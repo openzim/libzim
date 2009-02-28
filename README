@@ -1,0 +1,6 @@
+TntReader
+=========
+
+TntReader ist ein Server, mit dem sich die Daten von der deutschen
+Wikipedia-DVD 2007 lesen lassen. Der Server stellt die Daten aus
+den zeno-Dateien als Webseiten zur Verfügung.

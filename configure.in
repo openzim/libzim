@@ -1,0 +1,30 @@
+AC_INIT(zimlib, 0.1, [Tommi Maekitalo <tommi@tntnet.org>])
+AM_INIT_AUTOMAKE([subdir-objects])
+
+abi_current=0
+abi_revision=0
+abi_age=0
+sonumber=${abi_current}:${abi_revision}:${abi_age}
+AC_SUBST(sonumber)
+
+AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_SRCDIR([src/file.cpp])
+
+AC_PROG_CXX
+AC_PROG_LIBTOOL
+AC_CHECK_HEADER([zlib.h], , AC_MSG_ERROR([zlib header not found]))
+AC_CHECK_HEADER([bzlib.h], , AC_MSG_ERROR([bzip2 header files not found]))
+
+AC_LANG(C++)
+
+AC_CHECK_HEADER([cxxtools/condition.h], , AC_MSG_ERROR([cxxtools headers not found]))
+
+# output
+AC_CONFIG_FILES([
+  Makefile
+  src/Makefile
+  include/Makefile
+  zimDump/Makefile
+  ])
+
+AC_OUTPUT
