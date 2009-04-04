@@ -4,19 +4,25 @@ lib_LTLIBRARIES = libzim.la
 
 libzim_la_SOURCES = \
 	article.cpp \
-	articlesearch.cpp \
 	bunzip2stream.cpp \
 	bzip2.cpp \
 	bzip2stream.cpp \
+	cluster.cpp \
 	deflatestream.cpp \
 	dirent.cpp \
 	file.cpp \
 	fileheader.cpp \
 	fileimpl.cpp \
-	files.cpp \
-	indexarticle.cpp \
 	inflatestream.cpp \
 	qunicode.cpp \
+	unicode.cpp \
+	uuid.cpp \
+	zintstream.cpp
+
+FOO = \
+	articlesearch.cpp \
+	files.cpp \
+	indexarticle.cpp \
 	search.cpp \
 	unicode.cpp \
 	zintstream.cpp

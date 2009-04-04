@@ -20,7 +20,6 @@
 #ifndef ZIM_FILEIMPL_H
 #define ZIM_FILEIMPL_H
 
-#include <cxxtools/mutex.h>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -29,51 +28,46 @@
 #include <zim/qunicode.h>
 #include <zim/fileheader.h>
 #include <zim/cache.h>
+#include <zim/dirent.h>
+#include <zim/cluster.h>
 
 namespace zim
 {
-  class Dirent;
-  class Article;
-
   class FileImpl : public cxxtools::RefCounted
   {
       std::ifstream zimFile;
       Fileheader header;
       std::string filename;
+
+      typedef std::vector<offset_type> OffsetsType;
+      OffsetsType indexOffsets;
+      OffsetsType clusterOffsets;
+
+      Cache<offset_type, Cluster> clusterCache;
+
       std::string namespaces;
 
-      cxxtools::Mutex mutex;
-
-      typedef std::vector<offset_type> IndexOffsetsType;
-      IndexOffsetsType indexOffsets;
-
-      std::string readDataNolock(size_type count);
-      std::string readDataNolock(offset_type off, size_type count);
-      Dirent readDirentNolock();
-      Dirent readDirentNolock(offset_type off);
-
-      Cache<offset_type, std::string> uncompressCache;
-
     public:
-      FileImpl(const char* fname);
+      explicit FileImpl(const char* fname);
 
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
 
-      Article getArticle(char ns, const QUnicodeString& url, bool collate);
-      Article getArticle(char ns, const std::string& url, bool collate);
-      Article getArticle(size_type idx);
-      std::pair<bool, size_type> findArticle(char ns, const QUnicodeString& url, bool collate);
       Dirent getDirent(size_type idx);
-      size_type getCountArticles() const  { return indexOffsets.size(); }
-      offset_type getDirentOffset(size_type idx) const  { return indexOffsets[idx]; }
+      size_type getCountArticles() const       { return indexOffsets.size(); }
+
+      Cluster getCluster(size_type idx);
+      size_type getCountClusters() const       { return clusterOffsets.size(); }
+      offset_type getClusterOffset(size_type idx) const    { return clusterOffsets[idx]; }
 
       size_type getNamespaceBeginOffset(char ch);
       size_type getNamespaceEndOffset(char ch);
-      std::string getNamespaces();
+      size_type getNamespaceCount(char ns)
+        { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
-      std::string readData(offset_type off, size_type count);
-      std::string uncompressData(const Dirent& dirent, const std::string& data);
+      std::string getNamespaces();
+      bool hasNamespace(char ch);
+
   };
 
 }

@@ -41,9 +41,28 @@ inline bool isLittleEndian()
 
 ////////////////////////////////////////////////////////////////////////
 template <typename T>
-T fromLittleEndian(const T* ptr, bool fromBigEndian = isBigEndian())
+void toLittleEndian(const T& d, char* dst, bool bigEndian = isBigEndian())
 {
-  if (fromBigEndian)
+  if (bigEndian)
+  {
+    std::reverse_copy(
+      reinterpret_cast<const char*>(&d),
+      reinterpret_cast<const char*>(&d) + sizeof(T),
+      dst);
+  }
+  else
+  {
+    std::copy(
+      reinterpret_cast<const char*>(&d),
+      reinterpret_cast<const char*>(&d) + sizeof(T),
+      dst);
+  }
+}
+
+template <typename T>
+T fromLittleEndian(const T* ptr, bool bigEndian = isBigEndian())
+{
+  if (bigEndian)
   {
     T ret;
     std::reverse_copy(reinterpret_cast<const int8_t*>(ptr),
@@ -55,33 +74,32 @@ T fromLittleEndian(const T* ptr, bool fromBigEndian = isBigEndian())
   {
     return *ptr;
   }
-}
-
-template <typename T>
-T fromLittleEndian(T* ptr, bool fromBigEndian = isBigEndian())
-{ return fromLittleEndian(static_cast<const T*>(ptr), fromBigEndian); }
-
-template <typename T>
-T fromLittleEndian(const void* ptr, bool fromBigEndian = isBigEndian())
-{ return fromLittleEndian(static_cast<const T*>(ptr), fromBigEndian); }
-
-template <typename T>
-T fromLittleEndian(const T& t, bool fromBigEndian = isBigEndian())
-{ return fromLittleEndian(static_cast<const T*>(&t), fromBigEndian); }
-
-template <typename T>
-T fromLittleEndian(std::istream& in, bool fromBigEndian = isBigEndian())
-{
-  T data;
-  in.read(reinterpret_cast<char*>(&data), sizeof(T));
-  return fromLittleEndian(&data, fromBigEndian);
 }
 
 ////////////////////////////////////////////////////////////////////////
 template <typename T>
-T fromBigEndian(const T* ptr, bool fromBigEndian_ = isBigEndian())
+void toBigEndian(const T& d, char* dst, bool bigEndian = isBigEndian())
 {
-  if (fromBigEndian_)
+  if (bigEndian)
+  {
+    std::copy(
+      reinterpret_cast<const char*>(&d),
+      reinterpret_cast<const char*>(&d) + sizeof(T),
+      dst);
+  }
+  else
+  {
+    std::reverse_copy(
+      reinterpret_cast<const char*>(&d),
+      reinterpret_cast<const char*>(&d) + sizeof(T),
+      dst);
+  }
+}
+
+template <typename T>
+T fromBigEndian(const T* ptr, bool bigEndian = isBigEndian())
+{
+  if (bigEndian)
   {
     return *ptr;
   }
@@ -93,26 +111,6 @@ T fromBigEndian(const T* ptr, bool fromBigEndian_ = isBigEndian())
                       reinterpret_cast<int8_t*>(&ret));
     return ret;
   }
-}
-
-template <typename T>
-T fromBigEndian(T* ptr, bool fromBigEndian_ = isBigEndian())
-{ return fromBigEndian(static_cast<const T*>(ptr), fromBigEndian_); }
-
-template <typename T>
-T fromBigEndian(const void* ptr, bool fromBigEndian_ = isBigEndian())
-{ return fromBigEndian(static_cast<const T*>(ptr), fromBigEndian_); }
-
-template <typename T>
-T fromBigEndian(const T& t, bool fromBigEndian = isBigEndian())
-{ return fromBigEndian(static_cast<const T*>(&t), fromBigEndian); }
-
-template <typename T>
-T fromBigEndian(std::istream& in, bool fromBigEndian_ = isBigEndian())
-{
-  T data;
-  in.read(reinterpret_cast<char*>(&data), sizeof(T));
-  return fromBigEndian(&data, fromBigEndian_);
 }
 
 #endif // ENDIAN_H

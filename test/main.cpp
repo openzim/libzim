@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,41 +17,5 @@
  *
  */
 
-#ifndef ZIM_ZIM_H
-#define ZIM_ZIM_H
-
-#include <stdint.h>
-
-namespace zim
-{
-  typedef uint32_t size_type;
-  typedef uint64_t offset_type;
-
-  enum CompressionType
-  {
-    zimcompDefault,
-    zimcompNone,
-    zimcompZip,
-    zimcompBzip2,
-    zimcompLzma
-  };
-
-  enum MimeType
-  {
-    zimMimeTextHtml,
-    zimMimeTextPlain,
-    zimMimeImageJpeg,
-    zimMimeImagePng,
-    zimMimeImageTiff,
-    zimMimeTextCss,
-    zimMimeImageGif,
-    zimMimeIndex,
-    zimMimeApplicationJavaScript,
-    zimMimeImageIcon,
-    zimMimeTextXml
-  };
-
-}
-
-#endif // ZIM_ZIM_H
+#include <cxxtools/unit/testmain.h>
 

@@ -21,6 +21,7 @@
 #define ZIM_QUNICODE_H
 
 #include <string>
+#include <iosfwd>
 
 namespace zim
 {

@@ -34,8 +34,10 @@ namespace zim
       bool is_end() const  { return file == 0 || idx >= file->getCountArticles(); }
 
     public:
-      explicit const_iterator(File* file_ = 0);
-      const_iterator(File* file_, size_type idx_);
+      explicit const_iterator(File* file_ = 0, size_type idx_ = 0)
+        : file(file_),
+          idx(idx_)
+      { }
 
       size_type getIndex() const   { return idx; }
       const File& getFile() const  { return *file; }
@@ -72,7 +74,12 @@ namespace zim
         return *this;
       }
 
-      Article operator*() const;
+      Article operator*() const
+      {
+        if (article.getIndex() != idx)
+          article = file->getArticle(idx);
+        return article;
+      }
 
       pointer operator->() const
       {
@@ -80,6 +87,7 @@ namespace zim
           article = file->getArticle(idx);
         return &article;
       }
+
   };
 
 }

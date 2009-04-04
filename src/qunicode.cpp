@@ -19,6 +19,7 @@
 
 #include <zim/qunicode.h>
 #include <cxxtools/log.h>
+#include <iostream>
 #include <sstream>
 
 log_define("zim.qunicode")

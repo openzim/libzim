@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2006,2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,137 +18,78 @@
  */
 
 #include <zim/file.h>
-#include <zim/fileiterator.h>
-#include <zim/fileimpl.h>
+#include <zim/article.h>
 #include <cxxtools/log.h>
-#include <limits>
+#include <zim/fileiterator.h>
 
 log_define("zim.file")
 
 namespace zim
 {
-  File::File(const std::string& fname)
-    : impl(new FileImpl(fname.c_str()))
-  { }
-
-  File::File(FileImpl* impl_)
-    : impl(impl_)
-  { }
-
-  std::string File::readData(offset_type off, size_type count)
-  {
-    log_debug("readData(" << off << ", " << count << ')');
-    return impl->readData(off, count);
-  }
-
-  std::string File::uncompressData(const Dirent& dirent, const std::string& data)
-  {
-    return impl->uncompressData(dirent, data);
-  }
-
-  Article File::getArticle(char ns, const std::string& url, bool collate)
-  {
-    log_debug("getArticle('" << ns << "', \"" << url << "\", " << collate << ')');
-    return impl->getArticle(ns, url, collate);
-  }
-
-  Article File::getArticle(char ns, const QUnicodeString& url, bool collate)
-  {
-    log_debug(getFilename() << ".getArticle('" << ns << "', \"" << url << "\", " << collate << ')');
-    return impl->getArticle(ns, url, collate);
-  }
-
-  Article File::getArticle(size_type idx)
-  {
-    log_debug(getFilename() << ".getArticle(" << idx << ')');
-    return impl->getArticle(idx);
-  }
-
   Dirent File::getDirent(size_type idx)
   {
-    log_debug("getDirent(" << idx << ')');
+    log_trace("File::getDirent(" << idx << ')');
+
     return impl->getDirent(idx);
   }
 
-  size_type File::getCountArticles() const
+  Article File::getArticle(size_type idx) const
   {
-    log_debug("getCountArticles()");
-    return impl->getCountArticles();
-  }
-
-  std::string File::getNamespaces()
-  {
-    log_debug("getNamespaces()");
-    return impl->getNamespaces();
-  }
-
-  bool File::hasNamespace(char ch)
-  {
-    size_type off = getNamespaceBeginOffset(ch);
-    return off < getCountArticles() && getDirent(off).getNamespace() == ch;
-  }
-
-  size_type File::getNamespaceBeginOffset(char ch)
-  {
-    log_debug("getNamespaceBeginOffset(" << ch << ')');
-    return impl->getNamespaceBeginOffset(ch);
-  }
-
-  size_type File::getNamespaceEndOffset(char ch)
-  {
-    log_debug("getNamespaceEndOffset(" << ch << ')');
-    return impl->getNamespaceEndOffset(ch);
+    return Article(*this, idx);
   }
 
   File::const_iterator File::begin()
-  {
-    return const_iterator(this);
-  }
+  { return const_iterator(this, 0); }
 
   File::const_iterator File::end()
-  {
-    return const_iterator();
-  }
+  { return const_iterator(this, getCountArticles()); }
 
-  File::const_iterator File::find(char ns, const std::string& url, bool collate)
+  File::const_iterator File::find(char ns, const QUnicodeString& title, bool collate)
   {
-    return const_iterator(this, impl->findArticle(ns, QUnicodeString(url), collate).second);
-  }
+    log_debug("find article " << ns << " \"" << title << "\", " << collate << " in file \"" << getFilename() << '"');
 
-  File::const_iterator File::find(char ns, const QUnicodeString& url, bool collate)
-  {
-    return const_iterator(this, impl->findArticle(ns, url, collate).second);
-  }
-
-  File::const_iterator::const_iterator(File* file_)
-    : file(file_),
-      idx(0)
-  {
-    article.setIndex(std::numeric_limits<zim::size_type>::max());
-  }
-
-  File::const_iterator::const_iterator(File* file_, size_type idx_)
-    : file(file_),
-      idx(idx_)
-  {
-    if (idx_ < file->getCountArticles())
-      article = file->getArticle(idx);
-    else
+    if (getNamespaces().find(ns) == std::string::npos)
     {
-      file = 0;
-      idx = 0;
+      log_debug("namespace " << ns << " not found");
+      return end();
     }
-  }
 
-  Article File::const_iterator::operator*() const
-  {
-    log_debug("dereference File::const_iterator; articleindex=" << article.getIndex() << " idx=" << idx);
-    if (article.getIndex() != idx)
+    size_type l = getNamespaceBeginOffset(ns);
+    size_type u = getNamespaceEndOffset(ns);
+
+    unsigned itcount = 0;
+    while (u - l > 1)
     {
-      log_debug("fetch article with index " << idx);
-      article = file->getArticle(idx);
+      ++itcount;
+      size_type p = l + (u - l) / 2;
+      Dirent d = getDirent(p);
+
+      int c = ns < d.getNamespace() ? -1
+            : ns > d.getNamespace() ? 1
+            : (collate ? title.compareCollate(QUnicodeString(d.getTitle()))
+                       : title.compare(QUnicodeString(d.getTitle())));
+      if (c < 0)
+        u = p;
+      else if (c > 0)
+        l = p;
+      else
+      {
+        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
+        return const_iterator(this, p);
+      }
     }
-    return article;
+
+    Dirent d = getDirent(l);
+    int c = collate ? title.compareCollate(QUnicodeString(d.getTitle()))
+                    : title.compare(QUnicodeString(d.getTitle()));
+    if (c == 0)
+    {
+      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
+      return const_iterator(this, l);
+    }
+
+    log_debug("article not found (\"" << d.getTitle() << "\" does not match)");
+    return const_iterator(this, u);
   }
 
 }

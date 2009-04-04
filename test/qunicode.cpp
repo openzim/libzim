@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,41 +17,29 @@
  *
  */
 
-#ifndef ZIM_ZIM_H
-#define ZIM_ZIM_H
+#include <zim/qunicode.h>
+#include <cxxtools/unit/testsuite.h>
+#include <cxxtools/unit/registertest.h>
 
-#include <stdint.h>
-
-namespace zim
+class QUnicodeTest : public cxxtools::unit::TestSuite
 {
-  typedef uint32_t size_type;
-  typedef uint64_t offset_type;
+  public:
+    QUnicodeTest()
+      : cxxtools::unit::TestSuite("zim::QUnicodeTest")
+    {
+      registerMethod("QStringLen", *this, &QUnicodeTest::QStringLen);
+    }
 
-  enum CompressionType
-  {
-    zimcompDefault,
-    zimcompNone,
-    zimcompZip,
-    zimcompBzip2,
-    zimcompLzma
-  };
+    void QStringLen()
+    {
+      zim::QUnicodeString s("Hallo");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(s.getValue().size(), 5);
 
-  enum MimeType
-  {
-    zimMimeTextHtml,
-    zimMimeTextPlain,
-    zimMimeImageJpeg,
-    zimMimeImagePng,
-    zimMimeImageTiff,
-    zimMimeTextCss,
-    zimMimeImageGif,
-    zimMimeIndex,
-    zimMimeApplicationJavaScript,
-    zimMimeImageIcon,
-    zimMimeTextXml
-  };
+      zim::QUnicodeString s2("L\xc3\xbcliang");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(s2.getValue().size(), 8);
 
-}
+    }
 
-#endif // ZIM_ZIM_H
+};
 
+cxxtools::unit::RegisterTest<QUnicodeTest> register_QUnicodeTest;

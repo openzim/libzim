@@ -19,54 +19,81 @@
 
 #include <zim/fileheader.h>
 #include <iostream>
+#include <algorithm>
 #include <cxxtools/log.h>
 
 log_define("zim.file.header")
 
 namespace zim
 {
-  const size_type Fileheader::magic = 1439867043;
-  const size_type Fileheader::version = 4;
-  const size_type Fileheader::headerSize;
-
-  Fileheader::Fileheader()
-  {
-    std::fill(header, header + headerSize, '\0');
-
-    *reinterpret_cast<size_type*>(header + 0) = fromLittleEndian<size_type>(&magic);
-    *reinterpret_cast<size_type*>(header + 4) = fromLittleEndian<size_type>(&version);
-  }
+  const size_type Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
+  const size_type Fileheader::zimVersion = 4;
+  const size_type Fileheader::size = 56;
 
   std::ostream& operator<< (std::ostream& out, const Fileheader& fh)
   {
-    out.write(fh.header, Fileheader::headerSize);
-    for (unsigned i = 0; i < Fileheader::headerFill; ++i)
-      out << '\0';
+    char header[56];
+    toLittleEndian(Fileheader::zimMagic, header);
+    toLittleEndian(Fileheader::zimVersion, header + 4);
+    std::copy(fh.getUuid().data, fh.getUuid().data + sizeof(Uuid), header + 8);
+    toLittleEndian(fh.getArticleCount(), header + 24);
+    toLittleEndian(fh.getIndexPtrPos(), header + 28);
+    toLittleEndian(fh.getClusterCount(), header + 36);
+    toLittleEndian(fh.getClusterPtrPos(), header + 40);
+    toLittleEndian(fh.getMainPage(), header + 48);
+    toLittleEndian(fh.getLayoutPage(), header + 52);
+
+    out.write(header, 56);
+
     return out;
   }
 
   std::istream& operator>> (std::istream& in, Fileheader& fh)
   {
-    in.read(fh.header, Fileheader::headerSize);
-    if (in.gcount() != Fileheader::headerSize)
-      in.setstate(std::ios::failbit);
-    else
+    char header[56];
+    in.read(header, 56);
+    if (in.fail())
+      return in;
+    if (in.gcount() != 56)
     {
-      in.ignore(57);
-
-      if (fh.getMagicNumber() != Fileheader::magic)
-      {
-        log_error("invalid magic number " << fh.getMagicNumber() << " found - "
-            << Fileheader::magic << " expected");
-        in.setstate(std::ios::failbit);
-      }
-      else if (fh.getVersion() != Fileheader::version)
-      {
-        log_error("invalid zimfile version " << fh.getVersion() << " found - "
-            << Fileheader::version << " expected");
-        in.setstate(std::ios::failbit);
-      }
+      in.setstate(std::ios::failbit);
+      return in;
     }
+
+    size_type magicNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header));
+    if (magicNumber != Fileheader::zimMagic)
+    {
+      log_error("invalid magic number " << magicNumber << " found - "
+          << Fileheader::zimMagic << " expected");
+      in.setstate(std::ios::failbit);
+      return in;
+    }
+
+    size_type version = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
+    if (version != Fileheader::zimVersion)
+    {
+      log_error("invalid zimfile version " << version << " found - "
+          << Fileheader::zimVersion << " expected");
+      in.setstate(std::ios::failbit);
+      return in;
+    }
+
+    Uuid uuid;
+    std::copy(header + 8, header + 24, uuid.data);
+    size_type articleCount = fromLittleEndian(reinterpret_cast<const size_type*>(header + 24));
+    offset_type indexPtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 28));
+    size_type blobCount = fromLittleEndian(reinterpret_cast<const size_type*>(header + 36));
+    offset_type blobPtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 40));
+    size_type mainPage = fromLittleEndian(reinterpret_cast<const size_type*>(header + 48));
+    size_type layoutPage = fromLittleEndian(reinterpret_cast<const size_type*>(header + 52));
+
+    fh.setUuid(uuid);
+    fh.setArticleCount(articleCount);
+    fh.setIndexPtrPos(indexPtrPos);
+    fh.setClusterCount(blobCount);
+    fh.setClusterPtrPos(blobPtrPos);
+    fh.setMainPage(mainPage);
+    fh.setLayoutPage(layoutPage);
 
     return in;
   }

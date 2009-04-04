@@ -67,17 +67,17 @@ namespace zim
       uLong getAdler() const   { return stream.adler; }
   };
 
-  class InflateStream : public std::ostream
+  class InflateStream : public std::iostream
   {
       InflateStreamBuf streambuf;
 
     public:
       explicit InflateStream(std::streambuf* sinksource, unsigned bufsize = 8192)
-        : std::ostream(0),
+        : std::iostream(0),
           streambuf(sinksource, bufsize)
         { init(&streambuf); }
       explicit InflateStream(std::ios& sinksource, unsigned bufsize = 8192)
-        : std::ostream(0),
+        : std::iostream(0),
           streambuf(sinksource.rdbuf(), bufsize)
         { init(&streambuf); }
 

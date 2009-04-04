@@ -22,46 +22,50 @@
 
 #include <zim/zim.h>
 #include <zim/endian.h>
+#include <zim/uuid.h>
 #include <iosfwd>
 
 namespace zim
 {
   class Fileheader
   {
-      friend std::ostream& operator<< (std::ostream& out, const Fileheader& fh);
-      friend std::istream& operator>> (std::istream& in, Fileheader& fh);
-
     public:
-      static const size_type magic;
-      static const size_type version;
-      static const unsigned headerSize = 60;
-      static const unsigned headerFill = 58;
+      static const size_type zimMagic;
+      static const size_type zimVersion;
+      static const size_type size;
 
     private:
-      char header[headerSize];
+      Uuid uuid;
+      size_type articleCount;
+      offset_type indexPtrPos;
+      size_type blobCount;
+      offset_type blobPtrPos;
+      size_type mainPage;
+      size_type layoutPage;
 
     public:
-      Fileheader();
+      Fileheader()  {}
 
-      size_type getMagicNumber() const   { return fromLittleEndian<size_type>(header + 0x0); }
-      size_type getVersion() const       { return fromLittleEndian<size_type>(header + 0x4); }
+      const Uuid& getUuid() const                  { return uuid; }
+      void setUuid(const Uuid& uuid_)              { uuid = uuid_; }
 
-      size_type getCount() const         { return fromLittleEndian<size_type>(header + 0x8); }
-      void      setCount(size_type s)    { *reinterpret_cast<size_type*>(header + 8) = fromLittleEndian<size_type>(&s); }
+      size_type getArticleCount() const            { return articleCount; }
+      void      setArticleCount(size_type s)       { articleCount = s; }
 
-      offset_type getIndexPos() const    { return fromLittleEndian<offset_type>(header + 0x10); }
-      void        setIndexPos(offset_type p) { *reinterpret_cast<offset_type*>(header + 0x10) = fromLittleEndian<offset_type>(&p); }
+      offset_type getIndexPtrPos() const           { return indexPtrPos; }
+      void        setIndexPtrPos(offset_type p)    { indexPtrPos = p; }
 
-      size_type getIndexLen() const      { return fromLittleEndian<size_type>(header + 0x18); }
-      void      setIndexLen(size_type l) { *reinterpret_cast<size_type*>(header + 0x18) = fromLittleEndian<size_type>(&l); }
+      size_type getClusterCount() const            { return blobCount; }
+      void      setClusterCount(size_type s)       { blobCount = s; }
 
-      offset_type getIndexPtrPos() const { return fromLittleEndian<offset_type>(header + 0x20); }
-      void        setIndexPtrPos(offset_type p) { *reinterpret_cast<offset_type*>(header + 0x20) = fromLittleEndian<offset_type>(&p); }
+      offset_type getClusterPtrPos() const         { return blobPtrPos; }
+      void        setClusterPtrPos(offset_type p)  { blobPtrPos = p; }
 
-      size_type getIndexPtrLen() const   { return fromLittleEndian<size_type>(header + 0x28); }
-      void      setIndexPtrLen(size_type l) { *reinterpret_cast<size_type*>(header + 0x28) = fromLittleEndian<size_type>(&l); }
+      size_type getMainPage() const                { return mainPage; }
+      void      setMainPage(size_type s)           { mainPage = s; }
 
-      offset_type getDataPos() const   { return getIndexPos() + getIndexLen(); }
+      size_type getLayoutPage() const              { return layoutPage; }
+      void      setLayoutPage(size_type s)         { layoutPage = s; }
   };
 
   std::ostream& operator<< (std::ostream& out, const Fileheader& fh);

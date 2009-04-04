@@ -1,4 +1,8 @@
 SUBDIRS = \
 	src \
-	zimDump \
-	include
+	include \
+	test \
+	zimDump
+
+test: all
+	test/zimlib-test

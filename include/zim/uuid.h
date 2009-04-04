@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,41 +17,38 @@
  *
  */
 
-#ifndef ZIM_ZIM_H
-#define ZIM_ZIM_H
+#ifndef ZIM_UUID_H
+#define ZIM_UUID_H
 
-#include <stdint.h>
+#include <iosfwd>
+#include <algorithm>
+#include <cstring>
 
 namespace zim
 {
-  typedef uint32_t size_type;
-  typedef uint64_t offset_type;
-
-  enum CompressionType
+  struct Uuid
   {
-    zimcompDefault,
-    zimcompNone,
-    zimcompZip,
-    zimcompBzip2,
-    zimcompLzma
+    Uuid()
+    {
+      std::memset(data, 0, 16);
+    }
+
+    Uuid(const char uuid[16])
+    {
+      std::copy(uuid, uuid+16, data);
+    }
+
+    static Uuid generate();
+
+    bool operator== (const Uuid& other) const
+      { return std::equal(data, data+16, other.data); }
+    unsigned size() const  { return 16; }
+
+    char data[16];
   };
 
-  enum MimeType
-  {
-    zimMimeTextHtml,
-    zimMimeTextPlain,
-    zimMimeImageJpeg,
-    zimMimeImagePng,
-    zimMimeImageTiff,
-    zimMimeTextCss,
-    zimMimeImageGif,
-    zimMimeIndex,
-    zimMimeApplicationJavaScript,
-    zimMimeImageIcon,
-    zimMimeTextXml
-  };
+  std::ostream& operator<< (std::ostream& out, const Uuid& uuid);
 
 }
 
-#endif // ZIM_ZIM_H
-
+#endif // ZIM_UUID_H

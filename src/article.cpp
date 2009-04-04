@@ -40,69 +40,47 @@ namespace zim
 
     switch (getLibraryMimeType())
     {
-      case Dirent::zimMimeTextHtml:
+      case zimMimeTextHtml:
         return textHtml;
-      case Dirent::zimMimeTextPlain:
+      case zimMimeTextPlain:
         return textPlain;
-      case Dirent::zimMimeImageJpeg:
+      case zimMimeImageJpeg:
         return imageJpeg;
-      case Dirent::zimMimeImagePng:
+      case zimMimeImagePng:
         return imagePng;
-      case Dirent::zimMimeImageTiff:
+      case zimMimeImageTiff:
         return imageTiff;
-      case Dirent::zimMimeTextCss:
+      case zimMimeTextCss:
         return textCss;
-      case Dirent::zimMimeImageGif:
+      case zimMimeImageGif:
         return imageGif;
-      case Dirent::zimMimeIndex:
+      case zimMimeIndex:
         return index;
-      case Dirent::zimMimeApplicationJavaScript:
+      case zimMimeApplicationJavaScript:
         return applicationJavaScript;
-      case Dirent::zimMimeImageIcon:
+      case zimMimeImageIcon:
         return imageIcon;
-      case Dirent::zimMimeTextXml:
+      case zimMimeTextXml:
         return textXml;
     }
 
     return textHtml;
   }
 
-  void Article::uncompressData() const
+  size_type Article::getArticleSize() const
   {
-    if (!getRedirectFlag() && uncompressedData.empty() && !getRawData().empty())
-      uncompressedData = const_cast<File&>(file).uncompressData(dirent, getRawData());
+    Dirent dirent = getDirent();
+    return file.getCluster(dirent.getClusterNumber())
+               .getBlobSize(dirent.getBlobNumber());
   }
 
-  std::string Article::getData() const
+  QUnicodeString Article::getUrl() const
   {
-    if (getRedirectFlag())
-      return std::string();
-    uncompressData();
+    log_trace("Article::getUrl()");
 
-    return getArticleSize() > 0 ? uncompressedData.substr(getArticleOffset(), getArticleSize())
-                                : uncompressedData;
+    log_debug("namespace=" << getNamespace());
+    log_debug("title=" << getDirent().getTitle());
+
+    return QUnicodeString(std::string(1, getNamespace()) + '/' + getDirent().getTitle().getValue());
   }
-
-  const std::string& Article::getRawData() const
-  {
-    log_trace("getRawData()");
-
-    if (!dataRead)
-    {
-      Article* article = const_cast<Article*>(this);
-      log_debug("read data from file");
-      article->data.assign(
-        const_cast<File&>(file).readData(getDirent().getOffset(),
-        getDirent().getSize()));
-      article->dataRead = true;
-    }
-
-    return data;
-  }
-
-  Article Article::getRedirectArticle() const
-  {
-    return const_cast<Article*>(this)->getFile().getArticle(getRedirectIndex());
-  }
-
 }

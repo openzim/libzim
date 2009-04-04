@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2006,2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,13 +23,13 @@
 #include <string>
 #include <iterator>
 #include <zim/zim.h>
-#include <cxxtools/smartptr.h>
 #include <zim/fileimpl.h>
+#include <zim/blob.h>
+#include <cxxtools/smartptr.h>
 
 namespace zim
 {
   class Article;
-  class Dirent;
 
   class File
   {
@@ -38,38 +38,42 @@ namespace zim
     public:
       File()
         { }
-      explicit File(const std::string& fname);
-      explicit File(FileImpl* impl);
-
-      std::string readData(offset_type off, size_type count);
-      std::string uncompressData(const Dirent& dirent, const std::string& data);
+      explicit File(const std::string& fname)
+        : impl(new FileImpl(fname.c_str()))
+        { }
 
       const std::string& getFilename() const   { return impl->getFilename(); }
       const Fileheader& getFileheader() const  { return impl->getFileheader(); }
 
-      Article getArticle(char ns, const std::string& url, bool collate = false);
-      Article getArticle(char ns, const QUnicodeString& url, bool collate = false);
-      Article getArticle(size_type idx);
       Dirent getDirent(size_type idx);
-      offset_type getDirentOffset(size_type idx) const  { return impl->getDirentOffset(idx); }
-      size_type getCountArticles() const;
+      size_type getCountArticles() const       { return impl->getCountArticles(); }
 
-      size_type getNamespaceBeginOffset(char ch);
-      size_type getNamespaceEndOffset(char ch);
+      Article getArticle(size_type idx) const;
+
+      Cluster getCluster(size_type idx) const  { return impl->getCluster(idx); }
+      size_type getCountClusters() const       { return impl->getCountClusters(); }
+      offset_type getClusterOffset(size_type idx) const    { return impl->getClusterOffset(idx); }
+
+      Blob getBlob(size_type clusterIdx, size_type blobIdx)
+        { return getCluster(clusterIdx).getBlob(blobIdx); }
+
+      size_type getNamespaceBeginOffset(char ch)
+        { return impl->getNamespaceBeginOffset(ch); }
+      size_type getNamespaceEndOffset(char ch)
+        { return impl->getNamespaceEndOffset(ch); }
       size_type getNamespaceCount(char ns)
         { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
-      std::string getNamespaces();
+      std::string getNamespaces()
+        { return impl->getNamespaces(); }
       bool hasNamespace(char ch);
 
       class const_iterator;
 
       const_iterator begin();
       const_iterator end();
-      const_iterator find(char ns, const std::string& url, bool collate = false);
-      const_iterator find(char ns, const QUnicodeString& url, bool collate = false);
+      const_iterator find(char ns, const QUnicodeString& title, bool collate = false);
 
-      operator bool() const  { return impl.getPointer() != 0; }
   };
 
 }

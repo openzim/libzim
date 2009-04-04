@@ -25,6 +25,7 @@ AC_CONFIG_FILES([
   src/Makefile
   include/Makefile
   zimDump/Makefile
+  test/Makefile
   ])
 
 AC_OUTPUT
