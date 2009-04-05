@@ -91,7 +91,7 @@ namespace zim
           data.pop_back();
       }
 
-      Value get(const Key& key, Value def = Value())
+      std::pair<bool, Value> getx(const Key& key, Value def = Value())
       {
         for (typename DataType::iterator it = data.begin(); it != data.end(); ++it)
         {
@@ -100,12 +100,18 @@ namespace zim
             typename DataType::value_type v = *it;
             data.erase(it);
             data.push_front(v);
-            return v.second;
+            return std::pair<bool, Value>(true, v.second);
           }
         }
 
-        return def;
+        return std::pair<bool, Value>(false, def);
       }
+
+      Value get(const Key& key, Value def = Value())
+      {
+        return getx(key, def).second;
+      }
+
 
   };
 }

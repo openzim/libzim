@@ -23,6 +23,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 #include <cxxtools/refcounted.h>
 #include <zim/zim.h>
 #include <zim/qunicode.h>
@@ -43,7 +44,11 @@ namespace zim
       OffsetsType indexOffsets;
       OffsetsType clusterOffsets;
 
+      Cache<size_type, Dirent> direntCache;
       Cache<offset_type, Cluster> clusterCache;
+      typedef std::map<char, size_type> NamespaceCache;
+      NamespaceCache namespaceBeginCache;
+      NamespaceCache namespaceEndCache;
 
       std::string namespaces;
 

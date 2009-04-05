@@ -32,6 +32,7 @@ namespace zim
   //
   FileImpl::FileImpl(const char* fname)
     : zimFile(fname),
+      direntCache(64),
       clusterCache(16)
   {
     if (!zimFile)
@@ -89,6 +90,13 @@ namespace zim
       throw ZenoFileFormatError("file in error state");
     }
 
+    std::pair<bool, Dirent> v = direntCache.getx(idx);
+    if (v.first)
+    {
+      log_debug("dirent found in cache");
+      return v.second;
+    }
+
     log_debug("seek to " << indexOffsets[idx]);
     zimFile.seekg(indexOffsets[idx]);
     if (!zimFile)
@@ -109,6 +117,7 @@ namespace zim
     }
 
     log_debug("reading dirent was successful");
+    direntCache.put(idx, dirent);
 
     return dirent;
   }
@@ -145,7 +154,11 @@ namespace zim
 
   size_type FileImpl::getNamespaceBeginOffset(char ch)
   {
-    log_debug("getNamespaceBeginOffset(" << ch << ')');
+    log_trace("getNamespaceBeginOffset(" << ch << ')');
+
+    NamespaceCache::const_iterator it = namespaceBeginCache.find(ch);
+    if (it != namespaceBeginCache.end())
+      return it->second;
 
     size_type lower = 0;
     size_type upper = getCountArticles();
@@ -159,12 +172,20 @@ namespace zim
       else
         lower = m;
     }
-    return d.getNamespace() < ch ? upper : lower;
+
+    size_type ret = d.getNamespace() < ch ? upper : lower;
+    namespaceBeginCache[ch] = ret;
+
+    return ret;
   }
 
   size_type FileImpl::getNamespaceEndOffset(char ch)
   {
-    log_debug("getNamespaceEndOffset(" << ch << ')');
+    log_trace("getNamespaceEndOffset(" << ch << ')');
+
+    NamespaceCache::const_iterator it = namespaceEndCache.find(ch);
+    if (it != namespaceEndCache.end())
+      return it->second;
 
     size_type lower = 0;
     size_type upper = getCountArticles();
@@ -179,7 +200,11 @@ namespace zim
         lower = m;
       log_debug("namespace " << d.getNamespace() << " m=" << m << " lower=" << lower << " upper=" << upper);
     }
+
+    namespaceEndCache[ch] = upper;
+
     return upper;
+
   }
 
   std::string FileImpl::getNamespaces()
