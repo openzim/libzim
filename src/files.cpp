@@ -45,7 +45,7 @@ namespace zim
         {
           std::string fname = *it;
           log_trace("process " << fname);
-          if (fname.size() > 4 && fname.compare(fname.size() - 5, 5, ".zim") == 0)
+          if (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
           {
             log_debug("file \"" << fname << "\" found");
             try
@@ -70,36 +70,10 @@ namespace zim
     }
   }
 
-  Files::Files(const std::string& dir, const std::string& fixdir)
+  Files::Files(const std::string& dir)
   {
     if (!dir.empty())
       addFiles(dir);
-
-    log_debug("fixdir=" << fixdir);
-    if (!fixdir.empty())
-    {
-      FilesType::iterator f = files.find(fixdir);
-      struct stat st;
-      if (f != files.end())
-      {
-        log_debug("fix file=" << fixdir);
-        addFixFile(fixdir, f->second);
-      }
-      else if (::stat(fixdir.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
-      {
-        std::string fname = fixdir;
-        std::string::size_type p = fname.find_last_of('/');
-        if (p != std::string::npos)
-          fname.erase(0, p + 1);
-        log_debug("fix file=" << fname << " (" << fixdir << ')');
-        fixFiles[fname] = File(fixdir);
-      }
-      else
-      {
-        log_debug("add fix files from directory " << fixdir);
-        addFixFiles(fixdir);
-      }
-    }
   }
 
   void Files::addFiles(const std::string& dir, unsigned maxdepth)
@@ -107,13 +81,6 @@ namespace zim
     log_debug("search for zim-files in directory " << dir);
     addFiles_(files, dir, maxdepth);
     log_debug(files.size() << " zimfiles active");
-  }
-
-  void Files::addFixFiles(const std::string& dir, unsigned maxdepth)
-  {
-    log_debug("search for additional zim-files in directory " << dir);
-    addFiles_(fixFiles, dir, maxdepth);
-    log_debug(files.size() << " zimfiles");
   }
 
   Files Files::getFiles(char ns)
@@ -142,9 +109,9 @@ namespace zim
     {
       log_debug("search in " << it->first);
       Article article = it->second.getArticle(ns, url);
-      if (article)
+      if (article.good())
       {
-        if (ret.getRedirectFlag())
+        if (ret.isRedirect())
         {
           log_debug("redirect article found - return it");
           return ret;
@@ -173,10 +140,7 @@ namespace zim
     log_debug("getArticle('" << ns << "', \"" << url << "\")");
     Article ret = getArticle(files, ns, url);
 
-    if (!ret)
-      ret = getFixArticle(ns, url);
-
-    if (!ret)
+    if (!ret.good())
       log_debug("article not found");
 
     return ret;
@@ -196,10 +160,7 @@ namespace zim
     log_debug("file \"" << file << "\" found");
     Article article = it->second.getArticle(ns, url);
 
-    if (!article)
-      article = getFixArticle(ns, url);
-
-    if (article)
+    if (article.good())
     {
       log_debug("article found");
       return getBestArticle(article);
@@ -218,7 +179,7 @@ namespace zim
     {
       log_debug("search in " << it->first);
       Article a = it->second.getArticle(article.getNamespace(), article.getTitle());
-      if (a
+      if (a.good()
         && a.getLibraryMimeType() == article.getLibraryMimeType()
         && ret.getData().size() < a.getData().size())
       {
@@ -227,15 +188,9 @@ namespace zim
       }
     }
 
-    if (!ret)
+    if (!ret.good())
       log_debug("article not found");
     return ret;
-  }
-
-  Article Files::getFixArticle(char ns, const QUnicodeString& url)
-  {
-    log_debug("getFixArticle('" << ns << "', \"" << url << "\")");
-    return getArticle(fixFiles, ns, url);
   }
 
 }

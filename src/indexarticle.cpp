@@ -22,6 +22,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <cxxtools/log.h>
+#include "ptrstream.h"
 
 log_define("zim.indexarticle")
 
@@ -31,7 +32,7 @@ namespace zim
 
   void IndexArticle::readEntries()
   {
-    if (!*this || categoriesRead)
+    if (!good() || categoriesRead)
       return;
 
     log_debug("read entries for article " << getUrl());
@@ -82,7 +83,8 @@ namespace zim
         entries[c].push_back(entry);
 
         log_debug("read data from offset " << offset << " len " << len);
-        std::istringstream data(getData().substr(offset, len));
+        zim::Blob b = getData();
+        ptrstream data(const_cast<char*>(b.data()), const_cast<char*>(b.end()));
         IZIntStream zdata(data);
 
         unsigned index;
@@ -136,7 +138,8 @@ namespace zim
     try
     {
       zim::size_type categoryCount[4];
-      std::istringstream data(getData());
+      zim::Blob b = getData();
+      ptrstream data(const_cast<char*>(b.data()), const_cast<char*>(b.end()));
       for (unsigned c = 0; c < 4; ++c)
         categoryCount[c] = getSizeValue(data);
 

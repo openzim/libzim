@@ -106,7 +106,7 @@ namespace zim
 
       // weight position of words in the document
       for (itp = posList.begin(); itp != posList.end(); ++itp)
-        priority += Search::getWeightPos() * itp->first / article.getDataLen();
+        priority += Search::getWeightPos() * itp->first / article.getData().size();
 
       log_debug("priority of article " << article.getIndex() << " \"" << article.getTitle() << "\", " << wordList.size() << " words: " << priority);
     }
@@ -147,7 +147,7 @@ namespace zim
       }
     }
 
-    if (!articlefile)
+    if (!articlefile.good())
       throw std::runtime_error("no article file found");
   }
 

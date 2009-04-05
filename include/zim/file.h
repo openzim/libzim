@@ -49,6 +49,7 @@ namespace zim
       size_type getCountArticles() const       { return impl->getCountArticles(); }
 
       Article getArticle(size_type idx) const;
+      Article getArticle(char ns, const QUnicodeString& title, bool collate = false);
 
       Cluster getCluster(size_type idx) const  { return impl->getCluster(idx); }
       size_type getCountClusters() const       { return impl->getCountClusters(); }
@@ -74,6 +75,7 @@ namespace zim
       const_iterator end();
       const_iterator find(char ns, const QUnicodeString& title, bool collate = false);
 
+      bool good() const    { return impl.getPointer() != 0; }
   };
 
 }

@@ -83,6 +83,8 @@ namespace zim
       size_type   getIndex() const   { return idx; }
 
       QUnicodeString getUrl() const;
+
+      bool good() const   { return idx != std::numeric_limits<size_type>::max(); }
   };
 
 }

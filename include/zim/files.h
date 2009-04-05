@@ -33,7 +33,6 @@ namespace zim
 
     private:
       FilesType files;
-      FilesType fixFiles;
 
       static Article getArticle(FilesType& files, char ns, const QUnicodeString& url);
 
@@ -42,23 +41,18 @@ namespace zim
       typedef FilesType::const_iterator const_iterator;
 
       Files() { }
-      explicit Files(const std::string& dir, const std::string& fixdir = std::string());
+      explicit Files(const std::string& dir);
 
       void addFile(const std::string& fname)  { files[fname] = File(fname); }
       void addFile(const std::string& fname, const File& file )  { files[fname] = file; }
       void addFiles(const std::string& dir, unsigned maxdepth = 2);
-      void addFixFile(const std::string& fname)  { fixFiles[fname] = File(fname); }
-      void addFixFile(const std::string& fname, const File& file )  { fixFiles[fname] = file; }
-      void addFixFiles(const std::string& dir, unsigned maxdepth = 2);
 
       Files getFiles(char ns);
       File getFirstFile(char ns);
-      const FilesType& getFixFiles() const    { return fixFiles; }
 
       Article getArticle(char ns, const QUnicodeString& url);
       Article getArticle(const std::string& file, char ns, const QUnicodeString& url);
       Article getBestArticle(const Article& article);
-      Article getFixArticle(char ns, const QUnicodeString& url);
 
       iterator begin()                 { return files.begin(); }
       iterator end()                   { return files.end(); }

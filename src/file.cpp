@@ -38,6 +38,18 @@ namespace zim
     return Article(*this, idx);
   }
 
+  Article File::getArticle(char ns, const QUnicodeString& title, bool collate)
+  {
+    const_iterator it = find(ns, title, collate);
+    return it == end() ? Article() : *it;
+  }
+
+  bool File::hasNamespace(char ch)
+  {
+    size_type off = getNamespaceBeginOffset(ch);
+    return off < getCountArticles() && getDirent(off).getNamespace() == ch;
+  }
+
   File::const_iterator File::begin()
   { return const_iterator(this, 0); }
 
