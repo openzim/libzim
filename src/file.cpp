@@ -60,14 +60,14 @@ namespace zim
   {
     log_debug("find article " << ns << " \"" << title << "\", " << collate << " in file \"" << getFilename() << '"');
 
-    if (getNamespaces().find(ns) == std::string::npos)
+    size_type l = getNamespaceBeginOffset(ns);
+    size_type u = getNamespaceEndOffset(ns);
+
+    if (l == u)
     {
       log_debug("namespace " << ns << " not found");
       return end();
     }
-
-    size_type l = getNamespaceBeginOffset(ns);
-    size_type u = getNamespaceEndOffset(ns);
 
     unsigned itcount = 0;
     while (u - l > 1)
@@ -100,7 +100,7 @@ namespace zim
       return const_iterator(this, l);
     }
 
-    log_debug("article not found (\"" << d.getTitle() << "\" does not match)");
+    log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
     return const_iterator(this, u);
   }
 

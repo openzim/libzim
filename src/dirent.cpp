@@ -67,9 +67,14 @@ namespace zim
     char header[14];
     in.read(header, 10);
     if (in.fail())
+    {
+      log_warn("error reading dirent header");
       return in;
+    }
+
     if (in.gcount() != 10)
     {
+      log_warn("error reading dirent header (2)");
       in.setstate(std::ios::failbit);
       return in;
     }
@@ -79,19 +84,30 @@ namespace zim
     size_type extraLen;
     if (redirect)
     {
-      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
+      log_debug("read redirect entry");
 
-      extraLen = fromLittleEndian(reinterpret_cast<const size_type*>(header + 8));
+      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
+      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 8));
+
+      log_debug("redirectIndex=" << redirectIndex << " extraLen=" << extraLen);
 
       dirent.setRedirect(redirectIndex);
     }
     else
     {
+      log_debug("read article entry");
+
       in.read(header + 10, 4);
       if (in.fail())
+      {
+        log_warn("error reading article dirent header");
         return in;
+      }
+
       if (in.gcount() != 4)
       {
+        log_warn("error reading article dirent header (2)");
+        return in;
         in.setstate(std::ios::failbit);
         return in;
       }
@@ -99,10 +115,11 @@ namespace zim
       MimeType mimeType = static_cast<MimeType>(header[1]);
       size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
       size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header + 8));
+      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 12));
+
+      log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber << " extraLen=" << extraLen);
 
       dirent.setArticle(mimeType, clusterNumber, blobNumber);
-
-      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 12));
     }
     
     char ch;

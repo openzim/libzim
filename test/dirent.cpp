@@ -102,7 +102,7 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getExtraLen(), 9);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getExtraLen(), 8);
 
     }
 
