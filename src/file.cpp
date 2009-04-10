@@ -40,6 +40,7 @@ namespace zim
 
   Article File::getArticle(char ns, const QUnicodeString& title, bool collate)
   {
+    log_trace("File::getArticle('" << ns << "', \"" << title << "\", " << collate << ')');
     const_iterator it = find(ns, title, collate);
     return it == end() ? Article() : *it;
   }

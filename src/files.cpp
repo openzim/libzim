@@ -103,20 +103,22 @@ namespace zim
 
   Article Files::getArticle(FilesType& files, char ns, const QUnicodeString& url)
   {
-    log_debug("getArticle(files, '" << ns << "', \"" << url << "\")");
+    log_trace("getArticle(files, '" << ns << "', \"" << url << "\")");
+
     Article ret;
     for (iterator it = files.begin(); it != files.end(); ++it)
     {
       log_debug("search in " << it->first);
       Article article = it->second.getArticle(ns, url);
+
       if (article.good())
       {
-        if (ret.isRedirect())
+        if (article.isRedirect())
         {
           log_debug("redirect article found - return it");
-          return ret;
+          return article;
         }
-        else if (ret.getData().size() <= article.getData().size())
+        else if (!ret.good() || ret.getData().size() <= article.getData().size())
         {
           log_debug("article found in " << it->first);
           ret = article;
@@ -137,7 +139,7 @@ namespace zim
 
   Article Files::getArticle(char ns, const QUnicodeString& url)
   {
-    log_debug("getArticle('" << ns << "', \"" << url << "\")");
+    log_trace("getArticle('" << ns << "', \"" << url << "\")");
     Article ret = getArticle(files, ns, url);
 
     if (!ret.good())
