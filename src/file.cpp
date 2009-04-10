@@ -41,8 +41,8 @@ namespace zim
   Article File::getArticle(char ns, const QUnicodeString& title, bool collate)
   {
     log_trace("File::getArticle('" << ns << "', \"" << title << "\", " << collate << ')');
-    const_iterator it = find(ns, title, collate);
-    return it == end() ? Article() : *it;
+    std::pair<bool, const_iterator> r = findx(ns, title, collate);
+    return r.first ? *r.second : Article();
   }
 
   bool File::hasNamespace(char ch)
@@ -57,7 +57,7 @@ namespace zim
   File::const_iterator File::end()
   { return const_iterator(this, getCountArticles()); }
 
-  File::const_iterator File::find(char ns, const QUnicodeString& title, bool collate)
+  std::pair<bool, File::const_iterator> File::findx(char ns, const QUnicodeString& title, bool collate)
   {
     log_debug("find article " << ns << " \"" << title << "\", " << collate << " in file \"" << getFilename() << '"');
 
@@ -67,7 +67,7 @@ namespace zim
     if (l == u)
     {
       log_debug("namespace " << ns << " not found");
-      return end();
+      return std::pair<bool, const_iterator>(false, end());
     }
 
     unsigned itcount = 0;
@@ -88,7 +88,7 @@ namespace zim
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return const_iterator(this, p);
+        return std::pair<bool, const_iterator>(true, const_iterator(this, p));
       }
     }
 
@@ -98,11 +98,15 @@ namespace zim
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return const_iterator(this, l);
+      return std::pair<bool, const_iterator>(true, const_iterator(this, l));
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return const_iterator(this, u);
+    return std::pair<bool, const_iterator>(false, const_iterator(this, u));
   }
 
+  File::const_iterator File::find(char ns, const QUnicodeString& title, bool collate)
+  {
+    return findx(ns, title, collate).second;
+  }
 }

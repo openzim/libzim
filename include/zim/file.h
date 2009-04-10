@@ -73,6 +73,7 @@ namespace zim
 
       const_iterator begin();
       const_iterator end();
+      std::pair<bool, const_iterator> findx(char ns, const QUnicodeString& title, bool collate = false);
       const_iterator find(char ns, const QUnicodeString& title, bool collate = false);
 
       bool good() const    { return impl.getPointer() != 0; }
