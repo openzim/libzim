@@ -82,7 +82,7 @@ namespace zim
       const File& getFile() const    { return file; }
       size_type   getIndex() const   { return idx; }
 
-      QUnicodeString getUrl() const;
+      QUnicodeString getUrl() const  { return getDirent().getUrl(); }
 
       bool good() const   { return idx != std::numeric_limits<size_type>::max(); }
   };

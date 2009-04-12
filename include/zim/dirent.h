@@ -95,6 +95,7 @@ namespace zim
         blobNumber = blobNumber_;
       }
 
+      QUnicodeString getUrl() const;
   };
 
   std::ostream& operator<< (std::ostream& out, const Dirent& fh);

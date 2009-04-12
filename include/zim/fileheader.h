@@ -24,6 +24,7 @@
 #include <zim/endian.h>
 #include <zim/uuid.h>
 #include <iosfwd>
+#include <limits>
 
 namespace zim
 {
@@ -44,7 +45,14 @@ namespace zim
       size_type layoutPage;
 
     public:
-      Fileheader()  {}
+      Fileheader()
+        : articleCount(0),
+          indexPtrPos(0),
+          blobCount(0),
+          blobPtrPos(0),
+          mainPage(std::numeric_limits<size_type>::max()),
+          layoutPage(std::numeric_limits<size_type>::max())
+      {}
 
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }
@@ -61,9 +69,11 @@ namespace zim
       offset_type getClusterPtrPos() const         { return blobPtrPos; }
       void        setClusterPtrPos(offset_type p)  { blobPtrPos = p; }
 
+      bool      hasMainPage() const                { return mainPage != std::numeric_limits<size_type>::max(); }
       size_type getMainPage() const                { return mainPage; }
       void      setMainPage(size_type s)           { mainPage = s; }
 
+      bool      hasLayoutPage() const              { return layoutPage != std::numeric_limits<size_type>::max(); }
       size_type getLayoutPage() const              { return layoutPage; }
       void      setLayoutPage(size_type s)         { layoutPage = s; }
   };

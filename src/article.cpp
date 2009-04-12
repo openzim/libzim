@@ -74,13 +74,4 @@ namespace zim
                .getBlobSize(dirent.getBlobNumber());
   }
 
-  QUnicodeString Article::getUrl() const
-  {
-    log_trace("Article::getUrl()");
-
-    log_debug("namespace=" << getNamespace());
-    log_debug("title=" << getDirent().getTitle());
-
-    return QUnicodeString(std::string(1, getNamespace()) + '/' + getDirent().getTitle().getValue());
-  }
 }

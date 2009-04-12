@@ -149,4 +149,14 @@ namespace zim
     return in;
   }
 
+  QUnicodeString Dirent::getUrl() const
+  {
+    log_trace("Dirent::getUrl()");
+
+    log_debug("namespace=" << getNamespace());
+    log_debug("title=" << getTitle());
+
+    return QUnicodeString(std::string(1, getNamespace()) + '/' + getTitle().getValue());
+  }
+
 }
