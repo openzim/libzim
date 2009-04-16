@@ -20,6 +20,7 @@ libzim_la_SOURCES = \
 	ptrstream.cpp \
 	qunicode.cpp \
 	search.cpp \
+	template.cpp \
 	unicode.cpp \
 	uuid.cpp \
 	zintstream.cpp

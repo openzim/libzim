@@ -48,7 +48,8 @@ namespace zim
     zimMimeIndex,
     zimMimeApplicationJavaScript,
     zimMimeImageIcon,
-    zimMimeTextXml
+    zimMimeTextXml,
+    zimMimeTextHtmlTemplate
   };
 
 }

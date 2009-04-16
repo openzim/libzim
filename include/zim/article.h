@@ -26,6 +26,7 @@
 #include <zim/qunicode.h>
 #include <zim/file.h>
 #include <limits>
+#include <iosfwd>
 
 namespace zim
 {
@@ -79,7 +80,11 @@ namespace zim
         return const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
       }
 
+      std::string getPage(bool layout = true, unsigned maxRecurse = 10);
+      void getPage(std::ostream&, bool layout = true, unsigned maxRecurse = 10);
+
       const File& getFile() const    { return file; }
+      File& getFile()                { return file; }
       size_type   getIndex() const   { return idx; }
 
       QUnicodeString getUrl() const  { return getDirent().getUrl(); }

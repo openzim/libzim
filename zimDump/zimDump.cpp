@@ -51,6 +51,7 @@ class ZimDumper
     void locateArticle(zim::size_type idx);
     void findArticle(char ns, const char* url, bool collate);
     void dumpArticle();
+    void printPage();
     void listArticles(bool info, bool extra);
     void listArticle(const zim::Article& article, bool extra);
     void listArticle(bool extra)
@@ -72,9 +73,19 @@ void ZimDumper::printInfo()
                "article count: " << file.getFileheader().getArticleCount() << "\n"
                "index ptr pos: " << file.getFileheader().getIndexPtrPos() << "\n"
                "cluster count: " << file.getFileheader().getClusterCount() << "\n"
-               "cluster ptr pos: " << file.getFileheader().getClusterPtrPos() << "\n"
-               "main page: " << file.getFileheader().getMainPage() << "\n"
-               "layout page: " << file.getFileheader().getLayoutPage() << std::endl;
+               "cluster ptr pos: " << file.getFileheader().getClusterPtrPos() << "\n";
+
+  if (file.getFileheader().hasMainPage())
+    std::cout << "main page: " << file.getFileheader().getMainPage() << "\n";
+  else
+    std::cout << "main page: " << "-\n";
+
+  if (file.getFileheader().hasLayoutPage())
+    std::cout << "layout page: " << file.getFileheader().getLayoutPage() << "\n";
+  else
+    std::cout << "layout page: " << "-\n";
+
+  std::cout.flush();
 }
 
 void ZimDumper::printNsInfo(char ch)
@@ -95,6 +106,12 @@ void ZimDumper::findArticle(char ns, const char* url, bool collate)
   log_debug("findArticle(" << ns << ", " << url << ", " << collate << ')');
   pos = file.find(ns, zim::QUnicodeString::fromUtf8(url), collate);
   log_debug("findArticle(" << ns << ", " << url << ", " << collate << ") => idx=" << pos.getIndex());
+}
+
+void ZimDumper::printPage()
+{
+  log_trace("print page");
+  std::cout << pos->getPage() << std::flush;
 }
 
 void ZimDumper::dumpArticle()
@@ -205,6 +222,7 @@ int main(int argc, char* argv[])
     cxxtools::Arg<char> nsinfo(argc, argv, 'N');
     cxxtools::Arg<bool> info(argc, argv, 'i');
     cxxtools::Arg<bool> data(argc, argv, 'd');
+    cxxtools::Arg<bool> page(argc, argv, 'p');
     cxxtools::Arg<const char*> find(argc, argv, 'f');
     cxxtools::Arg<bool> list(argc, argv, 'l');
     cxxtools::Arg<zim::size_type> indexOffset(argc, argv, 'o');
@@ -223,6 +241,7 @@ int main(int argc, char* argv[])
                    "  -N ns     print info about namespace\n"
                    "  -i        print info about articles\n"
                    "  -d        print data of articles\n"
+                   "  -p        print page\n"
                    "  -f url    find article\n"
                    "  -l        list articles\n"
                    "  -o idx    locate article\n"
@@ -268,6 +287,8 @@ int main(int argc, char* argv[])
     // print requested info
     if (data)
       app.dumpArticle();
+    else if (page)
+      app.printPage();
     else if (list)
       app.listArticles(info, extra);
     else if (info)

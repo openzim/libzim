@@ -93,7 +93,7 @@ namespace zim
     std::pair<bool, Dirent> v = direntCache.getx(idx);
     if (v.first)
     {
-      log_debug("dirent found in cache");
+      log_debug("dirent " << idx << " found in cache");
       return v.second;
     }
 
@@ -136,7 +136,7 @@ namespace zim
       return cluster;
     }
 
-    log_debug("read cluster from offset " << clusterOffsets[idx]);
+    log_debug("read cluster " << idx << " from offset " << clusterOffsets[idx]);
     zimFile.seekg(clusterOffsets[idx]);
     zimFile >> cluster;
 
@@ -148,6 +148,8 @@ namespace zim
       log_debug("put cluster " << idx << " into cluster cache");
       clusterCache.put(idx, cluster);
     }
+    else
+      log_debug("cluster " << idx << " is not compressed - do not cache");
 
     return cluster;
   }
