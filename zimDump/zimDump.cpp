@@ -51,6 +51,7 @@ class ZimDumper
     void locateArticle(zim::size_type idx);
     void findArticle(char ns, const char* url, bool collate);
     void dumpArticle();
+    void dumpIndex();
     void printPage();
     void listArticles(bool info, bool extra);
     void listArticle(const zim::Article& article, bool extra);
@@ -120,6 +121,73 @@ void ZimDumper::dumpArticle()
   std::cout << pos->getData() << std::flush;
 }
 
+void ZimDumper::dumpIndex()
+{
+  log_trace("dump index");
+
+  if (pos->getNamespace() == 'X')
+  {
+    // prepare parameter stream
+    std::istringstream paramstream(pos->getParameter());
+    paramstream.get(); // skip length byte
+    zim::IZIntStream parameter(paramstream);
+
+    // read flags
+    unsigned flags, off=0;
+    parameter.get(flags);
+    if (!parameter)
+      throw std::runtime_error("invalid index parameter data");
+
+    // process categories
+    for (unsigned c = 0, flag = 1; c < 4; ++c, flag <<= 1)
+    {
+      if (!(flags & flag))
+        continue;  // category empty
+
+      unsigned len, idx, wpos;
+      parameter.get(len).get(idx).get(wpos);
+      if (!parameter)
+        throw std::runtime_error("invalid index parameter data");
+
+      std::cout << 'c' << c << '\t' << idx << ';' << wpos;
+
+      // prepare data stream
+      zim::Blob data = pos->getData();
+
+      if (off + len > data.size())
+        throw std::runtime_error("invalid index data");
+
+      std::string data_s(data.data() + off, len);
+      std::istringstream stream(data_s);
+      zim::IZIntStream in(stream);
+
+      off += len;
+
+      unsigned lastidx = 0, lastpos = 0;
+      while (in.get(idx).get(wpos))
+      {
+        if (idx == 0)
+        {
+          idx = lastidx;
+          lastpos = (wpos += lastpos);
+        }
+        else
+        {
+          lastidx = (idx += lastidx);
+          lastpos = wpos;
+        }
+
+        std::cout << '\t' << idx << ';' << wpos;
+      }
+
+      std::cout << std::endl;
+    }
+
+  }
+  else
+    std::cout << "no index article\n";
+}
+
 void ZimDumper::listArticles(bool info, bool extra)
 {
   log_trace("listArticles(" << info << ", " << extra << ") verbose=" << verbose);
@@ -135,38 +203,42 @@ void ZimDumper::listArticles(bool info, bool extra)
 
 void ZimDumper::listArticle(const zim::Article& article, bool extra)
 {
-  std::cout <<
-      "title: "           << article.getTitle() << "\n"
-    "\tidx:             " << article.getIndex() << "\n"
-    "\tnamespace:       " << article.getNamespace() << "\n"
-    "\tredirect:        " << article.isRedirect() << "\n";
+  zim::Dirent dirent = article.getDirent();
 
-  if (article.isRedirect())
+  std::cout <<
+      "title: "           << dirent.getTitle() << "\n"
+    "\tidx:             " << article.getIndex() << "\n"
+    "\tnamespace:       " << dirent.getNamespace() << "\n"
+    "\tredirect:        " << dirent.isRedirect() << "\n";
+
+  if (dirent.isRedirect())
   {
     std::cout <<
-      "\tredirect index:  " << article.getRedirectIndex() << "\n";
+      "\tredirect index:  " << dirent.getRedirectIndex() << "\n";
   }
   else
   {
     std::cout <<
-      "\tmime-type:       " << article.getLibraryMimeType() << "\n"
+      "\tmime-type:       " << dirent.getMimeType() << "\n"
       "\tarticle size:    " << article.getArticleSize() << "\n";
 
     if (verbose)
     {
+      zim::Cluster cluster = article.getCluster();
+
       std::cout <<
-      "\tcluster number:  " << article.getDirent().getClusterNumber() << "\n"
-      "\tcluster count:   " << article.getCluster().count() << "\n"
-      "\tcluster size:    " << article.getCluster().size() << "\n"
-      "\tcluster offset:  " << file.getClusterOffset(article.getDirent().getClusterNumber()) << "\n"
-      "\tblob number:     " << article.getDirent().getBlobNumber() << "\n"
-      "\tcompression:     " << static_cast<unsigned>(article.getCluster().getCompression()) << "\n";
+      "\tcluster number:  " << dirent.getClusterNumber() << "\n"
+      "\tcluster count:   " << cluster.count() << "\n"
+      "\tcluster size:    " << cluster.size() << "\n"
+      "\tcluster offset:  " << file.getClusterOffset(dirent.getClusterNumber()) << "\n"
+      "\tblob number:     " << dirent.getBlobNumber() << "\n"
+      "\tcompression:     " << static_cast<unsigned>(cluster.getCompression()) << "\n";
     }
   }
 
   if (extra)
   {
-    std::string parameter = article.getParameter();
+    std::string parameter = dirent.getParameter();
     std::cout << "\textra:           ";
     static char hexdigit[] = "0123456789abcdef";
     for (std::string::const_iterator it = parameter.begin(); it != parameter.end(); ++it)
@@ -231,6 +303,7 @@ int main(int argc, char* argv[])
     cxxtools::Arg<bool> collate(argc, argv, 'c');
     cxxtools::Arg<const char*> dumpAll(argc, argv, 'D');
     cxxtools::Arg<bool> verbose(argc, argv, 'v');
+    cxxtools::Arg<bool> zint(argc, argv, 'Z');
 
     if (argc <= 1)
     {
@@ -249,6 +322,7 @@ int main(int argc, char* argv[])
                    "  -n ns     specify namespace (default 'A')\n"
                    "  -D dir    dump all files into directory\n"
                    "  -v        verbose (print uncompressed length of articles when -i is set)\n"
+                   "  -Z        dump index data\n"
                    "\n"
                    "examples:\n"
                    "  " << argv[0] << " -F wikipedia.zim\n"
@@ -293,6 +367,8 @@ int main(int argc, char* argv[])
       app.listArticles(info, extra);
     else if (info)
       app.listArticle(extra);
+    else if (zint)
+      app.dumpIndex();
   }
   catch (const std::exception& e)
   {

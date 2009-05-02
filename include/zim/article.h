@@ -48,8 +48,7 @@ namespace zim
 
       Dirent getDirent() const                { return const_cast<File&>(file).getDirent(idx); }
 
-      const std::string&
-                  getParameter() const        { return getDirent().getParameter(); }
+      std::string getParameter() const        { return getDirent().getParameter(); }
 
       QUnicodeString getTitle() const         { return getDirent().getTitle(); }
 
