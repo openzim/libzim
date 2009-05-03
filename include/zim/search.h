@@ -26,8 +26,6 @@
 
 namespace zim
 {
-  class Files;
-
   class SearchResult
   {
       Article article;
@@ -85,7 +83,14 @@ namespace zim
       File articlefile;
 
     public:
-      explicit Search(Files& files);
+      explicit Search(const File& zimfile)
+        : indexfile(zimfile),
+          articlefile(zimfile)
+          { }
+      Search(const File& articlefile_, const File& indexfile_)
+        : indexfile(indexfile_),
+          articlefile(articlefile_)
+          { }
 
       void search(Results& results, const std::string& expr);
       void find(Results& results, char ns, const QUnicodeString& praefix, unsigned limit = searchLimit);

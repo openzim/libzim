@@ -20,7 +20,6 @@
 #include <zim/search.h>
 #include <zim/fileiterator.h>
 #include <zim/indexarticle.h>
-#include <zim/files.h>
 #include <sstream>
 #include <cxxtools/log.h>
 #include <map>
@@ -129,27 +128,6 @@ namespace zim
   double Search::weightPos = 2;
   double Search::weightDistinctWords = 50;
   unsigned Search::searchLimit = 10000;
-
-  Search::Search(Files& files)
-  {
-    for (Files::iterator it = files.begin(); it != files.end(); ++it)
-    {
-      if (it->second.hasNamespace('A'))
-      {
-        log_debug("articlefile " << it->second.getFilename());
-        articlefile = it->second;
-      }
-
-      if (it->second.hasNamespace('X'))
-      {
-        log_debug("indexfile " << it->second.getFilename());
-        indexfile = it->second;
-      }
-    }
-
-    if (!articlefile.good())
-      throw std::runtime_error("no article file found");
-  }
 
   void Search::search(Results& results, const std::string& expr)
   {

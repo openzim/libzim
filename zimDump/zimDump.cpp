@@ -129,7 +129,6 @@ void ZimDumper::dumpIndex()
   {
     // prepare parameter stream
     std::istringstream paramstream(pos->getParameter());
-    paramstream.get(); // skip length byte
     zim::IZIntStream parameter(paramstream);
 
     // read flags
@@ -251,8 +250,6 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
     if (parameter.size() > 1)
     {
       std::istringstream s(parameter);
-      unsigned len = s.get(); // read length byte
-      std::cout << "len=" << len;
 
       zim::IZIntStream in(s);
       unsigned val;

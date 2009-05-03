@@ -48,7 +48,6 @@ namespace zim
   void IndexArticle::readEntriesZ()
   {
     std::istringstream s(getParameter());
-    s.get();  // skip length byte
     zim::IZIntStream extra(s);
 
     unsigned flagfield;  // field with one bit (bits 0-3) for each cateogry
@@ -84,7 +83,7 @@ namespace zim
 
         log_debug("read data from offset " << offset << " len " << len);
         zim::Blob b = getData();
-        ptrstream data(const_cast<char*>(b.data()), const_cast<char*>(b.end()));
+        ptrstream data(const_cast<char*>(b.data() + offset), const_cast<char*>(b.data() + offset + len));
         IZIntStream zdata(data);
 
         unsigned index;

@@ -19,49 +19,50 @@
 
 #include <iostream>
 #include <cxxtools/loginit.h>
-#include <cxxtools/log.h>
-#include <cxxtools/syserror.h>
+#include <cxxtools/arg.h>
 #include <zim/search.h>
-#include <zim/files.h>
-#include <sys/types.h> 
-#include <sys/stat.h> 
-#include <unistd.h> 
+
+void zimSearch(zim::Search& search, const std::string& s)
+{
+    zim::Search::Results result;
+    search.search(result, s);
+
+    for (zim::Search::Results::const_iterator it = result.begin(); it != result.end(); ++it)
+    {
+      std::cout << "article " << it->getArticle().getIndex() << "\tpriority " << it->getPriority() << "\t:\t" << it->getArticle().getTitle() << std::endl;
+    }
+}
 
 int main(int argc, char* argv[])
 {
   try
   {
     log_init();
+
+    cxxtools::Arg<std::string> indexfile(argc, argv, 'x');
+
     if (argc <= 2)
     {
-      std::cerr << "usage: " << argv[0] << " zim-directory searchstring" << std::endl;
+      std::cerr << "usage: " << argv[0] << " [-x indexfile] zimfile searchstring" << std::endl;
       return 1;
     }
 
-    zim::Files files;
-
-    struct stat st;
-    if (stat(argv[1], &st) != 0)
-      throw cxxtools::SysError("stat");
-
-    if (st.st_mode & S_IFDIR)
-      files.addFiles(argv[1]);
-    else
-      files.addFile(argv[1]);
-
-    zim::Search search(files);
-    zim::Search::Results result;
     std::string s = argv[2];
     for (int a = 3; a < argc; ++a)
     {
       s += ' ';
       s += argv[a];
     }
-    search.search(result, s);
 
-    for (zim::Search::Results::const_iterator it = result.begin(); it != result.end(); ++it)
+    if (indexfile.isSet())
     {
-      std::cout << "article " << it->getArticle().getIndex() << "\tpriority " << it->getPriority() << "\t:\t" << it->getArticle().getTitle() << std::endl;
+      zim::Search search = zim::Search(zim::File(argv[1]), zim::File(indexfile));
+      zimSearch(search, s);
+    }
+    else
+    {
+      zim::Search search = zim::Search(zim::File(argv[1]));
+      zimSearch(search, s);
     }
   }
   catch (const std::exception& e)
