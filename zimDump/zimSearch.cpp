@@ -41,6 +41,29 @@ int main(int argc, char* argv[])
 
     cxxtools::Arg<std::string> indexfile(argc, argv, 'x');
 
+    cxxtools::Arg<double> weightOcc(argc, argv, "--weight-occ");
+    cxxtools::Arg<double> weightOccOff(argc, argv, "--weight-occ-off");
+    cxxtools::Arg<double> weightPlus(argc, argv, "--weight-plus");
+    cxxtools::Arg<double> weightDist(argc, argv, "--weight-dist");
+    cxxtools::Arg<double> weightPos(argc, argv, "--weight-pos");
+    cxxtools::Arg<double> weightPosRel(argc, argv, "--weight-pos-rel");
+    cxxtools::Arg<double> weightDistinctWords(argc, argv, "--weight-distinct-words");
+
+    if (weightOcc.isSet())
+      zim::Search::setWeightOcc(weightOcc);
+    if (weightOccOff.isSet())
+      zim::Search::setWeightOccOff(weightOccOff);
+    if (weightPlus.isSet())
+      zim::Search::setWeightPlus(weightPlus);
+    if (weightDist.isSet())
+      zim::Search::setWeightDist(weightDist);
+    if (weightPos.isSet())
+      zim::Search::setWeightPos(weightPos);
+    if (weightPosRel.isSet())
+      zim::Search::setWeightPosRel(weightPosRel);
+    if (weightDistinctWords.isSet())
+      zim::Search::setWeightDistinctWords(weightDistinctWords);
+
     if (argc <= 2)
     {
       std::cerr << "usage: " << argv[0] << " [-x indexfile] zimfile searchstring" << std::endl;

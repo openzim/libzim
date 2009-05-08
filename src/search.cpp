@@ -104,8 +104,13 @@ namespace zim
       log_debug("priority3: " << priority);
 
       // weight position of words in the document
-      for (itp = posList.begin(); itp != posList.end(); ++itp)
-        priority += Search::getWeightPos() * itp->first / article.getData().size();
+      if (Search::getWeightPos())
+        for (itp = posList.begin(); itp != posList.end(); ++itp)
+          priority += Search::getWeightPos() / pow(1.01, itp->first);
+
+      if (Search::getWeightPosRel())
+        for (itp = posList.begin(); itp != posList.end(); ++itp)
+          priority += Search::getWeightPosRel() * itp->first / article.getData().size();
 
       log_debug("priority of article " << article.getIndex() << " \"" << article.getTitle() << "\", " << wordList.size() << " words: " << priority);
     }
@@ -120,12 +125,12 @@ namespace zim
     posList[pos] = word;
   }
 
-  double Search::weightTitle = 10.0;
   double Search::weightOcc = 10.0;
   double Search::weightOccOff = 1.0;
   double Search::weightPlus = 10.0;
   double Search::weightDist = 10;
-  double Search::weightPos = 2;
+  double Search::weightPos = 10;
+  double Search::weightPosRel = 0;
   double Search::weightDistinctWords = 50;
   unsigned Search::searchLimit = 10000;
 

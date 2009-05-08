@@ -70,12 +70,12 @@ namespace zim
       };
 
     private:
-      static double weightTitle;
       static double weightOcc;
       static double weightOccOff;
       static double weightPlus;
       static double weightDist;
       static double weightPos;
+      static double weightPosRel;
       static double weightDistinctWords;
       static unsigned searchLimit;
 
@@ -96,21 +96,21 @@ namespace zim
       void find(Results& results, char ns, const QUnicodeString& praefix, unsigned limit = searchLimit);
       void find(Results& results, char ns, const QUnicodeString& begin, const QUnicodeString& end, unsigned limit = searchLimit);
 
-      static double getWeightTitle()               { return weightTitle; }
       static double getWeightOcc()                 { return weightOcc; }
       static double getWeightOccOff()              { return weightOccOff; }
       static double getWeightPlus()                { return weightPlus; }
       static double getWeightDist()                { return weightDist; }
       static double getWeightPos()                 { return weightPos; }
+      static double getWeightPosRel()              { return weightPosRel; }
       static double getWeightDistinctWords()       { return weightDistinctWords; }
-      static unsigned getSearchLimit()       { return searchLimit; }
+      static unsigned getSearchLimit()             { return searchLimit; }
 
-      static void setWeightTitle(double v)         { weightTitle = v; }
       static void setWeightOcc(double v)           { weightOcc = v; }
       static void setWeightOccOff(double v)        { weightOccOff = v; }
       static void setWeightPlus(double v)          { weightPlus = v; }
       static void setWeightDist(double v)          { weightDist = v; }
       static void setWeightPos(double v)           { weightPos = v; }
+      static void setWeightPosRel(double v)        { weightPosRel = v; }
       static void setWeightDistinctWords(double v) { weightDistinctWords = v; }
       static void setSearchLimit(unsigned v)       { searchLimit = v; }
   };
