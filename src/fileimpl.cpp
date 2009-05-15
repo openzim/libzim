@@ -32,7 +32,7 @@ namespace zim
   //
   FileImpl::FileImpl(const char* fname)
     : zimFile(fname),
-      direntCache(64),
+      direntCache(512),
       clusterCache(16)
   {
     if (!zimFile)
@@ -93,19 +93,18 @@ namespace zim
     std::pair<bool, Dirent> v = direntCache.getx(idx);
     if (v.first)
     {
-      log_debug("dirent " << idx << " found in cache");
+      log_debug("dirent " << idx << " found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
       return v.second;
     }
 
-    log_debug("seek to " << indexOffsets[idx]);
+    log_debug("dirent " << idx << " not found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
+
     zimFile.seekg(indexOffsets[idx]);
     if (!zimFile)
     {
       log_warn("failed to seek to directory entry");
       throw ZenoFileFormatError("failed to seek to directory entry");
     }
-
-    log_debug("seeked to directory entry");
 
     Dirent dirent;
     zimFile >> dirent;
@@ -116,7 +115,7 @@ namespace zim
       throw ZenoFileFormatError("failed to read directory entry");
     }
 
-    log_debug("reading dirent was successful");
+    log_debug("dirent read from " << indexOffsets[idx]);
     direntCache.put(idx, dirent);
 
     return dirent;
@@ -132,7 +131,7 @@ namespace zim
     Cluster cluster = clusterCache.get(idx);
     if (cluster)
     {
-      log_debug("cluster found in cache; count=" << cluster.count() << " size=" << cluster.size());
+      log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
       return cluster;
     }
 
@@ -145,7 +144,7 @@ namespace zim
 
     if (cluster.isCompressed())
     {
-      log_debug("put cluster " << idx << " into cluster cache");
+      log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
       clusterCache.put(idx, cluster);
     }
     else

@@ -31,6 +31,8 @@ namespace zim
       typedef std::deque<std::pair<Key, Value> > DataType;
       DataType data;
       typename DataType::size_type maxElements;
+      unsigned hits;
+      unsigned misses;
 
     public:
       typedef typename DataType::size_type size_type;
@@ -39,7 +41,9 @@ namespace zim
       typedef typename DataType::const_iterator const_iterator;
 
       explicit Cache(size_type maxElements_)
-        : maxElements(maxElements_)
+        : maxElements(maxElements_),
+          hits(0),
+          misses(0)
         { }
 
       size_type size() const        { return data.size(); }
@@ -82,6 +86,8 @@ namespace zim
           }
         }
 
+        ++misses;
+
         if (data.size() < maxElements / 2)
           data.push_back(typename DataType::value_type(key, value));
         else
@@ -100,6 +106,7 @@ namespace zim
             typename DataType::value_type v = *it;
             data.erase(it);
             data.push_front(v);
+            ++hits;
             return std::pair<bool, Value>(true, v.second);
           }
         }
@@ -112,7 +119,10 @@ namespace zim
         return getx(key, def).second;
       }
 
-
+      unsigned getHits() const    { return hits; }
+      unsigned getMisses() const  { return misses; }
+      double hitRatio() const     { return hits+misses > 0 ? static_cast<double>(hits)/static_cast<double>(hits+misses) : 0; }
+      double fillfactor() const   { return static_cast<double>(data.size()) / static_cast<double>(maxElements); }
   };
 }
 #endif // ZIM_CACHE_H
