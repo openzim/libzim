@@ -57,7 +57,27 @@ int main(int argc, char* argv[])
 
     cxxtools::Arg<bool> compress(argc, argv, 'c');
 
-    if (compress)
+    if (argc > 1)
+    {
+      for (int a = 1; a < argc; ++a)
+      {
+        std::istringstream conv(argv[a]);
+        zim::size_type number;
+        conv >> number;
+        if (conv)
+        {
+          std::ostringstream s;
+          zim::OZIntStream z(s);
+          z.put(number);
+          std::string x = s.str();
+          std::cout << number << " => " << std::hex;
+          for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
+            std::cout << static_cast<unsigned>(static_cast<unsigned char>(*it)) << ' ';
+          std::cout << std::dec << '\n';
+        }
+      }
+    }
+    else if (compress)
     {
       zim::OZIntStream z(std::cout);
       for (int a = 1; a < argc; ++a)
