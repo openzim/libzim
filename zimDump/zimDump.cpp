@@ -148,7 +148,10 @@ void ZimDumper::dumpIndex()
       if (!parameter)
         throw std::runtime_error("invalid index parameter data");
 
-      std::cout << 'c' << c << '\t' << idx << ';' << wpos;
+      if (verbose)
+        std::cout << 'c' << c << "\tidx=" << idx << "\tpos=" << wpos << std::endl;
+      else
+        std::cout << 'c' << c << '\t' << idx << ';' << wpos;
 
       // prepare data stream
       zim::Blob data = pos->getData();
@@ -165,6 +168,8 @@ void ZimDumper::dumpIndex()
       unsigned lastidx = 0, lastpos = 0;
       while (in.get(idx).get(wpos))
       {
+        unsigned oidx = idx;
+        unsigned owpos = wpos;
         if (idx == 0)
         {
           idx = lastidx;
@@ -176,10 +181,14 @@ void ZimDumper::dumpIndex()
           lastpos = wpos;
         }
 
-        std::cout << '\t' << idx << ';' << wpos;
+        if (verbose)
+          std::cout << 'c' << c << "\tidx=" << oidx << " => " << idx << "\tpos=" << owpos << " => " << wpos << std::endl;
+        else
+          std::cout << '\t' << idx << ';' << wpos;
       }
 
-      std::cout << std::endl;
+      if (!verbose)
+        std::cout << std::endl;
     }
 
   }

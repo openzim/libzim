@@ -58,7 +58,7 @@ namespace zim
 
       priority = 1.0;
 
-      log_debug("getPriority, " << wordList.size() << " words");
+      log_debug("getPriority, " << wordList.size() << " words; idx=" << article.getIndex());
 
       // weight occurencies of words in article and title
       for (WordListType::const_iterator itw = wordList.begin(); itw != wordList.end(); ++itw)
@@ -136,6 +136,8 @@ namespace zim
 
   void Search::search(Results& results, const std::string& expr)
   {
+    log_trace("search articles with expression \"" << expr << '"');
+
     std::istringstream ssearch(expr);
     std::string token;
 
