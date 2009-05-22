@@ -20,7 +20,7 @@
 #include <zim/zintstream.h>
 #include <cxxtools/log.h>
 
-log_define("cxxtools.zintstream")
+log_define("zim.zintstream")
 
 namespace zim
 {
@@ -61,30 +61,40 @@ namespace zim
     {
       count = 1;
       data[0] = (value << 2);
+      log_debug(value << " => " << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[0])));
     }
-    else if (value < 16384 - 64)
+    else if (value < 16384 + 64)
     {
       value -= 64;
       count = 2;
       data[0] = value << 2 | 1;
       data[1] = value >> 6;
+      log_debug(value << " => " << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[0]))
+                                << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[1])));
     }
-    else if (value < 4194304 - 16384 - 64)
+    else if (value < 4194304 + 16384 + 64)
     {
       value -= 16384 + 64;
       count = 3;
       data[0] = value << 2 | 2;
       data[1] = value >> 6;
       data[2] = value >> 14;
+      log_debug(value << " => " << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[0]))
+                                << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[1]))
+                                << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[2])));
     }
     else
     {
       value -= 4194304 + 16384 + 64;
       count = 4;
-      data[0] = value << 2 | 2;
+      data[0] = value << 2 | 3;
       data[1] = value >> 6;
       data[2] = value >> 14;
       data[3] = value >> 22;
+      log_debug(value << " => " << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[0]))
+                                << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[1]))
+                                << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[2]))
+                                << std::hex << static_cast<unsigned>(static_cast<unsigned char>(data[4])));
     }
 
     stream.write(reinterpret_cast<char*>(&data[0]), count);
