@@ -85,6 +85,9 @@ namespace zim
       {
         redirect = true;
         redirectIndex = idx;
+        mimeType = zimMimeNone;
+        clusterNumber = 0;
+        blobNumber = 0;
       }
 
       void setArticle(MimeType mimeType_, size_type clusterNumber_, size_type blobNumber_)

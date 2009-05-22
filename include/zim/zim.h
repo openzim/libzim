@@ -38,6 +38,7 @@ namespace zim
 
   enum MimeType
   {
+    zimMimeNone = -1,
     zimMimeTextHtml,
     zimMimeTextPlain,
     zimMimeImageJpeg,
