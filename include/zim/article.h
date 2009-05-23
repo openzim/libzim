@@ -76,7 +76,8 @@ namespace zim
       Blob getData() const
       {
         Dirent dirent = getDirent();
-        return const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
+        return dirent.isRedirect() ? Blob()
+                                   : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
       }
 
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);
