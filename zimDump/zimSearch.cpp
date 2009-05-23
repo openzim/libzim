@@ -66,7 +66,19 @@ int main(int argc, char* argv[])
 
     if (argc <= 2)
     {
-      std::cerr << "usage: " << argv[0] << " [-x indexfile] zimfile searchstring" << std::endl;
+      std::cerr << "usage: " << argv[0] << " [-x indexfile] zimfile searchstring\n"
+                   "\n"
+                   "options\n"
+                   "  -x indexfile   specify indexfile\n"
+                   "options to tune search parameters:)\n"
+                   "  --weight-occ number (default " << zim::Search::getWeightOcc() << ")\n"
+                   "  --weight-occ-off number (default " << zim::Search::getWeightOccOff() << ")\n"
+                   "  --weight-plus number (default " << zim::Search::getWeightPlus() << ")\n"
+                   "  --weight-dist number (default " << zim::Search::getWeightDist() << ")\n"
+                   "  --weight-pos number (default " << zim::Search::getWeightPos() << ")\n"
+                   "  --weight-pos-rel number (default " << zim::Search::getWeightPosRel() << ")\n"
+                   "  --weight-distinct-words number (default " << zim::Search::getWeightDistinctWords() << ')'
+                << std::endl;
       return 1;
     }
 
