@@ -31,7 +31,7 @@ namespace zim
   // FileImpl
   //
   FileImpl::FileImpl(const char* fname)
-    : zimFile(fname),
+    : zimFile(fname, std::ios::in | std::ios::binary),
       direntCache(512),
       clusterCache(16)
   {
