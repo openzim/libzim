@@ -64,6 +64,7 @@ namespace zim
         : value(v)
         { }
       static QUnicodeString fromUtf8(const std::string& v);
+      static QUnicodeString fromIso8859_15(const std::string& v);
 
       const std::string& getValue() const { return value; }
       void clear()        { value.clear(); }
