@@ -21,6 +21,7 @@ nobase_include_HEADERS = \
 	zim/qunicode.h \
 	zim/search.h \
 	zim/stringlessignorecase.h \
+	zim/template.h \
 	zim/unicode.h \
 	zim/uuid.h \
 	zim/zim.h \
