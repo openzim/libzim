@@ -77,6 +77,7 @@ namespace zim
       const_iterator find(char ns, const QUnicodeString& title, bool collate = false);
 
       bool good() const    { return impl.getPointer() != 0; }
+      time_t getMTime() const   { return impl->getMTime(); }
   };
 
 }

@@ -21,7 +21,12 @@
 #include <zim/error.h>
 #include <zim/dirent.h>
 #include <zim/endian.h>
+#include <cxxtools/systemerror.h>
 #include <cxxtools/log.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include "config.h"
 
 log_define("zim.file.impl")
 
@@ -37,6 +42,17 @@ namespace zim
   {
     if (!zimFile)
       throw ZenoFileFormatError(std::string("can't open zim-file \"") + fname + '"');
+
+#ifdef HAVE_STAT64
+    struct stat64 st;
+    int ret = ::stat64(fname, &st);
+#else
+    struct stat st;
+    int ret = ::stat(fname, &st);
+#endif
+    if (ret != 0)
+      throw cxxtools::SystemError("stat");
+    mtime = st.st_mtime;
 
     filename = fname;
 
