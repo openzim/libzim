@@ -55,6 +55,14 @@ namespace zim
         { readEntries(); return entries[cat].size(); }
       const EntriesType& getCategory(unsigned cat)
         { readEntries(); return entries[cat]; }
+      unsigned getTotalCount()
+      {
+        readEntries();
+        unsigned c = 0;
+        for (unsigned cat = 0; cat < 4; ++cat)
+          c += entries[cat].size();
+        return c;
+      }
 
       static void setNoOffset(bool sw = true)   { noOffset = sw; }
       static bool getNoOffset()                 { return noOffset; }

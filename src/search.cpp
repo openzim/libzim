@@ -154,26 +154,52 @@ namespace zim
         token.erase(0, 1);
       }
 
+      if (token.empty())
+      {
+        log_warn("empty token");
+        continue;
+      }
+
       for (std::string::iterator it = token.begin(); it != token.end(); ++it)
         *it = std::tolower(*it);
 
       log_debug("search for token \"" << token << '"');
 
-      IndexArticle indexarticle = indexfile.getArticle('X', QUnicodeString::fromUtf8(token), true);
+      QUnicodeString qtoken = QUnicodeString::fromUtf8(token);
+      IndexArticle indexarticle = indexfile.getArticle('X', qtoken, true);
 
-      for (unsigned cat = 0; cat < 4; ++cat)
+      if (indexarticle.getTotalCount() > 0)
       {
-        const IndexArticle::EntriesType ent = indexarticle.getCategory(cat);
-        for (IndexArticle::EntriesType::const_iterator it = ent.begin(); it != ent.end(); ++it)
+        for (unsigned cat = 0; cat < 4; ++cat)
         {
-          uint32_t articleIdx = it->index;
-          uint32_t position = it->pos;
+          const IndexArticle::EntriesType ent = indexarticle.getCategory(cat);
+          for (IndexArticle::EntriesType::const_iterator it = ent.begin(); it != ent.end(); ++it)
+          {
+            uint32_t articleIdx = it->index;
+            uint32_t position = it->pos;
+
+            IndexType::iterator itIt = index.insert(
+              IndexType::value_type(articleIdx,
+                SearchResult(articlefile.getArticle(articleIdx)))).first;
+
+            itIt->second.foundWord(token, position, addweight + 3 - cat);
+          }
+        }
+      }
+      else
+      {
+        log_debug("no entries found - try searching for titles");
+        Results results;
+        find(results, 'A', qtoken);
+        for (Results::const_iterator it = results.begin(); it != results.end(); ++it)
+        {
+          uint32_t articleIdx = it->getArticle().getIndex();
 
           IndexType::iterator itIt = index.insert(
             IndexType::value_type(articleIdx,
-              SearchResult(articlefile.getArticle(articleIdx)))).first;
+              SearchResult(it->getArticle()))).first;
 
-          itIt->second.foundWord(token, position, addweight + 3 - cat);
+          itIt->second.foundWord(token, 0, addweight + 3 - it->getArticle().getTitle().size());
         }
       }
     }
@@ -184,8 +210,8 @@ namespace zim
     {
       if (it->second.getCountPositions() > 1)
         results.push_back(it->second);
-      else
-        log_debug("discard article " << it->first);
+      //else
+        //log_debug("discard article " << it->first);
     }
 
     if (results.empty())
