@@ -22,7 +22,7 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
-#include <cxxtools/log.h>
+#include "log.h"
 
 log_define("zim.article")
 

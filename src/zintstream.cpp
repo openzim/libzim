@@ -18,7 +18,7 @@
  */
 
 #include <zim/zintstream.h>
-#include <cxxtools/log.h>
+#include "log.h"
 
 log_define("zim.zintstream")
 

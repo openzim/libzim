@@ -18,7 +18,7 @@
  */
 
 #include <zim/bzip2stream.h>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <sstream>
 #include <string.h>
 
@@ -51,7 +51,7 @@ namespace zim
 
     checkError(::BZ2_bzCompressInit(&stream, blockSize100k, 0, workFactor),
         stream);
-    setp(obuffer.begin(), obuffer.end());
+    setp(&obuffer[0], &obuffer[0] + obuffer.size());
   }
 
   Bzip2StreamBuf::~Bzip2StreamBuf()
@@ -65,8 +65,8 @@ namespace zim
     log_debug("Bzip2StreamBuf::overflow");
 
     // initialize input-stream
-    stream.next_in = obuffer.data();
-    stream.avail_in = pptr() - obuffer.data();
+    stream.next_in = &obuffer[0];
+    stream.avail_in = pptr() - &obuffer[0];
 
     // initialize zbuffer for deflated data
     char zbuffer[8192];
@@ -89,10 +89,10 @@ namespace zim
 
     // move remaining characters to start of obuffer
     if (stream.avail_in > 0)
-      memmove(obuffer.data(), stream.next_in, stream.avail_in);
+      memmove(&obuffer[0], stream.next_in, stream.avail_in);
 
     // reset outbuffer
-    setp(obuffer.begin() + stream.avail_in, obuffer.end());
+    setp(&obuffer[0] + stream.avail_in, &obuffer[0] + obuffer.size());
     if (c != traits_type::eof())
       sputc(traits_type::to_char_type(c));
 
@@ -109,7 +109,7 @@ namespace zim
     log_debug("Bzip2StreamBuf::sync");
 
     // initialize input-stream for
-    stream.next_in = obuffer.data();
+    stream.next_in = &obuffer[0];
     stream.avail_in = pptr() - pbase();
     char zbuffer[8192];
     int ret;
@@ -135,7 +135,7 @@ namespace zim
     } while (ret != BZ_RUN_OK);
 
     // reset outbuffer
-    setp(obuffer.begin(), obuffer.end());
+    setp(&obuffer[0], &obuffer[0] + obuffer.size());
     return 0;
   }
 
@@ -145,7 +145,7 @@ namespace zim
 
     char zbuffer[8192];
     // initialize input-stream for
-    stream.next_in = obuffer.data();
+    stream.next_in = &obuffer[0];
     stream.avail_in = pptr() - pbase();
     int ret;
     do
@@ -169,7 +169,7 @@ namespace zim
     } while (ret != BZ_STREAM_END);
 
     // reset outbuffer
-    setp(obuffer.begin(), obuffer.end());
+    setp(&obuffer[0], &obuffer[0] + obuffer.size());
     return 0;
   }
 

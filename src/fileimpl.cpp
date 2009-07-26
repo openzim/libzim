@@ -21,12 +21,18 @@
 #include <zim/error.h>
 #include <zim/dirent.h>
 #include <zim/endian.h>
-#include <cxxtools/systemerror.h>
-#include <cxxtools/log.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include "config.h"
+#include "log.h"
+
+#ifdef WITH_CXXTOOLS
+#  include <cxxtools/systemerror.h>
+#else
+#  include <sstream>
+#endif
 
 log_define("zim.file.impl")
 
@@ -51,7 +57,15 @@ namespace zim
     int ret = ::stat(fname, &st);
 #endif
     if (ret != 0)
+#ifdef WITH_CXXTOOLS
       throw cxxtools::SystemError("stat");
+#else
+    {
+      std::ostringstream msg;
+      msg << "stat failed with errno " << errno << " : " << strerror(errno);
+      throw std::runtime_error(msg.str());
+    }
+#endif
     mtime = st.st_mtime;
 
     filename = fname;

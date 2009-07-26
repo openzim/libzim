@@ -21,7 +21,7 @@
 #include <zim/fileiterator.h>
 #include <zim/indexarticle.h>
 #include <sstream>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <map>
 #include <math.h>
 #include <cctype>

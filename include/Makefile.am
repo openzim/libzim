@@ -15,12 +15,14 @@ nobase_include_HEADERS = \
 	zim/fileheader.h \
 	zim/fileimpl.h \
 	zim/fileiterator.h \
-	zim/files.h \
 	zim/indexarticle.h \
 	zim/inflatestream.h \
+	zim/noncopyable.h \
 	zim/qunicode.h \
 	zim/search.h \
+	zim/smartptr.h \
 	zim/stringlessignorecase.h \
+	zim/refcounted.h \
 	zim/template.h \
 	zim/unicode.h \
 	zim/uuid.h \

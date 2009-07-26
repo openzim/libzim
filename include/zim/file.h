@@ -25,7 +25,7 @@
 #include <zim/zim.h>
 #include <zim/fileimpl.h>
 #include <zim/blob.h>
-#include <cxxtools/smartptr.h>
+#include <zim/smartptr.h>
 
 namespace zim
 {
@@ -33,7 +33,7 @@ namespace zim
 
   class File
   {
-      cxxtools::SmartPtr<FileImpl> impl;
+      SmartPtr<FileImpl> impl;
 
     public:
       File()

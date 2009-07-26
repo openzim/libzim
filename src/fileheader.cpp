@@ -20,7 +20,7 @@
 #include <zim/fileheader.h>
 #include <iostream>
 #include <algorithm>
-#include <cxxtools/log.h>
+#include "log.h"
 
 log_define("zim.file.header")
 

@@ -21,8 +21,8 @@
 #define ZIM_CLUSTER_H
 
 #include <zim/zim.h>
-#include <cxxtools/refcounted.h>
-#include <cxxtools/smartptr.h>
+#include <zim/refcounted.h>
+#include <zim/smartptr.h>
 #include <iosfwd>
 #include <vector>
 
@@ -31,7 +31,7 @@ namespace zim
   class Blob;
   class Cluster;
 
-  class ClusterImpl : public cxxtools::RefCounted
+  class ClusterImpl : public RefCounted
   {
       friend std::istream& operator>> (std::istream& in, ClusterImpl& blobImpl);
       friend std::ostream& operator<< (std::ostream& out, const ClusterImpl& blobImpl);
@@ -69,7 +69,7 @@ namespace zim
       friend std::istream& operator>> (std::istream& in, Cluster& blob);
       friend std::ostream& operator<< (std::ostream& out, const Cluster& blob);
 
-      cxxtools::SmartPtr<ClusterImpl> impl;
+      SmartPtr<ClusterImpl> impl;
 
       ClusterImpl* getImpl();
 

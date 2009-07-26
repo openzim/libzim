@@ -18,7 +18,18 @@ AC_CHECK_FUNCS([stat64])
 
 AC_LANG(C++)
 
+AC_ARG_WITH([cxxtools],
+  AS_HELP_STRING([--with-cxxtools=yes|no], [use cxxtools (default:yes)]),
+  [with_cxxtools=$withval],
+  [with_cxxtools=yes])
+
+if test "$with_cxxtools" = "yes"
+then
+  AC_DEFINE(WITH_CXXTOOLS, [1], [defined if cxxtools is used])
+fi
+
 AC_CHECK_HEADER([cxxtools/condition.h], , AC_MSG_ERROR([cxxtools headers not found]))
+AM_CONDITIONAL(WITH_CXXTOOLS, test "$with_cxxtools" = yes)
 
 # output
 AC_CONFIG_FILES([

@@ -18,7 +18,7 @@
  */
 
 #include <zim/qunicode.h>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <iostream>
 #include <sstream>
 

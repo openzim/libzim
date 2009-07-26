@@ -21,7 +21,7 @@
 #include <zim/zintstream.h>
 #include <sstream>
 #include <stdexcept>
-#include <cxxtools/log.h>
+#include "log.h"
 #include "ptrstream.h"
 
 log_define("zim.indexarticle")

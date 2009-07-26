@@ -23,7 +23,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <bzlib.h>
-#include <cxxtools/dynbuffer.h>
+#include <vector>
 #include <zim/bzip2.h>
 
 namespace zim
@@ -39,7 +39,7 @@ namespace zim
   class Bzip2StreamBuf : public std::streambuf
   {
       bz_stream stream;
-      cxxtools::Dynbuffer<char_type> obuffer;
+      std::vector<char_type> obuffer;
       std::streambuf* sink;
 
     public:

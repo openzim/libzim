@@ -19,7 +19,7 @@
 
 #include <zim/file.h>
 #include <zim/article.h>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <zim/fileiterator.h>
 
 log_define("zim.file")

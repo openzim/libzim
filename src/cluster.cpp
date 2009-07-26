@@ -20,7 +20,7 @@
 #include <zim/cluster.h>
 #include <zim/blob.h>
 #include <sstream>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <zim/deflatestream.h>
 #include <zim/inflatestream.h>
 #include <zim/bzip2stream.h>

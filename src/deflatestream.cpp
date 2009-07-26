@@ -19,7 +19,7 @@
 
 
 #include "zim/deflatestream.h"
-#include <cxxtools/log.h>
+#include "log.h"
 #include <sstream>
 #include <string.h>
 
@@ -60,7 +60,7 @@ namespace zim
     stream.avail_out = 0;
 
     checkError(::deflateInit(&stream, level), stream);
-    setp(obuffer.begin(), obuffer.end());
+    setp(&obuffer[0], &obuffer[0] + obuffer.size());
   }
 
   DeflateStreamBuf::~DeflateStreamBuf()
@@ -73,12 +73,12 @@ namespace zim
     log_debug("DeflateStreamBuf::overflow");
 
     // initialize input-stream
-    stream.next_in = (Bytef*)obuffer.data();
-    stream.avail_in = pptr() - obuffer.data();
+    stream.next_in = reinterpret_cast<Bytef*>(&obuffer[0]);
+    stream.avail_in = pptr() - &obuffer[0];
 
     // initialize zbuffer for deflated data
     char zbuffer[8192];
-    stream.next_out = (Bytef*)zbuffer;
+    stream.next_out = reinterpret_cast<Bytef*>(zbuffer);
     stream.avail_out = sizeof(zbuffer);
 
     // deflate
@@ -97,10 +97,10 @@ namespace zim
 
     // move remaining characters to start of obuffer
     if (stream.avail_in > 0)
-      memmove(obuffer.data(), stream.next_in, stream.avail_in);
+      memmove(&obuffer[0], stream.next_in, stream.avail_in);
 
     // reset outbuffer
-    setp(obuffer.begin() + stream.avail_in, obuffer.end());
+    setp(&obuffer[0] + stream.avail_in, &obuffer[0] + obuffer.size());
     if (c != traits_type::eof())
       sputc(traits_type::to_char_type(c));
 
@@ -117,7 +117,7 @@ namespace zim
     log_debug("DeflateStreamBuf::sync");
 
     // initialize input-stream for
-    stream.next_in = (Bytef*)obuffer.data();
+    stream.next_in = reinterpret_cast<Bytef*>(&obuffer[0]);
     stream.avail_in = pptr() - pbase();
     char zbuffer[8192];
     while (stream.avail_in > 0)
@@ -141,7 +141,7 @@ namespace zim
     };
 
     // reset outbuffer
-    setp(obuffer.begin(), obuffer.end());
+    setp(&obuffer[0], &obuffer[0] + obuffer.size());
     return 0;
   }
 
@@ -149,7 +149,7 @@ namespace zim
   {
     char zbuffer[8192];
     // initialize input-stream for
-    stream.next_in = (Bytef*)obuffer.data();
+    stream.next_in = reinterpret_cast<Bytef*>(&obuffer[0]);
     stream.avail_in = pptr() - pbase();
     while (true)
     {
@@ -174,7 +174,7 @@ namespace zim
     };
 
     // reset outbuffer
-    setp(obuffer.begin(), obuffer.end());
+    setp(&obuffer[0], &obuffer[0] + obuffer.size());
     return 0;
   }
 

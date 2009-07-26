@@ -18,7 +18,7 @@
  */
 
 #include <zim/bunzip2stream.h>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <sstream>
 #include <cstring>
 

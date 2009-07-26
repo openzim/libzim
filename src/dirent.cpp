@@ -18,7 +18,7 @@
  */
 
 #include <zim/dirent.h>
-#include <cxxtools/log.h>
+#include "log.h"
 #include <algorithm>
 #include <stdint.h>
 #include <zim/endian.h>

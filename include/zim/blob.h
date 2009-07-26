@@ -29,7 +29,7 @@ namespace zim
   {
       const char* _data;
       unsigned _size;
-      cxxtools::SmartPtr<ClusterImpl> _cluster;
+      SmartPtr<ClusterImpl> _cluster;
 
     public:
       Blob()

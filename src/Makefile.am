@@ -12,7 +12,6 @@ libzim_la_SOURCES = \
 	deflatestream.cpp \
 	dirent.cpp \
 	file.cpp \
-	files.cpp \
 	fileheader.cpp \
 	fileimpl.cpp \
 	indexarticle.cpp \
@@ -28,4 +27,8 @@ libzim_la_SOURCES = \
 include_HEADERS = \
 	ptrstream.h
 
-libzim_la_LDFLAGS=-lcxxtools -lz -lbz2
+libzim_la_LDFLAGS=-lz -lbz2
+
+if WITH_CXXTOOLS
+libzim_la_LDFLAGS+=-lcxxtools
+endif

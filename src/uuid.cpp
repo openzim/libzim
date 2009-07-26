@@ -21,8 +21,10 @@
 #include <iostream>
 #include <time.h>
 #include <sys/time.h>
+#include "log.h"
+#ifdef WITH_CXXTOOLS
 #include <cxxtools/md5stream.h>
-#include <cxxtools/log.h>
+#endif
 
 log_define("zim.uuid")
 
@@ -40,18 +42,31 @@ namespace zim
 
   Uuid Uuid::generate()
   {
-    cxxtools::Md5stream m;
-
-    clock_t c = clock();
+    Uuid ret;
 
     struct timeval tv;
     gettimeofday(&tv, 0);
 
+#ifdef WITH_CXXTOOLS
+
+    cxxtools::Md5stream m;
+
+    clock_t c = clock();
+
     m << c << tv.tv_sec << tv.tv_usec;
 
-    Uuid ret;
-    log_debug("generated uuid: " << m.getHexDigest());
     m.getDigest(reinterpret_cast<unsigned char*>(&ret.data[0]));
+
+#else
+
+    *reinterpret_cast<int32_t*>(ret.data) = reinterpret_cast<int32_t>(&ret);
+    *reinterpret_cast<int32_t*>(ret.data + 4) = static_cast<int32_t>(tv.tv_sec);
+    *reinterpret_cast<int32_t*>(ret.data + 8) = static_cast<int32_t>(tv.tv_usec);
+    *reinterpret_cast<int32_t*>(ret.data + 12) = static_cast<int32_t>(getpid());
+
+#endif
+
+    log_debug("generated uuid: " << ret.data);
 
     return ret;
   }

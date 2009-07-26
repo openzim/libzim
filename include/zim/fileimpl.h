@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <cxxtools/refcounted.h>
+#include <zim/refcounted.h>
 #include <zim/zim.h>
 #include <zim/qunicode.h>
 #include <zim/fileheader.h>
@@ -34,7 +34,7 @@
 
 namespace zim
 {
-  class FileImpl : public cxxtools::RefCounted
+  class FileImpl : public RefCounted
   {
       std::ifstream zimFile;
       Fileheader header;

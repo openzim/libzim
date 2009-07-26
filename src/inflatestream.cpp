@@ -19,8 +19,7 @@
 
 
 #include "zim/inflatestream.h"
-#include <cxxtools/log.h>
-#include <cxxtools/dynbuffer.h>
+#include "log.h"
 #include <sstream>
 
 log_define("zim.inflatestream")
