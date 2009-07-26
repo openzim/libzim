@@ -33,26 +33,30 @@ namespace zim
 
   std::ostream& operator<< (std::ostream& out, const Dirent& dirent)
   {
-    char header[12];
-    header[0] = static_cast<char>(dirent.isRedirect());
-    header[1] = static_cast<char>(dirent.getMimeType());
-    header[2] = '\0';
-    header[3] = dirent.getNamespace();
+    union
+    {
+      char d[12];
+      long a;
+    } header;
+    header.d[0] = static_cast<char>(dirent.isRedirect());
+    header.d[1] = static_cast<char>(dirent.getMimeType());
+    header.d[2] = '\0';
+    header.d[3] = dirent.getNamespace();
 
     log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().getValue().size() << " extralen=" << dirent.getExtraLen());
 
     if (dirent.isRedirect())
     {
-      toLittleEndian(dirent.getRedirectIndex(), header + 4);
-      toLittleEndian(dirent.getExtraLen(), header + 8);
-      out.write(header, 10);
+      toLittleEndian(dirent.getRedirectIndex(), header.d + 4);
+      toLittleEndian(dirent.getExtraLen(), header.d + 8);
+      out.write(header.d, 10);
     }
     else
     {
-      toLittleEndian(dirent.getClusterNumber(), header + 4);
-      toLittleEndian(dirent.getBlobNumber(), header + 8);
-      toLittleEndian(dirent.getExtraLen(), header + 12);
-      out.write(header, 14);
+      toLittleEndian(dirent.getClusterNumber(), header.d + 4);
+      toLittleEndian(dirent.getBlobNumber(), header.d + 8);
+      toLittleEndian(dirent.getExtraLen(), header.d + 12);
+      out.write(header.d, 14);
     }
 
     out << dirent.getTitle().getValue();
@@ -64,8 +68,13 @@ namespace zim
 
   std::istream& operator>> (std::istream& in, Dirent& dirent)
   {
-    char header[14];
-    in.read(header, 10);
+    union
+    {
+      long a;
+      char d[14];
+    } header;
+
+    in.read(header.d, 10);
     if (in.fail())
     {
       log_warn("error reading dirent header");
@@ -79,15 +88,15 @@ namespace zim
       return in;
     }
 
-    bool redirect = header[0];
-    char ns = header[3];
+    bool redirect = header.d[0];
+    char ns = header.d[3];
     size_type extraLen;
     if (redirect)
     {
       log_debug("read redirect entry");
 
-      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
-      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 8));
+      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
+      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d + 8));
 
       log_debug("redirectIndex=" << redirectIndex << " extraLen=" << extraLen);
 
@@ -97,7 +106,7 @@ namespace zim
     {
       log_debug("read article entry");
 
-      in.read(header + 10, 4);
+      in.read(header.d + 10, 4);
       if (in.fail())
       {
         log_warn("error reading article dirent header");
@@ -112,10 +121,10 @@ namespace zim
         return in;
       }
 
-      MimeType mimeType = static_cast<MimeType>(header[1]);
-      size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
-      size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header + 8));
-      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 12));
+      MimeType mimeType = static_cast<MimeType>(header.d[1]);
+      size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
+      size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
+      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d + 12));
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber << " extraLen=" << extraLen);
 
