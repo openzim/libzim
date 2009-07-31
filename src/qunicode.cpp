@@ -18,6 +18,7 @@
  */
 
 #include <zim/qunicode.h>
+#include <zim/zim.h> // for the types compatibilty
 #include "log.h"
 #include <iostream>
 #include <sstream>

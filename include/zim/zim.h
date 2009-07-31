@@ -22,6 +22,12 @@
 
 #include <stdint.h>
 
+#ifdef _WIN32
+typedef unsigned __int64 uint64_t;
+typedef signed __int8 int8_t;
+typedef signed __int32 int32_t;
+#endif
+
 namespace zim
 {
   typedef uint32_t size_type;

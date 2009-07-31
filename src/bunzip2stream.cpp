@@ -21,6 +21,7 @@
 #include "log.h"
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
 log_define("zim.bzip2.uncompress")
 

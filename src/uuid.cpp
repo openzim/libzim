@@ -20,10 +20,28 @@
 #include <zim/uuid.h>
 #include <iostream>
 #include <time.h>
-#include <sys/time.h>
+#include <zim/zim.h> // necessary to have the new types
 #include "log.h"
 #ifdef WITH_CXXTOOLS
 #include <cxxtools/md5stream.h>
+#endif
+
+#ifdef WIN32
+
+#  include <time.h>
+#  include <Windows.h>
+int gettimeofday(struct timeval* tp, void* tzp) {
+    DWORD t;
+    t = timeGetTime();
+    tp->tv_sec = t / 1000;
+    tp->tv_usec = t % 1000;
+    return 0;
+}
+
+#define getpid GetCurrentProcessId
+
+#else
+#  include <sys/time.h>
 #endif
 
 log_define("zim.uuid")

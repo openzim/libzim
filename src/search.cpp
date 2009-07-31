@@ -106,7 +106,7 @@ namespace zim
       // weight position of words in the document
       if (Search::getWeightPos())
         for (itp = posList.begin(); itp != posList.end(); ++itp)
-          priority += Search::getWeightPos() / pow(1.01, itp->first);
+          priority += Search::getWeightPos() / pow(1.01, static_cast<double>(itp->first));
 
       if (Search::getWeightPosRel())
         for (itp = posList.begin(); itp != posList.end(); ++itp)
