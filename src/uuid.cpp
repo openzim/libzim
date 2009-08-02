@@ -29,7 +29,7 @@
 #ifdef WIN32
 
 #  include <time.h>
-#  include <Windows.h>
+#  include <windows.h>
 int gettimeofday(struct timeval* tp, void* tzp) {
     DWORD t;
     t = timeGetTime();
