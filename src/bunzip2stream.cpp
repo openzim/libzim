@@ -44,7 +44,7 @@ namespace zim
 
     // because in windows std::min is not defined, we define our own min-function
     template <typename T>
-    bool min(const T& a, const T& b)
+    bool mymin(const T& a, const T& b)
     { return a <= b ? a : b; }
   }
 
@@ -119,7 +119,7 @@ namespace zim
           // there is data already available
           // read compressed data from source into ibuffer
           log_debug("in_avail=" << sinksource->in_avail());
-          stream.avail_in = sinksource->sgetn(ibuffer(), zim::min(sinksource->in_avail(), ibuffer_size()));
+          stream.avail_in = sinksource->sgetn(ibuffer(), mymin(sinksource->in_avail(), ibuffer_size()));
         }
         else
         {
