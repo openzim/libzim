@@ -26,9 +26,9 @@ AC_ARG_WITH([cxxtools],
 if test "$with_cxxtools" = "yes"
 then
   AC_DEFINE(WITH_CXXTOOLS, [1], [defined if cxxtools is used])
+  AC_CHECK_HEADER([cxxtools/condition.h], , AC_MSG_ERROR([cxxtools headers not found]))
 fi
 
-AC_CHECK_HEADER([cxxtools/condition.h], , AC_MSG_ERROR([cxxtools headers not found]))
 AM_CONDITIONAL(WITH_CXXTOOLS, test "$with_cxxtools" = yes)
 
 # output
