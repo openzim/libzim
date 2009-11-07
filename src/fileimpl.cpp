@@ -24,27 +24,41 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <sstream>
 #include <errno.h>
 #include "config.h"
 #include "log.h"
 
 #ifdef WITH_CXXTOOLS
 #  include <cxxtools/systemerror.h>
-#else
-#  include <sstream>
 #endif
 
 log_define("zim.file.impl")
 
 namespace zim
 {
+  namespace
+  {
+    unsigned envValue(const char* env, unsigned def)
+    {
+      const char* v = ::getenv(env);
+      if (v)
+      {
+        std::istringstream s(v);
+        s >> def;
+      }
+      return def;
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
   FileImpl::FileImpl(const char* fname)
     : zimFile(fname, std::ios::in | std::ios::binary),
-      direntCache(512),
-      clusterCache(16)
+      direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
+      clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE))
   {
     if (!zimFile)
       throw ZenoFileFormatError(std::string("can't open zim-file \"") + fname + '"');

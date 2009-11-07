@@ -18,6 +18,9 @@ AC_CHECK_FUNCS([stat64])
 
 AC_LANG(C++)
 
+#
+# cxxtools
+#
 AC_ARG_WITH([cxxtools],
   AS_HELP_STRING([--with-cxxtools=yes|no], [use cxxtools (default:yes)]),
   [with_cxxtools=$withval],
@@ -31,7 +34,26 @@ fi
 
 AM_CONDITIONAL(WITH_CXXTOOLS, test "$with_cxxtools" = yes)
 
+#
+# cache size
+#
+AC_ARG_WITH([cluster-cache-size],
+  AS_HELP_STRING([--with-cluster-cache-size=number], [set cluster cache size to number (default:16)]),
+  [cluster_cache_size=$withval],
+  [cluster_cache_size=16])
+
+AC_DEFINE_UNQUOTED(CLUSTER_CACHE_SIZE, $cluster_cache_size, [set cluster cache size to number of cached chunks])
+
+AC_ARG_WITH([dirent-cache-size],
+  AS_HELP_STRING([--with-dirent-cache-size=number], [set dirent cache size to number (default:512)]),
+  [dirent_cache_size=$withval],
+  [dirent_cache_size=512])
+
+AC_DEFINE_UNQUOTED(DIRENT_CACHE_SIZE, $dirent_cache_size, [set dirent cache size to number of cached chunks])
+
+#
 # output
+#
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
