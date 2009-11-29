@@ -23,7 +23,6 @@
 #include <string>
 #include <zim/zim.h>
 #include <zim/dirent.h>
-#include <zim/qunicode.h>
 #include <zim/file.h>
 #include <limits>
 #include <iosfwd>
@@ -50,7 +49,9 @@ namespace zim
 
       std::string getParameter() const        { return getDirent().getParameter(); }
 
-      QUnicodeString getTitle() const         { return getDirent().getTitle(); }
+      const std::string& getTitle() const     { return getDirent().getTitle(); }
+      const std::string& getUrl() const       { return getDirent().getUrl(); }
+      std::string getLongUrl() const          { return getDirent().getLongUrl(); }
 
       MimeType    getLibraryMimeType() const  { return getDirent().getMimeType(); }
       const std::string&
@@ -86,8 +87,6 @@ namespace zim
       const File& getFile() const    { return file; }
       File& getFile()                { return file; }
       size_type   getIndex() const   { return idx; }
-
-      QUnicodeString getUrl() const  { return getDirent().getUrl(); }
 
       bool good() const   { return idx != std::numeric_limits<size_type>::max(); }
   };

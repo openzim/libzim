@@ -26,7 +26,6 @@
 #include <map>
 #include <zim/refcounted.h>
 #include <zim/zim.h>
-#include <zim/qunicode.h>
 #include <zim/fileheader.h>
 #include <zim/cache.h>
 #include <zim/dirent.h>
@@ -62,6 +61,8 @@ namespace zim
       const Fileheader& getFileheader() const  { return header; }
 
       Dirent getDirent(size_type idx);
+      Dirent getDirentByTitle(size_type idx);
+      Dirent getDirentByUrl(size_type idx);
       size_type getCountArticles() const       { return indexOffsets.size(); }
 
       Cluster getCluster(size_type idx);

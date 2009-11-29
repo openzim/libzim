@@ -49,7 +49,7 @@ class ZimDumper
     void printInfo();
     void printNsInfo(char ch);
     void locateArticle(zim::size_type idx);
-    void findArticle(char ns, const char* url, bool collate);
+    void findArticle(char ns, const char* url);
     void dumpArticle();
     void dumpIndex();
     void printPage();
@@ -102,11 +102,11 @@ void ZimDumper::locateArticle(zim::size_type idx)
   pos = zim::File::const_iterator(&file, idx);
 }
 
-void ZimDumper::findArticle(char ns, const char* url, bool collate)
+void ZimDumper::findArticle(char ns, const char* url)
 {
-  log_debug("findArticle(" << ns << ", " << url << ", " << collate << ')');
-  pos = file.find(ns, zim::QUnicodeString::fromUtf8(url), collate);
-  log_debug("findArticle(" << ns << ", " << url << ", " << collate << ") => idx=" << pos.getIndex());
+  log_debug("findArticle(" << ns << ", " << url << ')');
+  pos = file.findByUrl(ns, url);
+  log_debug("findArticle(" << ns << ", " << url << ") => idx=" << pos.getIndex());
 }
 
 void ZimDumper::printPage()
@@ -129,7 +129,7 @@ void ZimDumper::dumpIndex()
   {
     // prepare parameter stream
     std::istringstream paramstream(pos->getParameter());
-    zim::IZIntStream parameter(paramstream);
+    zim::ZIntStream parameter(paramstream);
 
     // read flags
     unsigned flags, off=0;
@@ -161,7 +161,7 @@ void ZimDumper::dumpIndex()
 
       std::string data_s(data.data() + off, len);
       std::istringstream stream(data_s);
-      zim::IZIntStream in(stream);
+      zim::ZIntStream in(stream);
 
       off += len;
 
@@ -260,7 +260,7 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
     {
       std::istringstream s(parameter);
 
-      zim::IZIntStream in(s);
+      zim::ZIntStream in(s);
       unsigned val;
       while (in.get(val))
         std::cout << '\t' << val;
@@ -278,7 +278,7 @@ void ZimDumper::dumpFiles(const std::string& directory)
     std::string d = directory + '/' + it->getNamespace();
     if (ns.find(it->getNamespace()) == ns.end())
       ::mkdir(d.c_str(), 0777);
-    std::string t = it->getTitle().getValue();
+    std::string t = it->getTitle();
     std::string::size_type p;
     while ((p = t.find('/')) != std::string::npos)
       t.replace(p, 1, "%2f");
@@ -306,7 +306,6 @@ int main(int argc, char* argv[])
     cxxtools::Arg<zim::size_type> indexOffset(argc, argv, 'o');
     cxxtools::Arg<bool> extra(argc, argv, 'x');
     cxxtools::Arg<char> ns(argc, argv, 'n', 'A');  // namespace
-    cxxtools::Arg<bool> collate(argc, argv, 'c');
     cxxtools::Arg<const char*> dumpAll(argc, argv, 'D');
     cxxtools::Arg<bool> verbose(argc, argv, 'v');
     cxxtools::Arg<bool> zint(argc, argv, 'Z');
@@ -359,7 +358,7 @@ int main(int argc, char* argv[])
     if (indexOffset.isSet())
       app.locateArticle(indexOffset);
     else if (find.isSet())
-      app.findArticle(ns, find, collate);
+      app.findArticle(ns, find);
 
     // dump files
     if (dumpAll.isSet())

@@ -18,7 +18,6 @@ nobase_include_HEADERS = \
 	zim/indexarticle.h \
 	zim/inflatestream.h \
 	zim/noncopyable.h \
-	zim/qunicode.h \
 	zim/search.h \
 	zim/smartptr.h \
 	zim/stringlessignorecase.h \

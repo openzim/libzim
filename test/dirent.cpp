@@ -41,12 +41,12 @@ class DirentTest : public cxxtools::unit::TestSuite
     void ReadWriteArticleDirent()
     {
       zim::Dirent dirent;
-      dirent.setTitle('A', zim::QUnicodeString("Foo"));
+      dirent.setTitle('A', "Foo");
       dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle().getValue(), "Foo");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle(), "Foo");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
@@ -64,7 +64,7 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle().getValue(), "Foo");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "Foo");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
@@ -75,12 +75,12 @@ class DirentTest : public cxxtools::unit::TestSuite
     void ReadWriteArticleDirentU()
     {
       zim::Dirent dirent;
-      dirent.setTitle('A', zim::QUnicodeString("L\xc3\xbcliang"));
+      dirent.setTitle('A', "L\xc3\xbcliang");
       dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle().getValue(), "L\xc3\xbcliang");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle(), "L\xc3\xbcliang");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
@@ -98,7 +98,7 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle().getValue(), "L\xc3\xbcliang");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "L\xc3\xbcliang");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
@@ -109,13 +109,13 @@ class DirentTest : public cxxtools::unit::TestSuite
     void ReadWriteArticleDirentP()
     {
       zim::Dirent dirent;
-      dirent.setTitle('A', zim::QUnicodeString("Foo"));
+      dirent.setTitle('A', "Foo");
       dirent.setParameter("bar");
       dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle().getValue(), "Foo");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle(), "Foo");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
@@ -133,7 +133,7 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle().getValue(), "Foo");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "Foo");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
@@ -144,13 +144,13 @@ class DirentTest : public cxxtools::unit::TestSuite
     void ReadWriteRedirectDirent()
     {
       zim::Dirent dirent;
-      dirent.setTitle('A', zim::QUnicodeString("Bar"));
+      dirent.setTitle('A', "Bar");
       dirent.setParameter("baz");
       dirent.setRedirect(321);
 
       CXXTOOLS_UNIT_ASSERT(dirent.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle().getValue(), "Bar");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getTitle(), "Bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "baz");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getRedirectIndex(), 321);
 
@@ -163,7 +163,7 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       CXXTOOLS_UNIT_ASSERT(dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle().getValue(), "Bar");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "Bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "baz");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getRedirectIndex(), 321);
     }
@@ -171,7 +171,7 @@ class DirentTest : public cxxtools::unit::TestSuite
     void ArticleDirentSize()
     {
       zim::Dirent dirent;
-      dirent.setTitle('A', zim::QUnicodeString("Bar"));
+      dirent.setTitle('A', "Bar");
       dirent.setParameter("baz");
       dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
 
@@ -184,7 +184,7 @@ class DirentTest : public cxxtools::unit::TestSuite
     void RedirectDirentSize()
     {
       zim::Dirent dirent;
-      dirent.setTitle('A', zim::QUnicodeString("Bar"));
+      dirent.setTitle('A', "Bar");
       dirent.setParameter("baz");
       dirent.setRedirect(321);
 

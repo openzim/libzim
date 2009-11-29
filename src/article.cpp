@@ -108,9 +108,9 @@ namespace zim
       log_trace("onToken(\"" << token << "\")");
 
       if (token == "title")
-        out << article.getTitle().toUtf8();
+        out << article.getTitle();
       else if (token == "url")
-        out << article.getUrl().toUtf8();
+        out << article.getUrl();
       else if (token == "namespace")
         out << article.getNamespace();
       else if (token == "content")
@@ -126,11 +126,11 @@ namespace zim
       }
     }
 
-    void Ev::onLink(char ns, const std::string& title)
+    void Ev::onLink(char ns, const std::string& url)
     {
       if (maxRecurse <= 0)
         throw std::runtime_error("maximum recursive limit is reached");
-      article.getFile().getArticle(ns, QUnicodeString::fromUtf8(title)).getPage(out, false, maxRecurse - 1);
+      article.getFile().getArticleByUrl(ns, url).getPage(out, false, maxRecurse - 1);
     }
 
   }

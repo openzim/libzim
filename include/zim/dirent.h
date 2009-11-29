@@ -22,7 +22,6 @@
 
 #include <string>
 #include <zim/zim.h>
-#include <zim/qunicode.h>
 
 namespace zim
 {
@@ -37,7 +36,8 @@ namespace zim
       size_type redirectIndex;  // only used when redirect is true
 
       char ns;
-      QUnicodeString title;
+      std::string title;
+      std::string url;
       std::string parameter;
 
     public:
@@ -54,12 +54,14 @@ namespace zim
       size_type getRedirectIndex() const      { return isRedirect() ? redirectIndex : 0; }
 
       char getNamespace() const               { return ns; }
-      const QUnicodeString& getTitle() const  { return title; }
+      const std::string& getTitle() const     { return title; }
+      const std::string& getUrl() const       { return url; }
+      std::string getLongUrl() const;
       const std::string& getParameter() const { return parameter; }
 
       uint16_t getExtraLen() const
       {
-        uint16_t s = title.getValue().size();
+        uint16_t s = title.size();
         if (!parameter.empty())
           s += (parameter.size() + 1);
         return s;
@@ -70,10 +72,16 @@ namespace zim
         return (isRedirect() ? 10 : 14) + getExtraLen();
       }
 
-      void setTitle(char ns_, const QUnicodeString& title_)
+      void setTitle(char ns_, const std::string& title_)
       {
         ns = ns_;
         title = title_;
+      }
+
+      void setUrl(char ns_, const std::string& url_)
+      {
+        ns = ns_;
+        url = url_;
       }
 
       void setParameter(const std::string& parameter_)
@@ -98,7 +106,6 @@ namespace zim
         blobNumber = blobNumber_;
       }
 
-      QUnicodeString getUrl() const;
   };
 
   std::ostream& operator<< (std::ostream& out, const Dirent& fh);

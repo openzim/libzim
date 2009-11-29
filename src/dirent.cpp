@@ -35,7 +35,7 @@ namespace zim
   {
     union
     {
-      char d[12];
+      char d[14];
       long a;
     } header;
     header.d[0] = static_cast<char>(dirent.isRedirect());
@@ -43,7 +43,7 @@ namespace zim
     header.d[2] = '\0';
     header.d[3] = dirent.getNamespace();
 
-    log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().getValue().size() << " extralen=" << dirent.getExtraLen());
+    log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size() << " extralen=" << dirent.getExtraLen());
 
     if (dirent.isRedirect())
     {
@@ -59,7 +59,7 @@ namespace zim
       out.write(header.d, 14);
     }
 
-    out << dirent.getTitle().getValue();
+    out << dirent.getTitle();
     if (!dirent.getParameter().empty())
       out << '\0' << dirent.getParameter();
 
@@ -152,20 +152,20 @@ namespace zim
         parameter += ch;
     }
 
-    dirent.setTitle(ns, QUnicodeString(title));
+    dirent.setTitle(ns, title);
     dirent.setParameter(parameter);
 
     return in;
   }
 
-  QUnicodeString Dirent::getUrl() const
+  std::string Dirent::getLongUrl() const
   {
-    log_trace("Dirent::getUrl()");
+    log_trace("Dirent::getLongUrl()");
 
     log_debug("namespace=" << getNamespace());
     log_debug("title=" << getTitle());
 
-    return QUnicodeString(std::string(1, getNamespace()) + '/' + getTitle().getValue());
+    return std::string(1, getNamespace()) + '/' + getUrl();
   }
 
 }

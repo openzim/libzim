@@ -33,15 +33,32 @@ namespace zim
     return impl->getDirent(idx);
   }
 
+  Dirent File::getDirentByUrl(size_type idx)
+  {
+    // TODO
+  }
+
+  Dirent File::getDirentByTitle(size_type idx)
+  {
+    // TODO
+  }
+
   Article File::getArticle(size_type idx) const
   {
     return Article(*this, idx);
   }
 
-  Article File::getArticle(char ns, const QUnicodeString& title, bool collate)
+  Article File::getArticleByTitle(char ns, const std::string& title)
   {
-    log_trace("File::getArticle('" << ns << "', \"" << title << "\", " << collate << ')');
-    std::pair<bool, const_iterator> r = findx(ns, title, collate);
+    log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
+    std::pair<bool, const_iterator> r = findxByTitle(ns, title);
+    return r.first ? *r.second : Article();
+  }
+
+  Article File::getArticleByUrl(char ns, const std::string& url)
+  {
+    log_trace("File::getArticleByUrl('" << ns << "', \"" << url << ')');
+    std::pair<bool, const_iterator> r = findxByUrl(ns, url);
     return r.first ? *r.second : Article();
   }
 
@@ -57,9 +74,9 @@ namespace zim
   File::const_iterator File::end()
   { return const_iterator(this, getCountArticles()); }
 
-  std::pair<bool, File::const_iterator> File::findx(char ns, const QUnicodeString& title, bool collate)
+  std::pair<bool, File::const_iterator> File::findxByTitle(char ns, const std::string& title)
   {
-    log_debug("find article " << ns << " \"" << title << "\", " << collate << " in file \"" << getFilename() << '"');
+    log_debug("find article by title " << ns << " \"" << title << "\",  in file \"" << getFilename() << '"');
 
     size_type l = getNamespaceBeginOffset(ns);
     size_type u = getNamespaceEndOffset(ns);
@@ -75,12 +92,12 @@ namespace zim
     {
       ++itcount;
       size_type p = l + (u - l) / 2;
-      Dirent d = getDirent(p);
+      Dirent d = getDirentByTitle(p);
 
       int c = ns < d.getNamespace() ? -1
             : ns > d.getNamespace() ? 1
-            : (collate ? title.compareCollate(QUnicodeString(d.getTitle()))
-                       : title.compare(QUnicodeString(d.getTitle())));
+            : title.compare(d.getTitle());
+
       if (c < 0)
         u = p;
       else if (c > 0)
@@ -92,9 +109,9 @@ namespace zim
       }
     }
 
-    Dirent d = getDirent(l);
-    int c = collate ? title.compareCollate(QUnicodeString(d.getTitle()))
-                    : title.compare(QUnicodeString(d.getTitle()));
+    Dirent d = getDirentByTitle(l);
+    int c = title.compare(d.getTitle());
+
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
@@ -105,8 +122,58 @@ namespace zim
     return std::pair<bool, const_iterator>(false, const_iterator(this, u));
   }
 
-  File::const_iterator File::find(char ns, const QUnicodeString& title, bool collate)
+  std::pair<bool, File::const_iterator> File::findxByUrl(char ns, const std::string& url)
   {
-    return findx(ns, title, collate).second;
+    // TODO
+    log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
+
+    size_type l = getNamespaceBeginOffset(ns);
+    size_type u = getNamespaceEndOffset(ns);
+
+    if (l == u)
+    {
+      log_debug("namespace " << ns << " not found");
+      return std::pair<bool, const_iterator>(false, end());
+    }
+
+    unsigned itcount = 0;
+    while (u - l > 1)
+    {
+      ++itcount;
+      size_type p = l + (u - l) / 2;
+      Dirent d = getDirentByUrl(p);
+
+      int c = ns < d.getNamespace() ? -1
+            : ns > d.getNamespace() ? 1
+            : url.compare(d.getUrl());
+
+      if (c < 0)
+        u = p;
+      else if (c > 0)
+        l = p;
+      else
+      {
+        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
+        return std::pair<bool, const_iterator>(true, const_iterator(this, p));
+      }
+    }
+
+    Dirent d = getDirentByUrl(l);
+    int c = url.compare(d.getUrl());
+
+    if (c == 0)
+    {
+      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
+      return std::pair<bool, const_iterator>(true, const_iterator(this, l));
+    }
+
+    log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
+    return std::pair<bool, const_iterator>(false, const_iterator(this, u));
   }
+
+  File::const_iterator File::findByTitle(char ns, const std::string& title)
+  { return findxByTitle(ns, title).second; }
+
+  File::const_iterator File::findByUrl(char ns, const std::string& url)
+  { return findxByUrl(ns, url).second; }
 }

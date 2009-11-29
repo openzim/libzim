@@ -17,15 +17,14 @@ libzim_la_SOURCES = \
 	indexarticle.cpp \
 	inflatestream.cpp \
 	ptrstream.cpp \
-	qunicode.cpp \
 	search.cpp \
 	template.cpp \
 	unicode.cpp \
 	uuid.cpp \
 	zintstream.cpp
 
-include_HEADERS = \
-	ptrstream.h
+#include_HEADERS = \
+#	ptrstream.h
 
 libzim_la_LDFLAGS=-lz -lbz2
 

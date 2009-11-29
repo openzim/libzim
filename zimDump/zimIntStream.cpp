@@ -23,13 +23,13 @@
 #include <cxxtools/loginit.h>
 #include <cxxtools/arg.h>
 
-log_define("zintstream");
+log_define("zintstream")
 
 void doDecompress(std::istream& in)
 {
   unsigned col = 0;
 
-  zim::IZIntStream z(std::cin);
+  zim::ZIntStream z(std::cin);
   unsigned n;
   while (z.get(n))
   {
@@ -45,8 +45,12 @@ void doDecompress(std::istream& in)
   std::cout << std::endl;
 }
 
-void doCompress(std::istream& in)
+std::string zintCompress(unsigned value)
 {
+  std::ostringstream s;
+  zim::ZIntStream z(s);
+  z.put(value);
+  return s.str();
 }
 
 int main(int argc, char* argv[])
@@ -57,7 +61,31 @@ int main(int argc, char* argv[])
 
     cxxtools::Arg<bool> compress(argc, argv, 'c');
 
-    if (argc > 1)
+    if (compress)
+    {
+      zim::ZIntStream z(std::cout);
+
+      if (argc > 1)
+      {
+        for (int a = 1; a < argc; ++a)
+        {
+          std::istringstream s(argv[a]);
+          unsigned n;
+          while (s >> n)
+          {
+            log_debug("compress " << n);
+            z.put(n);
+          }
+        }
+      }
+      else
+      {
+        unsigned n;
+        while (std::cin >> n)
+          z.put(n);
+      }
+    }
+    else if (argc > 1)
     {
       for (int a = 1; a < argc; ++a)
       {
@@ -67,27 +95,13 @@ int main(int argc, char* argv[])
         if (conv)
         {
           std::ostringstream s;
-          zim::OZIntStream z(s);
+          zim::ZIntStream z(s);
           z.put(number);
           std::string x = s.str();
           std::cout << number << " => " << std::hex;
           for (std::string::const_iterator it = x.begin(); it != x.end(); ++it)
             std::cout << static_cast<unsigned>(static_cast<unsigned char>(*it)) << ' ';
           std::cout << std::dec << '\n';
-        }
-      }
-    }
-    else if (compress)
-    {
-      zim::OZIntStream z(std::cout);
-      for (int a = 1; a < argc; ++a)
-      {
-        std::istringstream s(argv[a]);
-        unsigned n;
-        while (s >> n)
-        {
-          log_debug("compress " << n);
-          z.put(n);
         }
       }
     }

@@ -46,10 +46,13 @@ namespace zim
       const Fileheader& getFileheader() const  { return impl->getFileheader(); }
 
       Dirent getDirent(size_type idx);
+      Dirent getDirentByUrl(size_type idx);
+      Dirent getDirentByTitle(size_type idx);
       size_type getCountArticles() const       { return impl->getCountArticles(); }
 
       Article getArticle(size_type idx) const;
-      Article getArticle(char ns, const QUnicodeString& title, bool collate = false);
+      Article getArticleByTitle(char ns, const std::string& title);
+      Article getArticleByUrl(char ns, const std::string& title);
 
       Cluster getCluster(size_type idx) const  { return impl->getCluster(idx); }
       size_type getCountClusters() const       { return impl->getCountClusters(); }
@@ -73,8 +76,10 @@ namespace zim
 
       const_iterator begin();
       const_iterator end();
-      std::pair<bool, const_iterator> findx(char ns, const QUnicodeString& title, bool collate = false);
-      const_iterator find(char ns, const QUnicodeString& title, bool collate = false);
+      std::pair<bool, const_iterator> findxByTitle(char ns, const std::string& title);
+      std::pair<bool, const_iterator> findxByUrl(char ns, const std::string& url);
+      const_iterator findByTitle(char ns, const std::string& title);
+      const_iterator findByUrl(char ns, const std::string& url);
 
       bool good() const    { return impl.getPointer() != 0; }
       time_t getMTime() const   { return impl->getMTime(); }

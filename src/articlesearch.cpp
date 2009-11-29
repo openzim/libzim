@@ -43,7 +43,7 @@ namespace zim
 
     for (File::const_iterator it = articleFile.begin(); it != articleFile.end(); ++it)
     {
-      std::string title = it->getTitle().toUtf8();
+      std::string title = it->getTitle();
       if (title.find(expr) != std::string::npos)
         ret.push_back(*it);
     }
