@@ -35,7 +35,7 @@ namespace zim
   {
     union
     {
-      char d[14];
+      char d[18];
       long a;
     } header;
     header.d[0] = static_cast<char>(dirent.isRedirect());
@@ -45,23 +45,35 @@ namespace zim
 
     log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size() << " extralen=" << dirent.getExtraLen());
 
+    toLittleEndian(dirent.getVersion(), header.d + 4);
+
     if (dirent.isRedirect())
     {
-      toLittleEndian(dirent.getRedirectIndex(), header.d + 4);
-      toLittleEndian(dirent.getExtraLen(), header.d + 8);
-      out.write(header.d, 10);
-    }
-    else
-    {
-      toLittleEndian(dirent.getClusterNumber(), header.d + 4);
-      toLittleEndian(dirent.getBlobNumber(), header.d + 8);
+      toLittleEndian(dirent.getRedirectIndex(), header.d + 8);
       toLittleEndian(dirent.getExtraLen(), header.d + 12);
       out.write(header.d, 14);
     }
+    else
+    {
+      toLittleEndian(dirent.getClusterNumber(), header.d + 8);
+      toLittleEndian(dirent.getBlobNumber(), header.d + 12);
+      toLittleEndian(dirent.getExtraLen(), header.d + 16);
+      out.write(header.d, 18);
+    }
 
-    out << dirent.getTitle();
-    if (!dirent.getParameter().empty())
-      out << '\0' << dirent.getParameter();
+    out << dirent.getUrl();
+
+    if (dirent.getTitle() == dirent.getUrl())
+    {
+      if (!dirent.getParameter().empty())
+        out << '\0' << '\0' << dirent.getParameter();
+    }
+    else
+    {
+      out << '\0' << dirent.getTitle();
+      if (!dirent.getParameter().empty())
+        out << '\0' << dirent.getParameter();
+    }
 
     return out;
   }
@@ -71,17 +83,17 @@ namespace zim
     union
     {
       long a;
-      char d[14];
+      char d[18];
     } header;
 
-    in.read(header.d, 10);
+    in.read(header.d, 14);
     if (in.fail())
     {
       log_warn("error reading dirent header");
       return in;
     }
 
-    if (in.gcount() != 10)
+    if (in.gcount() != 14)
     {
       log_warn("error reading dirent header (2)");
       in.setstate(std::ios::failbit);
@@ -90,13 +102,16 @@ namespace zim
 
     bool redirect = header.d[0];
     char ns = header.d[3];
+    size_type version = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
+    dirent.setVersion(version);
+
     size_type extraLen;
     if (redirect)
     {
       log_debug("read redirect entry");
 
-      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
-      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d + 8));
+      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
+      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d + 12));
 
       log_debug("redirectIndex=" << redirectIndex << " extraLen=" << extraLen);
 
@@ -106,7 +121,7 @@ namespace zim
     {
       log_debug("read article entry");
 
-      in.read(header.d + 10, 4);
+      in.read(header.d + 14, 4);
       if (in.fail())
       {
         log_warn("error reading article dirent header");
@@ -122,9 +137,9 @@ namespace zim
       }
 
       MimeType mimeType = static_cast<MimeType>(header.d[1]);
-      size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
-      size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
-      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d + 12));
+      size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
+      size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 12));
+      extraLen = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d + 16));
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber << " extraLen=" << extraLen);
 
@@ -132,27 +147,39 @@ namespace zim
     }
     
     char ch;
+    std::string url;
     std::string title;
     std::string parameter;
 
-    log_debug("read title and parameters; extraLen=" << extraLen);
+    log_debug("read url, title and parameters; extraLen=" << extraLen);
 
-    title.reserve(extraLen);
+    url.reserve(extraLen);
     while (extraLen && in.get(ch) && ch != '\0')
     {
-      title += ch;
+      url += ch;
       --extraLen;
     }
 
-    if (in && extraLen)
+    if (in && extraLen && --extraLen)
     {
-      --extraLen;
-      parameter.reserve(extraLen);
-      while (extraLen-- && in.get(ch))
-        parameter += ch;
+      title.reserve(extraLen);
+      while (extraLen && in.get(ch) && ch != '\0')
+      {
+        title += ch;
+        --extraLen;
+      }
+
+      if (in && extraLen)
+      {
+        --extraLen;
+        parameter.reserve(extraLen);
+        while (extraLen-- && in.get(ch))
+          parameter += ch;
+      }
     }
 
-    dirent.setTitle(ns, title);
+    dirent.setUrl(ns, url);
+    dirent.setTitle(title);
     dirent.setParameter(parameter);
 
     return in;
@@ -161,9 +188,7 @@ namespace zim
   std::string Dirent::getLongUrl() const
   {
     log_trace("Dirent::getLongUrl()");
-
-    log_debug("namespace=" << getNamespace());
-    log_debug("title=" << getTitle());
+    log_debug("namespace=" << getNamespace() << " title=" << getTitle());
 
     return std::string(1, getNamespace()) + '/' + getUrl();
   }

@@ -89,18 +89,29 @@ namespace zim
     if (zimFile.fail())
       throw ZimFileFormatError("error reading zim-file header");
 
-    // read index offsets
+    // read url offsets
     {
-      size_type indexOffsetsSize = header.getArticleCount() * sizeof(OffsetsType::value_type);
-      log_debug("read " << indexOffsetsSize << " bytes indexptr");
-      zimFile.seekg(header.getIndexPtrPos());
-      indexOffsets.resize(header.getArticleCount());
-      zimFile.read(reinterpret_cast<char*>(&indexOffsets[0]), indexOffsetsSize);
+      size_type urlOffsetsSize = header.getArticleCount() * sizeof(OffsetsType::value_type);
+      log_debug("read " << urlOffsetsSize << " bytes urlptr");
+      zimFile.seekg(header.getUrlPtrPos());
+      urlOffsets.resize(header.getArticleCount());
+      zimFile.read(reinterpret_cast<char*>(&urlOffsets[0]), urlOffsetsSize);
+    }
+
+    // read title offsets
+    {
+      size_type titlePtrSize = header.getArticleCount() * sizeof(TitlePtrType::value_type);
+      log_debug("read " << titlePtrSize << " bytes titleptr");
+      zimFile.seekg(header.getTitlePtrPos());
+      titleIdx.resize(header.getArticleCount());
+      zimFile.read(reinterpret_cast<char*>(&titleIdx[0]), titlePtrSize);
     }
 
     if (isBigEndian())
     {
-      for (OffsetsType::iterator it = indexOffsets.begin(); it != indexOffsets.end(); ++it)
+      for (OffsetsType::iterator it = urlOffsets.begin(); it != urlOffsets.end(); ++it)
+        *it = fromLittleEndian(&*it);
+      for (TitlePtrType::iterator it = titleIdx.begin(); it != titleIdx.end(); ++it)
         *it = fromLittleEndian(&*it);
     }
 
@@ -137,7 +148,7 @@ namespace zim
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
 
-    if (idx >= indexOffsets.size())
+    if (idx >= urlOffsets.size())
       throw ZimFileFormatError("article index out of range");
 
     if (!zimFile)
@@ -155,7 +166,7 @@ namespace zim
 
     log_debug("dirent " << idx << " not found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
 
-    zimFile.seekg(indexOffsets[idx]);
+    zimFile.seekg(urlOffsets[idx]);
     if (!zimFile)
     {
       log_warn("failed to seek to directory entry");
@@ -171,10 +182,17 @@ namespace zim
       throw ZimFileFormatError("failed to read directory entry");
     }
 
-    log_debug("dirent read from " << indexOffsets[idx]);
+    log_debug("dirent read from " << urlOffsets[idx]);
     direntCache.put(idx, dirent);
 
     return dirent;
+  }
+
+  Dirent FileImpl::getDirentByTitle(size_type idx)
+  {
+    if (idx >= titleIdx.size())
+      throw ZimFileFormatError("article index out of range");
+    return getDirent(titleIdx[idx]);
   }
 
   Cluster FileImpl::getCluster(size_type idx)

@@ -30,6 +30,8 @@ namespace zim
       bool redirect;
       MimeType mimeType;
 
+      size_type version;
+
       size_type clusterNumber;  // only used when redirect is false
       size_type blobNumber;    // only used when redirect is false
 
@@ -46,6 +48,9 @@ namespace zim
       bool isRedirect() const                 { return redirect; }
       MimeType getMimeType() const            { return mimeType; }
 
+      size_type getVersion() const            { return version; }
+      void setVersion(size_type v)            { version = v; }
+
       size_type getClusterNumber() const      { return isRedirect() ? 0 : clusterNumber; }
       size_type getBlobNumber() const         { return isRedirect() ? 0 : blobNumber; }
       void setCluster(size_type clusterNumber_, size_type blobNumber_)
@@ -54,27 +59,37 @@ namespace zim
       size_type getRedirectIndex() const      { return isRedirect() ? redirectIndex : 0; }
 
       char getNamespace() const               { return ns; }
-      const std::string& getTitle() const     { return title; }
+      const std::string& getTitle() const     { return title.empty() ? url : title; }
       const std::string& getUrl() const       { return url; }
       std::string getLongUrl() const;
       const std::string& getParameter() const { return parameter; }
 
       uint16_t getExtraLen() const
       {
-        uint16_t s = title.size();
-        if (!parameter.empty())
-          s += (parameter.size() + 1);
+        uint16_t s = url.size();
+
+        if (title.empty() || url == title)
+        {
+          if (!parameter.empty())
+            s += (parameter.size() + 2);
+        }
+        else
+        {
+          s += title.size() + 1;
+          if (!parameter.empty())
+            s += (parameter.size() + 1);
+        }
+
         return s;
       }
 
       unsigned getDirentSize() const
       {
-        return (isRedirect() ? 10 : 14) + getExtraLen();
+        return (isRedirect() ? 14 : 18) + getExtraLen();
       }
 
-      void setTitle(char ns_, const std::string& title_)
+      void setTitle(const std::string& title_)
       {
-        ns = ns_;
         title = title_;
       }
 

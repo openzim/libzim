@@ -40,8 +40,10 @@ namespace zim
       std::string filename;
 
       typedef std::vector<offset_type> OffsetsType;
-      OffsetsType indexOffsets;
+      typedef std::vector<size_type> TitlePtrType;
+      OffsetsType urlOffsets;
       OffsetsType clusterOffsets;
+      TitlePtrType titleIdx;
 
       Cache<size_type, Dirent> direntCache;
       Cache<offset_type, Cluster> clusterCache;
@@ -62,8 +64,7 @@ namespace zim
 
       Dirent getDirent(size_type idx);
       Dirent getDirentByTitle(size_type idx);
-      Dirent getDirentByUrl(size_type idx);
-      size_type getCountArticles() const       { return indexOffsets.size(); }
+      size_type getCountArticles() const       { return urlOffsets.size(); }
 
       Cluster getCluster(size_type idx);
       size_type getCountClusters() const       { return clusterOffsets.size(); }

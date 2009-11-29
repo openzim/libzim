@@ -72,7 +72,8 @@ void ZimDumper::printInfo()
   }
   std::cout << "uuid: " << file.getFileheader().getUuid() << "\n"
                "article count: " << file.getFileheader().getArticleCount() << "\n"
-               "index ptr pos: " << file.getFileheader().getIndexPtrPos() << "\n"
+               "url ptr pos: " << file.getFileheader().getUrlPtrPos() << "\n"
+               "title ptr pos: " << file.getFileheader().getTitlePtrPos() << "\n"
                "cluster count: " << file.getFileheader().getClusterCount() << "\n"
                "cluster ptr pos: " << file.getFileheader().getClusterPtrPos() << "\n";
 
