@@ -39,12 +39,6 @@ namespace zim
       Fileheader header;
       std::string filename;
 
-      typedef std::vector<offset_type> OffsetsType;
-      typedef std::vector<size_type> TitlePtrType;
-      OffsetsType urlOffsets;
-      OffsetsType clusterOffsets;
-      TitlePtrType titleIdx;
-
       Cache<size_type, Dirent> direntCache;
       Cache<offset_type, Cluster> clusterCache;
       typedef std::map<char, size_type> NamespaceCache;
@@ -53,6 +47,8 @@ namespace zim
 
       std::string namespaces;
       time_t mtime;
+
+      offset_type getOffset(offset_type ptrOffset, size_type idx);
 
     public:
       explicit FileImpl(const char* fname);
@@ -64,11 +60,12 @@ namespace zim
 
       Dirent getDirent(size_type idx);
       Dirent getDirentByTitle(size_type idx);
-      size_type getCountArticles() const       { return urlOffsets.size(); }
+      size_type getIndexByTitle(size_type idx);
+      size_type getCountArticles() const       { return header.getArticleCount(); }
 
       Cluster getCluster(size_type idx);
-      size_type getCountClusters() const       { return clusterOffsets.size(); }
-      offset_type getClusterOffset(size_type idx) const    { return clusterOffsets[idx]; }
+      size_type getCountClusters() const       { return header.getClusterCount(); }
+      offset_type getClusterOffset(size_type idx)   { return getOffset(header.getClusterPtrPos(), idx); }
 
       size_type getNamespaceBeginOffset(char ch);
       size_type getNamespaceEndOffset(char ch);

@@ -26,39 +26,27 @@ log_define("zim.file")
 
 namespace zim
 {
-  Dirent File::getDirent(size_type idx)
-  {
-    log_trace("File::getDirent(" << idx << ')');
-
-    return impl->getDirent(idx);
-  }
-
-  Dirent File::getDirentByUrl(size_type idx)
-  {
-    // TODO
-  }
-
-  Dirent File::getDirentByTitle(size_type idx)
-  {
-    // TODO
-  }
-
   Article File::getArticle(size_type idx) const
   {
     return Article(*this, idx);
-  }
-
-  Article File::getArticleByTitle(char ns, const std::string& title)
-  {
-    log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
-    std::pair<bool, const_iterator> r = findxByTitle(ns, title);
-    return r.first ? *r.second : Article();
   }
 
   Article File::getArticleByUrl(char ns, const std::string& url)
   {
     log_trace("File::getArticleByUrl('" << ns << "', \"" << url << ')');
     std::pair<bool, const_iterator> r = findxByUrl(ns, url);
+    return r.first ? *r.second : Article();
+  }
+
+  Article File::getArticleByTitle(size_type idx)
+  {
+    return Article(*this, impl->getIndexByTitle(idx));
+  }
+
+  Article File::getArticleByTitle(char ns, const std::string& title)
+  {
+    log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
+    std::pair<bool, const_iterator> r = findxByTitle(ns, title);
     return r.first ? *r.second : Article();
   }
 
@@ -71,8 +59,59 @@ namespace zim
   File::const_iterator File::begin()
   { return const_iterator(this, 0); }
 
+  File::const_iterator File::beginByTitle()
+  { return const_iterator(this, 0, const_iterator::ArticleIterator); }
+
   File::const_iterator File::end()
   { return const_iterator(this, getCountArticles()); }
+
+  std::pair<bool, File::const_iterator> File::findxByUrl(char ns, const std::string& url)
+  {
+    log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
+
+    size_type l = getNamespaceBeginOffset(ns);
+    size_type u = getNamespaceEndOffset(ns);
+
+    if (l == u)
+    {
+      log_debug("namespace " << ns << " not found");
+      return std::pair<bool, const_iterator>(false, end());
+    }
+
+    unsigned itcount = 0;
+    while (u - l > 1)
+    {
+      ++itcount;
+      size_type p = l + (u - l) / 2;
+      Dirent d = getDirent(p);
+
+      int c = ns < d.getNamespace() ? -1
+            : ns > d.getNamespace() ? 1
+            : url.compare(d.getUrl());
+
+      if (c < 0)
+        u = p;
+      else if (c > 0)
+        l = p;
+      else
+      {
+        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
+        return std::pair<bool, const_iterator>(true, const_iterator(this, p));
+      }
+    }
+
+    Dirent d = getDirent(l);
+    int c = url.compare(d.getUrl());
+
+    if (c == 0)
+    {
+      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
+      return std::pair<bool, const_iterator>(true, const_iterator(this, l));
+    }
+
+    log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
+    return std::pair<bool, const_iterator>(false, const_iterator(this, u));
+  }
 
   std::pair<bool, File::const_iterator> File::findxByTitle(char ns, const std::string& title)
   {
@@ -105,7 +144,7 @@ namespace zim
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, const_iterator>(true, const_iterator(this, p));
+        return std::pair<bool, const_iterator>(true, const_iterator(this, p, const_iterator::ArticleIterator));
       }
     }
 
@@ -115,65 +154,17 @@ namespace zim
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, const_iterator>(true, const_iterator(this, l));
+      return std::pair<bool, const_iterator>(true, const_iterator(this, l, const_iterator::ArticleIterator));
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return std::pair<bool, const_iterator>(false, const_iterator(this, u));
+    return std::pair<bool, const_iterator>(false, const_iterator(this, u, const_iterator::ArticleIterator));
   }
 
-  std::pair<bool, File::const_iterator> File::findxByUrl(char ns, const std::string& url)
-  {
-    // TODO
-    log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
-
-    size_type l = getNamespaceBeginOffset(ns);
-    size_type u = getNamespaceEndOffset(ns);
-
-    if (l == u)
-    {
-      log_debug("namespace " << ns << " not found");
-      return std::pair<bool, const_iterator>(false, end());
-    }
-
-    unsigned itcount = 0;
-    while (u - l > 1)
-    {
-      ++itcount;
-      size_type p = l + (u - l) / 2;
-      Dirent d = getDirentByUrl(p);
-
-      int c = ns < d.getNamespace() ? -1
-            : ns > d.getNamespace() ? 1
-            : url.compare(d.getUrl());
-
-      if (c < 0)
-        u = p;
-      else if (c > 0)
-        l = p;
-      else
-      {
-        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, const_iterator>(true, const_iterator(this, p));
-      }
-    }
-
-    Dirent d = getDirentByUrl(l);
-    int c = url.compare(d.getUrl());
-
-    if (c == 0)
-    {
-      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, const_iterator>(true, const_iterator(this, l));
-    }
-
-    log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
-    return std::pair<bool, const_iterator>(false, const_iterator(this, u));
-  }
+  File::const_iterator File::findByUrl(char ns, const std::string& url)
+  { return findxByUrl(ns, url).second; }
 
   File::const_iterator File::findByTitle(char ns, const std::string& title)
   { return findxByTitle(ns, title).second; }
 
-  File::const_iterator File::findByUrl(char ns, const std::string& url)
-  { return findxByUrl(ns, url).second; }
 }
