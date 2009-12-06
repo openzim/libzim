@@ -53,7 +53,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getExtraLen(), 3);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getVersion(), 54346);
 
       dirent.setTitle("Foo");
@@ -78,7 +77,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getExtraLen(), 7);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getVersion(), 54346);
 
       std::stringstream s;
@@ -97,7 +95,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getExtraLen(), 7);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getVersion(), 54346);
 
     }
@@ -115,7 +112,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getExtraLen(), 8);
 
       std::stringstream s;
       s << dirent;
@@ -134,7 +130,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getExtraLen(), 8);
 
     }
 
@@ -152,7 +147,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getParameter(), "bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getExtraLen(), 8);
 
       std::stringstream s;
       s << dirent;
@@ -170,7 +164,6 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getClusterNumber(), 45);
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getBlobNumber(), 1234);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getExtraLen(), 8);
     }
 
     void ReadWriteRedirectDirent()

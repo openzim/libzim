@@ -64,28 +64,12 @@ namespace zim
       std::string getLongUrl() const;
       const std::string& getParameter() const { return parameter; }
 
-      uint16_t getExtraLen() const
-      {
-        uint16_t s = url.size();
-
-        if (title.empty() || url == title)
-        {
-          if (!parameter.empty())
-            s += (parameter.size() + 2);
-        }
-        else
-        {
-          s += title.size() + 1;
-          if (!parameter.empty())
-            s += (parameter.size() + 1);
-        }
-
-        return s;
-      }
-
       unsigned getDirentSize() const
       {
-        return (isRedirect() ? 14 : 18) + getExtraLen();
+        unsigned ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
+        if (title != url)
+          ret += title.size();
+        return ret;
       }
 
       void setTitle(const std::string& title_)
