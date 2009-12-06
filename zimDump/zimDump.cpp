@@ -215,7 +215,8 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
   zim::Dirent dirent = article.getDirent();
 
   std::cout <<
-      "title: "           << dirent.getTitle() << "\n"
+      "url: "             << dirent.getUrl() << "\n"
+    "\ttitle:           " << dirent.getTitle() << "\n"
     "\tidx:             " << article.getIndex() << "\n"
     "\tnamespace:       " << dirent.getNamespace() << "\n"
     "\tredirect:        " << dirent.isRedirect() << "\n";
