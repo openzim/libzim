@@ -38,9 +38,9 @@ class ZimDumper
     bool verbose;
 
   public:
-    explicit ZimDumper(const char* fname)
+    ZimDumper(const char* fname, bool titleSort)
       : file(fname),
-        pos(file.begin()),
+        pos(titleSort ? file.beginByTitle() : file.begin()),
         verbose(false)
       { }
 
@@ -73,7 +73,7 @@ void ZimDumper::printInfo()
   std::cout << "uuid: " << file.getFileheader().getUuid() << "\n"
                "article count: " << file.getFileheader().getArticleCount() << "\n"
                "url ptr pos: " << file.getFileheader().getUrlPtrPos() << "\n"
-               "title ptr pos: " << file.getFileheader().getTitlePtrPos() << "\n"
+               "title idx pos: " << file.getFileheader().getTitleIdxPos() << "\n"
                "cluster count: " << file.getFileheader().getClusterCount() << "\n"
                "cluster ptr pos: " << file.getFileheader().getClusterPtrPos() << "\n";
 
@@ -310,6 +310,7 @@ int main(int argc, char* argv[])
     cxxtools::Arg<const char*> dumpAll(argc, argv, 'D');
     cxxtools::Arg<bool> verbose(argc, argv, 'v');
     cxxtools::Arg<bool> zint(argc, argv, 'Z');
+    cxxtools::Arg<bool> titleSort(argc, argv, 't');
 
     if (argc <= 1)
     {
@@ -344,7 +345,7 @@ int main(int argc, char* argv[])
     }
 
     // initalize app
-    ZimDumper app(argv[1]);
+    ZimDumper app(argv[1], titleSort);
     app.setVerbose(verbose);
 
     // global info
