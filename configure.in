@@ -1,4 +1,4 @@
-AC_INIT(zimlib, 0.90, [Tommi Maekitalo <tommi@tntnet.org>])
+AC_INIT(zimlib, 0.91, [Tommi Maekitalo <tommi@tntnet.org>])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 abi_current=0
@@ -50,6 +50,13 @@ AC_ARG_WITH([dirent-cache-size],
   [dirent_cache_size=512])
 
 AC_DEFINE_UNQUOTED(DIRENT_CACHE_SIZE, $dirent_cache_size, [set dirent cache size to number of cached chunks])
+
+AC_ARG_ENABLE([unittest],
+  AS_HELP_STRING([--disable-unittest], [disable building of unittest]),
+  [enable_unittest=$enableval],
+  [enable_unittest=enable_unittest])
+
+AM_CONDITIONAL(MAKE_UNITTEST, test "$enable_unittest" = "enable_unittest")
 
 #
 # output
