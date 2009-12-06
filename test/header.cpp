@@ -39,7 +39,7 @@ class FileheaderTest : public cxxtools::unit::TestSuite
       header.setUuid("1234567890abcdef");
       header.setArticleCount(4711);
       header.setUrlPtrPos(12345);
-      header.setTitlePtrPos(23456);
+      header.setTitleIdxPos(23456);
       header.setClusterCount(14);
       header.setClusterPtrPos(45678);
       header.setMainPage(11);
@@ -48,7 +48,7 @@ class FileheaderTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(header.getUuid(), "1234567890abcdef");
       CXXTOOLS_UNIT_ASSERT_EQUALS(header.getArticleCount(), 4711);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header.getUrlPtrPos(), 12345);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getTitlePtrPos(), 23456);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getTitleIdxPos(), 23456);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header.getClusterCount(), 14);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header.getClusterPtrPos(), 45678);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header.getMainPage(), 11);
@@ -65,7 +65,7 @@ class FileheaderTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getUuid(), "1234567890abcdef");
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getArticleCount(), 4711);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getUrlPtrPos(), 12345);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getTitlePtrPos(), 23456);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getTitleIdxPos(), 23456);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getClusterCount(), 14);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getClusterPtrPos(), 45678);
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getMainPage(), 11);

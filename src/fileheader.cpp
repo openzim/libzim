@@ -39,7 +39,7 @@ namespace zim
     toLittleEndian(fh.getArticleCount(), header + 24);
     toLittleEndian(fh.getClusterCount(), header + 28);
     toLittleEndian(fh.getUrlPtrPos(), header + 32);
-    toLittleEndian(fh.getTitlePtrPos(), header + 40);
+    toLittleEndian(fh.getTitleIdxPos(), header + 40);
     toLittleEndian(fh.getClusterPtrPos(), header + 48);
     toLittleEndian(fh.getMimeListPos(), header + 56);
     toLittleEndian(fh.getMainPage(), header + 64);
@@ -85,7 +85,7 @@ namespace zim
     size_type articleCount = fromLittleEndian(reinterpret_cast<const size_type*>(header + 24));
     size_type clusterCount = fromLittleEndian(reinterpret_cast<const size_type*>(header + 28));
     offset_type urlPtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 32));
-    offset_type titlePtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 40));
+    offset_type titleIdxPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 40));
     offset_type clusterPtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 48));
     offset_type mimeListPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 56));
     size_type mainPage = fromLittleEndian(reinterpret_cast<const size_type*>(header + 64));
@@ -95,7 +95,7 @@ namespace zim
     fh.setArticleCount(articleCount);
     fh.setClusterCount(clusterCount);
     fh.setUrlPtrPos(urlPtrPos);
-    fh.setTitlePtrPos(titlePtrPos);
+    fh.setTitleIdxPos(titleIdxPos);
     fh.setClusterPtrPos(clusterPtrPos);
     fh.setMimeListPos(mimeListPos);
     fh.setMainPage(mainPage);

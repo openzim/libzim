@@ -163,7 +163,7 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    zimFile.seekg(header.getTitlePtrPos() + sizeof(size_type) * idx);
+    zimFile.seekg(header.getTitleIdxPos() + sizeof(size_type) * idx);
     size_type ret;
     zimFile.read(reinterpret_cast<char*>(&ret), sizeof(size_type));
 

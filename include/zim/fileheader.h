@@ -38,7 +38,7 @@ namespace zim
     private:
       Uuid uuid;
       size_type articleCount;
-      offset_type titlePtrPos;
+      offset_type titleIdxPos;
       offset_type urlPtrPos;
       offset_type mimeListPos;
       size_type blobCount;
@@ -49,7 +49,7 @@ namespace zim
     public:
       Fileheader()
         : articleCount(0),
-          titlePtrPos(0),
+          titleIdxPos(0),
           urlPtrPos(0),
           blobCount(0),
           blobPtrPos(0),
@@ -63,8 +63,8 @@ namespace zim
       size_type getArticleCount() const            { return articleCount; }
       void      setArticleCount(size_type s)       { articleCount = s; }
 
-      offset_type getTitlePtrPos() const           { return titlePtrPos; }
-      void        setTitlePtrPos(offset_type p)    { titlePtrPos = p; }
+      offset_type getTitleIdxPos() const           { return titleIdxPos; }
+      void        setTitleIdxPos(offset_type p)    { titleIdxPos = p; }
 
       offset_type getUrlPtrPos() const             { return urlPtrPos; }
       void        setUrlPtrPos(offset_type p)      { urlPtrPos = p; }
