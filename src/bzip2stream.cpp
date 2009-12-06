@@ -56,14 +56,11 @@ namespace zim
 
   Bzip2StreamBuf::~Bzip2StreamBuf()
   {
-    log_debug("bzCompressEnd");
     ::BZ2_bzCompressEnd(&stream);
   }
 
   Bzip2StreamBuf::int_type Bzip2StreamBuf::overflow(int_type c)
   {
-    log_debug("Bzip2StreamBuf::overflow");
-
     // initialize input-stream
     stream.next_in = &obuffer[0];
     stream.avail_in = pptr() - &obuffer[0];
@@ -74,9 +71,7 @@ namespace zim
     stream.avail_out = sizeof(zbuffer);
 
     // deflate
-    log_debug("pre:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " BZ_RUN");
     int ret = checkError(::BZ2_bzCompress(&stream, BZ_RUN), stream);
-    log_debug("post:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " ret=" << ret << " total_out_lo32=" << stream.total_out_lo32);
 
     // copy zbuffer to sink / consume deflated data
     std::streamsize count = sizeof(zbuffer) - stream.avail_out;
@@ -106,8 +101,6 @@ namespace zim
 
   int Bzip2StreamBuf::sync()
   {
-    log_debug("Bzip2StreamBuf::sync");
-
     // initialize input-stream for
     stream.next_in = &obuffer[0];
     stream.avail_in = pptr() - pbase();
@@ -119,9 +112,7 @@ namespace zim
       stream.next_out = zbuffer;
       stream.avail_out = sizeof(zbuffer);
 
-      log_debug("pre:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " BZ_FLUSH");
       ret = checkError(::BZ2_bzCompress(&stream, BZ_FLUSH), stream);
-      log_debug("post:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " ret=" << ret << " total_out_lo32=" << stream.total_out_lo32);
 
       // copy zbuffer to sink
       std::streamsize count = sizeof(zbuffer) - stream.avail_out;
@@ -141,8 +132,6 @@ namespace zim
 
   int Bzip2StreamBuf::end()
   {
-    log_debug("Bzip2StreamBuf::end");
-
     char zbuffer[8192];
     // initialize input-stream for
     stream.next_in = &obuffer[0];
@@ -154,9 +143,7 @@ namespace zim
       stream.next_out = zbuffer;
       stream.avail_out = sizeof(zbuffer);
 
-      log_debug("pre:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " BZ_FINISH");
       ret = checkError(::BZ2_bzCompress(&stream, BZ_FINISH), stream);
-      log_debug("post:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " ret=" << ret << " total_out_lo32=" << stream.total_out_lo32);
 
       // copy zbuffer to sink
       std::streamsize count = sizeof(zbuffer) - stream.avail_out;

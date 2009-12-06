@@ -67,8 +67,6 @@ namespace zim
 
   InflateStreamBuf::int_type InflateStreamBuf::overflow(int_type c)
   {
-    log_debug("InflateStreamBuf::overflow");
-
     if (pptr())
     {
       // initialize input-stream for
@@ -82,10 +80,8 @@ namespace zim
         stream.next_out = (Bytef*)ibuffer();
         stream.avail_out = ibuffer_size();
 
-        log_debug("pre:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in);
         ret = ::inflate(&stream, Z_SYNC_FLUSH);
         checkError(ret, stream);
-        log_debug("post:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " ret=" << ret);
 
         // copy zbuffer to sinksource
         std::streamsize count = ibuffer_size() - stream.avail_out;
@@ -119,14 +115,12 @@ namespace zim
         {
           // there is data already available
           // read compressed data from source into ibuffer
-          log_debug("in_avail=" << sinksource->in_avail());
           stream.avail_in = sinksource->sgetn(ibuffer(), std::min(sinksource->in_avail(), ibuffer_size()));
         }
         else
         {
           // no data available
           stream.avail_in = sinksource->sgetn(ibuffer(), ibuffer_size());
-          log_debug(stream.avail_in << " bytes read from source");
           if (stream.avail_in == 0)
             return traits_type::eof();
         }
@@ -138,9 +132,7 @@ namespace zim
 
       // at least one character received from source - pass to decompressor
 
-      log_debug("pre:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in);
       int ret = ::inflate(&stream, Z_SYNC_FLUSH);
-      log_debug("post:avail_out=" << stream.avail_out << " avail_in=" << stream.avail_in << " ret=" << ret);
 
       checkError(ret, stream);
 
