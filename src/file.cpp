@@ -31,10 +31,10 @@ namespace zim
     return Article(*this, idx);
   }
 
-  Article File::getArticleByUrl(char ns, const std::string& url)
+  Article File::getArticle(char ns, const std::string& url)
   {
-    log_trace("File::getArticleByUrl('" << ns << "', \"" << url << ')');
-    std::pair<bool, const_iterator> r = findxByUrl(ns, url);
+    log_trace("File::getArticle('" << ns << "', \"" << url << ')');
+    std::pair<bool, const_iterator> r = findx(ns, url);
     return r.first ? *r.second : Article();
   }
 
@@ -65,7 +65,7 @@ namespace zim
   File::const_iterator File::end()
   { return const_iterator(this, getCountArticles()); }
 
-  std::pair<bool, File::const_iterator> File::findxByUrl(char ns, const std::string& url)
+  std::pair<bool, File::const_iterator> File::findx(char ns, const std::string& url)
   {
     log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
 
@@ -161,8 +161,8 @@ namespace zim
     return std::pair<bool, const_iterator>(false, const_iterator(this, u, const_iterator::ArticleIterator));
   }
 
-  File::const_iterator File::findByUrl(char ns, const std::string& url)
-  { return findxByUrl(ns, url).second; }
+  File::const_iterator File::find(char ns, const std::string& url)
+  { return findx(ns, url).second; }
 
   File::const_iterator File::findByTitle(char ns, const std::string& title)
   { return findxByTitle(ns, title).second; }

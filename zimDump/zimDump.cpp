@@ -106,7 +106,7 @@ void ZimDumper::locateArticle(zim::size_type idx)
 void ZimDumper::findArticle(char ns, const char* url)
 {
   log_debug("findArticle(" << ns << ", " << url << ')');
-  pos = file.findByUrl(ns, url);
+  pos = file.find(ns, url);
   log_debug("findArticle(" << ns << ", " << url << ") => idx=" << pos.getIndex());
 }
 

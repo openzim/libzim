@@ -130,7 +130,7 @@ namespace zim
     {
       if (maxRecurse <= 0)
         throw std::runtime_error("maximum recursive limit is reached");
-      article.getFile().getArticleByUrl(ns, url).getPage(out, false, maxRecurse - 1);
+      article.getFile().getArticle(ns, url).getPage(out, false, maxRecurse - 1);
     }
 
   }

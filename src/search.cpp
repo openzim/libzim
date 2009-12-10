@@ -226,7 +226,7 @@ namespace zim
   void Search::find(Results& results, char ns, const std::string& praefix, unsigned limit)
   {
     log_debug("find results in namespace " << ns << " for praefix \"" << praefix << '"');
-    for (File::const_iterator pos = articlefile.findByUrl(ns, praefix);
+    for (File::const_iterator pos = articlefile.find(ns, praefix);
          pos != articlefile.end() && results.size() < limit; ++pos)
     {
       if (ns != pos->getNamespace() || pos->getUrl().compare(praefix) > 0)
@@ -243,7 +243,7 @@ namespace zim
     const std::string& end, unsigned limit)
   {
     log_debug("find results in namespace " << ns << " for praefix \"" << begin << '"');
-    for (File::const_iterator pos = articlefile.findByUrl(ns, begin);
+    for (File::const_iterator pos = articlefile.find(ns, begin);
          pos != articlefile.end() && results.size() < limit; ++pos)
     {
       log_debug("check " << pos->getNamespace() << '/' << pos->getTitle());
