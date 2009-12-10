@@ -1,7 +1,7 @@
-AC_INIT(zimlib, 0.91, [Tommi Maekitalo <tommi@tntnet.org>])
+AC_INIT(zimlib, 0.92, [Tommi Maekitalo <tommi@tntnet.org>])
 AM_INIT_AUTOMAKE([subdir-objects])
 
-abi_current=0
+abi_current=1
 abi_revision=0
 abi_age=0
 sonumber=${abi_current}:${abi_revision}:${abi_age}
