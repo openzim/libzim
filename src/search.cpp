@@ -243,13 +243,13 @@ namespace zim
     const std::string& end, unsigned limit)
   {
     log_debug("find results in namespace " << ns << " for praefix \"" << begin << '"');
-    for (File::const_iterator pos = articlefile.find(ns, begin);
+    for (File::const_iterator pos = articlefile.findByTitle(ns, begin);
          pos != articlefile.end() && results.size() < limit; ++pos)
     {
       log_debug("check " << pos->getNamespace() << '/' << pos->getTitle());
-      if (pos->getNamespace() != ns || pos->getUrl().compare(end) > 0)
+      if (pos->getNamespace() != ns || pos->getTitle().compare(end) > 0)
       {
-        log_debug("article \"" << pos->getDirent().getLongUrl() << "\" does not match");
+        log_debug("article " << pos->getNamespace() << ", \"" << pos->getTitle() << "\" does not match");
         break;
       }
       results.push_back(SearchResult(*pos));
