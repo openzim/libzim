@@ -31,7 +31,6 @@ class ZIntTest : public cxxtools::unit::TestSuite
 
       zint.put(num);
       unsigned n;
-      const char* s = data.str().c_str();
       zint.get(n);
 
       CXXTOOLS_UNIT_ASSERT_EQUALS(n, num);

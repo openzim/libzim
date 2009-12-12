@@ -39,8 +39,8 @@ namespace zim
         bool operator() (const SearchResult& s1, const SearchResult& s2) const
         {
           return s1.getPriority() > s2.getPriority()
-              || s1.getPriority() == s2.getPriority()
-               && s1.getArticle().getTitle() > s2.getArticle().getTitle();
+              || (s1.getPriority() == s2.getPriority()
+               && s1.getArticle().getTitle() > s2.getArticle().getTitle());
         }
     };
   }

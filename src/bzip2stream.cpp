@@ -71,7 +71,7 @@ namespace zim
     stream.avail_out = sizeof(zbuffer);
 
     // deflate
-    int ret = checkError(::BZ2_bzCompress(&stream, BZ_RUN), stream);
+    checkError(::BZ2_bzCompress(&stream, BZ_RUN), stream);
 
     // copy zbuffer to sink / consume deflated data
     std::streamsize count = sizeof(zbuffer) - stream.avail_out;

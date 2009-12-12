@@ -56,7 +56,7 @@ namespace zim
     in.read(header, Fileheader::size);
     if (in.fail())
       return in;
-    if (in.gcount() != Fileheader::size)
+    if (static_cast<size_type>(in.gcount()) != Fileheader::size)
     {
       in.setstate(std::ios::failbit);
       return in;

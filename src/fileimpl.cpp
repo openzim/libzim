@@ -97,7 +97,7 @@ namespace zim
     {
       offset_type lastOffset = getClusterOffset(getCountClusters() - 1);
       log_debug("last offset=" << lastOffset << " file size=" << st.st_size);
-      if (lastOffset > st.st_size)
+      if (lastOffset > static_cast<offset_type>(st.st_size))
       {
         log_fatal("last offset (" << lastOffset << ") larger than file size (" << st.st_size << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");

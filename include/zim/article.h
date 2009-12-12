@@ -49,8 +49,8 @@ namespace zim
 
       std::string getParameter() const        { return getDirent().getParameter(); }
 
-      const std::string& getTitle() const     { return getDirent().getTitle(); }
-      const std::string& getUrl() const       { return getDirent().getUrl(); }
+      std::string getTitle() const            { return getDirent().getTitle(); }
+      std::string getUrl() const              { return getDirent().getUrl(); }
       std::string getLongUrl() const          { return getDirent().getLongUrl(); }
 
       MimeType    getLibraryMimeType() const  { return getDirent().getMimeType(); }
@@ -68,8 +68,8 @@ namespace zim
 
       bool operator< (const Article& a) const
         { return getNamespace() < a.getNamespace()
-              || getNamespace() == a.getNamespace()
-               && getTitle() < a.getTitle(); }
+              || (getNamespace() == a.getNamespace()
+               && getTitle() < a.getTitle()); }
 
       Cluster getCluster() const
         { return file.getCluster(getDirent().getClusterNumber()); }

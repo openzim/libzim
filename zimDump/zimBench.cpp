@@ -74,8 +74,7 @@ int main(int argc, char* argv[])
     RandomUrlsType randomUrls;
 
     std::cout << "collect linear urls" << std::endl;
-    zim::File::const_iterator it = file.begin();
-    for (unsigned n = 0; it != file.end() && urls.size() < count; ++it)
+    for (zim::File::const_iterator it = file.begin(); it != file.end() && urls.size() < count; ++it)
     {
       log_debug("check url " << it->getUrl() << '\t' << urls.size() << " found");
       if (!it->isRedirect())
@@ -87,7 +86,7 @@ int main(int argc, char* argv[])
     std::cout << "collect random urls" << std::endl;
     while (randomUrls.size() < distinctCount)
     {
-      it = file.find(ns, randomUrl());
+      zim::File::const_iterator it = file.find(ns, randomUrl());
       log_debug("check url " << it->getUrl() << '\t' << randomUrls.size() << " found");
       if (!it->isRedirect())
         randomUrls.push_back(it->getUrl());

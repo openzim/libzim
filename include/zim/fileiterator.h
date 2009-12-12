@@ -52,8 +52,8 @@ namespace zim
       const File& getFile() const  { return *file; }
 
       bool operator== (const const_iterator& it) const
-        { return is_end() && it.is_end()
-              || file == it.file && idx == it.idx; }
+        { return (is_end() && it.is_end())
+              || (file == it.file && idx == it.idx); }
       bool operator!= (const const_iterator& it) const
         { return !operator==(it); }
 
@@ -85,7 +85,7 @@ namespace zim
         return *this;
       }
 
-      Article operator*() const
+      const Article& operator*() const
       {
         if (!article.good())
           article = mode == UrlIterator ? file->getArticle(idx)
