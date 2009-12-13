@@ -22,13 +22,14 @@
 
 #include <string>
 #include <zim/zim.h>
+#include <limits>
 
 namespace zim
 {
   class Dirent
   {
       bool redirect;
-      MimeType mimeType;
+      uint16_t mimeType;
 
       size_type version;
 
@@ -46,7 +47,7 @@ namespace zim
       Dirent()  {}
 
       bool isRedirect() const                 { return redirect; }
-      MimeType getMimeType() const            { return mimeType; }
+      uint16_t getMimeType() const            { return mimeType; }
 
       size_type getVersion() const            { return version; }
       void setVersion(size_type v)            { version = v; }
@@ -92,12 +93,12 @@ namespace zim
       {
         redirect = true;
         redirectIndex = idx;
-        mimeType = zimMimeNone;
+        mimeType = std::numeric_limits<uint16_t>::max();
         clusterNumber = 0;
         blobNumber = 0;
       }
 
-      void setArticle(MimeType mimeType_, size_type clusterNumber_, size_type blobNumber_)
+      void setArticle(uint16_t mimeType_, size_type clusterNumber_, size_type blobNumber_)
       {
         redirect = false;
         mimeType = mimeType_;

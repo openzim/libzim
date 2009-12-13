@@ -103,6 +103,22 @@ namespace zim
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
     }
+
+    // read mime types
+    zimFile.seekg(header.getMimeListPos());
+    std::string mimeType;
+    while (true)
+    {
+      std::getline(zimFile, mimeType, '\0');
+
+      if (zimFile.fail())
+        throw ZimFileFormatError("error reading mime type list");
+
+      if (mimeType.empty())
+        break;
+
+      mimeTypes.push_back(mimeType);;
+    }
   }
 
   Dirent FileImpl::getDirent(size_type idx)
@@ -295,6 +311,18 @@ namespace zim
 
     }
     return namespaces;
+  }
+
+  const std::string& FileImpl::getMimeType(uint16_t idx) const
+  {
+    if (idx > mimeTypes.size())
+    {
+      std::ostringstream msg;
+      msg << "unknown mime type code " << idx;
+      throw std::runtime_error(msg.str());
+    }
+
+    return mimeTypes[idx];
   }
 
 }

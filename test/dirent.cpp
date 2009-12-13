@@ -43,7 +43,7 @@ class DirentTest : public cxxtools::unit::TestSuite
     {
       zim::Dirent dirent;
       dirent.setUrl('A', "Bar");
-      dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
+      dirent.setArticle(17, 45, 1234);
       dirent.setVersion(54346);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
@@ -67,7 +67,7 @@ class DirentTest : public cxxtools::unit::TestSuite
       zim::Dirent dirent;
       dirent.setUrl('A', "Bar");
       dirent.setTitle("Foo");
-      dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
+      dirent.setArticle(17, 45, 1234);
       dirent.setVersion(54346);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
@@ -103,7 +103,7 @@ class DirentTest : public cxxtools::unit::TestSuite
     {
       zim::Dirent dirent;
       dirent.setUrl('A', "L\xc3\xbcliang");
-      dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
+      dirent.setArticle(17, 45, 1234);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
@@ -138,7 +138,7 @@ class DirentTest : public cxxtools::unit::TestSuite
       zim::Dirent dirent;
       dirent.setUrl('A', "Foo");
       dirent.setParameter("bar");
-      dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
+      dirent.setArticle(17, 45, 1234);
 
       CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
@@ -205,7 +205,7 @@ class DirentTest : public cxxtools::unit::TestSuite
     {
       zim::Dirent dirent;
       std::string s;
-      dirent.setArticle(zim::zimMimeImagePng, 45, 1234);
+      dirent.setArticle(17, 45, 1234);
       dirent.setUrl('A', "Bar");
 
       // case url set, title empty, extralen empty

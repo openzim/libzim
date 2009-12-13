@@ -42,23 +42,7 @@ namespace zim
     zimcompLzma
   };
 
-  enum MimeType
-  {
-    zimMimeNone = -1,
-    zimMimeTextHtml,
-    zimMimeTextPlain,
-    zimMimeImageJpeg,
-    zimMimeImagePng,
-    zimMimeImageTiff,
-    zimMimeTextCss,
-    zimMimeImageGif,
-    zimMimeIndex,
-    zimMimeApplicationJavaScript,
-    zimMimeImageIcon,
-    zimMimeTextXml,
-    zimMimeTextHtmlTemplate
-  };
-
+  static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";
 }
 
 #endif // ZIM_ZIM_H

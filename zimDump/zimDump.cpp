@@ -75,6 +75,7 @@ void ZimDumper::printInfo()
   }
   std::cout << "uuid: " << file.getFileheader().getUuid() << "\n"
                "article count: " << file.getFileheader().getArticleCount() << "\n"
+               "mime list pos: " << file.getFileheader().getMimeListPos() << "\n"
                "url ptr pos: " << file.getFileheader().getUrlPtrPos() << "\n"
                "title idx pos: " << file.getFileheader().getTitleIdxPos() << "\n"
                "cluster count: " << file.getFileheader().getClusterCount() << "\n"
@@ -234,7 +235,7 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
   else
   {
     std::cout <<
-      "\tmime-type:       " << dirent.getMimeType() << "\n"
+      "\tmime-type:       " << article.getMimeType() << "\n"
       "\tarticle size:    " << article.getArticleSize() << "\n";
 
     if (verbose)

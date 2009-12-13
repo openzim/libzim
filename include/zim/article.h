@@ -53,9 +53,9 @@ namespace zim
       std::string getUrl() const              { return getDirent().getUrl(); }
       std::string getLongUrl() const          { return getDirent().getLongUrl(); }
 
-      MimeType    getLibraryMimeType() const  { return getDirent().getMimeType(); }
+      uint16_t    getLibraryMimeType() const  { return getDirent().getMimeType(); }
       const std::string&
-                  getMimeType() const;
+                  getMimeType() const         { return file.getMimeType(getLibraryMimeType()); }
 
       bool        isRedirect() const          { return getDirent().isRedirect(); }
 

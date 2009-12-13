@@ -28,50 +28,6 @@ log_define("zim.article")
 
 namespace zim
 {
-  const std::string& Article::getMimeType() const
-  {
-    static const std::string textHtml = "text/html; charset=UTF-8";
-    static const std::string textPlain = "text/plain";
-    static const std::string textXml = "application/xml";
-    static const std::string imageJpeg = "image/jpeg";
-    static const std::string imagePng = "image/png";
-    static const std::string imageTiff = "image/tiff";
-    static const std::string textCss = "text/css";
-    static const std::string imageGif = "image/gif";
-    static const std::string index = "text/plain";
-    static const std::string applicationJavaScript = "application/x-javascript";
-    static const std::string imageIcon = "image/x-icon";
-
-    switch (getLibraryMimeType())
-    {
-      case zimMimeTextHtml:
-      case zimMimeTextHtmlTemplate:
-        return textHtml;
-      case zimMimeTextPlain:
-        return textPlain;
-      case zimMimeImageJpeg:
-        return imageJpeg;
-      case zimMimeImagePng:
-        return imagePng;
-      case zimMimeImageTiff:
-        return imageTiff;
-      case zimMimeTextCss:
-        return textCss;
-      case zimMimeImageGif:
-        return imageGif;
-      case zimMimeIndex:
-        return index;
-      case zimMimeApplicationJavaScript:
-        return applicationJavaScript;
-      case zimMimeImageIcon:
-        return imageIcon;
-      case zimMimeTextXml:
-        return textXml;
-    }
-
-    return textHtml;
-  }
-
   size_type Article::getArticleSize() const
   {
     Dirent dirent = getDirent();
@@ -146,7 +102,7 @@ namespace zim
   {
     log_trace("Article::getPage(" << layout << ", " << maxRecurse << ')');
 
-    if (getLibraryMimeType() == zimMimeTextHtml || getLibraryMimeType() == zimMimeTextHtmlTemplate)
+    if (getMimeType().compare(0, 9, "text/html") == 0 || getMimeType() == MimeHtmlTemplate)
     {
       if (layout && file.getFileheader().hasLayoutPage())
       {
@@ -162,7 +118,7 @@ namespace zim
 
         return;
       }
-      else if (getLibraryMimeType() == zimMimeTextHtmlTemplate)
+      else if (getMimeType() == MimeHtmlTemplate)
       {
         Blob data = getData();
 

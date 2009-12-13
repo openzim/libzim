@@ -48,6 +48,9 @@ namespace zim
       std::string namespaces;
       time_t mtime;
 
+      typedef std::vector<std::string> MimeTypes;
+      MimeTypes mimeTypes;
+
       offset_type getOffset(offset_type ptrOffset, size_type idx);
 
     public:
@@ -75,6 +78,7 @@ namespace zim
       std::string getNamespaces();
       bool hasNamespace(char ch);
 
+      const std::string& getMimeType(uint16_t idx) const;
   };
 
 }

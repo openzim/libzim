@@ -38,8 +38,7 @@ namespace zim
       char d[16];
       long a;
     } header;
-    header.d[0] = static_cast<char>(dirent.isRedirect());
-    header.d[1] = static_cast<char>(dirent.getMimeType());
+    toLittleEndian(dirent.getMimeType(), header.d);
     header.d[2] = static_cast<char>(dirent.getParameter().size());
     header.d[3] = dirent.getNamespace();
 
@@ -91,7 +90,8 @@ namespace zim
       return in;
     }
 
-    bool redirect = header.d[0];
+    uint16_t mimeType = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d));
+    bool redirect = (mimeType == std::numeric_limits<uint16_t>::max());
     char ns = header.d[3];
     size_type version = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
     dirent.setVersion(version);
@@ -122,7 +122,6 @@ namespace zim
         return in;
       }
 
-      MimeType mimeType = static_cast<MimeType>(header.d[1]);
       size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
       size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 12));
 
