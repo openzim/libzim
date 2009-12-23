@@ -23,8 +23,10 @@ nobase_include_HEADERS = \
 	zim/zintstream.h
 
 noinst_HEADERS = \
-	zim/deflatestream.h \
-	zim/inflatestream.h \
 	zim/bunzip2stream.h \
 	zim/bzip2.h \
-	zim/bzip2stream.h
+	zim/bzip2stream.h \
+	zim/deflatestream.h \
+	zim/inflatestream.h \
+	zim/lzmastream.h \
+	zim/unlzmastream.h

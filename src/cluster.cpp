@@ -25,9 +25,13 @@
 #include <zim/inflatestream.h>
 #include <zim/bzip2stream.h>
 #include <zim/bunzip2stream.h>
+#include <zim/lzmastream.h>
+#include <zim/unlzmastream.h>
 #include <zim/endian.h>
 
 log_define("zim.cluster")
+
+#define log_debug1(e)
 
 namespace zim
 {
@@ -50,7 +54,7 @@ namespace zim
 
   void ClusterImpl::read(std::istream& in)
   {
-    log_debug("read");
+    log_debug1("read");
 
     // read first offset, which specifies, how many offsets we need to read
     size_type offset;
@@ -63,7 +67,7 @@ namespace zim
     size_type n = offset / 4;
     size_type a = offset;
 
-    log_debug("first offset is " << offset << " n=" << n << " a=" << a);
+    log_debug1("first offset is " << offset << " n=" << n << " a=" << a);
 
     // read offsets
     offsets.clear();
@@ -75,11 +79,11 @@ namespace zim
       in.read(reinterpret_cast<char*>(&offset), sizeof(offset));
       if (in.fail())
       {
-        log_debug("fail at " << n);
+        log_debug1("fail at " << n);
         return;
       }
       offset = fromLittleEndian(&offset);
-      log_debug("offset=" << offset << '(' << offset-a << ')');
+      log_debug1("offset=" << offset << '(' << offset-a << ')');
       offsets.push_back(offset - a);
     }
 
@@ -88,7 +92,7 @@ namespace zim
     {
       n = offsets.back() - offsets.front();
       data.resize(n);
-      log_debug("read " << n << " bytes of data");
+      log_debug1("read " << n << " bytes of data");
       in.read(&(data[0]), n);
     }
   }
@@ -109,12 +113,9 @@ namespace zim
 
   void ClusterImpl::addBlob(const Blob& blob)
   {
-    log_debug("addBlob(ptr, " << blob.size() << ')');
+    log_debug1("addBlob(ptr, " << blob.size() << ')');
     data.insert(data.end(), blob.data(), blob.end());
     offsets.push_back(data.size());
-
-    for (unsigned n = 0; n < offsets.size(); ++n)
-      log_debug("offset[" << n << "]=" << offsets[n]);
   }
 
   Blob ClusterImpl::getBlob(size_type n) const
@@ -141,6 +142,8 @@ namespace zim
 
   std::istream& operator>> (std::istream& in, ClusterImpl& clusterImpl)
   {
+    log_trace("read cluster");
+
     char c;
     in.get(c);
     clusterImpl.setCompression(static_cast<CompressionType>(c));
@@ -156,6 +159,7 @@ namespace zim
         {
           log_debug("uncompress data (zlib)");
           zim::InflateStream is(in);
+          is.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.read(is);
           break;
         }
@@ -164,12 +168,19 @@ namespace zim
         {
           log_debug("uncompress data (bzip2)");
           zim::Bunzip2Stream is(in);
+          is.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.read(is);
           break;
         }
 
       case zimcompLzma:
-        throw std::runtime_error("lzma decompression is not implemented");
+        {
+          log_debug("uncompress data (lzma)");
+          zim::UnlzmaStream is(in);
+          is.exceptions(std::ios::failbit | std::ios::badbit);
+          clusterImpl.read(is);
+          break;
+        }
 
       default:
         log_error("invalid compression flag " << c);
@@ -187,6 +198,8 @@ namespace zim
 
   std::ostream& operator<< (std::ostream& out, const ClusterImpl& clusterImpl)
   {
+    log_trace("write cluster");
+
     out.put(static_cast<char>(clusterImpl.getCompression()));
 
     switch(clusterImpl.getCompression())
@@ -200,6 +213,7 @@ namespace zim
         {
           log_debug("compress data (zlib)");
           zim::DeflateStream os(out);
+          os.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.write(os);
           os.flush();
           break;
@@ -209,13 +223,21 @@ namespace zim
         {
           log_debug("compress data (bzip2)");
           zim::Bzip2Stream os(out);
+          os.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.write(os);
           os.end();
           break;
         }
 
       case zimcompLzma:
-        throw std::runtime_error("lzma compression is not implemented");
+        {
+          log_debug("compress data (lzma)");
+          zim::LzmaStream os(out);
+          os.exceptions(std::ios::failbit | std::ios::badbit);
+          clusterImpl.write(os);
+          os.end();
+          break;
+        }
 
       default:
         std::ostringstream msg;

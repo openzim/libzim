@@ -16,17 +16,19 @@ libzim_la_SOURCES = \
 	fileimpl.cpp \
 	indexarticle.cpp \
 	inflatestream.cpp \
+	lzmastream.cpp \
 	ptrstream.cpp \
 	search.cpp \
 	template.cpp \
 	unicode.cpp \
+	unlzmastream.cpp \
 	uuid.cpp \
 	zintstream.cpp
 
 #include_HEADERS = \
 #	ptrstream.h
 
-libzim_la_LDFLAGS=-lz -lbz2
+libzim_la_LDFLAGS=-lz -lbz2 -llzma
 
 if WITH_CXXTOOLS
 libzim_la_LDFLAGS+=-lcxxtools
