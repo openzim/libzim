@@ -49,14 +49,18 @@ int main(int argc, char* argv[])
   {
     log_init();
 
-    cxxtools::Arg<unsigned> count(argc, argv, 'n', 1000);
-    cxxtools::Arg<unsigned> randomCount(argc, argv, 'r', count);
-    cxxtools::Arg<unsigned> distinctCount(argc, argv, 'd', randomCount);
+    cxxtools::Arg<unsigned> count(argc, argv, 'n', 1000);   // number of linear accessed articles
+    cxxtools::Arg<unsigned> randomCount(argc, argv, 'r', count);  // number of random accesses
+    cxxtools::Arg<unsigned> distinctCount(argc, argv, 'd', randomCount);  // number of distinct articles used for random access
     cxxtools::Arg<char> ns(argc, argv, "--ns", 'A');
 
     if (argc != 2)
     {
-      std::cerr << "usage: " << argv[0] << " filename" << std::endl;
+      std::cerr << "usage: " << argv[0] << " [options] zimfile\n"
+                   "\t-n number\tnumber of linar accessed articles (default 1000)\n"
+                   "\t-r number\tnumber of random accessed articles (default: same as -n)\n"
+                   "\t-d number\tnumber of distinct articles used for random access (default: same as -r)\n"
+                << std::flush;
       return 1;
     }
 
