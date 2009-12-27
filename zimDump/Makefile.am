@@ -1,9 +1,10 @@
 AM_CPPFLAGS=-I$(top_builddir)/include
-bin_PROGRAMS = zimDump zimSearch
-noinst_PROGRAMS = zimIntStream zimBench
+if MAKE_BENCHMARK
+  ZIMBENCH = zimBench
+endif
+bin_PROGRAMS = zimDump zimSearch $(ZIMBENCH)
 zimDump_SOURCES = zimDump.cpp
 zimSearch_SOURCES = zimSearch.cpp
-zimIntStream_SOURCES = zimIntStream.cpp
 zimBench_SOURCES = zimBench.cpp
 AM_LDFLAGS = -lcxxtools
 LDADD = $(top_builddir)/src/libzim.la
