@@ -1,5 +1,5 @@
 if WITH_CXXTOOLS
-    ZIMDUMP_DIR = zimDump
+    TOOLS_DIR = src/tools
 
 if MAKE_UNITTEST
     UNITTEST_DIR = test
@@ -14,5 +14,4 @@ endif
 SUBDIRS = \
 	src \
 	include \
-    $(ZIMDUMP_DIR) $(UNITTEST_DIR)
-
+    $(TOOLS_DIR) $(UNITTEST_DIR)

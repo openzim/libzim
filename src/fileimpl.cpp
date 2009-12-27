@@ -24,11 +24,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <sstream>
 #include <errno.h>
 #include "config.h"
 #include "log.h"
+#include "envvalue.h"
 
 #ifdef WITH_CXXTOOLS
 #  include <cxxtools/systemerror.h>
@@ -38,20 +38,6 @@ log_define("zim.file.impl")
 
 namespace zim
 {
-  namespace
-  {
-    unsigned envValue(const char* env, unsigned def)
-    {
-      const char* v = ::getenv(env);
-      if (v)
-      {
-        std::istringstream s(v);
-        s >> def;
-      }
-      return def;
-    }
-  }
-
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //

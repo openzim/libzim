@@ -20,8 +20,10 @@
 
 #include "zim/unlzmastream.h"
 #include "log.h"
+#include "config.h"
 #include <sstream>
 #include <cstring>
+#include "envvalue.h"
 
 log_define("zim.lzma.uncompress")
 
@@ -55,6 +57,7 @@ namespace zim
       }
       return ret;
     }
+
   }
 
   UnlzmaStreamBuf::UnlzmaStreamBuf(std::streambuf* sinksource_, unsigned bufsize_)
@@ -64,8 +67,10 @@ namespace zim
   {
     std::memset(reinterpret_cast<void*>(&stream), 0, sizeof(stream));
 
+    unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
+    log_debug("lzma memory size=" << memsize);
     checkError(
-      ::lzma_stream_decoder(&stream, 100*1024*1024, 0));
+      ::lzma_stream_decoder(&stream, memsize, 0));
   }
 
   UnlzmaStreamBuf::~UnlzmaStreamBuf()

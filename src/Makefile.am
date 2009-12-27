@@ -11,6 +11,7 @@ libzim_la_SOURCES = \
 	cluster.cpp \
 	deflatestream.cpp \
 	dirent.cpp \
+	envvalue.cpp \
 	file.cpp \
 	fileheader.cpp \
 	fileimpl.cpp \
@@ -25,8 +26,11 @@ libzim_la_SOURCES = \
 	uuid.cpp \
 	zintstream.cpp
 
-#include_HEADERS = \
-#	ptrstream.h
+include_HEADERS = \
+	envvalue.h \
+	fileimpl.h \
+	log.h \
+	ptrstream.h
 
 libzim_la_LDFLAGS=-lz -lbz2 -llzma
 

@@ -103,6 +103,7 @@ int main(int argc, char* argv[])
     file = zim::File(filename);
 
     // linear read
+    std::cout << "linear:" << std::flush;
     cxxtools::Clock clock;
     clock.start();
 
@@ -111,13 +112,14 @@ int main(int argc, char* argv[])
       size += file.getArticle(ns, *it).getData().size();
 
     cxxtools::Timespan t = clock.stop();
-    std::cout << "linear:\tsize=" << size << "\tt=" << (t.totalMSecs() / 1000.0) << "s\t" << (static_cast<double>(urls.size()) / t.totalMSecs() * 1000.0) << " articles/s" << std::endl;
+    std::cout << "\tsize=" << size << "\tt=" << (t.totalMSecs() / 1000.0) << "s\t" << (static_cast<double>(urls.size()) / t.totalMSecs() * 1000.0) << " articles/s" << std::endl;
 
     // reopen file
     file = zim::File();
     file = zim::File(filename);
 
     // random access
+    std::cout << "random:" << std::flush;
     clock.start();
 
     size = 0;
@@ -128,7 +130,7 @@ int main(int argc, char* argv[])
       //size += file.getArticle(ns, *it).getData().size();
 
     t = clock.stop();
-    std::cout << "random:\tsize=" << size << "\tt=" << (t.totalMSecs() / 1000.0) << "s\t" << (static_cast<double>(randomCount) / t.totalMSecs() * 1000.0) << " articles/s" << std::endl;
+    std::cout << "\tsize=" << size << "\tt=" << (t.totalMSecs() / 1000.0) << "s\t" << (static_cast<double>(randomCount) / t.totalMSecs() * 1000.0) << " articles/s" << std::endl;
   }
   catch (const std::exception& e)
   {

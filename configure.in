@@ -1,4 +1,4 @@
-AC_INIT(zimlib, 0.92, [Tommi Maekitalo <tommi@tntnet.org>])
+AC_INIT(zimlib, 0.92.20091227-3, [Tommi Maekitalo <tommi@tntnet.org>])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 abi_current=1
@@ -52,23 +52,35 @@ AC_ARG_WITH([dirent-cache-size],
 
 AC_DEFINE_UNQUOTED(DIRENT_CACHE_SIZE, $dirent_cache_size, [set dirent cache size to number of cached chunks])
 
+#
+# unittest
+#
 AC_ARG_ENABLE([unittest],
   AS_HELP_STRING([--disable-unittest], [disable building of unittest]),
   [enable_unittest=$enableval],
   [enable_unittest=yes])
 
+AM_CONDITIONAL(MAKE_UNITTEST, test "$enable_unittest" = "yes")
+
+#
+# benchmark tool
+#
 AC_ARG_ENABLE([benchmark],
   AS_HELP_STRING([--enable-benchmark], [build benchmark tool zimBench]),
   [enable_benchmark=$enableval],
   [enable_benchmark=disable_benchmark])
 
-AC_MSG_CHECKING([unittest])
-AM_CONDITIONAL(MAKE_UNITTEST, test "$enable_unittest" = "yes")
-AC_MSG_RESULT([enable_unittest=$enable_unittest])
-
-AC_MSG_CHECKING([bechmark])
 AM_CONDITIONAL(MAKE_BENCHMARK, test "$enable_benchmark" = "yes")
-AC_MSG_RESULT([enable_benchmark=$enable_benchmark])
+
+#
+# lzma memory usage
+#
+AC_ARG_WITH([lzma-memory-size],
+  AS_HELP_STRING([--with-lzma-memory-size=number], [set lzma uncompress memory in MB (default:128)]),
+  [lzma_memory_size=$withval],
+  [lzma_memory_size=128])
+
+AC_DEFINE_UNQUOTED(LZMA_MEMORY_SIZE, $lzma_memory_size, [set lzma uncompress memory size to number of MB])
 
 #
 # output
@@ -76,8 +88,8 @@ AC_MSG_RESULT([enable_benchmark=$enable_benchmark])
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  src/tools/Makefile
   include/Makefile
-  zimDump/Makefile
   test/Makefile
   ])
 
