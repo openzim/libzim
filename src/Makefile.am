@@ -28,7 +28,6 @@ libzim_la_SOURCES = \
 
 include_HEADERS = \
 	envvalue.h \
-	fileimpl.h \
 	log.h \
 	ptrstream.h
 
