@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     if (argc != 2)
     {
       std::cerr << "usage: " << argv[0] << " [options] zimfile\n"
-                   "\t-n number\tnumber of linar accessed articles (default 1000)\n"
+                   "\t-n number\tnumber of linear accessed articles (default 1000)\n"
                    "\t-r number\tnumber of random accessed articles (default: same as -n)\n"
                    "\t-d number\tnumber of distinct articles used for random access (default: same as -r)\n"
                 << std::flush;
