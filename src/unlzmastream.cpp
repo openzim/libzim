@@ -68,7 +68,6 @@ namespace zim
     std::memset(reinterpret_cast<void*>(&stream), 0, sizeof(stream));
 
     unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
-    log_debug("lzma memory size=" << memsize);
     checkError(
       ::lzma_stream_decoder(&stream, memsize, 0));
   }
@@ -81,8 +80,6 @@ namespace zim
 
   UnlzmaStreamBuf::int_type UnlzmaStreamBuf::overflow(int_type c)
   {
-    log_trace("overflow");
-
     if (pptr())
     {
       // initialize input-stream for
@@ -96,8 +93,6 @@ namespace zim
         stream.next_out = reinterpret_cast<uint8_t*>(ibuffer());
         stream.avail_out = ibuffer_size();
 
-        log_debug("lzma_code LZMA_RUN; next_in=" << static_cast<const void*>(stream.next_in) << " avail_in=" << stream.avail_in
-            << " next_out=" << static_cast<const void*>(stream.next_out) << " avail_out=" << stream.avail_out);
         ret = ::lzma_code(&stream, LZMA_RUN);
         checkError(ret);
 
@@ -120,8 +115,6 @@ namespace zim
   UnlzmaStreamBuf::int_type UnlzmaStreamBuf::underflow()
   {
     // read from sinksource and decompress into obuffer
-
-    log_trace("underflow");
 
     stream.next_out = reinterpret_cast<uint8_t*>(obuffer());
     stream.avail_out = obuffer_size();
@@ -152,8 +145,6 @@ namespace zim
 
       // at least one character received from source - pass to decompressor
 
-      log_debug("lzma_code LZMA_RUN; next_in=" << static_cast<const void*>(stream.next_in) << " avail_in=" << stream.avail_in
-          << " next_out=" << static_cast<const void*>(stream.next_out) << " avail_out=" << stream.avail_out);
       checkError(::lzma_code(&stream, LZMA_RUN));
 
       setg(obuffer(), obuffer(), obuffer() + obuffer_size() - stream.avail_out);
