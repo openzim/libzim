@@ -48,7 +48,7 @@ namespace zim
 
     public:
       LzmaStreamBuf(std::streambuf* sink_,
-        uint32_t preset = 9                   /* | LZMA_PRESET_EXTREME */,
+        uint32_t preset = 3 | LZMA_PRESET_EXTREME,
         lzma_check check = LZMA_CHECK_CRC32   /* LZMA_CHECK_NONE */,
         unsigned bufsize = 8192);
       ~LzmaStreamBuf();
@@ -71,14 +71,14 @@ namespace zim
 
     public:
       explicit LzmaStream(std::streambuf* sink,
-        uint32_t preset = 9                   /* | LZMA_PRESET_EXTREME */,
+        uint32_t preset = 3 | LZMA_PRESET_EXTREME,
         lzma_check check = LZMA_CHECK_CRC32   /* LZMA_CHECK_NONE */,
         unsigned bufsize = 8192)
         : std::ostream(0),
           streambuf(sink, preset, check, bufsize)
         { init(&streambuf); }
       explicit LzmaStream(std::ostream& sink,
-        uint32_t preset = 9                   /* | LZMA_PRESET_EXTREME */,
+        uint32_t preset = 3 | LZMA_PRESET_EXTREME,
         lzma_check check = LZMA_CHECK_CRC32   /* LZMA_CHECK_NONE */,
         unsigned bufsize = 8192)
         : std::ostream(0),
