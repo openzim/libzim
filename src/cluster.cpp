@@ -28,6 +28,8 @@
 #include <zim/lzmastream.h>
 #include <zim/unlzmastream.h>
 #include <zim/endian.h>
+#include <stdlib.h>
+#include <sstream>
 
 log_define("zim.cluster")
 
@@ -231,8 +233,28 @@ namespace zim
 
       case zimcompLzma:
         {
-          log_debug("compress data (lzma)");
-          zim::LzmaStream os(out);
+          uint32_t lzmaPreset = 3 | LZMA_PRESET_EXTREME;
+          /**
+           * read lzma preset from environment
+           * ZIM_LZMA_PRESET is a number followed optionally by a
+           * suffix 'e'. The number gives the preset and the suffix tells,
+           * if LZMA_PRESET_EXTREME should be set.
+           * e.g.:
+           *   ZIM_LZMA_LEVEL=9   => 9
+           *   ZIM_LZMA_LEVEL=3e  => 3 + extreme
+           */
+          const char* e = ::getenv("ZIM_LZMA_LEVEL");
+          if (e)
+          {
+            char flag = '\0';
+            std::istringstream s(e);
+            s >> lzmaPreset >> flag;
+            if (flag == 'e')
+              lzmaPreset |= LZMA_PRESET_EXTREME;
+          }
+
+          log_debug("compress data (lzma, " << std::hex << lzmaPreset << ")");
+          zim::LzmaStream os(out, lzmaPreset);
           os.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.write(os);
           os.end();
