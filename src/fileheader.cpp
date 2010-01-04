@@ -71,8 +71,8 @@ namespace zim
       return in;
     }
 
-    size_type version = fromLittleEndian(reinterpret_cast<const size_type*>(header + 4));
-    if (version != Fileheader::zimVersion)
+    uint16_t version = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 4));
+    if (version != static_cast<size_type>(Fileheader::zimVersion))
     {
       log_error("invalid zimfile version " << version << " found - "
           << Fileheader::zimVersion << " expected");
