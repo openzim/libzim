@@ -115,7 +115,7 @@ namespace zim
 
   std::pair<bool, File::const_iterator> File::findxByTitle(char ns, const std::string& title)
   {
-    log_debug("find article by title " << ns << " \"" << title << "\",  in file \"" << getFilename() << '"');
+    log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
     size_type l = getNamespaceBeginOffset(ns);
     size_type u = getNamespaceEndOffset(ns);

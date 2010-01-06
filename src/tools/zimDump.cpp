@@ -49,7 +49,7 @@ class ZimDumper
     void printInfo();
     void printNsInfo(char ch);
     void locateArticle(zim::size_type idx);
-    void findArticle(char ns, const char* url);
+    void findArticle(char ns, const char* expr, bool title);
     void dumpArticle();
     void dumpIndex();
     void printPage();
@@ -107,11 +107,14 @@ void ZimDumper::locateArticle(zim::size_type idx)
   pos = zim::File::const_iterator(&file, idx);
 }
 
-void ZimDumper::findArticle(char ns, const char* url)
+void ZimDumper::findArticle(char ns, const char* expr, bool title)
 {
-  log_debug("findArticle(" << ns << ", " << url << ')');
-  pos = file.find(ns, url);
-  log_debug("findArticle(" << ns << ", " << url << ") => idx=" << pos.getIndex());
+  log_debug("findArticle(" << ns << ", " << expr << ')');
+  if (title)
+    pos = file.findByTitle(ns, expr);
+  else
+    pos = file.find(ns, expr);
+  log_debug("findArticle(" << ns << ", " << expr << ") => idx=" << pos.getIndex());
 }
 
 void ZimDumper::printPage()
@@ -428,7 +431,7 @@ int main(int argc, char* argv[])
     if (indexOffset.isSet())
       app.locateArticle(indexOffset);
     else if (find.isSet())
-      app.findArticle(ns, find);
+      app.findArticle(ns, find, titleSort);
 
     // dump files
     if (dumpAll.isSet())
