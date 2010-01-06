@@ -251,7 +251,17 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
       "\tcluster size:    " << cluster.size() << "\n"
       "\tcluster offset:  " << file.getClusterOffset(dirent.getClusterNumber()) << "\n"
       "\tblob number:     " << dirent.getBlobNumber() << "\n"
-      "\tcompression:     " << static_cast<unsigned>(cluster.getCompression()) << "\n";
+      "\tcompression:     ";
+      switch (cluster.getCompression())
+      {
+        case zim::zimcompDefault: std::cout << "default"; break;
+        case zim::zimcompNone:    std::cout << "none"; break;
+        case zim::zimcompZip:     std::cout << "zip"; break;
+        case zim::zimcompBzip2:   std::cout << "bzip2"; break;
+        case zim::zimcompLzma:    std::cout << "lzma"; break;
+        default:                  std::cout << "unknown (" << static_cast<unsigned>(cluster.getCompression()) << ')'; break;
+      }
+      std::cout << "\n";
     }
   }
 
