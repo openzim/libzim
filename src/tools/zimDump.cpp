@@ -389,6 +389,7 @@ int main(int argc, char* argv[])
                    "  -d        print data of articles\n"
                    "  -p        print page\n"
                    "  -f title  find article\n"
+                   "  -t        sort (and find) articles by title instead of url\n"
                    "  -l        list articles\n"
                    "  -L        list articles as table\n"
                    "  -o idx    locate article by index\n"
