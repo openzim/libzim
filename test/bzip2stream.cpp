@@ -27,18 +27,22 @@
 
 class Bzip2streamTest : public cxxtools::unit::TestSuite
 {
+    std::string testtext;
+
   public:
     Bzip2streamTest()
       : cxxtools::unit::TestSuite("zim::Bzip2streamTest")
     {
       registerMethod("bunzip2Istream", *this, &Bzip2streamTest::bunzip2IstreamTest);
       registerMethod("bunzip2Ostream", *this, &Bzip2streamTest::bunzip2OstreamTest);
+
+      for (unsigned n = 0; n < 10240; ++n)
+        testtext += "Hello";
     }
 
     void bunzip2IstreamTest()
     {
       // test 
-      std::string testtext("HalloHalloHalloHalloHalloHalloHallo");
       std::stringstream bzip2target;
 
       {
@@ -49,7 +53,7 @@ class Bzip2streamTest : public cxxtools::unit::TestSuite
 
       {
         std::ostringstream msg;
-        msg << "teststring with " << testtext.size() << " bytes bzip2d into " << bzip2target.str().size() << " bytes";
+        msg << "teststring with " << testtext.size() << " bytes compressed into " << bzip2target.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
@@ -62,7 +66,7 @@ class Bzip2streamTest : public cxxtools::unit::TestSuite
 
       {
         std::ostringstream msg;
-        msg << "teststring bunzip2d to " << bunzip2target.str().size() << " bytes";
+        msg << "teststring uncompressed to " << bunzip2target.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
@@ -72,7 +76,6 @@ class Bzip2streamTest : public cxxtools::unit::TestSuite
     void bunzip2OstreamTest()
     {
       // test 
-      std::string testtext("HalloHalloHalloHalloHalloHalloHallo");
       std::stringstream bzip2target;
 
       {
@@ -83,7 +86,7 @@ class Bzip2streamTest : public cxxtools::unit::TestSuite
 
       {
         std::ostringstream msg;
-        msg << "teststring with " << testtext.size() << " bytes bzip2d into " << bzip2target.str().size() << " bytes";
+        msg << "teststring with " << testtext.size() << " bytes compressed into " << bzip2target.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
@@ -96,7 +99,7 @@ class Bzip2streamTest : public cxxtools::unit::TestSuite
 
       {
         std::ostringstream msg;
-        msg << "teststring bunzip2d to " << bunzip2target.str().size() << " bytes";
+        msg << "teststring uncompressed to " << bunzip2target.str().size() << " bytes";
         reportMessage(msg.str());
       }
 

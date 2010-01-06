@@ -19,17 +19,28 @@
 
 #include <zim/cluster.h>
 #include <zim/blob.h>
-#include <sstream>
-#include "log.h"
-#include <zim/deflatestream.h>
-#include <zim/inflatestream.h>
-#include <zim/bzip2stream.h>
-#include <zim/bunzip2stream.h>
-#include <zim/lzmastream.h>
-#include <zim/unlzmastream.h>
 #include <zim/endian.h>
 #include <stdlib.h>
 #include <sstream>
+
+#include "log.h"
+
+#include "config.h"
+
+#ifdef ENABLE_ZLIB
+#include <zim/deflatestream.h>
+#include <zim/inflatestream.h>
+#endif
+
+#ifdef ENABLE_BZIP2
+#include <zim/bzip2stream.h>
+#include <zim/bunzip2stream.h>
+#endif
+
+#ifdef ENABLE_LZMA
+#include <zim/lzmastream.h>
+#include <zim/unlzmastream.h>
+#endif
 
 log_define("zim.cluster")
 
@@ -159,28 +170,40 @@ namespace zim
 
       case zimcompZip:
         {
+#ifdef ENABLE_ZLIB
           log_debug("uncompress data (zlib)");
           zim::InflateStream is(in);
           is.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.read(is);
+#else
+          throw std::runtime_error("zlib not enabled in this library");
+#endif
           break;
         }
 
       case zimcompBzip2:
         {
+#ifdef ENABLE_BZIP2
           log_debug("uncompress data (bzip2)");
           zim::Bunzip2Stream is(in);
           is.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.read(is);
+#else
+          throw std::runtime_error("bzip2 not enabled in this library");
+#endif
           break;
         }
 
       case zimcompLzma:
         {
+#ifdef ENABLE_LZMA
           log_debug("uncompress data (lzma)");
           zim::UnlzmaStream is(in);
           is.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.read(is);
+#else
+          throw std::runtime_error("lzma not enabled in this library");
+#endif
           break;
         }
 
@@ -213,26 +236,35 @@ namespace zim
 
       case zimcompZip:
         {
+#ifdef ENABLE_ZLIB
           log_debug("compress data (zlib)");
           zim::DeflateStream os(out);
           os.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.write(os);
           os.flush();
+#else
+          throw std::runtime_error("zlib not enabled in this library");
+#endif
           break;
         }
 
       case zimcompBzip2:
         {
+#ifdef ENABLE_BZIP2
           log_debug("compress data (bzip2)");
           zim::Bzip2Stream os(out);
           os.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.write(os);
           os.end();
+#else
+          throw std::runtime_error("bzip2 not enabled in this library");
+#endif
           break;
         }
 
       case zimcompLzma:
         {
+#ifdef ENABLE_LZMA
           uint32_t lzmaPreset = 3 | LZMA_PRESET_EXTREME;
           /**
            * read lzma preset from environment
@@ -258,6 +290,9 @@ namespace zim
           os.exceptions(std::ios::failbit | std::ios::badbit);
           clusterImpl.write(os);
           os.end();
+#else
+          throw std::runtime_error("lzma not enabled in this library");
+#endif
           break;
         }
 

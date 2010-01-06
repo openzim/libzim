@@ -27,25 +27,29 @@
 
 class ZlibstreamTest : public cxxtools::unit::TestSuite
 {
+    std::string testtext;
+
   public:
     ZlibstreamTest()
       : cxxtools::unit::TestSuite("zim::ZlibstreamTest")
     {
       registerMethod("inflatorIstream", *this, &ZlibstreamTest::inflatorIstreamTest);
       registerMethod("inflatorOstream", *this, &ZlibstreamTest::inflatorOstreamTest);
+
+      for (unsigned n = 0; n < 10240; ++n)
+        testtext += "Hello";
     }
 
     void inflatorIstreamTest()
     {
       // test 
-      std::string testtext("HalloHalloHalloHalloHalloHalloHallo");
       std::stringstream deflatetarget;
       zim::DeflateStream deflator(deflatetarget);
       deflator << testtext << std::flush;
 
       {
         std::ostringstream msg;
-        msg << "teststring with " << testtext.size() << " bytes deflated into " << deflatetarget.str().size() << " bytes";
+        msg << "teststring with " << testtext.size() << " bytes compressed into " << deflatetarget.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
@@ -55,7 +59,7 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
 
       {
         std::ostringstream msg;
-        msg << "teststring inflated to " << inflatetarget.str().size() << " bytes";
+        msg << "teststring uncompressed to " << inflatetarget.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
@@ -65,14 +69,13 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
     void inflatorOstreamTest()
     {
       // test 
-      std::string testtext("HalloHalloHalloHalloHalloHalloHallo");
       std::stringstream deflatetarget;
       zim::DeflateStream deflator(deflatetarget);
       deflator << testtext << std::flush;
 
       {
         std::ostringstream msg;
-        msg << "teststring with " << testtext.size() << " bytes deflated into " << deflatetarget.str().size() << " bytes";
+        msg << "teststring with " << testtext.size() << " bytes compressed into " << deflatetarget.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
@@ -82,7 +85,7 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
 
       {
         std::ostringstream msg;
-        msg << "teststring inflated to " << inflatetarget.str().size() << " bytes";
+        msg << "teststring uncompressed to " << inflatetarget.str().size() << " bytes";
         reportMessage(msg.str());
       }
 
