@@ -20,6 +20,7 @@
 #include <zim/lzmastream.h>
 #include "log.h"
 #include <cstring>
+#include <sstream>
 
 log_define("zim.lzma.compress")
 
