@@ -83,6 +83,9 @@ namespace zim
       File articlefile;
 
     public:
+      Search()
+          { }
+
       explicit Search(const File& zimfile)
         : indexfile(zimfile),
           articlefile(zimfile)
