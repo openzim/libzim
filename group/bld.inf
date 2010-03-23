@@ -1,0 +1,86 @@
+/*
+============================================================================
+ Name        : bld.inf
+ Author      : 
+ Copyright   : Your copyright notice
+ Description : This file provides the information required for building the
+               whole of a openctst.
+============================================================================
+*/
+
+PRJ_MMPFILES
+zimlib.mmp
+
+PRJ_EXPORTS
+../include/zim/article.h zim/article.h
+../include/zim/articlesearch.h zim/articlesearch.h
+../include/zim/blob.h  zim/blob.h
+../include/zim/bunzip2stream.h  zim/bunzip2stream.h
+../include/zim/bzip2.h  zim/bzip2.h
+../include/zim/bzip2stream.h  zim/bzip2stream.h
+../include/zim/cache.h  zim/cache.h
+../include/zim/cluster.h  zim/cluster.h
+../include/zim/deflatestream.h  zim/deflatestream.h
+../include/zim/dirent.h  zim/dirent.h
+../include/zim/endian.h  zim/endian.h
+../include/zim/error.h zim/error.h
+../include/zim/file.h zim/file.h
+../include/zim/fileheader.h zim/fileheader.h
+../include/zim/fileimpl.h zim/fileimpl.h
+../include/zim/fileiterator.h zim/fileiterator.h
+../include/zim/indexarticle.h zim/indexarticle.h
+../include/zim/inflatestream.h zim/inflatestream.h
+../include/zim/lzmastream.h zim/lzmastream.h
+../include/zim/noncopyable.h zim/noncopyable.h
+../include/zim/refcounted.h zim/refcounted.h
+../include/zim/search.h zim/search.h
+../include/zim/smartptr.h zim/smartptr.h
+../include/zim/template.h zim/template.h
+../include/zim/unicode.h zim/unicode.h
+../include/zim/unlzmastream.h zim/unlzmastream.h
+../include/zim/uuid.h zim/uuid.h
+../include/zim/zim.h zim/zim.h
+../include/zim/zintstream.h zim/zintstream.h
+/*
+============================================================================
+ Name        : bld.inf
+ Author      : 
+ Copyright   : Your copyright notice
+ Description : This file provides the information required for building the
+               whole of a openctst.
+============================================================================
+*/
+
+PRJ_MMPFILES
+zimlib.mmp
+
+PRJ_EXPORTS
+../include/zim/article.h zim/article.h
+../include/zim/articlesearch.h zim/articlesearch.h
+../include/zim/blob.h  zim/blob.h
+../include/zim/bunzip2stream.h  zim/bunzip2stream.h
+../include/zim/bzip2.h  zim/bzip2.h
+../include/zim/bzip2stream.h  zim/bzip2stream.h
+../include/zim/cache.h  zim/cache.h
+../include/zim/cluster.h  zim/cluster.h
+../include/zim/deflatestream.h  zim/deflatestream.h
+../include/zim/dirent.h  zim/dirent.h
+../include/zim/endian.h  zim/endian.h
+../include/zim/error.h zim/error.h
+../include/zim/file.h zim/file.h
+../include/zim/fileheader.h zim/fileheader.h
+../include/zim/fileimpl.h zim/fileimpl.h
+../include/zim/fileiterator.h zim/fileiterator.h
+../include/zim/indexarticle.h zim/indexarticle.h
+../include/zim/inflatestream.h zim/inflatestream.h
+../include/zim/lzmastream.h zim/lzmastream.h
+../include/zim/noncopyable.h zim/noncopyable.h
+../include/zim/refcounted.h zim/refcounted.h
+../include/zim/search.h zim/search.h
+../include/zim/smartptr.h zim/smartptr.h
+../include/zim/template.h zim/template.h
+../include/zim/unicode.h zim/unicode.h
+../include/zim/unlzmastream.h zim/unlzmastream.h
+../include/zim/uuid.h zim/uuid.h
+../include/zim/zim.h zim/zim.h
+../include/zim/zintstream.h zim/zintstream.h
