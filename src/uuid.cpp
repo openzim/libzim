@@ -26,7 +26,7 @@
 #include <cxxtools/md5stream.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #  include <time.h>
 #  include <windows.h>
