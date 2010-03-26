@@ -24,6 +24,27 @@
 
 namespace zim
 {
+#if USHRT_MAX == 0xffff
+
+    typedef unsigned short uint16_t;
+
+#elif UINT_MAX == 0xffff
+
+    typedef unsigned int uint16_t;
+
+#elif ULONG_MAX == 0xffff
+
+    typedef unsigned long uint16_t;
+
+#else
+
+}
+#include <stdint.h>
+namespace zim
+{
+
+#endif
+
 #if USHRT_MAX == 0xffffffffUL
 
     typedef unsigned short size_type;
