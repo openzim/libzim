@@ -11,6 +11,7 @@ nobase_include_HEADERS = \
 	zim/fileheader.h \
 	zim/fileimpl.h \
 	zim/fileiterator.h \
+	zim/fstream.h \
 	zim/indexarticle.h \
 	zim/noncopyable.h \
 	zim/search.h \

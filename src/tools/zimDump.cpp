@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <set>
 #include <zim/file.h>
 #include <zim/fileiterator.h>

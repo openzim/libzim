@@ -41,7 +41,7 @@ namespace zim
   // FileImpl
   //
   FileImpl::FileImpl(const char* fname)
-    : zimFile(fname, std::ios::in | std::ios::binary),
+    : zimFile(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE))
   {
@@ -109,6 +109,8 @@ namespace zim
   Dirent FileImpl::getDirent(size_type idx)
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
+
+    zimFile.setBufsize(64);
 
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
@@ -190,6 +192,8 @@ namespace zim
       log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
       return cluster;
     }
+
+    zimFile.setBufsize(16384);
 
     offset_type clusterOffset = getClusterOffset(idx);
     log_debug("read cluster " << idx << " from offset " << clusterOffset);

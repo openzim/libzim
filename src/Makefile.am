@@ -37,6 +37,7 @@ libzim_la_SOURCES = \
 	file.cpp \
 	fileheader.cpp \
 	fileimpl.cpp \
+	fstream.cpp \
 	indexarticle.cpp \
 	ptrstream.cpp \
 	search.cpp \
