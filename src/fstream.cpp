@@ -82,9 +82,9 @@ void streambuf::seekg(offset_type off)
 {
   setg(0, 0, 0);
 #ifdef HAVE_LSEEK64
-  int ret = ::lseek64(fd, off, SEEK_SET);
+  off64_t ret = ::lseek64(fd, off, SEEK_SET);
 #else
-  int ret = ::lseek(fd, off, SEEK_SET);
+  off_t ret = ::lseek(fd, off, SEEK_SET);
 #endif
   if (ret < 0)
   {
