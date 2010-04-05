@@ -19,6 +19,7 @@
 
 #include <zim/fstream.h>
 #include "log.h"
+#include "config.h"
 #include <sstream>
 #include <stdexcept>
 #include <errno.h>
@@ -80,8 +81,11 @@ streambuf::~streambuf()
 void streambuf::seekg(offset_type off)
 {
   setg(0, 0, 0);
-  // TODO
+#ifdef HAVE_LSEEK64
   int ret = ::lseek64(fd, off, SEEK_SET);
+#else
+  int ret = ::lseek(fd, off, SEEK_SET);
+#endif
   if (ret < 0)
   {
     std::ostringstream msg;

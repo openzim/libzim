@@ -13,7 +13,7 @@ AC_CONFIG_SRCDIR([src/file.cpp])
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_CHECK_HEADER([lzma.h], , AC_MSG_ERROR([lzma header files not found]))
-AC_CHECK_FUNCS([stat64])
+AC_CHECK_FUNCS([stat64 lseek64])
 
 AC_LANG(C++)
 
