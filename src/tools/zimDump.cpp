@@ -51,6 +51,7 @@ class ZimDumper
     void printNsInfo(char ch);
     void locateArticle(zim::size_type idx);
     void findArticle(char ns, const char* expr, bool title);
+    void findArticleByUrl(const std::string& url);
     void dumpArticle();
     void dumpIndex();
     void printPage();
@@ -116,6 +117,11 @@ void ZimDumper::findArticle(char ns, const char* expr, bool title)
   else
     pos = file.find(ns, expr);
   log_debug("findArticle(" << ns << ", " << expr << ") => idx=" << pos.getIndex());
+}
+
+void ZimDumper::findArticleByUrl(const std::string& url)
+{
+    pos = file.find(url);
 }
 
 void ZimDumper::printPage()
@@ -382,6 +388,7 @@ int main(int argc, char* argv[])
     cxxtools::Arg<bool> data(argc, argv, 'd');
     cxxtools::Arg<bool> page(argc, argv, 'p');
     cxxtools::Arg<const char*> find(argc, argv, 'f');
+    cxxtools::Arg<const char*> url(argc, argv, 'u');
     cxxtools::Arg<bool> list(argc, argv, 'l');
     cxxtools::Arg<bool> tableList(argc, argv, 'L');
     cxxtools::Arg<zim::size_type> indexOffset(argc, argv, 'o');
@@ -403,6 +410,7 @@ int main(int argc, char* argv[])
                    "  -d        print data of articles\n"
                    "  -p        print page\n"
                    "  -f title  find article\n"
+                   "  -u url    find article by url\n"
                    "  -t        sort (and find) articles by title instead of url\n"
                    "  -l        list articles\n"
                    "  -L        list articles as table\n"
@@ -443,6 +451,8 @@ int main(int argc, char* argv[])
       app.locateArticle(indexOffset);
     else if (find.isSet())
       app.findArticle(ns, find, titleSort);
+    else if (url.isSet())
+      app.findArticleByUrl(std::string(url));
 
     // dump files
     if (dumpAll.isSet())
