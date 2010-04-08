@@ -29,6 +29,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef O_LARGEFILE 
+#define O_LARGEFILE 0
+#endif
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 log_define("zim.fstream")
 
 namespace zim
@@ -65,9 +73,9 @@ int streambuf::sync()
 streambuf::streambuf(const char* fname, unsigned bufsize)
   : buffer(bufsize),
 #ifdef HAVE_OPEN64
-    fd(::open64(fname, 0))
+    fd(::open64(fname, O_RDONLY | O_LARGEFILE | O_BINARY))
 #else
-    fd(::open(fname, 0))
+    fd(::open(fname, O_RDONLY | O_LARGEFILE | O_BINARY))
 #endif
 {
   log_debug("streambuf for " << fname << " with " << bufsize << " bytes");
