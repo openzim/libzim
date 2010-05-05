@@ -54,9 +54,11 @@ namespace zim
       typedef streambuf::offset_type offset_type;
 
       explicit ifstream(const char* fname, unsigned bufsize = 8192)
-        : std::iostream(&myStreambuf),
+        : std::iostream(0),
           myStreambuf(fname, bufsize)
-      { }
+      {
+        init(&myStreambuf);
+      }
 
       void seekg(offset_type off) { myStreambuf.seekg(off); }
       void setBufsize(unsigned s) { myStreambuf.setBufsize(s); }
