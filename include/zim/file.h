@@ -86,7 +86,6 @@ namespace zim
       const_iterator find(const std::string& url);
 
       bool good() const    { return impl.getPointer() != 0; }
-      time_t getMTime() const   { return impl->getMTime(); }
 
       const std::string& getMimeType(uint16_t idx) const   { return impl->getMimeType(idx); }
   };

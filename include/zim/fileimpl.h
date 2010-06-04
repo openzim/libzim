@@ -46,7 +46,6 @@ namespace zim
       NamespaceCache namespaceEndCache;
 
       std::string namespaces;
-      time_t mtime;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
@@ -55,8 +54,6 @@ namespace zim
 
     public:
       explicit FileImpl(const char* fname);
-
-      time_t getMTime() const   { return mtime; }
 
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
