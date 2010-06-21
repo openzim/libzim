@@ -49,7 +49,7 @@ libzim_la_SOURCES = \
 	$(BZIP2_SOURCES) \
 	$(LZMA_SOURCES)
 
-include_HEADERS = \
+noinst_HEADERS = \
 	envvalue.h \
 	log.h \
 	ptrstream.h
