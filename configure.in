@@ -31,7 +31,7 @@ then
   AC_CHECK_HEADER([cxxtools/condition.h], , AC_MSG_ERROR([cxxtools headers not found]))
 fi
 
-AM_CONDITIONAL(WITH_CXXTOOLS, test "$with_cxxtools" = yes)
+AM_CONDITIONAL([WITH_CXXTOOLS], test "$with_cxxtools" = yes)
 
 #
 # cache size
