@@ -78,7 +78,7 @@ namespace zim
         return *this;
       }
 
-      const_iterator& operator--(int)
+      const_iterator operator--(int)
       {
         const_iterator it = *this;
         operator--();
