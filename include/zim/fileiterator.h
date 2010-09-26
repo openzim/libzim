@@ -67,8 +67,8 @@ namespace zim
       const_iterator operator++(int)
       {
         const_iterator it = *this;
-        ++it;
-        return *this;
+        operator++();
+        return it;
       }
 
       const_iterator& operator--()
@@ -81,8 +81,8 @@ namespace zim
       const_iterator& operator--(int)
       {
         const_iterator it = *this;
-        --it;
-        return *this;
+        operator--();
+        return it;
       }
 
       const Article& operator*() const
