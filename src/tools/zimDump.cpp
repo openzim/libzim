@@ -358,6 +358,8 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
 
 void ZimDumper::dumpFiles(const std::string& directory)
 {
+  ::mkdir(directory.c_str(), 0777);
+
   std::set<char> ns;
   for (zim::File::const_iterator it = pos; it != file.end(); ++it)
   {
