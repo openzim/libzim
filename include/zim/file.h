@@ -90,6 +90,8 @@ namespace zim
       const std::string& getMimeType(uint16_t idx) const   { return impl->getMimeType(idx); }
   };
 
+  std::string urldecode(const std::string& url);
+
 }
 
 #endif // ZIM_FILE_H
