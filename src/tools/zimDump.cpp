@@ -63,6 +63,7 @@ class ZimDumper
     void listArticleT(bool extra)
       { listArticleT(*pos, extra); }
     void dumpFiles(const std::string& directory);
+    void verifyChecksum();
 };
 
 void ZimDumper::printInfo()
@@ -82,6 +83,13 @@ void ZimDumper::printInfo()
                "title idx pos: " << file.getFileheader().getTitleIdxPos() << "\n"
                "cluster count: " << file.getFileheader().getClusterCount() << "\n"
                "cluster ptr pos: " << file.getFileheader().getClusterPtrPos() << "\n";
+  if (file.getFileheader().hasChecksum())
+    std::cout << 
+               "checksum pos: " << file.getFileheader().getChecksumPos() << "\n"
+               "checksum: " << file.getChecksum() << "\n";
+  else
+    std::cout << 
+               "no checksum\n";
 
   if (file.getFileheader().hasMainPage())
     std::cout << "main page: " << file.getFileheader().getMainPage() << "\n";
@@ -378,6 +386,14 @@ void ZimDumper::dumpFiles(const std::string& directory)
   }
 }
 
+void ZimDumper::verifyChecksum()
+{
+  if (file.verify())
+    std::cout << "checksum ok" << std::endl;
+  else
+    std::cout << "no checksum" << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
   try
@@ -400,6 +416,7 @@ int main(int argc, char* argv[])
     cxxtools::Arg<bool> verbose(argc, argv, 'v');
     cxxtools::Arg<bool> zint(argc, argv, 'Z');
     cxxtools::Arg<bool> titleSort(argc, argv, 't');
+    cxxtools::Arg<bool> verifyChecksum(argc, argv, 'C');
 
     if (argc <= 1)
     {
@@ -423,6 +440,7 @@ int main(int argc, char* argv[])
                    "  -v        verbose (print uncompressed length of articles when -i is set)\n"
                    "                    (print namespaces with counts with -F)\n"
                    "  -Z        dump index data\n"
+                   "  -C        verify checksum\n"
                    "\n"
                    "examples:\n"
                    "  " << argv[0] << " -F wikipedia.zim\n"
@@ -471,6 +489,9 @@ int main(int argc, char* argv[])
       app.listArticle(extra);
     else if (zint)
       app.dumpIndex();
+
+    if (verifyChecksum)
+      app.verifyChecksum();
   }
   catch (const std::exception& e)
   {

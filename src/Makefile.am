@@ -26,6 +26,10 @@ endif
 
 if WITH_CXXTOOLS
 CXXTOOLS_LDFLAGS = -lcxxtools
+else
+NOCXXTOOLS_SOURCES = \
+	md5.c \
+	md5stream.cpp
 endif
 
 libzim_la_SOURCES = \
@@ -47,11 +51,14 @@ libzim_la_SOURCES = \
 	zintstream.cpp \
 	$(ZLIB_SOURCES) \
 	$(BZIP2_SOURCES) \
-	$(LZMA_SOURCES)
+	$(LZMA_SOURCES) \
+	$(NOCXXTOOLS_SOURCES)
 
 noinst_HEADERS = \
 	envvalue.h \
 	log.h \
+	md5.h \
+	md5stream.h \
 	ptrstream.h
 
 libzim_la_LDFLAGS = $(ZLIB_LDFLAGS) $(BZIP2_LDFLAGS) $(LZMA_LDFLAGS) $(CXXTOOLS_LDFLAGS)

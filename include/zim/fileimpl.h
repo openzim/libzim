@@ -76,6 +76,9 @@ namespace zim
       bool hasNamespace(char ch);
 
       const std::string& getMimeType(uint16_t idx) const;
+
+      std::string getChecksum();
+      bool verify();
   };
 
 }

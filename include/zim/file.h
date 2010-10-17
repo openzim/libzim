@@ -88,6 +88,9 @@ namespace zim
       bool good() const    { return impl.getPointer() != 0; }
 
       const std::string& getMimeType(uint16_t idx) const   { return impl->getMimeType(idx); }
+
+      std::string getChecksum()   { return impl->getChecksum(); }
+      bool verify()               { return impl->verify(); }
   };
 
   std::string urldecode(const std::string& url);
