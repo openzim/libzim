@@ -60,21 +60,21 @@ namespace zim
       FilesType files;
       OpenFilesCacheType openFilesCache;
       OpenfileInfoPtr currentFile;
-      offset_type currentPos;
+      zim::offset_type currentPos;
 
       std::streambuf::int_type overflow(std::streambuf::int_type ch);
       std::streambuf::int_type underflow();
       int sync();
 
-      void setCurrentFile(const std::string& fname, offset_type off);
+      void setCurrentFile(const std::string& fname, zim::offset_type off);
 
     public:
       streambuf(const std::string& fname, unsigned bufsize, unsigned openFilesCache);
 
-      void seekg(offset_type off);
+      void seekg(zim::offset_type off);
       void setBufsize(unsigned s)
       { buffer.resize(s); }
-      offset_type fsize() const;
+      zim::offset_type fsize() const;
   };
 
   class ifstream : public std::istream
@@ -89,9 +89,9 @@ namespace zim
         init(&myStreambuf);
       }
 
-      void seekg(offset_type off) { myStreambuf.seekg(off); }
+      void seekg(zim::offset_type off) { myStreambuf.seekg(off); }
       void setBufsize(unsigned s) { myStreambuf.setBufsize(s); }
-      offset_type fsize() const  { return myStreambuf.fsize(); }
+      zim::offset_type fsize() const  { return myStreambuf.fsize(); }
   };
 
 }

@@ -94,7 +94,7 @@ streambuf::FileInfo::FileInfo(const std::string& fname_, int fd)
     throw std::runtime_error(msg.str());
   }
 
-  fsize = static_cast<offset_type>(ret);
+  fsize = static_cast<zim::offset_type>(ret);
 }
 
 std::streambuf::int_type streambuf::overflow(std::streambuf::int_type ch)
@@ -227,7 +227,7 @@ streambuf::streambuf(const std::string& fname, unsigned bufsize, unsigned noOpen
   setCurrentFile((*files.begin())->fname, 0);
 }
 
-void streambuf::setCurrentFile(const std::string& fname, offset_type off)
+void streambuf::setCurrentFile(const std::string& fname, zim::offset_type off)
 {
   std::pair<bool, OpenfileInfoPtr> f = openFilesCache.getx(fname);
   if (f.first)
@@ -259,12 +259,12 @@ void streambuf::setCurrentFile(const std::string& fname, offset_type off)
   }
 }
 
-void streambuf::seekg(offset_type off)
+void streambuf::seekg(zim::offset_type off)
 {
   setg(0, 0, 0);
   currentPos = off;
 
-  offset_type o = off;
+  zim::offset_type o = off;
   FilesType::iterator it;
   for (it = files.begin(); it != files.end() && (*it)->fsize < o; ++it)
     o -= (*it)->fsize;
@@ -279,9 +279,9 @@ void streambuf::seekg(offset_type off)
   setCurrentFile((*it)->fname, o);
 }
 
-offset_type streambuf::fsize() const
+zim::offset_type streambuf::fsize() const
 {
-  offset_type o = 0;
+  zim::offset_type o = 0;
   for (FilesType::const_iterator it = files.begin(); it != files.end(); ++it)
     o += (*it)->fsize;
   return o;
