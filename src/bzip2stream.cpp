@@ -103,7 +103,7 @@ namespace zim
   {
     // initialize input-stream for
     stream.next_in = &obuffer[0];
-    stream.avail_in = pptr() - pbase();
+    stream.avail_in = pptr() - &obuffer[0];
     char zbuffer[8192];
     int ret;
     do
@@ -135,7 +135,7 @@ namespace zim
     char zbuffer[8192];
     // initialize input-stream for
     stream.next_in = &obuffer[0];
-    stream.avail_in = pptr() - pbase();
+    stream.avail_in = pptr() - &obuffer[0];
     int ret;
     do
     {
@@ -151,7 +151,7 @@ namespace zim
       {
         std::streamsize n = sink->sputn(zbuffer, count);
         if (n < count)
-          return -1;
+          throw Bzip2CompressError(0, "failed to send compressed data to sink in bzip2stream");
       }
     } while (ret != BZ_STREAM_END);
 

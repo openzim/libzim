@@ -11,6 +11,7 @@ AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/file.cpp])
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_CHECK_HEADER([lzma.h], , AC_MSG_ERROR([lzma header files not found]))
