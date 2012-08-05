@@ -44,6 +44,7 @@ namespace zim
 
       const std::string& getFilename() const   { return impl->getFilename(); }
       const Fileheader& getFileheader() const  { return impl->getFileheader(); }
+      offset_type getFilesize() const          { return impl->getFilesize(); }
 
       Dirent getDirent(size_type idx)          { return impl->getDirent(idx); }
       Dirent getDirentByTitle(size_type idx)   { return impl->getDirentByTitle(idx); }
