@@ -25,7 +25,7 @@
 #include <zim/fileiterator.h>
 #include <zim/zintstream.h>
 #include <cxxtools/arg.h>
-#include <cxxtools/loginit.h>
+#include <cxxtools/log.h>
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>

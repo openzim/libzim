@@ -18,7 +18,7 @@
  */
 
 #include <iostream>
-#include <cxxtools/loginit.h>
+#include <cxxtools/log.h>
 #include <cxxtools/arg.h>
 #include <zim/search.h>
 
