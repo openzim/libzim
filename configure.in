@@ -19,13 +19,20 @@ AC_CHECK_FUNCS([stat64 lseek64 open64])
 
 AC_LANG(C++)
 
+AX_COMPILER_VENDOR
+AS_IF([test "$ax_cv_cxx_compiler_vendor" = "ibm"],
+      [CXXFLAGS="$CXXFLAGS -qrtti -qlanglvl=newexcp -D__NOLOCK_ON_INPUT -D__NOLOCK_ON_OUTPUT"])
+AX_CHECK_COMPILE_FLAG([-Wno-long-long], [CXXFLAGS="$CXXFLAGS -Wno-long-long"])
+AX_CHECK_COMPILE_FLAG([-Wall], [CXXFLAGS="$CXXFLAGS -Wall"])
+AX_CHECK_COMPILE_FLAG([-pedantic], [CXXFLAGS="$CXXFLAGS -pedantic"])
+
 #
 # cxxtools
 #
 AC_ARG_WITH([cxxtools],
   AS_HELP_STRING([--with-cxxtools=yes|no], [use cxxtools (default:yes)]),
   [with_cxxtools=$withval],
-  [with_cxxtools=yes])
+  [with_cxxtools=no])
 
 if test "$with_cxxtools" = "yes"
 then

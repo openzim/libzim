@@ -24,6 +24,9 @@
 #include "log.h"
 #ifdef WITH_CXXTOOLS
 #include <cxxtools/md5stream.h>
+#else
+#include <unistd.h>
+#include <string.h>
 #endif
 
 #ifdef _WIN32
@@ -83,10 +86,12 @@ namespace zim
     } u;
     u.p = &ret;
 
-    *reinterpret_cast<int32_t*>(ret.data) = u.n;
-    *reinterpret_cast<int32_t*>(ret.data + 4) = static_cast<int32_t>(tv.tv_sec);
-    *reinterpret_cast<int32_t*>(ret.data + 8) = static_cast<int32_t>(tv.tv_usec);
-    *reinterpret_cast<int32_t*>(ret.data + 12) = static_cast<int32_t>(getpid());
+    int32_t data[4];
+    data[0] = u.n;
+    data[1] = static_cast<int32_t>(tv.tv_sec);
+    data[2] = static_cast<int32_t>(tv.tv_usec);
+    data[3] = static_cast<int32_t>(getpid());
+    memcpy(ret.data, data, 128);
 
 #endif
 

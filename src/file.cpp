@@ -204,10 +204,10 @@ namespace zim
     enum {
       state_0,
       state_h1,
-      state_h2,
+      state_h2
     } state = state_0;
 
-    char ch;
+    char ch = '\0';
     for (std::string::const_iterator it = url.begin(); it != url.end(); ++it)
     {
       switch (state)
@@ -222,9 +222,9 @@ namespace zim
           break;
 
         case state_h1:
-          if (*it >= '0' && *it <= '9'
-            ||*it >= 'A' && *it <= 'F'
-            ||*it >= 'a' && *it <= 'f')
+          if ( (*it >= '0' && *it <= '9')
+            || (*it >= 'A' && *it <= 'F')
+            || (*it >= 'a' && *it <= 'f'))
           {
             ch = *it;
             state = state_h2;
@@ -238,9 +238,9 @@ namespace zim
           break;
 
         case state_h2:
-          if (*it >= '0' && *it <= '9'
-            ||*it >= 'A' && *it <= 'F'
-            ||*it >= 'a' && *it <= 'f')
+          if ( (*it >= '0' && *it <= '9')
+            || (*it >= 'A' && *it <= 'F')
+            || (*it >= 'a' && *it <= 'f'))
           {
             ret += static_cast<char>(hexval(ch) * 16 + hexval(*it));
           }
@@ -257,6 +257,9 @@ namespace zim
 
     switch (state)
     {
+      case state_0:
+        break;
+
       case state_h1:
         ret += '%';
         break;
