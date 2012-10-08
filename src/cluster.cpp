@@ -104,9 +104,14 @@ namespace zim
     if (offsets.size() > 1)
     {
       n = offsets.back() - offsets.front();
-      data.resize(n);
-      log_debug1("read " << n << " bytes of data");
-      in.read(&(data[0]), n);
+      if (n > 0)
+      {
+        data.resize(n);
+        log_debug1("read " << n << " bytes of data");
+        in.read(&(data[0]), n);
+      }
+      else
+        log_warn("read empty cluster");
     }
   }
 
@@ -121,7 +126,10 @@ namespace zim
       out.write(reinterpret_cast<const char*>(&o), sizeof(size_type));
     }
 
-    out.write(&(data[0]), data.size());
+    if (data.size() > 0)
+      out.write(&(data[0]), data.size());
+    else
+      log_warn("write empty cluster");
   }
 
   void ClusterImpl::addBlob(const Blob& blob)

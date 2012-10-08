@@ -35,6 +35,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
     {
       registerMethod("CreateCluster", *this, &ClusterTest::CreateCluster);
       registerMethod("ReadWriteCluster", *this, &ClusterTest::ReadWriteCluster);
+      registerMethod("ReadWriteEmpty", *this, &ClusterTest::ReadWriteEmpty);
 #ifdef ENABLE_ZLIB
       registerMethod("ReadWriteClusterZ", *this, &ClusterTest::ReadWriteClusterZ);
 #endif
@@ -89,6 +90,27 @@ class ClusterTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), blob0.size());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(1), blob1.size());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(2), blob2.size());
+    }
+
+    void ReadWriteEmpty()
+    {
+      std::stringstream s;
+
+      zim::Cluster cluster;
+
+      cluster.addBlob(0, 0);
+      cluster.addBlob(0, 0);
+      cluster.addBlob(0, 0);
+
+      s << cluster;
+
+      zim::Cluster cluster2;
+      s >> cluster2;
+      CXXTOOLS_UNIT_ASSERT(!s.fail());
+      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), 0);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(1), 0);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(2), 0);
     }
 
 #ifdef ENABLE_ZLIB
