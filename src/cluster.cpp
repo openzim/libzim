@@ -141,7 +141,9 @@ namespace zim
 
   Blob ClusterImpl::getBlob(size_type n) const
   {
-    return Blob(const_cast<ClusterImpl*>(this), getData(n), getSize(n));
+    size_type s = getSize();
+    return s > 0 ? Blob(const_cast<ClusterImpl*>(this), getData(n), getSize(n))
+                 : Blob();
   }
 
   void ClusterImpl::clear()
