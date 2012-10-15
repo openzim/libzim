@@ -51,10 +51,12 @@ libzim_la_SOURCES = \
 	$(LZMA_SOURCES)
 
 noinst_HEADERS = \
+	arg.h \
 	envvalue.h \
 	log.h \
 	md5.h \
 	md5stream.h \
-	ptrstream.h
+	ptrstream.h \
+	tee.h
 
 libzim_la_LDFLAGS = $(ZLIB_LDFLAGS) $(BZIP2_LDFLAGS) $(LZMA_LDFLAGS)
