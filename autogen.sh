@@ -3,9 +3,8 @@
 
 libtoolize --force --automake
 
-rm -f config.cache
-rm -f config.log
-aclocal
+rm -f config.cache config.log
+aclocal -I m4
 autoheader
 autoconf
 automake -a
