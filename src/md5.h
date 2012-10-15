@@ -85,20 +85,20 @@ typedef unsigned int UINT4;
 #endif
 
 /* MD5 context. */
-typedef struct {
+struct zim_MD5_CTX {
   UINT4 state[4];                                   /* state (ABCD) */
   UINT4 count[2];        /* number of bits, modulo 2^64 (lsb first) */
   unsigned char buffer[64];                         /* input buffer */
-} zim_MD5_CTX;
+};
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void zim_MD5Init PROTO_LIST ((zim_MD5_CTX *));
+void zim_MD5Init PROTO_LIST ((struct zim_MD5_CTX *));
 void zim_MD5Update PROTO_LIST
-  ((zim_MD5_CTX *, const unsigned char *, unsigned int));
-void zim_MD5Final PROTO_LIST ((unsigned char [16], zim_MD5_CTX *));
+  ((struct zim_MD5_CTX *, const unsigned char *, unsigned int));
+void zim_MD5Final PROTO_LIST ((unsigned char [16], struct zim_MD5_CTX *));
 
 #ifdef __cplusplus
 }

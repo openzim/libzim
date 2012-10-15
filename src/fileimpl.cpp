@@ -29,13 +29,7 @@
 #include "config.h"
 #include "log.h"
 #include "envvalue.h"
-
-#ifdef WITH_CXXTOOLS
-#  include <cxxtools/systemerror.h>
-#  include <cxxtools/md5stream.h>
-#else
-#  include "md5stream.h"
-#endif
+#include "md5stream.h"
 
 log_define("zim.file.impl")
 
@@ -331,11 +325,7 @@ namespace zim
     if (!header.hasChecksum())
       return false;
 
-#ifdef WITH_CXXTOOLS
-    cxxtools::Md5stream md5;
-#else
     Md5stream md5;
-#endif
 
     zimFile.seekg(0);
     char ch;

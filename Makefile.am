@@ -1,7 +1,3 @@
-if WITH_CXXTOOLS
-
-TOOLS_DIR = src/tools
-
 if MAKE_UNITTEST
 
 UNITTEST_DIR = test
@@ -11,9 +7,9 @@ test: all
 
 endif
 
-endif
-
 SUBDIRS = \
 	src \
+	src/tools \
 	include \
-	$(TOOLS_DIR) $(UNITTEST_DIR)
+	$(UNITTEST_DIR) \
+	examples

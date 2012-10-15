@@ -24,12 +24,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
- *
- * copied from cxxtools
  */
 
 #include "md5stream.h"
+#include "md5.h"
 #include <cstring>
 
 namespace zim
@@ -39,8 +37,14 @@ namespace zim
 // Md5streambuf
 //
 Md5streambuf::Md5streambuf()
+  : context(new zim_MD5_CTX())
 {
-  std::memset(digest, 0, 16);
+  zim_MD5Init(context);
+}
+
+Md5streambuf::~Md5streambuf()
+{
+  delete context;
 }
 
 std::streambuf::int_type Md5streambuf::overflow(
@@ -49,12 +53,12 @@ std::streambuf::int_type Md5streambuf::overflow(
   if (pptr() == 0)
   {
     // Ausgabepuffer ist leer - initialisieren
-    zim_MD5Init(&context);
+    zim_MD5Init(context);
   }
   else
   {
     // konsumiere Zeichen aus dem Puffer
-    zim_MD5Update(&context,
+    zim_MD5Update(context,
               (const unsigned char*)pbase(),
               pptr() - pbase());
   }
@@ -84,7 +88,7 @@ int Md5streambuf::sync()
   if (pptr() != pbase())
   {
     // konsumiere Zeichen aus dem Puffer
-    zim_MD5Update(&context, (const unsigned char*)pbase(), pptr() - pbase());
+    zim_MD5Update(context, (const unsigned char*)pbase(), pptr() - pbase());
 
     // leere Ausgabepuffer
     setp(buffer, buffer + bufsize);
@@ -100,14 +104,18 @@ void Md5streambuf::getDigest(unsigned char digest_[16])
     if (pptr() != pbase())
     {
       // konsumiere Zeichen aus dem Puffer
-      zim_MD5Update(&context, (const unsigned char*)pbase(), pptr() - pbase());
+      zim_MD5Update(context, (const unsigned char*)pbase(), pptr() - pbase());
     }
 
     // deinitialisiere Ausgabepuffer
     setp(0, 0);
-
-    zim_MD5Final(digest, &context);
   }
+  else
+  {
+    zim_MD5Init(context);
+  }
+
+  zim_MD5Final(digest, context);
 
   std::memcpy(digest_, digest, 16);
 }

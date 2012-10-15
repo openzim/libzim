@@ -26,7 +26,7 @@ documentation and/or software.
 #include "md5.h"
 #include <string.h>
 
-#define MD5_CTX zim_MD5_CTX
+#define MD5_CTX struct zim_MD5_CTX
 
 /* Constants for MD5Transform routine.
  */

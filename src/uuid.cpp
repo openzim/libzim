@@ -22,12 +22,7 @@
 #include <time.h>
 #include <zim/zim.h> // necessary to have the new types
 #include "log.h"
-#ifdef WITH_CXXTOOLS
-#include <cxxtools/md5stream.h>
-#else
-#include <unistd.h>
-#include <string.h>
-#endif
+#include "md5stream.h"
 
 #ifdef _WIN32
 
@@ -68,32 +63,13 @@ namespace zim
     struct timeval tv;
     gettimeofday(&tv, 0);
 
-#ifdef WITH_CXXTOOLS
-
-    cxxtools::Md5stream m;
+    Md5stream m;
 
     clock_t c = clock();
 
     m << c << tv.tv_sec << tv.tv_usec;
 
     m.getDigest(reinterpret_cast<unsigned char*>(&ret.data[0]));
-
-#else
-
-    union {
-      void* p;
-      int32_t n;
-    } u;
-    u.p = &ret;
-
-    int32_t data[4];
-    data[0] = u.n;
-    data[1] = static_cast<int32_t>(tv.tv_sec);
-    data[2] = static_cast<int32_t>(tv.tv_usec);
-    data[3] = static_cast<int32_t>(getpid());
-    memcpy(ret.data, data, 128);
-
-#endif
 
     log_debug("generated uuid: " << ret.data);
 

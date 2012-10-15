@@ -32,5 +32,6 @@
 #define log_info(e)
 #define log_debug(e)
 #define log_trace(e)
+#define log_init()
 
 #endif

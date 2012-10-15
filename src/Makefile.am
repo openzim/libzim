@@ -24,17 +24,10 @@ LZMA_SOURCES = \
 LZMA_LDFLAGS = -llzma
 endif
 
-if WITH_CXXTOOLS
-CXXTOOLS_LDFLAGS = -lcxxtools
-else
-NOCXXTOOLS_SOURCES = \
-	md5.c \
-	md5stream.cpp
-endif
-
 libzim_la_SOURCES = \
 	article.cpp \
 	articlesearch.cpp \
+	articlesource.cpp \
 	cluster.cpp \
 	dirent.cpp \
 	envvalue.cpp \
@@ -43,16 +36,19 @@ libzim_la_SOURCES = \
 	fileimpl.cpp \
 	fstream.cpp \
 	indexarticle.cpp \
+	md5.c \
+	md5stream.cpp \
 	ptrstream.cpp \
 	search.cpp \
+	tee.cpp \
 	template.cpp \
 	unicode.cpp \
 	uuid.cpp \
+	zimcreator.cpp \
 	zintstream.cpp \
 	$(ZLIB_SOURCES) \
 	$(BZIP2_SOURCES) \
-	$(LZMA_SOURCES) \
-	$(NOCXXTOOLS_SOURCES)
+	$(LZMA_SOURCES)
 
 noinst_HEADERS = \
 	envvalue.h \
@@ -61,4 +57,4 @@ noinst_HEADERS = \
 	md5stream.h \
 	ptrstream.h
 
-libzim_la_LDFLAGS = $(ZLIB_LDFLAGS) $(BZIP2_LDFLAGS) $(LZMA_LDFLAGS) $(CXXTOOLS_LDFLAGS)
+libzim_la_LDFLAGS = $(ZLIB_LDFLAGS) $(BZIP2_LDFLAGS) $(LZMA_LDFLAGS)

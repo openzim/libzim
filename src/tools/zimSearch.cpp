@@ -18,8 +18,8 @@
  */
 
 #include <iostream>
-#include <cxxtools/log.h>
-#include <cxxtools/arg.h>
+#include "log.h"
+#include "arg.h"
 #include <zim/search.h>
 
 void zimSearch(zim::Search& search, const std::string& s)
@@ -39,15 +39,15 @@ int main(int argc, char* argv[])
   {
     log_init();
 
-    cxxtools::Arg<std::string> indexfile(argc, argv, 'x');
+    zim::Arg<std::string> indexfile(argc, argv, 'x');
 
-    cxxtools::Arg<double> weightOcc(argc, argv, "--weight-occ");
-    cxxtools::Arg<double> weightOccOff(argc, argv, "--weight-occ-off");
-    cxxtools::Arg<double> weightPlus(argc, argv, "--weight-plus");
-    cxxtools::Arg<double> weightDist(argc, argv, "--weight-dist");
-    cxxtools::Arg<double> weightPos(argc, argv, "--weight-pos");
-    cxxtools::Arg<double> weightPosRel(argc, argv, "--weight-pos-rel");
-    cxxtools::Arg<double> weightDistinctWords(argc, argv, "--weight-distinct-words");
+    zim::Arg<double> weightOcc(argc, argv, "--weight-occ");
+    zim::Arg<double> weightOccOff(argc, argv, "--weight-occ-off");
+    zim::Arg<double> weightPlus(argc, argv, "--weight-plus");
+    zim::Arg<double> weightDist(argc, argv, "--weight-dist");
+    zim::Arg<double> weightPos(argc, argv, "--weight-pos");
+    zim::Arg<double> weightPosRel(argc, argv, "--weight-pos-rel");
+    zim::Arg<double> weightDistinctWords(argc, argv, "--weight-distinct-words");
 
     if (weightOcc.isSet())
       zim::Search::setWeightOcc(weightOcc);

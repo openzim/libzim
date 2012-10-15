@@ -27,9 +27,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef WITH_CXXTOOLS
-#include <cxxtools/systemerror.h>
-#endif
 
 #ifdef _WIN32
 #include <io.h>
@@ -306,15 +303,11 @@ time_t streambuf::getMTime() const
   int ret = ::stat(fname, &st);
 #endif
   if (ret != 0)
-#ifdef WITH_CXXTOOLS
-    throw cxxtools::SystemError("stat");
-#else
   {
     std::ostringstream msg;
     msg << "stat failed with errno " << errno << " : " << strerror(errno);
     throw std::runtime_error(msg.str());
   }
-#endif
   mtime = st.st_mtime;
 
   return mtime;

@@ -24,8 +24,8 @@
 #include <zim/file.h>
 #include <zim/fileiterator.h>
 #include <zim/zintstream.h>
-#include <cxxtools/arg.h>
-#include <cxxtools/log.h>
+#include "arg.h"
+#include "log.h"
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -400,23 +400,23 @@ int main(int argc, char* argv[])
   {
     log_init();
 
-    cxxtools::Arg<bool> fileinfo(argc, argv, 'F');
-    cxxtools::Arg<char> nsinfo(argc, argv, 'N');
-    cxxtools::Arg<bool> info(argc, argv, 'i');
-    cxxtools::Arg<bool> data(argc, argv, 'd');
-    cxxtools::Arg<bool> page(argc, argv, 'p');
-    cxxtools::Arg<const char*> find(argc, argv, 'f');
-    cxxtools::Arg<const char*> url(argc, argv, 'u');
-    cxxtools::Arg<bool> list(argc, argv, 'l');
-    cxxtools::Arg<bool> tableList(argc, argv, 'L');
-    cxxtools::Arg<zim::size_type> indexOffset(argc, argv, 'o');
-    cxxtools::Arg<bool> extra(argc, argv, 'x');
-    cxxtools::Arg<char> ns(argc, argv, 'n', 'A');  // namespace
-    cxxtools::Arg<const char*> dumpAll(argc, argv, 'D');
-    cxxtools::Arg<bool> verbose(argc, argv, 'v');
-    cxxtools::Arg<bool> zint(argc, argv, 'Z');
-    cxxtools::Arg<bool> titleSort(argc, argv, 't');
-    cxxtools::Arg<bool> verifyChecksum(argc, argv, 'C');
+    zim::Arg<bool> fileinfo(argc, argv, 'F');
+    zim::Arg<char> nsinfo(argc, argv, 'N');
+    zim::Arg<bool> info(argc, argv, 'i');
+    zim::Arg<bool> data(argc, argv, 'd');
+    zim::Arg<bool> page(argc, argv, 'p');
+    zim::Arg<const char*> find(argc, argv, 'f');
+    zim::Arg<const char*> url(argc, argv, 'u');
+    zim::Arg<bool> list(argc, argv, 'l');
+    zim::Arg<bool> tableList(argc, argv, 'L');
+    zim::Arg<zim::size_type> indexOffset(argc, argv, 'o');
+    zim::Arg<bool> extra(argc, argv, 'x');
+    zim::Arg<char> ns(argc, argv, 'n', 'A');  // namespace
+    zim::Arg<const char*> dumpAll(argc, argv, 'D');
+    zim::Arg<bool> verbose(argc, argv, 'v');
+    zim::Arg<bool> zint(argc, argv, 'Z');
+    zim::Arg<bool> titleSort(argc, argv, 't');
+    zim::Arg<bool> verifyChecksum(argc, argv, 'C');
 
     if (argc <= 1)
     {

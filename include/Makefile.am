@@ -21,7 +21,10 @@ nobase_include_HEADERS = \
 	zim/unicode.h \
 	zim/uuid.h \
 	zim/zim.h \
-	zim/zintstream.h
+	zim/zintstream.h \
+	zim/writer/articlesource.h \
+	zim/writer/dirent.h \
+	zim/writer/zimcreator.h
 
 noinst_HEADERS = \
 	zim/bunzip2stream.h \
