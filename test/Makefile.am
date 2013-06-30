@@ -23,6 +23,7 @@ zimlib_test_SOURCES = \
     header.cpp \
     main.cpp \
     template.cpp \
+    uuid.cpp \
     zint.cpp \
     $(ZLIB_SOURCES) \
     $(BZIP2_SOURCES) \

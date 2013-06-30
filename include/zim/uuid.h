@@ -42,6 +42,8 @@ namespace zim
 
     bool operator== (const Uuid& other) const
       { return std::equal(data, data+16, other.data); }
+    bool operator!= (const Uuid& other) const
+      { return !(*this == other); }
     unsigned size() const  { return 16; }
 
     char data[16];

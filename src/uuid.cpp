@@ -87,10 +87,10 @@ namespace zim
     for (unsigned n = 6; n < 8; ++n)
       out << hi(uuid.data[n]) << lo(uuid.data[n]);
     out << '-';
-    for (unsigned n = 6; n < 8; ++n)
+    for (unsigned n = 8; n < 10; ++n)
       out << hi(uuid.data[n]) << lo(uuid.data[n]);
     out << '-';
-    for (unsigned n = 8; n < 16; ++n)
+    for (unsigned n = 10; n < 16; ++n)
       out << hi(uuid.data[n]) << lo(uuid.data[n]);
     return out;
   }
