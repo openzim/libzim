@@ -30,4 +30,4 @@ zimlib_test_SOURCES = \
     $(LZMA_SOURCES)
 
 LDADD = $(top_builddir)/src/libzim.la
-zimlib_test_LDFLAGS=-lcxxtools-unit
+zimlib_test_LDFLAGS = -lcxxtools -lcxxtools-unit
