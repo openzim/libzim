@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <zim/cluster.h>
+#include <algorithm>
 
 namespace zim
 {
@@ -59,6 +60,11 @@ namespace zim
     return out;
   }
 
+  inline bool operator== (const Blob& b1, const Blob& b2)
+  {
+    return b1.size() == b2.size()
+        && std::equal(b1.data(), b1.data() + b1.size(), b2.data());
+  }
 }
 
 #endif // ZIM_BLOB_H
