@@ -21,6 +21,7 @@
 #include <zim/article.h>
 #include "log.h"
 #include <zim/fileiterator.h>
+#include <zim/error.h>
 
 log_define("zim.file")
 
@@ -42,6 +43,8 @@ namespace zim
 
   Article File::getArticle(size_type idx) const
   {
+    if (idx >= getCountArticles())
+      throw ZimFileFormatError("article index out of range");
     return Article(*this, idx);
   }
 
