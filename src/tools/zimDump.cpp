@@ -243,12 +243,23 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
     "\ttitle:           " << dirent.getTitle() << "\n"
     "\tidx:             " << article.getIndex() << "\n"
     "\tnamespace:       " << dirent.getNamespace() << "\n"
-    "\tredirect:        " << dirent.isRedirect() << "\n";
+    "\ttype:            " << (dirent.isRedirect()   ? "redirect"
+                            : dirent.isLinktarget() ? "linktarget"
+                            : dirent.isDeleted()    ? "deleted"
+                            :                         "article") << "\n";
 
   if (dirent.isRedirect())
   {
     std::cout <<
       "\tredirect index:  " << dirent.getRedirectIndex() << "\n";
+  }
+  else if (dirent.isLinktarget())
+  {
+    // nothing else
+  }
+  else if (dirent.isDeleted())
+  {
+    // nothing else
   }
   else
   {
@@ -314,11 +325,22 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
     << '\t' << dirent.getUrl()
     << '\t' << dirent.getTitle()
     << '\t' << article.getIndex()
-    << '\t' << dirent.isRedirect();
+    << '\t' << (dirent.isRedirect()   ? 'R'
+              : dirent.isLinktarget() ? 'L'
+              : dirent.isDeleted()    ? 'D'
+              :                         'A');
 
   if (dirent.isRedirect())
   {
     std::cout << '\t' << dirent.getRedirectIndex();
+  }
+  else if (dirent.isLinktarget())
+  {
+    // nothing else
+  }
+  else if (dirent.isDeleted())
+  {
+    // nothing else
   }
   else
   {

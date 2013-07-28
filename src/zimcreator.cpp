@@ -132,6 +132,14 @@ namespace zim
           dirent.setRedirectAid(article->getRedirectAid());
           log_debug("is redirect to " << dirent.getRedirectAid());
         }
+        else if (article->isLinktarget())
+        {
+          dirent.setLinktarget();
+        }
+        else if (article->isDeleted())
+        {
+          dirent.setDeleted();
+        }
         else
         {
           dirent.setArticle(getMimeTypeIdx(article->getMimeType()), 0, 0);

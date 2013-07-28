@@ -31,6 +31,10 @@ namespace zim
   // Dirent
   //
 
+  const uint16_t Dirent::redirectMimeType;
+  const uint16_t Dirent::linktargetMimeType;
+  const uint16_t Dirent::deletedMimeType;
+
   std::ostream& operator<< (std::ostream& out, const Dirent& dirent)
   {
     union
@@ -50,6 +54,10 @@ namespace zim
     {
       toLittleEndian(dirent.getRedirectIndex(), header.d + 8);
       out.write(header.d, 12);
+    }
+    else if (dirent.isLinktarget() || dirent.isDeleted())
+    {
+      out.write(header.d, 8);
     }
     else
     {
@@ -76,14 +84,14 @@ namespace zim
       char d[16];
     } header;
 
-    in.read(header.d, 12);
+    in.read(header.d, 8);
     if (in.fail())
     {
       log_warn("error reading dirent header");
       return in;
     }
 
-    if (in.gcount() != 12)
+    if (in.gcount() != 8)
     {
       log_warn("error reading dirent header (2)");
       in.setstate(std::ios::failbit);
@@ -91,31 +99,45 @@ namespace zim
     }
 
     uint16_t mimeType = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d));
-    bool redirect = (mimeType == std::numeric_limits<uint16_t>::max());
+    bool redirect = (mimeType == Dirent::redirectMimeType);
+    bool linktarget = (mimeType == Dirent::linktargetMimeType);
+    bool deleted = (mimeType == Dirent::deletedMimeType);
     char ns = header.d[3];
     size_type version = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
     dirent.setVersion(version);
 
     if (redirect)
     {
+      in.read(header.d + 8, 4);
+      if (in.fail())
+      {
+        log_warn("error reading redirect dirent header");
+        return in;
+      }
+
       size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
 
       log_debug("redirectIndex=" << redirectIndex);
 
       dirent.setRedirect(redirectIndex);
     }
+    else if (linktarget || deleted)
+    {
+      log_debug("linktarget or deleted entry");
+      dirent.setArticle(mimeType, 0, 0);
+    }
     else
     {
       log_debug("read article entry");
 
-      in.read(header.d + 12, 4);
+      in.read(header.d + 8, 8);
       if (in.fail())
       {
         log_warn("error reading article dirent header");
         return in;
       }
 
-      if (in.gcount() != 4)
+      if (in.gcount() != 8)
       {
         log_warn("error reading article dirent header (2)");
         in.setstate(std::ios::failbit);

@@ -58,6 +58,8 @@ namespace zim
                   getMimeType() const         { return file.getMimeType(getLibraryMimeType()); }
 
       bool        isRedirect() const          { return getDirent().isRedirect(); }
+      bool        isLinktarget() const        { return getDirent().isLinktarget(); }
+      bool        isDeleted() const           { return getDirent().isDeleted(); }
 
       char        getNamespace() const        { return getDirent().getNamespace(); }
 
@@ -77,8 +79,10 @@ namespace zim
       Blob getData() const
       {
         Dirent dirent = getDirent();
-        return dirent.isRedirect() ? Blob()
-                                   : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
+        return isRedirect()
+            || isLinktarget()
+            || isDeleted() ? Blob()
+                           : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
       }
 
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);

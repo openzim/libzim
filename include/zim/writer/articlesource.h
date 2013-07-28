@@ -38,10 +38,12 @@ namespace zim
         virtual std::string getUrl() const = 0;
         virtual std::string getTitle() const = 0;
         virtual size_type getVersion() const;
-        virtual bool isRedirect() const = 0;
+        virtual bool isRedirect() const;
+        virtual bool isLinktarget() const;
+        virtual bool isDeleted() const;
         virtual std::string getMimeType() const = 0;
         virtual bool shouldCompress() const;
-        virtual std::string getRedirectAid() const = 0;
+        virtual std::string getRedirectAid() const;
         virtual std::string getParameter() const;
 
         // returns the next category id, to which the article is assigned to

@@ -22,13 +22,11 @@
 
 #include <string>
 #include <zim/zim.h>
-#include <limits>
 
 namespace zim
 {
   class Dirent
   {
-      bool redirect;
       uint16_t mimeType;
 
       size_type version;
@@ -44,9 +42,13 @@ namespace zim
       std::string parameter;
 
     public:
+      // these constants are put into mimeType field
+      static const uint16_t redirectMimeType = 0xffff;
+      static const uint16_t linktargetMimeType = 0xfffe;
+      static const uint16_t deletedMimeType = 0xfffd;
+
       Dirent()
-        : redirect(false),
-          mimeType(0),
+        : mimeType(0),
           version(0),
           clusterNumber(0),
           blobNumber(0),
@@ -54,7 +56,9 @@ namespace zim
           ns('\0')
       {}
 
-      bool isRedirect() const                 { return redirect; }
+      bool isRedirect() const                 { return mimeType == redirectMimeType; }
+      bool isLinktarget() const               { return mimeType == linktargetMimeType; }
+      bool isDeleted() const                  { return mimeType == deletedMimeType; }
       uint16_t getMimeType() const            { return mimeType; }
 
       size_type getVersion() const            { return version; }
@@ -99,16 +103,28 @@ namespace zim
 
       void setRedirect(size_type idx)
       {
-        redirect = true;
         redirectIndex = idx;
-        mimeType = std::numeric_limits<uint16_t>::max();
+        mimeType = redirectMimeType;
+        clusterNumber = 0;
+        blobNumber = 0;
+      }
+
+      void setLinktarget()
+      {
+        mimeType = linktargetMimeType;
+        clusterNumber = 0;
+        blobNumber = 0;
+      }
+
+      void setDeleted()
+      {
+        mimeType = deletedMimeType;
         clusterNumber = 0;
         blobNumber = 0;
       }
 
       void setArticle(uint16_t mimeType_, size_type clusterNumber_, size_type blobNumber_)
       {
-        redirect = false;
         mimeType = mimeType_;
         clusterNumber = clusterNumber_;
         blobNumber = blobNumber_;

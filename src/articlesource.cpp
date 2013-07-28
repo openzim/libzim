@@ -28,6 +28,21 @@ namespace zim
       return 0;
     }
 
+    bool Article::isRedirect() const
+    {
+      return false;
+    }
+
+    bool Article::isLinktarget() const
+    {
+      return false;
+    }
+
+    bool Article::isDeleted() const
+    {
+      return false;
+    }
+
     bool Article::shouldCompress() const
     {
       std::string mimeType = getMimeType();
@@ -36,6 +51,11 @@ namespace zim
           && mimeType != "image/tiff"
           && mimeType != "image/gif"
           && mimeType != "application/zip";
+    }
+
+    std::string Article::getRedirectAid() const
+    {
+      return std::string();
     }
 
     std::string Article::getParameter() const

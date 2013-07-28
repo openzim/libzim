@@ -32,9 +32,11 @@ class DirentTest : public cxxtools::unit::TestSuite
     {
       registerMethod("SetGetDataDirent", *this, &DirentTest::SetGetDataDirent);
       registerMethod("ReadWriteArticleDirent", *this, &DirentTest::ReadWriteArticleDirent);
-      registerMethod("ReadWriteArticleDirentU", *this, &DirentTest::ReadWriteArticleDirentU);
-      registerMethod("ReadWriteArticleDirentP", *this, &DirentTest::ReadWriteArticleDirentP);
+      registerMethod("ReadWriteArticleDirentUnicode", *this, &DirentTest::ReadWriteArticleDirentUnicode);
+      registerMethod("ReadWriteArticleDirentParameter", *this, &DirentTest::ReadWriteArticleDirentParameter);
       registerMethod("ReadWriteRedirectDirent", *this, &DirentTest::ReadWriteRedirectDirent);
+      registerMethod("ReadWriteLinktargetDirent", *this, &DirentTest::ReadWriteLinktargetDirent);
+      registerMethod("ReadWriteDeletedDirent", *this, &DirentTest::ReadWriteDeletedDirent);
       registerMethod("DirentSize", *this, &DirentTest::DirentSize);
       registerMethod("RedirectDirentSize", *this, &DirentTest::RedirectDirentSize);
     }
@@ -99,7 +101,7 @@ class DirentTest : public cxxtools::unit::TestSuite
 
     }
 
-    void ReadWriteArticleDirentU()
+    void ReadWriteArticleDirentUnicode()
     {
       zim::Dirent dirent;
       dirent.setUrl('A', "L\xc3\xbcliang");
@@ -133,7 +135,7 @@ class DirentTest : public cxxtools::unit::TestSuite
 
     }
 
-    void ReadWriteArticleDirentP()
+    void ReadWriteArticleDirentParameter()
     {
       zim::Dirent dirent;
       dirent.setUrl('A', "Foo");
@@ -192,6 +194,60 @@ class DirentTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "Bar");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getParameter(), "baz");
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getRedirectIndex(), 321);
+    }
+
+    void ReadWriteLinktargetDirent()
+    {
+      zim::Dirent dirent;
+      dirent.setUrl('A', "Bar");
+      dirent.setLinktarget();
+
+      CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
+      CXXTOOLS_UNIT_ASSERT(dirent.isLinktarget());
+      CXXTOOLS_UNIT_ASSERT(!dirent.isDeleted());
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getUrl(), "Bar");
+
+      std::stringstream s;
+      s << dirent;
+      zim::Dirent dirent2;
+      s >> dirent2;
+
+      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
+
+      CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
+      CXXTOOLS_UNIT_ASSERT(dirent2.isLinktarget());
+      CXXTOOLS_UNIT_ASSERT(!dirent2.isDeleted());
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getUrl(), "Bar");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "Bar");
+    }
+
+    void ReadWriteDeletedDirent()
+    {
+      zim::Dirent dirent;
+      dirent.setUrl('A', "Bar");
+      dirent.setDeleted();
+
+      CXXTOOLS_UNIT_ASSERT(!dirent.isRedirect());
+      CXXTOOLS_UNIT_ASSERT(!dirent.isLinktarget());
+      CXXTOOLS_UNIT_ASSERT(dirent.isDeleted());
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getNamespace(), 'A');
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent.getUrl(), "Bar");
+
+      std::stringstream s;
+      s << dirent;
+      zim::Dirent dirent2;
+      s >> dirent2;
+
+      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
+
+      CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
+      CXXTOOLS_UNIT_ASSERT(!dirent2.isLinktarget());
+      CXXTOOLS_UNIT_ASSERT(dirent2.isDeleted());
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getUrl(), "Bar");
+      CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getTitle(), "Bar");
     }
 
     std::string direntAsString(const zim::Dirent& dirent)
