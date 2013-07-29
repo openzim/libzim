@@ -77,7 +77,11 @@ namespace zim
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
       public:
+        ZimCreator();
         ZimCreator(int& argc, char* argv[]);
+
+        unsigned getMinChunkSize()    { return minChunkSize; }
+        void setMinChunkSize(int s)   { minChunkSize = s; }
 
         void create(const std::string& fname, ArticleSource& src);
     };

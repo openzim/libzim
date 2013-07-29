@@ -46,6 +46,21 @@ namespace zim
 {
   namespace writer
   {
+    ZimCreator::ZimCreator()
+      : minChunkSize(1024-64),
+        nextMimeIdx(0),
+#ifdef ENABLE_LZMA
+        compression(zimcompLzma)
+#elif ENABLE_BZIP2
+        compression(zimcompBzip2)
+#elif ENABLE_ZLIB
+        compression(zimcompZip)
+#else
+        compression(zimcompNone)
+#endif
+    {
+    }
+
     ZimCreator::ZimCreator(int& argc, char* argv[])
       : nextMimeIdx(0),
 #ifdef ENABLE_LZMA
