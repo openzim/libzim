@@ -46,7 +46,7 @@ class ZimDumper
       { }
 
     void setVerbose(bool sw = true)  { verbose = sw; }
-    
+
     void printInfo();
     void printNsInfo(char ch);
     void locateArticle(zim::size_type idx);
@@ -84,11 +84,11 @@ void ZimDumper::printInfo()
                "cluster count: " << file.getFileheader().getClusterCount() << "\n"
                "cluster ptr pos: " << file.getFileheader().getClusterPtrPos() << "\n";
   if (file.getFileheader().hasChecksum())
-    std::cout << 
+    std::cout <<
                "checksum pos: " << file.getFileheader().getChecksumPos() << "\n"
                "checksum: " << file.getChecksum() << "\n";
   else
-    std::cout << 
+    std::cout <<
                "no checksum\n";
 
   if (file.getFileheader().hasMainPage())
@@ -135,13 +135,19 @@ void ZimDumper::findArticleByUrl(const std::string& url)
 void ZimDumper::printPage()
 {
   log_trace("print page");
-  std::cout << pos->getPage() << std::flush;
+  if(pos!=file.end())
+  {
+    std::cout << pos->getPage() << std::flush;
+  }
 }
 
 void ZimDumper::dumpArticle()
 {
   log_trace("dump article");
-  std::cout << pos->getData() << std::flush;
+  if(pos!=file.end())
+  {
+    std::cout << pos->getData() << std::flush;
+  }
 }
 
 void ZimDumper::dumpIndex()
