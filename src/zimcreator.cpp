@@ -401,40 +401,38 @@ namespace zim
       log_debug("after writing header - pos=" << zimfile.tellp());
 
       // write mime type list
-      std::vector <std::string> oldMImeList;
-      std::vector <std::string> newMImeList;
+      std::vector<std::string> oldMImeList;
+      std::vector<std::string> newMImeList;
       std::vector<uint16_t>mapping;
+
       for (RMimeTypes::const_iterator it = rmimeTypes.begin(); it != rmimeTypes.end(); ++it)
       {
         oldMImeList.push_back(it->second);
         newMImeList.push_back(it->second);
       }
+
       mapping.resize(oldMImeList.size());
       std::sort(newMImeList.begin(),newMImeList.end());
 
-      for(unsigned int i=0;i<oldMImeList.size();i++)
+      for (unsigned i=0; i<oldMImeList.size(); ++i)
       {
-        for(unsigned int j=0;j<newMImeList.size();j++)
+        for (unsigned j=0; j<newMImeList.size(); ++j)
         {
-            if(oldMImeList[i]==newMImeList[j])
-                mapping[i]=(uint16_t)j;
+          if (oldMImeList[i] == newMImeList[j])
+            mapping[i] = static_cast<uint16_t>(j);
         }
       }
-      for (unsigned int i=0;i<dirents.size();i++)
+
+      for (unsigned i=0; i<dirents.size(); ++i)
       {
-        dirents[i].setMimeType((uint16_t)mapping[dirents[i].getMimeType()]);
+        dirents[i].setMimeType(static_cast<uint16_t>(mapping[dirents[i].getMimeType()]));
       }
 
-      for(unsigned int i=0;i<newMImeList.size();i++)
+      for (unsigned i=0; i<newMImeList.size(); ++i)
       {
-        out<<newMImeList[i]<<'\0';
+        out << newMImeList[i] << '\0';
       }
-      /*
-      for (RMimeTypes::const_iterator it = rmimeTypes.begin(); it != rmimeTypes.end(); ++it)
-      {
-        out << it->second << '\0';
-      }
-      */
+
       out << '\0';
 
       // write url ptr list

@@ -110,7 +110,7 @@ namespace zim
       }
       void setMimeType(uint16_t mime)
       {
-        mimeType=mime;
+        mimeType = mime;
       }
       void setLinktarget()
       {
