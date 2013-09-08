@@ -108,7 +108,10 @@ namespace zim
         clusterNumber = 0;
         blobNumber = 0;
       }
-
+      void setMimeType(uint16_t mime)
+      {
+        mimeType=mime;
+      }
       void setLinktarget()
       {
         mimeType = linktargetMimeType;
