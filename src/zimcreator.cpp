@@ -403,7 +403,7 @@ namespace zim
       // write mime type list
       std::vector<std::string> oldMImeList;
       std::vector<std::string> newMImeList;
-      std::vector<uint16_t>mapping;
+      std::vector<uint16_t> mapping;
 
       for (RMimeTypes::const_iterator it = rmimeTypes.begin(); it != rmimeTypes.end(); ++it)
       {
@@ -412,7 +412,7 @@ namespace zim
       }
 
       mapping.resize(oldMImeList.size());
-      std::sort(newMImeList.begin(),newMImeList.end());
+      std::sort(newMImeList.begin(), newMImeList.end());
 
       for (unsigned i=0; i<oldMImeList.size(); ++i)
       {
@@ -425,7 +425,8 @@ namespace zim
 
       for (unsigned i=0; i<dirents.size(); ++i)
       {
-        dirents[i].setMimeType(static_cast<uint16_t>(mapping[dirents[i].getMimeType()]));
+        if (dirents[i].isArticle())
+          dirents[i].setMimeType(mapping[dirents[i].getMimeType()]);
       }
 
       for (unsigned i=0; i<newMImeList.size(); ++i)

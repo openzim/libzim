@@ -59,6 +59,7 @@ namespace zim
       bool isRedirect() const                 { return mimeType == redirectMimeType; }
       bool isLinktarget() const               { return mimeType == linktargetMimeType; }
       bool isDeleted() const                  { return mimeType == deletedMimeType; }
+      bool isArticle() const                  { return !isRedirect() && !isLinktarget() && !isDeleted(); }
       uint16_t getMimeType() const            { return mimeType; }
 
       size_type getVersion() const            { return version; }
@@ -108,10 +109,12 @@ namespace zim
         clusterNumber = 0;
         blobNumber = 0;
       }
+
       void setMimeType(uint16_t mime)
       {
         mimeType = mime;
       }
+
       void setLinktarget()
       {
         mimeType = linktargetMimeType;
