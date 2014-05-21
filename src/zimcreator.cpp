@@ -24,7 +24,13 @@
 #include <zim/endian.h>
 #include <algorithm>
 #include <fstream>
+
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <limits>
 #include <stdexcept>
