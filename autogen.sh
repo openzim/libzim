@@ -3,11 +3,10 @@
 
 if [ "`(uname -s) 2>/dev/null`" = "Darwin" ]
 then
-    LIBTOOLIZE=glibtoolize
+    glibtoolize --force
 else
-    LIBTOOLIZE=libtoolize
+    libtoolize --force --automake
 fi
-$LIBTOOLIZE --force --automake
 
 rm -f config.cache config.log
 aclocal -I m4
