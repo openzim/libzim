@@ -31,6 +31,10 @@ namespace zim
   // Dirent
   //
 
+  const uint16_t Dirent::redirectMimeType;
+  const uint16_t Dirent::linktargetMimeType;
+  const uint16_t Dirent::deletedMimeType;
+
   std::ostream& operator<< (std::ostream& out, const Dirent& dirent)
   {
     union
