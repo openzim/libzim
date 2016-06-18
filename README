@@ -1,6 +1,1 @@
-The zimlib is the standard implementation of the ZIM specification. It
-is a library which implements the read and write method for ZIM
-files. The zimlib is released under the GPLv2 license terms. Use the
-zimlib in your own software - like reader applications - to make them
-ZIM-capable without the need having to dig too much into the ZIM file
-format.
+README.md
