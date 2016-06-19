@@ -1,4 +1,4 @@
-AM_CPPFLAGS=-I$(top_builddir)/include
+AM_CPPFLAGS=-I$(top_srcdir)/include -I$(top_srcdir)/src
 if MAKE_BENCHMARK
   ZIMBENCH = zimbench
 endif
