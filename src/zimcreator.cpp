@@ -56,28 +56,30 @@ namespace zim
       : minChunkSize(1024-64),
         nextMimeIdx(0),
 #ifdef ENABLE_LZMA
-        compression(zimcompLzma)
+        compression(zimcompLzma),
 #elif ENABLE_BZIP2
-        compression(zimcompBzip2)
+        compression(zimcompBzip2),
 #elif ENABLE_ZLIB
-        compression(zimcompZip)
+        compression(zimcompZip),
 #else
-        compression(zimcompNone)
+        compression(zimcompNone),
 #endif
+        currentSize(0)
     {
     }
 
     ZimCreator::ZimCreator(int& argc, char* argv[])
       : nextMimeIdx(0),
 #ifdef ENABLE_LZMA
-        compression(zimcompLzma)
+        compression(zimcompLzma),
 #elif ENABLE_BZIP2
-        compression(zimcompBzip2)
+        compression(zimcompBzip2),
 #elif ENABLE_ZLIB
-        compression(zimcompZip)
+        compression(zimcompZip),
 #else
-        compression(zimcompNone)
+        compression(zimcompNone),
 #endif
+        currentSize(0)
     {
       Arg<unsigned> minChunkSizeArg(argc, argv, "--min-chunk-size");
       if (minChunkSizeArg.isSet())
@@ -110,15 +112,12 @@ namespace zim
       log_debug("basename " << basename);
 
       INFO("create directory entries");
-      createDirents(src);
+      createDirents(src, basename + ".tmp");
       INFO(dirents.size() << " directory entries created");
 
       INFO("create title index");
       createTitleIndex(src);
       INFO(dirents.size() << " title index created");
-
-      INFO("create clusters");
-      createClusters(src, basename + ".tmp");
       INFO(clusterOffsets.size() << " clusters created");
 
       INFO("fill header");
@@ -132,9 +131,23 @@ namespace zim
       INFO("ready");
     }
 
-    void ZimCreator::createDirents(ArticleSource& src)
+    void ZimCreator::createDirents(ArticleSource& src, const std::string& tmpfname)
     {
       INFO("collect articles");
+      std::ofstream out(tmpfname.c_str());
+      currentSize =
+        80 /* for header */ +
+        1 /* for mime type table termination */ +
+        16 /* for md5sum */;
+
+      // We keep both a "compressed cluster" and an "uncompressed cluster"
+      // because we don't know which one will fill up first.  We also need
+      // to track the dirents currently in each, so we can fix up the
+      // cluster index if the other one ends up written first.
+      DirentsType compDirents, uncompDirents;
+      Cluster compCluster, uncompCluster;
+      compCluster.setCompression(compression);
+      uncompCluster.setCompression(zimcompNone);
 
       const Article* article;
       while ((article = src.getNextArticle()) != 0)
@@ -163,13 +176,107 @@ namespace zim
         }
         else
         {
+          uint16_t oldMimeIdx = nextMimeIdx;
           dirent.setArticle(getMimeTypeIdx(article->getMimeType()), 0, 0);
           dirent.setCompress(article->shouldCompress());
           log_debug("is article; mimetype " << dirent.getMimeType());
+          if (oldMimeIdx != nextMimeIdx)
+          {
+            // Account for the size of the mime type entry
+            currentSize += rmimeTypes[oldMimeIdx].size() +
+              1 /* trailing null */;
+          }
         }
 
         dirents.push_back(dirent);
+        currentSize +=
+          dirent.getDirentSize() /* for directory entry */ +
+          sizeof(offset_type) /* for url pointer list */ +
+          sizeof(size_type) /* for title pointer list */;
+
+        // If this is a redirect, we're done: there's no blob to add.
+        if (dirent.isRedirect())
+        {
+          continue;
+        }
+
+        // Add blob data to compressed or uncompressed cluster.
+        Blob blob = src.getData(dirent.getAid());
+        if (blob.size() > 0)
+        {
+          isEmpty = false;
+        }
+
+        Cluster *cluster;
+        DirentsType *myDirents, *otherDirents;
+        if (dirent.isCompress())
+        {
+          cluster = &compCluster;
+          myDirents = &compDirents;
+          otherDirents = &uncompDirents;
+        }
+        else
+        {
+          cluster = &uncompCluster;
+          myDirents = &uncompDirents;
+          otherDirents = &compDirents;
+        }
+        myDirents->push_back(dirent);
+        dirent.setCluster(clusterOffsets.size(), cluster->count());
+        cluster->addBlob(blob);
+
+        // If cluster is now large enough, write it to disk.
+        if (cluster->size() >= minChunkSize * 1024)
+        {
+          log_info("cluster with " << cluster->count() << " articles, " <<
+                   cluster->size() << " bytes; current title \"" <<
+                   dirent.getTitle() << '\"');
+          offset_type start = out.tellp();
+          clusterOffsets.push_back(start);
+          out << *cluster;
+          log_debug("cluster written");
+          cluster->clear();
+          myDirents->clear();
+          // Update the cluster number of the dirents *not* written to disk.
+          for (DirentsType::iterator di = otherDirents->begin();
+               di != otherDirents->end(); ++di)
+          {
+            di->setCluster(clusterOffsets.size(), di->getBlobNumber());
+          }
+          offset_type end = out.tellp();
+          currentSize += (end - start) +
+            sizeof(offset_type) /* for cluster pointer entry */;
+        }
       }
+
+      // When we've seen all articles, write any remaining clusters.
+      if (compCluster.count() > 0)
+      {
+        clusterOffsets.push_back(out.tellp());
+        out << compCluster;
+        for (DirentsType::iterator di = uncompDirents.begin();
+             di != uncompDirents.end(); ++di)
+        {
+          di->setCluster(clusterOffsets.size(), di->getBlobNumber());
+        }
+      }
+      compCluster.clear();
+      compDirents.clear();
+
+      if (uncompCluster.count() > 0)
+      {
+        clusterOffsets.push_back(out.tellp());
+        out << uncompCluster;
+      }
+      uncompCluster.clear();
+      uncompDirents.clear();
+
+      if (!out)
+      {
+        throw std::runtime_error("failed to write temporary cluster file");
+      }
+
+      clustersSize = out.tellp();
 
       // sort
       INFO("sort " << dirents.size() << " directory entries (aid)");
@@ -266,77 +373,6 @@ namespace zim
 
       CompareTitle compareTitle(dirents);
       std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
-    }
-
-    void ZimCreator::createClusters(ArticleSource& src, const std::string& tmpfname)
-    {
-      std::ofstream out(tmpfname.c_str());
-
-      Cluster cluster;
-      cluster.setCompression(compression);
-
-      DirentsType::size_type count = 0, progress = 0;
-      for (DirentsType::iterator di = dirents.begin(); out && di != dirents.end(); ++di, ++count)
-      {
-        while (progress < count * 100 / dirents.size() + 1)
-        {
-          INFO(progress << "% ready");
-          progress += 10;
-        }
-
-        if (di->isRedirect())
-          continue;
-
-        Blob blob = src.getData(di->getAid());
-        if (blob.size() > 0)
-          isEmpty = false;
-
-        if (di->isCompress())
-        {
-          di->setCluster(clusterOffsets.size(), cluster.count());
-          cluster.addBlob(blob);
-          if (cluster.size() >= minChunkSize * 1024)
-          {
-            log_info("compress cluster with " << cluster.count() << " articles, " << cluster.size() << " bytes; current title \"" << di->getTitle() << '\"');
-
-            clusterOffsets.push_back(out.tellp());
-            out << cluster;
-            log_debug("cluster compressed");
-            cluster.clear();
-            cluster.setCompression(compression);
-          }
-        }
-        else
-        {
-          if (cluster.count() > 0)
-          {
-            clusterOffsets.push_back(out.tellp());
-            cluster.setCompression(compression);
-            out << cluster;
-            cluster.clear();
-            cluster.setCompression(compression);
-          }
-
-          di->setCluster(clusterOffsets.size(), cluster.count());
-          clusterOffsets.push_back(out.tellp());
-          Cluster c;
-          c.addBlob(blob);
-          c.setCompression(zimcompNone);
-          out << c;
-        }
-      }
-
-      if (cluster.count() > 0)
-      {
-        clusterOffsets.push_back(out.tellp());
-        cluster.setCompression(compression);
-        out << cluster;
-      }
-
-      if (!out)
-        throw std::runtime_error("failed to write temporary cluster file");
-
-      clustersSize = out.tellp();
     }
 
     void ZimCreator::fillHeader(ArticleSource& src)
