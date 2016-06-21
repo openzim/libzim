@@ -16,5 +16,24 @@ To build:
 make
 ```
 
+OSX compilation
+---------------
+On MacOSX, you'll need to install some packages from
+[homebrew](http://brew.sh/):
+```
+brew update
+brew install xz libmagic
+```
+You'll also want to add `/usr/local/include` to your search path,
+for example:
+```
+./autogen.sh
+./configure CFLAGS=-I/usr/local/include CXXFLAGS=-I/usr/local/include
+make
+```
+
+License
+-------
+
 The `zimlib` library is released under the GPLv2 license
 terms.
