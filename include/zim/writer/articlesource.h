@@ -97,7 +97,8 @@ namespace zim
          * code to not use it.
          * This should be removed once every users switch to new API.
          */
-        virtual Blob getData(const std::string& aid) { throw "This should not be called"; };
+        virtual Blob getData(const std::string& aid);
+
         /**********************************************************************/
     };
 

@@ -80,6 +80,9 @@ namespace zim
       std::cerr << "                     You should override Article::getData directly." << std::endl;
       return __source->getData(getAid());
     }
+    Blob ArticleSource::getData(const std::string& aid) {
+        throw std::runtime_error("This should not be called");
+    }
     /**************************************************************************/
 
     Uuid ArticleSource::getUuid()
