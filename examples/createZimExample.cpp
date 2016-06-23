@@ -40,7 +40,7 @@ class TestArticle : public zim::writer::Article
     virtual std::string getMimeType() const;
     virtual std::string getRedirectAid() const;
 
-    zim::Blob data()
+    virtual zim::Blob getData() const
     { return zim::Blob(&_data[0], _data.size()); }
 };
 
@@ -96,7 +96,6 @@ class TestArticleSource : public zim::writer::ArticleSource
     explicit TestArticleSource(unsigned max = 16);
 
     virtual const zim::writer::Article* getNextArticle();
-    virtual zim::Blob getData(const std::string& aid);
 };
 
 TestArticleSource::TestArticleSource(unsigned max)
@@ -119,14 +118,6 @@ const zim::writer::Article* TestArticleSource::getNextArticle()
   unsigned n = _next++;
 
   return &_articles[n];
-}
-
-zim::Blob TestArticleSource::getData(const std::string& aid)
-{
-  unsigned n;
-  std::istringstream s(aid);
-  s >> n;
-  return _articles[n-1].data();
 }
 
 int main(int argc, char* argv[])

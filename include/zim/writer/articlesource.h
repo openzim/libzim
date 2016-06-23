@@ -20,16 +20,16 @@
 #ifndef ZIM_WRITER_ARTICLESOURCE_H
 #define ZIM_WRITER_ARTICLESOURCE_H
 
+#include <zim/blob.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include <string>
 
 namespace zim
 {
-  class Blob;
-
   namespace writer
   {
+    class ArticleSource;
     class Article
     {
       public:
@@ -45,9 +45,26 @@ namespace zim
         virtual bool shouldCompress() const;
         virtual std::string getRedirectAid() const;
         virtual std::string getParameter() const;
+        /* Idealy this method should be pure virtual,
+         * but for compatibility reasons, provide a default implementation
+         * using the old ArticleSourc::getData.
+         */
+        virtual Blob getData() const;
 
         // returns the next category id, to which the article is assigned to
         virtual std::string getNextCategory();
+
+      /************************************************************************/
+      /* For API compatibility.
+       * The default Article::getData call ArticleSource::getData.
+       * So store the source of article in article to let default API compatible
+       * function do its job.
+       * This should be removed once every users switch to new API.
+       */
+      private:
+        mutable ArticleSource*  __source;
+        friend class ZimCreator;
+      /************************************************************************/
     };
 
     class Category
@@ -63,7 +80,6 @@ namespace zim
       public:
         virtual void setFilename(const std::string& fname) { }
         virtual const Article* getNextArticle() = 0;
-        virtual Blob getData(const std::string& aid) = 0;
         virtual Uuid getUuid();
         virtual std::string getMainPage();
         virtual std::string getLayoutPage();
@@ -73,6 +89,16 @@ namespace zim
         // ids. Using this list, the writer fetches the category data using
         // this method.
         virtual Category* getCategory(const std::string& cid);
+
+        /**********************************************************************/
+        /* For API compatibility.
+         * The default Article::getData call ArticleSource::getData.
+         * So keep the getData. Do not set it pure virtual cause we want new
+         * code to not use it.
+         * This should be removed once every users switch to new API.
+         */
+        virtual Blob getData(const std::string& aid) { throw "This should not be called"; };
+        /**********************************************************************/
     };
 
   }

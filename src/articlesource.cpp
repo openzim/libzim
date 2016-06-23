@@ -17,6 +17,7 @@
  *
  */
 
+#include <zim/blob.h>
 #include <zim/writer/articlesource.h>
 
 namespace zim
@@ -67,6 +68,19 @@ namespace zim
     {
       return std::string();
     }
+
+    /**************************************************************************/
+    /* For API compatibility.
+     * The default Article::getData call ArticleSource::getData.
+     * This should be removed once every users switch to new API.
+     */
+    Blob Article::getData() const
+    {
+      std::cerr << "DEPRECATED WARNING : Use of ArticleSource::getData is deprecated." << std::endl;
+      std::cerr << "                     You should override Article::getData directly." << std::endl;
+      return __source->getData(getAid());
+    }
+    /**************************************************************************/
 
     Uuid ArticleSource::getUuid()
     {
