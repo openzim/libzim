@@ -112,7 +112,7 @@ namespace zim
       log_debug("basename " << basename);
 
       INFO("create directory entries");
-      createDirents(src, basename + ".tmp");
+      createDirentsAndClusters(src, basename + ".tmp");
       INFO(dirents.size() << " directory entries created");
 
       INFO("create title index");
@@ -131,7 +131,7 @@ namespace zim
       INFO("ready");
     }
 
-    void ZimCreator::createDirents(ArticleSource& src, const std::string& tmpfname)
+    void ZimCreator::createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname)
     {
       INFO("collect articles");
       std::ofstream out(tmpfname.c_str());

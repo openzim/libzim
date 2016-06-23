@@ -54,7 +54,7 @@ namespace zim
         offset_type clustersSize;
         offset_type currentSize;
 
-        void createDirents(ArticleSource& src, const std::string& tmpfname);
+        void createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname);
         void createTitleIndex(ArticleSource& src);
         void fillHeader(ArticleSource& src);
         void write(const std::string& fname, const std::string& tmpfname);
