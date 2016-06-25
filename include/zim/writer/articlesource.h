@@ -20,6 +20,7 @@
 #ifndef ZIM_WRITER_ARTICLESOURCE_H
 #define ZIM_WRITER_ARTICLESOURCE_H
 
+#include <stdexcept>
 #include <zim/blob.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
