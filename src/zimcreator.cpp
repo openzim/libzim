@@ -144,7 +144,7 @@ namespace zim
       // because we don't know which one will fill up first.  We also need
       // to track the dirents currently in each, so we can fix up the
       // cluster index if the other one ends up written first.
-      DirentsType compDirents, uncompDirents;
+      DirentPtrsType compDirents, uncompDirents;
       Cluster compCluster, uncompCluster;
       compCluster.setCompression(compression);
       uncompCluster.setCompression(zimcompNone);
@@ -188,11 +188,11 @@ namespace zim
           }
         }
 
-        dirents.push_back(dirent);
         currentSize +=
           dirent.getDirentSize() /* for directory entry */ +
           sizeof(offset_type) /* for url pointer list */ +
           sizeof(size_type) /* for title pointer list */;
+        dirents.push_back(dirent);
 
         // If this is a redirect, we're done: there's no blob to add.
         if (dirent.isRedirect())
@@ -217,7 +217,7 @@ namespace zim
         }
 
         Cluster *cluster;
-        DirentsType *myDirents, *otherDirents;
+        DirentPtrsType *myDirents, *otherDirents;
         if (dirent.isCompress())
         {
           cluster = &compCluster;
@@ -230,9 +230,9 @@ namespace zim
           myDirents = &uncompDirents;
           otherDirents = &compDirents;
         }
-        myDirents->push_back(dirent);
-        dirent.setCluster(clusterOffsets.size(), cluster->count());
+        dirents.back().setCluster(clusterOffsets.size(), cluster->count());
         cluster->addBlob(blob);
+        myDirents->push_back(&(dirents.back()));
 
         // If cluster is now large enough, write it to disk.
         if (cluster->size() >= minChunkSize * 1024)
@@ -247,10 +247,10 @@ namespace zim
           cluster->clear();
           myDirents->clear();
           // Update the cluster number of the dirents *not* written to disk.
-          for (DirentsType::iterator di = otherDirents->begin();
+          for (DirentPtrsType::iterator di = otherDirents->begin();
                di != otherDirents->end(); ++di)
           {
-            di->setCluster(clusterOffsets.size(), di->getBlobNumber());
+            (*di)->setCluster(clusterOffsets.size(), (*di)->getBlobNumber());
           }
           offset_type end = out.tellp();
           currentSize += (end - start) +
@@ -263,10 +263,10 @@ namespace zim
       {
         clusterOffsets.push_back(out.tellp());
         out << compCluster;
-        for (DirentsType::iterator di = uncompDirents.begin();
+        for (DirentPtrsType::iterator di = uncompDirents.begin();
              di != uncompDirents.end(); ++di)
         {
-          di->setCluster(clusterOffsets.size(), di->getBlobNumber());
+          (*di)->setCluster(clusterOffsets.size(), (*di)->getBlobNumber());
         }
       }
       compCluster.clear();

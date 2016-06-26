@@ -33,6 +33,7 @@ namespace zim
     {
       public:
         typedef std::vector<Dirent> DirentsType;
+        typedef std::vector<Dirent*> DirentPtrsType;
         typedef std::vector<size_type> SizeVectorType;
         typedef std::vector<offset_type> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypes;
