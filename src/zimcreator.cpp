@@ -110,6 +110,7 @@ namespace zim
                      ? fname.substr(0, fname.size() - 4)
                      : fname;
       log_debug("basename " << basename);
+      src.setFilename(fname);
 
       INFO("create directory entries");
       createDirentsAndClusters(src, basename + ".tmp");
