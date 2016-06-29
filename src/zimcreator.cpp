@@ -232,7 +232,7 @@ namespace zim
         }
         dirents.back().setCluster(clusterOffsets.size(), cluster->count());
         cluster->addBlob(blob);
-        myDirents->push_back(&(dirents.back()));
+        myDirents->push_back(dirents.size()-1);
 
         // If cluster is now large enough, write it to disk.
         if (cluster->size() >= minChunkSize * 1024)
@@ -247,10 +247,11 @@ namespace zim
           cluster->clear();
           myDirents->clear();
           // Update the cluster number of the dirents *not* written to disk.
-          for (DirentPtrsType::iterator di = otherDirents->begin();
-               di != otherDirents->end(); ++di)
+          for (DirentPtrsType::iterator dpi = otherDirents->begin();
+               dpi != otherDirents->end(); ++dpi)
           {
-            (*di)->setCluster(clusterOffsets.size(), (*di)->getBlobNumber());
+            Dirent *di = &dirents[*dpi];
+            di->setCluster(clusterOffsets.size(), di->getBlobNumber());
           }
           offset_type end = out.tellp();
           currentSize += (end - start) +
@@ -263,10 +264,11 @@ namespace zim
       {
         clusterOffsets.push_back(out.tellp());
         out << compCluster;
-        for (DirentPtrsType::iterator di = uncompDirents.begin();
-             di != uncompDirents.end(); ++di)
+        for (DirentPtrsType::iterator dpi = uncompDirents.begin();
+             dpi != uncompDirents.end(); ++dpi)
         {
-          (*di)->setCluster(clusterOffsets.size(), (*di)->getBlobNumber());
+          Dirent *di = &dirents[*dpi];
+          di->setCluster(clusterOffsets.size(), di->getBlobNumber());
         }
       }
       compCluster.clear();
