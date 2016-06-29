@@ -41,7 +41,10 @@
   substracted from the actual number, so a 2 byte zero is actually a 128.
 
   The same logic continues on the 3rd, 4th, ... byte. Up to 7 additional bytes
-  are used, so the first byte must contain at least one 0.
+  could used, since the first byte must contain at least one 0.
+
+  This particular implementation only represents uint32_t values (numbers up
+  to 2^32-1), so it will only ever emit 5 bytes per input value.
 
   binary                          range
   ------------------------------- --------------------------------------------------
