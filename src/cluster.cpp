@@ -60,7 +60,7 @@ namespace zim
   }
 
   ClusterImpl::ClusterImpl()
-    : compression(zimcompDefault)
+    : compression(zimcompNone)
   {
     offsets.push_back(0);
   }

@@ -88,8 +88,8 @@ namespace zim
       Blob getBlob(size_type n) const;
 
       size_type count() const   { return impl ? impl->getCount() : 0; }
-      size_type size() const    { return impl ? impl->getSize() : 0; }
-      void clear()              { impl = 0; }
+      size_type size() const    { return impl ? impl->getSize(): sizeof(size_type); }
+      void clear()              { if (impl) impl->clear(); }
 
       void addBlob(const char* data, unsigned size) { getImpl()->addBlob(data, size); }
       void addBlob(const Blob& blob)                { getImpl()->addBlob(blob); }
