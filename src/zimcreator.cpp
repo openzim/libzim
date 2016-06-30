@@ -202,15 +202,6 @@ namespace zim
         }
 
         // Add blob data to compressed or uncompressed cluster.
-        /**********************************************************************/
-        /* For API compatibility.
-         * The default Article::getData call ArticleSource::getData.
-         * So set the source of article to let default API compatible function
-         * do its job.
-         * This should be removed once every users switch to new API.
-         */
-        article->__source = &src;
-        /**********************************************************************/
         Blob blob = article->getData();
         if (blob.size() > 0)
         {
