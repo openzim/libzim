@@ -79,6 +79,9 @@ namespace zim
 
     size_type n = offset / 4;
     size_type a = offset;
+    // offset are from start of cluster !after the char telling the compression!
+    // but startOffset is offset from start of the cluster.
+    startOffset = offset + sizeof(char);
 
     log_debug1("first offset is " << offset << " n=" << n << " a=" << a);
 

@@ -42,6 +42,7 @@ namespace zim
       CompressionType compression;
       Offsets offsets;
       Data data;
+      offset_type startOffset;
 
       void read(std::istream& in);
       void write(std::ostream& out) const;
@@ -49,14 +50,15 @@ namespace zim
     public:
       ClusterImpl();
 
-      void setCompression(CompressionType c)  { compression = c; }
-      CompressionType getCompression() const  { return compression; }
-      bool isCompressed() const               { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
+      void setCompression(CompressionType c)   { compression = c; }
+      CompressionType getCompression() const   { return compression; }
+      bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 
-      size_type getCount() const              { return offsets.size() - 1; }
-      const char* getData(unsigned n) const   { return &data[ offsets[n] ]; }
-      size_type getSize(unsigned n) const     { return offsets[n+1] - offsets[n]; }
-      size_type getSize() const               { return offsets.size() * sizeof(size_type) + data.size(); }
+      size_type getCount() const               { return offsets.size() - 1; }
+      const char* getData(unsigned n) const    { return &data[ offsets[n] ]; }
+      size_type getSize(unsigned n) const      { return offsets[n+1] - offsets[n]; }
+      size_type getSize() const                { return offsets.size() * sizeof(size_type) + data.size(); }
+      offset_type getOffset(size_type n) const { return startOffset + offsets[n]; }
       Blob getBlob(size_type n) const;
       void clear();
 
@@ -85,6 +87,7 @@ namespace zim
 
       const char* getBlobPtr(size_type n) const     { return impl->getData(n); }
       size_type getBlobSize(size_type n) const      { return impl->getSize(n); }
+      offset_type getBlobOffset(size_type n) const  { return impl->getOffset(n); }
       Blob getBlob(size_type n) const;
 
       size_type count() const   { return impl ? impl->getCount() : 0; }

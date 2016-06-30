@@ -62,6 +62,7 @@ namespace zim
 
       Blob getBlob(size_type clusterIdx, size_type blobIdx)
         { return getCluster(clusterIdx).getBlob(blobIdx); }
+      offset_type getOffset(size_type clusterIdx, size_type blobIdx);
 
       size_type getNamespaceBeginOffset(char ch)
         { return impl->getNamespaceBeginOffset(ch); }

@@ -201,6 +201,15 @@ namespace zim
   File::const_iterator File::findByTitle(char ns, const std::string& title)
   { return findxByTitle(ns, title).second; }
 
+  offset_type File::getOffset(size_type clusterIdx, size_type blobIdx)
+  {
+    Cluster cluster = getCluster(clusterIdx);
+    if (cluster.isCompressed())
+        return 0;
+    offset_type blobOffset = cluster.getBlobOffset(blobIdx);
+    return getClusterOffset(clusterIdx) + blobOffset;
+  }
+
   std::string urldecode(const std::string& url)
   {
     std::string ret;

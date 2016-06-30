@@ -85,6 +85,15 @@ namespace zim
                            : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
       }
 
+      offset_type getOffset() const
+      {
+        Dirent dirent = getDirent();
+        return isRedirect()
+            || isLinktarget()
+            || isDeleted() ? 0
+                           : const_cast<File&>(file).getOffset(dirent.getClusterNumber(), dirent.getBlobNumber());
+      }
+
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);
       void getPage(std::ostream&, bool layout = true, unsigned maxRecurse = 10);
 
