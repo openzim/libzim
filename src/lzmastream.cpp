@@ -58,10 +58,11 @@ namespace zim
   }
 
   LzmaStreamBuf::LzmaStreamBuf(std::streambuf* sink_, uint32_t preset, lzma_check check, unsigned bufsize_)
-    : stream(LZMA_STREAM_INIT),
-      obuffer(bufsize_),
+    : obuffer(bufsize_),
       sink(sink_)
   {
+    std::memset(reinterpret_cast<void*>(&stream), 0, sizeof(stream));
+
     checkError(
       ::lzma_easy_encoder(&stream, preset, check));
 
