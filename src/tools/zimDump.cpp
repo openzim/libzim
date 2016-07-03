@@ -394,6 +394,7 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
 
 void ZimDumper::dumpFiles(const std::string& directory)
 {
+  unsigned int truncatedFiles = 0;
   ::mkdir(directory.c_str(), 0777);
 
   std::set<char> ns;
@@ -406,6 +407,13 @@ void ZimDumper::dumpFiles(const std::string& directory)
     std::string::size_type p;
     while ((p = t.find('/')) != std::string::npos)
       t.replace(p, 1, "%2f");
+    if ( t.length() > 255 )
+    {
+      std::ostringstream sspostfix, sst;
+      sspostfix << (++truncatedFiles);
+      sst << t.substr(0, 254-sspostfix.tellp()) << "~" << sspostfix.str();
+      t = sst.str();
+    }
     std::string f = d + '/' + t;
     std::ofstream out(f.c_str());
     out << it->getData();
