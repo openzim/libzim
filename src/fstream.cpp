@@ -295,7 +295,7 @@ time_t streambuf::getMTime() const
 
   const char* fname = files.front()->fname.c_str();
 
-#ifdef HAVE_STAT64
+#if defined(HAVE_STAT64) && ! defined(__APPLE__)
   struct stat64 st;
   int ret = ::stat64(fname, &st);
 #else
