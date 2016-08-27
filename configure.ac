@@ -1,4 +1,4 @@
-AC_INIT(zimlib, 1.2, [Tommi Maekitalo <tommi@tntnet.org>])
+AC_INIT(zimlib, 1.3, [Tommi Maekitalo <tommi@tntnet.org>])
 AM_INIT_AUTOMAKE([subdir-objects])
 
 abi_current=2
