@@ -23,6 +23,7 @@
 #include <zim/zim.h>
 #include <zim/refcounted.h>
 #include <zim/smartptr.h>
+#include <zim/fstream.h>
 #include <iosfwd>
 #include <vector>
 
@@ -33,7 +34,6 @@ namespace zim
 
   class ClusterImpl : public RefCounted
   {
-      friend std::istream& operator>> (std::istream& in, ClusterImpl& blobImpl);
       friend std::ostream& operator<< (std::ostream& out, const ClusterImpl& blobImpl);
 
       typedef std::vector<size_type> Offsets;
@@ -41,11 +41,28 @@ namespace zim
 
       CompressionType compression;
       Offsets offsets;
-      Data data;
+      Data _data;
       offset_type startOffset;
 
-      void read(std::istream& in);
+      ifstream* lazy_read_stream;
+
+      offset_type read_header(std::istream& in);
+      void read_content(std::istream& in);
       void write(std::ostream& out) const;
+
+      void set_lazy_read(ifstream* in) {
+        lazy_read_stream = in;
+      }
+
+      bool is_fully_initialised() const { return lazy_read_stream == 0; }
+      void finalise_read();
+      const Data& data() const {
+        if ( !is_fully_initialised() )
+        {
+           const_cast<ClusterImpl*>(this)->finalise_read();
+        }
+        return _data;
+      }
 
     public:
       ClusterImpl();
@@ -55,20 +72,21 @@ namespace zim
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 
       size_type getCount() const               { return offsets.size() - 1; }
-      const char* getData(unsigned n) const    { return &data[ offsets[n] ]; }
+      const char* getData(unsigned n) const    { return &data()[ offsets[n] ]; }
       size_type getSize(unsigned n) const      { return offsets[n+1] - offsets[n]; }
-      size_type getSize() const                { return offsets.size() * sizeof(size_type) + data.size(); }
+      size_type getSize() const                { return offsets.size() * sizeof(size_type) + data().size(); }
       offset_type getOffset(size_type n) const { return startOffset + offsets[n]; }
       Blob getBlob(size_type n) const;
       void clear();
 
       void addBlob(const Blob& blob);
       void addBlob(const char* data, unsigned size);
+
+      void init_from_stream(ifstream& in, offset_type offset);
   };
 
   class Cluster
   {
-      friend std::istream& operator>> (std::istream& in, Cluster& blob);
       friend std::ostream& operator<< (std::ostream& out, const Cluster& blob);
 
       SmartPtr<ClusterImpl> impl;
@@ -98,10 +116,10 @@ namespace zim
       void addBlob(const Blob& blob)                { getImpl()->addBlob(blob); }
 
       operator bool() const   { return impl; }
+
+      void init_from_stream(ifstream& in, offset_type offset);
   };
 
-  std::istream& operator>> (std::istream& in, ClusterImpl& blobImpl);
-  std::istream& operator>> (std::istream& in, Cluster& blob);
   std::ostream& operator<< (std::ostream& out, const ClusterImpl& blobImpl);
   std::ostream& operator<< (std::ostream& out, const Cluster& blob);
 

@@ -176,8 +176,7 @@ namespace zim
 
     offset_type clusterOffset = getClusterOffset(idx);
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    zimFile.seekg(clusterOffset);
-    zimFile >> cluster;
+    cluster.init_from_stream(zimFile, clusterOffset);
 
     if (zimFile.fail())
       throw ZimFileFormatError("error reading cluster data");

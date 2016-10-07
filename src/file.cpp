@@ -206,8 +206,7 @@ namespace zim
     Cluster cluster = getCluster(clusterIdx);
     if (cluster.isCompressed())
         return 0;
-    offset_type blobOffset = cluster.getBlobOffset(blobIdx);
-    return getClusterOffset(clusterIdx) + blobOffset;
+    return cluster.getBlobOffset(blobIdx);
   }
 
   std::string urldecode(const std::string& url)
