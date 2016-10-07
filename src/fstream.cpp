@@ -264,7 +264,6 @@ void streambuf::setCurrentFile(const std::string& fname, zim::offset_type off)
 void streambuf::seekg(zim::offset_type off)
 {
   setg(0, 0, 0);
-  currentPos = off;
 
   zim::offset_type o = off;
   FilesType::iterator it;
