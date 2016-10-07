@@ -75,7 +75,7 @@ namespace zim
 
       void seekg(zim::offset_type off);
       void setBufsize(unsigned s)
-      { buffer.resize(s); }
+      { buffer.resize(s); setg(0, 0, 0);}
       zim::offset_type fsize() const;
       time_t getMTime() const;
   };

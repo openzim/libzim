@@ -258,6 +258,7 @@ void streambuf::setCurrentFile(const std::string& fname, zim::offset_type off)
       throw std::runtime_error(msg.str());
     }
   }
+  setg(0, 0, 0);
 }
 
 void streambuf::seekg(zim::offset_type off)
