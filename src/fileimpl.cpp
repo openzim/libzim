@@ -182,13 +182,8 @@ namespace zim
     if (zimFile.fail())
       throw ZimFileFormatError("error reading cluster data");
 
-    if (cluster.isCompressed())
-    {
-      log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-      clusterCache.put(idx, cluster);
-    }
-    else
-      log_debug("cluster " << idx << " is not compressed - do not cache");
+    log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
+    clusterCache.put(idx, cluster);
 
     return cluster;
   }
