@@ -79,19 +79,19 @@ namespace zim
       Blob getData() const
       {
         Dirent dirent = getDirent();
-        return isRedirect()
-            || isLinktarget()
-            || isDeleted() ? Blob()
-                           : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
+        return dirent.isRedirect()
+            || dirent.isLinktarget()
+            || dirent.isDeleted() ? Blob()
+                                  : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
       }
 
       offset_type getOffset() const
       {
         Dirent dirent = getDirent();
-        return isRedirect()
-            || isLinktarget()
-            || isDeleted() ? 0
-                           : const_cast<File&>(file).getOffset(dirent.getClusterNumber(), dirent.getBlobNumber());
+        return dirent.isRedirect()
+            || dirent.isLinktarget()
+            || dirent.isDeleted() ? 0
+                                  : const_cast<File&>(file).getOffset(dirent.getClusterNumber(), dirent.getBlobNumber());
       }
 
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);
