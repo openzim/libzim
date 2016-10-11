@@ -222,12 +222,12 @@ namespace zim
           myDirents = &uncompDirents;
           otherDirents = &compDirents;
         }
-        dirents.back().setCluster(clusterOffsets.size(), cluster->count());
-        cluster->addBlob(blob);
-        myDirents->push_back(dirents.size()-1);
 
-        // If cluster is now large enough, write it to disk.
-        if (cluster->size() >= minChunkSize * 1024)
+        // If cluster will be too large, write it to dis, and open a new
+        // one for the content.
+        if ( cluster->count()
+          && cluster->size()+blob.size() >= minChunkSize * 1024
+           )
         {
           log_info("cluster with " << cluster->count() << " articles, " <<
                    cluster->size() << " bytes; current title \"" <<
@@ -249,6 +249,10 @@ namespace zim
           currentSize += (end - start) +
             sizeof(offset_type) /* for cluster pointer entry */;
         }
+
+        dirents.back().setCluster(clusterOffsets.size(), cluster->count());
+        cluster->addBlob(blob);
+        myDirents->push_back(dirents.size()-1);
       }
 
       // When we've seen all articles, write any remaining clusters.
