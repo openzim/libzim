@@ -41,7 +41,8 @@ namespace zim
   FileImpl::FileImpl(const char* fname)
     : zimFile(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
-      clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE))
+      clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
   {
     log_trace("read file \"" << fname << '"');
 
@@ -181,8 +182,13 @@ namespace zim
     if (zimFile.fail())
       throw ZimFileFormatError("error reading cluster data");
 
-    log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-    clusterCache.put(idx, cluster);
+    if (cacheUncompressedCluster || cluster.isCompressed())
+    {
+      log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
+      clusterCache.put(idx, cluster);
+    }
+    else
+      log_debug("cluster " << idx << " is not compressed - do not cache");
 
     return cluster;
   }

@@ -41,6 +41,7 @@ namespace zim
 
       Cache<size_type, Dirent> direntCache;
       Cache<offset_type, Cluster> clusterCache;
+      bool cacheUncompressedCluster;
       typedef std::map<char, size_type> NamespaceCache;
       NamespaceCache namespaceBeginCache;
       NamespaceCache namespaceEndCache;
