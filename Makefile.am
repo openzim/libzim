@@ -13,3 +13,6 @@ SUBDIRS = \
 	include \
 	$(UNITTEST_DIR) \
 	examples
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libzim.pc

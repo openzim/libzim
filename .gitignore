@@ -27,3 +27,4 @@ stamp-h1
 examples/createZimExample
 src/tools/zimdump
 src/tools/zimsearch
+libzim.pc
