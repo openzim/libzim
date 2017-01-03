@@ -28,17 +28,17 @@
 
 #include "config.h"
 
-#ifdef ENABLE_ZLIB
+#if defined(ENABLE_ZLIB)
 #include <zim/deflatestream.h>
 #include <zim/inflatestream.h>
 #endif
 
-#ifdef ENABLE_BZIP2
+#if defined(ENABLE_BZIP2)
 #include <zim/bzip2stream.h>
 #include <zim/bunzip2stream.h>
 #endif
 
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
 #include <zim/lzmastream.h>
 #include <zim/unlzmastream.h>
 #endif
@@ -212,7 +212,7 @@ namespace zim
 
       case zimcompZip:
         {
-#ifdef ENABLE_ZLIB
+#if defined(ENABLE_ZLIB)
           log_debug("uncompress data (zlib)");
           zim::InflateStream is(in);
           is.exceptions(std::ios::failbit | std::ios::badbit);
@@ -226,7 +226,7 @@ namespace zim
 
       case zimcompBzip2:
         {
-#ifdef ENABLE_BZIP2
+#if defined(ENABLE_BZIP2)
           log_debug("uncompress data (bzip2)");
           zim::Bunzip2Stream is(in);
           is.exceptions(std::ios::failbit | std::ios::badbit);
@@ -240,7 +240,7 @@ namespace zim
 
       case zimcompLzma:
         {
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
           log_debug("uncompress data (lzma)");
           zim::UnlzmaStream is(in);
           is.exceptions(std::ios::failbit | std::ios::badbit);
@@ -274,7 +274,7 @@ namespace zim
 
       case zimcompZip:
         {
-#ifdef ENABLE_ZLIB
+#if defined(ENABLE_ZLIB)
           log_debug("compress data (zlib)");
           zim::DeflateStream os(out);
           os.exceptions(std::ios::failbit | std::ios::badbit);
@@ -288,7 +288,7 @@ namespace zim
 
       case zimcompBzip2:
         {
-#ifdef ENABLE_BZIP2
+#if defined(ENABLE_BZIP2)
           log_debug("compress data (bzip2)");
           zim::Bzip2Stream os(out);
           os.exceptions(std::ios::failbit | std::ios::badbit);
@@ -302,7 +302,7 @@ namespace zim
 
       case zimcompLzma:
         {
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
           uint32_t lzmaPreset = 3 | LZMA_PRESET_EXTREME;
           /**
            * read lzma preset from environment

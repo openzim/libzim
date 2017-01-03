@@ -55,11 +55,11 @@ namespace zim
     ZimCreator::ZimCreator()
       : minChunkSize(1024-64),
         nextMimeIdx(0),
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif ENABLE_BZIP2
+#elif defined(ENABLE_BZIP2)
         compression(zimcompBzip2),
-#elif ENABLE_ZLIB
+#elif defined(ENABLE_ZLIB)
         compression(zimcompZip),
 #else
         compression(zimcompNone),
@@ -70,11 +70,11 @@ namespace zim
 
     ZimCreator::ZimCreator(int& argc, char* argv[])
       : nextMimeIdx(0),
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif ENABLE_BZIP2
+#elif defined(ENABLE_BZIP2)
         compression(zimcompBzip2),
-#elif ENABLE_ZLIB
+#elif defined( ENABLE_ZLIB)
         compression(zimcompZip),
 #else
         compression(zimcompNone),
@@ -87,15 +87,15 @@ namespace zim
       else
         minChunkSize = Arg<unsigned>(argc, argv, 's', 1024-64);
 
-#ifdef ENABLE_ZLIB
+#if defined(ENABLE_ZLIB)
       if (Arg<bool>(argc, argv, "--zlib"))
         compression = zimcompZip;
 #endif
-#ifdef ENABLE_BZIP2
+#if defined(ENABLE_BZIP2)
       if (Arg<bool>(argc, argv, "--bzip2"))
         compression = zimcompBzip2;
 #endif
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
       if (Arg<bool>(argc, argv, "--lzma"))
         compression = zimcompLzma;
 #endif
