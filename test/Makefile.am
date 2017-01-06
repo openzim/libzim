@@ -1,6 +1,7 @@
 AM_CPPFLAGS=-I$(top_srcdir)/include
 
 noinst_PROGRAMS = zimlib-test
+TESTS = zimlib-test
 
 if WITH_ZLIB
     ZLIB_SOURCES = \
