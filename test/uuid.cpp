@@ -24,6 +24,8 @@
 #include <cxxtools/unit/testsuite.h>
 #include <cxxtools/unit/registertest.h>
 
+#include <unistd.h>
+
 class UuidTest : public cxxtools::unit::TestSuite
 {
   public:
@@ -91,6 +93,12 @@ class UuidTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT(uuid1 != uuid2);
       CXXTOOLS_UNIT_ASSERT(uuid1 != zim::Uuid());
       CXXTOOLS_UNIT_ASSERT(uuid2 == zim::Uuid());
+
+      // Since GNU Mach's clock isn't precise hence the time might be
+      // same during generating uuid1 and uuid2 leading to test
+      // failure. To bring the time difference between 2 sleep for a
+      // second. Thanks to Pino Toscano.
+      sleep(1);
 
       uuid2 = zim::Uuid::generate();
       CXXTOOLS_UNIT_ASSERT(uuid1 != uuid2);
