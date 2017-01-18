@@ -28,3 +28,6 @@ examples/createZimExample
 src/tools/zimdump
 src/tools/zimsearch
 libzim.pc
+test-driver
+test/zimlib-test*
+test/test-suite.log
