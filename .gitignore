@@ -2,7 +2,7 @@
 *#*
 autom4te.cache
 compile
-config.*
+config.h
 configure
 depcomp
 .deps

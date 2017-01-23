@@ -1,0 +1,14 @@
+
+#mesondefine VERSION
+
+#mesondefine DIRENT_CACHE_SIZE
+
+#mesondefine CLUSTER_CACHE_SIZE
+
+#mesondefine LZMA_MEMORY_SIZE
+
+#mesondefine ENABLE_ZLIB
+
+#mesondefine ENABLE_LZMA
+
+#mesondefine ENABLE_BZIP2
