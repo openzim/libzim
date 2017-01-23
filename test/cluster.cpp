@@ -39,13 +39,13 @@ class ClusterTest : public cxxtools::unit::TestSuite
       registerMethod("CreateCluster", *this, &ClusterTest::CreateCluster);
       registerMethod("ReadWriteCluster", *this, &ClusterTest::ReadWriteCluster);
       registerMethod("ReadWriteEmpty", *this, &ClusterTest::ReadWriteEmpty);
-#ifdef ENABLE_ZLIB
+#if defined(ENABLE_ZLIB)
       registerMethod("ReadWriteClusterZ", *this, &ClusterTest::ReadWriteClusterZ);
 #endif
-#ifdef ENABLE_BZIP2
+#if defined(ENABLE_BZIP2)
       registerMethod("ReadWriteClusterBz2", *this, &ClusterTest::ReadWriteClusterBz2);
 #endif
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
       registerMethod("ReadWriteClusterLzma", *this, &ClusterTest::ReadWriteClusterLzma);
 #endif
     }
@@ -126,7 +126,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       std::remove(name.c_str());
     }
 
-#ifdef ENABLE_ZLIB
+#if defined(ENABLE_ZLIB)
     void ReadWriteClusterZ()
     {
       std::string name = std::tmpnam(NULL);
@@ -164,7 +164,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
 
 #endif
 
-#ifdef ENABLE_BZIP2
+#if defined(ENABLE_BZIP2)
     void ReadWriteClusterBz2()
     {
       std::string name = std::tmpnam(NULL);
@@ -202,7 +202,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
 
 #endif
 
-#ifdef ENABLE_LZMA
+#if defined(ENABLE_LZMA)
     void ReadWriteClusterLzma()
     {
       std::string name = std::tmpnam(NULL);
