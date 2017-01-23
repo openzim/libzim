@@ -65,6 +65,7 @@ AC_DEFINE_UNQUOTED(DIRENT_CACHE_SIZE, $dirent_cache_size, [set dirent cache size
 # compression algorithms
 #
 
+pkg_config_deps=""
 # zlib
 AC_ARG_ENABLE([zlib],
   AS_HELP_STRING([--enable-zlib], [add support for zlib compression (disabled by default)]),
@@ -75,6 +76,7 @@ if test "$enable_zlib" = "yes"
 then
     AC_CHECK_HEADER([zlib.h], , AC_MSG_ERROR([zlib header not found]))
     AC_DEFINE(ENABLE_ZLIB, [1], [defined if zlib compression is enabled])
+    pkg_config_deps+=" zlib"
 fi
 
 AM_CONDITIONAL(WITH_ZLIB, test "$enable_zlib" = "yes")
@@ -89,6 +91,7 @@ if test "$enable_bzip2" = "yes"
 then
     AC_CHECK_HEADER([bzlib.h], , AC_MSG_ERROR([bzip2 header files not found]))
     AC_DEFINE(ENABLE_BZIP2, [1], [defined if bzip2 compression is enabled])
+    pkg_config_deps+=" bzip2"
 fi
 
 AM_CONDITIONAL(WITH_BZIP2, test "$enable_bzip2" = "yes")
@@ -103,9 +106,12 @@ if test "$enable_lzma" = "yes"
 then
     AC_CHECK_HEADER([lzma.h], , AC_MSG_ERROR([lzma header files not found]))
     AC_DEFINE(ENABLE_LZMA, [1], [defined if lzma compression is enabled])
+    pkg_config_deps+=" liblzma"
 fi
 
 AM_CONDITIONAL(WITH_LZMA, test "$enable_lzma" = "yes")
+
+AC_SUBST(PKG_CONFIG_DEPENDENCIES, $pkg_config_deps)
 
 #
 # unittest
