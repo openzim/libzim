@@ -6,7 +6,6 @@ configure_file(output : 'config.h',
 common_sources = [
 #    'config.h',
     'article.cpp',
-    'articlesearch.cpp',
     'articlesource.cpp',
     'cluster.cpp',
     'dirent.cpp',

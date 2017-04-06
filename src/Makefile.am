@@ -26,7 +26,6 @@ endif
 
 libzim_la_SOURCES = \
 	article.cpp \
-	articlesearch.cpp \
 	articlesource.cpp \
 	cluster.cpp \
 	dirent.cpp \

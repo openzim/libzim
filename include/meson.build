@@ -1,6 +1,5 @@
 install_headers(
     'zim/article.h',
-    'zim/articlesearch.h',
     'zim/blob.h',
     'zim/cache.h',
     'zim/cluster.h',
