@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/zintstream.h>
+#include "zintstream.h"
 #include <stdint.h>
 #include "log.h"
 

@@ -21,7 +21,6 @@
 #define ZIM_FILEHEADER_H
 
 #include <zim/zim.h>
-#include <zim/endian.h>
 #include <zim/uuid.h>
 #include <iosfwd>
 #include <limits>

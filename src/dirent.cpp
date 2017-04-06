@@ -19,7 +19,7 @@
 
 #include <zim/dirent.h>
 #include <zim/zim.h>
-#include <zim/endian.h>
+#include "endian_tools.h"
 #include "log.h"
 #include <algorithm>
 

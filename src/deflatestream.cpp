@@ -18,7 +18,7 @@
  */
 
 
-#include "zim/deflatestream.h"
+#include "deflatestream.h"
 #include "log.h"
 #include <sstream>
 #include <string.h>

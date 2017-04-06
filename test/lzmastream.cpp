@@ -17,8 +17,8 @@
  *
  */
 
-#include <zim/lzmastream.h>
-#include <zim/unlzmastream.h>
+#include "../src/lzmastream.h"
+#include "../src/unlzmastream.h"
 #include <iostream>
 #include <sstream>
 

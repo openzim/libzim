@@ -17,8 +17,8 @@
  *
  */
 
-#include <zim/bunzip2stream.h>
-#include <zim/bzip2stream.h>
+#include "../src/bunzip2stream.h"
+#include "../src/bzip2stream.h"
 #include <iostream>
 #include <sstream>
 

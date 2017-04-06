@@ -23,7 +23,7 @@
 #include <set>
 #include <zim/file.h>
 #include <zim/fileiterator.h>
-#include <zim/zintstream.h>
+#include "../zintstream.h"
 #include "../arg.h"
 #include "../log.h"
 #include <stdexcept>

@@ -18,7 +18,8 @@
  */
 
 #include <zim/indexarticle.h>
-#include <zim/zintstream.h>
+#include "zintstream.h"
+#include "endian_tools.h"
 #include <sstream>
 #include <stdexcept>
 #include "log.h"

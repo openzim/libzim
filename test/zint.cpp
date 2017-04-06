@@ -19,7 +19,7 @@
 
 #include <cxxtools/unit/testsuite.h>
 #include <cxxtools/unit/registertest.h>
-#include "zim/zintstream.h"
+#include "../src/zintstream.h"
 #include <sstream>
 
 class ZIntTest : public cxxtools::unit::TestSuite

@@ -6,7 +6,6 @@ install_headers(
     'zim/cache.h',
     'zim/cluster.h',
     'zim/dirent.h',
-    'zim/endian.h',
     'zim/error.h',
     'zim/file.h',
     'zim/fileheader.h',
@@ -19,10 +18,8 @@ install_headers(
     'zim/smartptr.h',
     'zim/refcounted.h',
     'zim/template.h',
-    'zim/unicode.h',
     'zim/uuid.h',
     'zim/zim.h',
-    'zim/zintstream.h',
     subdir:'zim'
 )
 

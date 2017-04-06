@@ -18,7 +18,7 @@
  */
 
 
-#include "zim/inflatestream.h"
+#include "inflatestream.h"
 #include "log.h"
 #include <sstream>
 
