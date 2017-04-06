@@ -18,9 +18,9 @@
  */
 
 #include <iostream>
-#include "log.h"
-#include "arg.h"
-#include <zim/search.h>
+#include "../log.h"
+#include "../arg.h"
+#include <../../include/zim/search.h>
 
 void zimSearch(zim::Search& search, const std::string& s)
 {

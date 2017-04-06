@@ -66,3 +66,5 @@ libzim = library('zim',
                  include_directories : inc,
                  dependencies : deps,
                  install : true)
+
+subdir('tools')

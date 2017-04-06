@@ -1,3 +1,5 @@
+include_directory = include_directories('.')
+
 install_headers(
     'zim/article.h',
     'zim/blob.h',

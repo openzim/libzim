@@ -28,7 +28,7 @@
 #include <cxxtools/unit/testsuite.h>
 #include <cxxtools/unit/registertest.h>
 
-#include "config.h"
+#include "../src/config.h"
 
 class ClusterTest : public cxxtools::unit::TestSuite
 {

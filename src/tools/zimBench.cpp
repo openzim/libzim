@@ -29,7 +29,7 @@
 #include <zim/article.h>
 #include <zim/blob.h>
 
-#include <cxxtools/loginit.h>
+#include "../log.h"
 #include <cxxtools/arg.h>
 #include <cxxtools/clock.h>
 
