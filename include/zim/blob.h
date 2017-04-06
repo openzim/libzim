@@ -21,6 +21,7 @@
 #define ZIM_BLOB_H
 
 #include <iostream>
+#include <string>
 #include <zim/cluster.h>
 #include <algorithm>
 
@@ -48,6 +49,7 @@ namespace zim
           _cluster(cluster)
           { }
 
+      operator std::string() const { return std::string(_data, _size); }
       const char* data() const  { return _data; }
       const char* end() const   { return _data + _size; }
       unsigned size() const     { return _size; }
