@@ -20,103 +20,51 @@
 #ifndef ZIM_SEARCH_H
 #define ZIM_SEARCH_H
 
-#include <zim/article.h>
+#include "search_iterator.h"
 #include <vector>
+#include <string>
 #include <map>
 
 namespace zim
 {
-  class SearchResult
-  {
-      Article article;
-      mutable double priority;
-      struct WordAttr
-      {
-        unsigned count;
-        unsigned addweight;
-        WordAttr() : count(0), addweight(1) { }
-      };
 
-      typedef std::map<std::string, WordAttr> WordListType; // map word => count and addweight
-      typedef std::map<size_type, std::string> PosListType;  // map position => word
-      WordListType wordList;
-      PosListType posList;
-
+class File;
+class Search
+{
+    friend class search_iterator;
+    friend class search_iterator::InternalData;
     public:
-      SearchResult() : priority(0) { }
-      explicit SearchResult(const Article& article_, unsigned priority_ = 0)
-        : article(article_),
-          priority(priority_)
-          { }
-      const Article& getArticle() const  { return article; }
-      double getPriority() const;
-      void foundWord(const std::string& word, size_type pos, unsigned addweight);
-      unsigned getCountWords() const  { return wordList.size(); }
-      unsigned getCountPositions() const  { return posList.size(); }
-  };
+        typedef search_iterator iterator;
 
-  class Search
-  {
-    public:
-      class Results : public std::vector<SearchResult>
-      {
-          std::string expr;
+        explicit Search(const std::vector<const File*> zimfiles);
+        explicit Search(const File* zimfile);
+        Search(const Search& it);
+        Search& operator=(const Search& it);
+        Search(Search&& it);
+        Search& operator=(Search&& it);
+        ~Search();
 
-        public:
-          void setExpression(const std::string& e)
-            { expr = e; }
-          const std::string& getExpression() const
-            { return expr; }
-      };
+        Search& add_zimfile(const File* zimfile);
+        Search& set_query(const std::string& query);
+        Search& set_range(int start, int end);
+
+        search_iterator begin() const;
+        search_iterator end() const;
+        int get_matches_estimated() const;
 
     private:
-      static double weightOcc;
-      static double weightOccOff;
-      static double weightPlus;
-      static double weightDist;
-      static double weightPos;
-      static double weightPosRel;
-      static double weightDistinctWords;
-      static unsigned searchLimit;
+         class InternalData;
+         std::unique_ptr<InternalData> internal;
+         std::vector<const File*> zimfiles;
 
-      File indexfile;
-      File articlefile;
+         mutable std::map<std::string, int> valuesmap;
+         std::string query;
+         int range_start;
+         int range_end;
+         mutable bool search_started;
+         mutable int estimated_matches_number;
+};
 
-    public:
-      Search()
-          { }
-
-      explicit Search(const File& zimfile)
-        : indexfile(zimfile),
-          articlefile(zimfile)
-          { }
-      Search(const File& articlefile_, const File& indexfile_)
-        : indexfile(indexfile_),
-          articlefile(articlefile_)
-          { }
-
-      void search(Results& results, const std::string& expr);
-      void find(Results& results, char ns, const std::string& praefix, unsigned limit = searchLimit);
-      void find(Results& results, char ns, const std::string& begin, const std::string& end, unsigned limit = searchLimit);
-
-      static double getWeightOcc()                 { return weightOcc; }
-      static double getWeightOccOff()              { return weightOccOff; }
-      static double getWeightPlus()                { return weightPlus; }
-      static double getWeightDist()                { return weightDist; }
-      static double getWeightPos()                 { return weightPos; }
-      static double getWeightPosRel()              { return weightPosRel; }
-      static double getWeightDistinctWords()       { return weightDistinctWords; }
-      static unsigned getSearchLimit()             { return searchLimit; }
-
-      static void setWeightOcc(double v)           { weightOcc = v; }
-      static void setWeightOccOff(double v)        { weightOccOff = v; }
-      static void setWeightPlus(double v)          { weightPlus = v; }
-      static void setWeightDist(double v)          { weightDist = v; }
-      static void setWeightPos(double v)           { weightPos = v; }
-      static void setWeightPosRel(double v)        { weightPosRel = v; }
-      static void setWeightDistinctWords(double v) { weightDistinctWords = v; }
-      static void setSearchLimit(unsigned v)       { searchLimit = v; }
-  };
-}
+} //namespace zim
 
 #endif // ZIM_SEARCH_H

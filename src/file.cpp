@@ -19,6 +19,7 @@
 
 #include <zim/file.h>
 #include <zim/article.h>
+#include <zim/search.h>
 #include "log.h"
 #include <zim/fileiterator.h>
 #include <zim/error.h>
@@ -200,6 +201,13 @@ namespace zim
 
   File::const_iterator File::findByTitle(char ns, const std::string& title) const
   { return findxByTitle(ns, title).second; }
+
+  const Search* File::search(const std::string& query, int start, int end) const {
+      Search* search = new Search(this);
+      search->set_query(query);
+      search->set_range(start, end);
+      return search;
+  }
 
   offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
   {

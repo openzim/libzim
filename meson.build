@@ -1,6 +1,7 @@
 project('libzim', ['c', 'cpp'],
   version : '1.4',
-  license : 'GPL2')
+  license : 'GPL2',
+  default_options : ['c_std=c11', 'cpp_std=c++11'])
 
 abi_current=2
 abi_revision=0
@@ -19,6 +20,9 @@ conf.set('ENABLE_LZMA', lzma_dep.found())
 bzip2_dep = dependency('bzip2', required:false)
 conf.set('ENABLE_BZIP2', bzip2_dep.found())
 
+xapian_dep = dependency('xapian-core', required:false)
+conf.set('ENABLE_XAPIAN', xapian_dep.found())
+
 pkg_requires = []
 if zlib_dep.found()
     pkg_requires += ['zlib']
@@ -29,6 +33,14 @@ endif
 if bzip2_dep.found()
     pkg_requires += ['bzip2']
 endif
+if xapian_dep.found()
+    pkg_requires += ['xapian-core']
+    icu_dep = dependency('icu-i18n')
+    pkg_requires += ['icu-i18n']
+else
+    icu_dep = dependency('icu-i18n', required:false)
+endif
+
 
 inc = include_directories('include')
 

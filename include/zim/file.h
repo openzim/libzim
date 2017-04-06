@@ -30,6 +30,7 @@
 namespace zim
 {
   class Article;
+  class Search;
 
   class File
   {
@@ -86,6 +87,8 @@ namespace zim
       const_iterator findByTitle(char ns, const std::string& title) const;
       const_iterator find(char ns, const std::string& url) const;
       const_iterator find(const std::string& url) const;
+
+      const Search* search(const std::string& query, int start, int end) const;
 
       bool good() const    { return impl.getPointer() != 0; }
       time_t getMTime() const   { return impl->getMTime(); }
