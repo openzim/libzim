@@ -24,6 +24,7 @@
 #include <zim/zim.h>
 #include <zim/dirent.h>
 #include <zim/file.h>
+#include <zim/blob.h>
 #include <limits>
 #include <iosfwd>
 

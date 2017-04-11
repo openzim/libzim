@@ -19,6 +19,7 @@
 
 #include <zim/file.h>
 #include <zim/article.h>
+#include <zim/search.h>
 #include "log.h"
 #include <zim/fileiterator.h>
 #include <zim/error.h>
@@ -48,48 +49,48 @@ namespace zim
     return Article(*this, idx);
   }
 
-  Article File::getArticle(char ns, const std::string& url)
+  Article File::getArticle(char ns, const std::string& url) const
   {
     log_trace("File::getArticle('" << ns << "', \"" << url << ')');
     std::pair<bool, const_iterator> r = findx(ns, url);
     return r.first ? *r.second : Article();
   }
 
-  Article File::getArticleByUrl(const std::string& url)
+  Article File::getArticleByUrl(const std::string& url) const
   {
     log_trace("File::getArticle(\"" << url << ')');
     std::pair<bool, const_iterator> r = findx(url);
     return r.first ? *r.second : Article();
   }
 
-  Article File::getArticleByTitle(size_type idx)
+  Article File::getArticleByTitle(size_type idx) const
   {
     return Article(*this, impl->getIndexByTitle(idx));
   }
 
-  Article File::getArticleByTitle(char ns, const std::string& title)
+  Article File::getArticleByTitle(char ns, const std::string& title) const
   {
     log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
     std::pair<bool, const_iterator> r = findxByTitle(ns, title);
     return r.first ? *r.second : Article();
   }
 
-  bool File::hasNamespace(char ch)
+  bool File::hasNamespace(char ch) const
   {
     size_type off = getNamespaceBeginOffset(ch);
     return off < getCountArticles() && getDirent(off).getNamespace() == ch;
   }
 
-  File::const_iterator File::begin()
+  File::const_iterator File::begin() const
   { return const_iterator(this, 0); }
 
-  File::const_iterator File::beginByTitle()
+  File::const_iterator File::beginByTitle() const
   { return const_iterator(this, 0, const_iterator::ArticleIterator); }
 
-  File::const_iterator File::end()
+  File::const_iterator File::end() const
   { return const_iterator(this, getCountArticles()); }
 
-  std::pair<bool, File::const_iterator> File::findx(char ns, const std::string& url)
+  std::pair<bool, File::const_iterator> File::findx(char ns, const std::string& url) const
   {
     log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
 
@@ -137,14 +138,14 @@ namespace zim
     return std::pair<bool, const_iterator>(false, const_iterator(this, c < 0 ? l : u));
   }
 
-  std::pair<bool, File::const_iterator> File::findx(const std::string& url)
+  std::pair<bool, File::const_iterator> File::findx(const std::string& url) const
   {
     if (url.size() < 2 || url[1] != '/')
       return std::pair<bool, const_iterator>(false, const_iterator());
     return findx(url[0], url.substr(2));
   }
 
-  std::pair<bool, File::const_iterator> File::findxByTitle(char ns, const std::string& title)
+  std::pair<bool, File::const_iterator> File::findxByTitle(char ns, const std::string& title) const
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
@@ -192,16 +193,23 @@ namespace zim
     return std::pair<bool, const_iterator>(false, const_iterator(this, c < 0 ? l : u, const_iterator::ArticleIterator));
   }
 
-  File::const_iterator File::find(char ns, const std::string& url)
+  File::const_iterator File::find(char ns, const std::string& url) const
   { return findx(ns, url).second; }
 
-  File::const_iterator File::find(const std::string& url)
+  File::const_iterator File::find(const std::string& url) const
   { return findx(url).second; }
 
-  File::const_iterator File::findByTitle(char ns, const std::string& title)
+  File::const_iterator File::findByTitle(char ns, const std::string& title) const
   { return findxByTitle(ns, title).second; }
 
-  offset_type File::getOffset(size_type clusterIdx, size_type blobIdx)
+  const Search* File::search(const std::string& query, int start, int end) const {
+      Search* search = new Search(this);
+      search->set_query(query);
+      search->set_range(start, end);
+      return search;
+  }
+
+  offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
   {
     Cluster cluster = getCluster(clusterIdx);
     if (cluster.isCompressed())

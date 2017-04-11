@@ -6,7 +6,6 @@ configure_file(output : 'config.h',
 common_sources = [
 #    'config.h',
     'article.cpp',
-    'articlesearch.cpp',
     'articlesource.cpp',
     'cluster.cpp',
     'dirent.cpp',
@@ -15,11 +14,11 @@ common_sources = [
     'fileheader.cpp',
     'fileimpl.cpp',
     'fstream.cpp',
-    'indexarticle.cpp',
     'md5.c',
     'md5stream.cpp',
     'ptrstream.cpp',
     'search.cpp',
+    'search_iterator.cpp',
     'tee.cpp',
     'template.cpp',
     'unicode.cpp',
@@ -44,6 +43,11 @@ lzma_sources = [
     'unlzmastream.cpp'
 ]
 
+xapian_sources = [
+    'xapian/htmlparse.cc',
+    'xapian/myhtmlparse.cc'
+]
+
 sources = common_sources
 deps = []
 
@@ -62,8 +66,15 @@ if lzma_dep.found()
     deps += [lzma_dep]
 endif
 
+if xapian_dep.found()
+    sources += xapian_sources
+    deps += [xapian_dep, icu_dep]
+endif
+
 libzim = library('zim',
                  sources,
                  include_directories : inc,
                  dependencies : deps,
                  install : true)
+
+#subdir('tools')

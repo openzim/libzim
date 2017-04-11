@@ -30,6 +30,7 @@
 namespace zim
 {
   class Article;
+  class Search;
 
   class File
   {
@@ -46,46 +47,48 @@ namespace zim
       const Fileheader& getFileheader() const  { return impl->getFileheader(); }
       offset_type getFilesize() const          { return impl->getFilesize(); }
 
-      Dirent getDirent(size_type idx)          { return impl->getDirent(idx); }
-      Dirent getDirentByTitle(size_type idx)   { return impl->getDirentByTitle(idx); }
+      Dirent getDirent(size_type idx) const    { return impl->getDirent(idx); }
+      Dirent getDirentByTitle(size_type idx) const { return impl->getDirentByTitle(idx); }
       size_type getCountArticles() const       { return impl->getCountArticles(); }
 
       Article getArticle(size_type idx) const;
-      Article getArticle(char ns, const std::string& url);
-      Article getArticleByUrl(const std::string& url);
-      Article getArticleByTitle(size_type idx);
-      Article getArticleByTitle(char ns, const std::string& title);
+      Article getArticle(char ns, const std::string& url) const;
+      Article getArticleByUrl(const std::string& url) const;
+      Article getArticleByTitle(size_type idx) const;
+      Article getArticleByTitle(char ns, const std::string& title) const;
 
       Cluster getCluster(size_type idx) const  { return impl->getCluster(idx); }
       size_type getCountClusters() const       { return impl->getCountClusters(); }
       offset_type getClusterOffset(size_type idx) const    { return impl->getClusterOffset(idx); }
 
-      Blob getBlob(size_type clusterIdx, size_type blobIdx)
+      Blob getBlob(size_type clusterIdx, size_type blobIdx) const
         { return getCluster(clusterIdx).getBlob(blobIdx); }
-      offset_type getOffset(size_type clusterIdx, size_type blobIdx);
+      offset_type getOffset(size_type clusterIdx, size_type blobIdx) const;
 
-      size_type getNamespaceBeginOffset(char ch)
+      size_type getNamespaceBeginOffset(char ch) const
         { return impl->getNamespaceBeginOffset(ch); }
-      size_type getNamespaceEndOffset(char ch)
+      size_type getNamespaceEndOffset(char ch) const
         { return impl->getNamespaceEndOffset(ch); }
-      size_type getNamespaceCount(char ns)
+      size_type getNamespaceCount(char ns) const
         { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
-      std::string getNamespaces()
+      std::string getNamespaces() const
         { return impl->getNamespaces(); }
-      bool hasNamespace(char ch);
+      bool hasNamespace(char ch) const;
 
       class const_iterator;
 
-      const_iterator begin();
-      const_iterator beginByTitle();
-      const_iterator end();
-      std::pair<bool, const_iterator> findx(char ns, const std::string& url);
-      std::pair<bool, const_iterator> findx(const std::string& url);
-      std::pair<bool, const_iterator> findxByTitle(char ns, const std::string& title);
-      const_iterator findByTitle(char ns, const std::string& title);
-      const_iterator find(char ns, const std::string& url);
-      const_iterator find(const std::string& url);
+      const_iterator begin() const;
+      const_iterator beginByTitle() const;
+      const_iterator end() const;
+      std::pair<bool, const_iterator> findx(char ns, const std::string& url) const;
+      std::pair<bool, const_iterator> findx(const std::string& url) const;
+      std::pair<bool, const_iterator> findxByTitle(char ns, const std::string& title) const;
+      const_iterator findByTitle(char ns, const std::string& title) const;
+      const_iterator find(char ns, const std::string& url) const;
+      const_iterator find(const std::string& url) const;
+
+      const Search* search(const std::string& query, int start, int end) const;
 
       bool good() const    { return impl.getPointer() != 0; }
       time_t getMTime() const   { return impl->getMTime(); }

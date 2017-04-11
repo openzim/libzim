@@ -17,8 +17,8 @@
  *
  */
 
-#include <zim/inflatestream.h>
-#include <zim/deflatestream.h>
+#include "../src/inflatestream.h"
+#include "../src/deflatestream.h"
 #include <iostream>
 #include <sstream>
 

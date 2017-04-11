@@ -12,3 +12,5 @@
 #mesondefine ENABLE_LZMA
 
 #mesondefine ENABLE_BZIP2
+
+#mesondefine ENABLE_XAPIAN

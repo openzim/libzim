@@ -18,18 +18,15 @@
  */
 
 #include <iostream>
-#include "log.h"
-#include "arg.h"
-#include <zim/search.h>
+#include "../log.h"
+#include "../arg.h"
+#include <../../include/zim/search.h>
 
-void zimSearch(zim::Search& search, const std::string& s)
+void zimSearch(zim::Search& search)
 {
-    zim::Search::Results result;
-    search.search(result, s);
-
-    for (zim::Search::Results::const_iterator it = result.begin(); it != result.end(); ++it)
+    for (zim::Search::iterator it = search.begin(); it != search.end(); ++it)
     {
-      std::cout << "article " << it->getArticle().getIndex() << "\tpriority " << it->getPriority() << "\t:\t" << it->getArticle().getTitle() << std::endl;
+      std::cout << "article " << it->getIndex() << "\nscore " << it.get_score() << "\t:\t" << it->getTitle() << std::endl;
     }
 }
 
@@ -39,45 +36,12 @@ int main(int argc, char* argv[])
   {
     log_init();
 
-    zim::Arg<std::string> indexfile(argc, argv, 'x');
-
-    zim::Arg<double> weightOcc(argc, argv, "--weight-occ");
-    zim::Arg<double> weightOccOff(argc, argv, "--weight-occ-off");
-    zim::Arg<double> weightPlus(argc, argv, "--weight-plus");
-    zim::Arg<double> weightDist(argc, argv, "--weight-dist");
-    zim::Arg<double> weightPos(argc, argv, "--weight-pos");
-    zim::Arg<double> weightPosRel(argc, argv, "--weight-pos-rel");
-    zim::Arg<double> weightDistinctWords(argc, argv, "--weight-distinct-words");
-
-    if (weightOcc.isSet())
-      zim::Search::setWeightOcc(weightOcc);
-    if (weightOccOff.isSet())
-      zim::Search::setWeightOccOff(weightOccOff);
-    if (weightPlus.isSet())
-      zim::Search::setWeightPlus(weightPlus);
-    if (weightDist.isSet())
-      zim::Search::setWeightDist(weightDist);
-    if (weightPos.isSet())
-      zim::Search::setWeightPos(weightPos);
-    if (weightPosRel.isSet())
-      zim::Search::setWeightPosRel(weightPosRel);
-    if (weightDistinctWords.isSet())
-      zim::Search::setWeightDistinctWords(weightDistinctWords);
-
     if (argc <= 2)
     {
       std::cerr << "usage: " << argv[0] << " [-x indexfile] zimfile searchstring\n"
                    "\n"
                    "options\n"
                    "  -x indexfile   specify indexfile\n"
-                   "options to tune search parameters:)\n"
-                   "  --weight-occ number (default " << zim::Search::getWeightOcc() << ")\n"
-                   "  --weight-occ-off number (default " << zim::Search::getWeightOccOff() << ")\n"
-                   "  --weight-plus number (default " << zim::Search::getWeightPlus() << ")\n"
-                   "  --weight-dist number (default " << zim::Search::getWeightDist() << ")\n"
-                   "  --weight-pos number (default " << zim::Search::getWeightPos() << ")\n"
-                   "  --weight-pos-rel number (default " << zim::Search::getWeightPosRel() << ")\n"
-                   "  --weight-distinct-words number (default " << zim::Search::getWeightDistinctWords() << ')'
                 << std::endl;
       return 1;
     }
@@ -89,16 +53,10 @@ int main(int argc, char* argv[])
       s += argv[a];
     }
 
-    if (indexfile.isSet())
-    {
-      zim::Search search = zim::Search(zim::File(argv[1]), zim::File(indexfile));
-      zimSearch(search, s);
-    }
-    else
-    {
-      zim::Search search = zim::Search(zim::File(argv[1]));
-      zimSearch(search, s);
-    }
+    zim::File zimfile(argv[1]);
+    zim::Search search = zim::Search(&zimfile);
+    search.set_query(s);
+    zimSearch(search);
   }
   catch (const std::exception& e)
   {

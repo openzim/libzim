@@ -19,7 +19,7 @@
 
 #include <zim/cluster.h>
 #include <zim/blob.h>
-#include <zim/endian.h>
+#include "endian_tools.h"
 #include <zim/error.h>
 #include <stdlib.h>
 #include <sstream>
@@ -29,18 +29,18 @@
 #include "config.h"
 
 #if defined(ENABLE_ZLIB)
-#include <zim/deflatestream.h>
-#include <zim/inflatestream.h>
+#include "deflatestream.h"
+#include "inflatestream.h"
 #endif
 
 #if defined(ENABLE_BZIP2)
-#include <zim/bzip2stream.h>
-#include <zim/bunzip2stream.h>
+#include "bzip2stream.h"
+#include "bunzip2stream.h"
 #endif
 
 #if defined(ENABLE_LZMA)
-#include <zim/lzmastream.h>
-#include <zim/unlzmastream.h>
+#include "lzmastream.h"
+#include "unlzmastream.h"
 #endif
 
 log_define("zim.cluster")

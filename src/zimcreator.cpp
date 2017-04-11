@@ -21,7 +21,7 @@
 #include <zim/fileheader.h>
 #include <zim/cluster.h>
 #include <zim/blob.h>
-#include <zim/endian.h>
+#include "endian_tools.h"
 #include <algorithm>
 #include <fstream>
 

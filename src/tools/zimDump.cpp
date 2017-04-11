@@ -23,9 +23,9 @@
 #include <set>
 #include <zim/file.h>
 #include <zim/fileiterator.h>
-#include <zim/zintstream.h>
-#include "arg.h"
-#include "log.h"
+#include "../zintstream.h"
+#include "../arg.h"
+#include "../log.h"
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>

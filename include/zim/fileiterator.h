@@ -34,7 +34,7 @@ namespace zim
       };
 
     private:
-      File* file;
+      const File* file;
       size_type idx;
       mutable Article article;
       Mode mode;
@@ -42,7 +42,7 @@ namespace zim
       bool is_end() const  { return file == 0 || idx >= file->getCountArticles(); }
 
     public:
-      explicit const_iterator(File* file_ = 0, size_type idx_ = 0, Mode mode_ = UrlIterator)
+      explicit const_iterator(const File* file_ = 0, size_type idx_ = 0, Mode mode_ = UrlIterator)
         : file(file_),
           idx(idx_),
           mode(mode_)

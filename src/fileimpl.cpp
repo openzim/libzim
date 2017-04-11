@@ -20,7 +20,7 @@
 #include <zim/fileimpl.h>
 #include <zim/error.h>
 #include <zim/dirent.h>
-#include <zim/endian.h>
+#include "endian_tools.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
