@@ -57,8 +57,6 @@ namespace zim
         nextMimeIdx(0),
 #if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif defined(ENABLE_BZIP2)
-        compression(zimcompBzip2),
 #elif defined(ENABLE_ZLIB)
         compression(zimcompZip),
 #else
@@ -72,8 +70,6 @@ namespace zim
       : nextMimeIdx(0),
 #if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif defined(ENABLE_BZIP2)
-        compression(zimcompBzip2),
 #elif defined( ENABLE_ZLIB)
         compression(zimcompZip),
 #else
@@ -90,10 +86,6 @@ namespace zim
 #if defined(ENABLE_ZLIB)
       if (Arg<bool>(argc, argv, "--zlib"))
         compression = zimcompZip;
-#endif
-#if defined(ENABLE_BZIP2)
-      if (Arg<bool>(argc, argv, "--bzip2"))
-        compression = zimcompBzip2;
 #endif
 #if defined(ENABLE_LZMA)
       if (Arg<bool>(argc, argv, "--lzma"))

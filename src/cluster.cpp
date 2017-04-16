@@ -33,11 +33,6 @@
 #include "inflatestream.h"
 #endif
 
-#if defined(ENABLE_BZIP2)
-#include "bzip2stream.h"
-#include "bunzip2stream.h"
-#endif
-
 #if defined(ENABLE_LZMA)
 #include "lzmastream.h"
 #include "unlzmastream.h"
@@ -224,20 +219,6 @@ namespace zim
           break;
         }
 
-      case zimcompBzip2:
-        {
-#if defined(ENABLE_BZIP2)
-          log_debug("uncompress data (bzip2)");
-          zim::Bunzip2Stream is(in);
-          is.exceptions(std::ios::failbit | std::ios::badbit);
-          read_header(is);
-          read_content(is);
-#else
-          throw std::runtime_error("bzip2 not enabled in this library");
-#endif
-          break;
-        }
-
       case zimcompLzma:
         {
 #if defined(ENABLE_LZMA)
@@ -282,20 +263,6 @@ namespace zim
           os.flush();
 #else
           throw std::runtime_error("zlib not enabled in this library");
-#endif
-          break;
-        }
-
-      case zimcompBzip2:
-        {
-#if defined(ENABLE_BZIP2)
-          log_debug("compress data (bzip2)");
-          zim::Bzip2Stream os(out);
-          os.exceptions(std::ios::failbit | std::ios::badbit);
-          clusterImpl.write(os);
-          os.end();
-#else
-          throw std::runtime_error("bzip2 not enabled in this library");
 #endif
           break;
         }

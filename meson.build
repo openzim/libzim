@@ -17,8 +17,6 @@ zlib_dep = dependency('zlib', required:false)
 conf.set('ENABLE_ZLIB', zlib_dep.found())
 lzma_dep = dependency('liblzma', required:false)
 conf.set('ENABLE_LZMA', lzma_dep.found())
-bzip2_dep = dependency('bzip2', required:false)
-conf.set('ENABLE_BZIP2', bzip2_dep.found())
 
 xapian_dep = dependency('xapian-core', required:false)
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
@@ -29,9 +27,6 @@ if zlib_dep.found()
 endif
 if lzma_dep.found()
     pkg_requires += ['liblzma']
-endif
-if bzip2_dep.found()
-    pkg_requires += ['bzip2']
 endif
 if xapian_dep.found()
     pkg_requires += ['xapian-core']
