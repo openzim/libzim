@@ -32,12 +32,6 @@ zlib_sources = [
     'inflatestream.cpp'
 ]
 
-bzip2_sources = [
-    'bunzip2stream.cpp',
-    'bzip2.cpp',
-    'bzip2stream.cpp'
-]
-
 lzma_sources = [
     'lzmastream.cpp',
     'unlzmastream.cpp'
@@ -54,11 +48,6 @@ deps = []
 if zlib_dep.found()
     sources += zlib_sources
     deps += [zlib_dep]
-endif
-
-if bzip2_dep.found()
-    sources += bzip2_sources
-    deps += [bzip2_dep]
 endif
 
 if lzma_dep.found()

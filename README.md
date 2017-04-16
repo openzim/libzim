@@ -31,8 +31,6 @@ libraries need to be available:
 
 * Z ................................................. http://zlib.net/
 (package zlib1g-dev on Ubuntu)
-* Bzip2 ......................................... http://www.bzip.org/
-(package libbz2-dev on Ubuntu)
 * Lzma ...................................... http://tukaani.org/lzma/
 (package lzma-dev on Ubuntu)
 * ICU ................................... http://site.icu-project.org/
