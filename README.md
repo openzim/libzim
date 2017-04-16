@@ -72,7 +72,6 @@ hash -r                  # Refresh bash paths
 
 Finally we need the Ninja tool (available in the $PATH). Here is a
 solution to download, build and install it locally:
-
 ```
 git clone git://github.com/ninja-build/ninja.git
 cd ninja
