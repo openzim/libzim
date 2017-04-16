@@ -16,9 +16,6 @@ endif
 if lzma_dep.found()
     zimlibtest_sources += ['lzmastream.cpp']
 endif
-if bzip2_dep.found()
-    zimlibtest_sources += ['bzip2stream.cpp']
-endif
 
 cxxtools_dep = dependency('cxxtools-unit')
 
