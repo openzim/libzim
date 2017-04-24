@@ -145,43 +145,6 @@ int streambuf::sync()
   return traits_type::eof();
 }
 
-namespace
-{
-  void parseFilelist(const std::string& list, std::vector<std::string>& out)
-  {
-    enum {
-      state_0,
-      state_t,
-      state_e
-    } state = state_0;
-
-    for (std::string::const_iterator it = list.begin(); it != list.end(); ++it)
-    {
-      switch (state)
-      {
-        case state_0:
-          out.push_back(std::string(1, *it));
-          state = state_t;
-          break;
-
-        case state_t:
-          if (*it == ':')
-            out.push_back(std::string(1, *it));
-          else if (*it == '\\')
-            state = state_e;
-          else
-            out.back() += *it;
-          break;
-
-        case state_e:
-          out.back() += *it;
-          state = state_t;
-          break;
-      }
-    }
-  }
-}
-
 streambuf::streambuf(const std::string& fname, unsigned bufsize, unsigned noOpenFiles)
   : buffer(bufsize),
     openFilesCache(noOpenFiles),

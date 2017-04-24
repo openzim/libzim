@@ -47,6 +47,7 @@ namespace zim
         virtual std::string getRedirectAid() const;
         virtual std::string getParameter() const;
         virtual Blob getData() const = 0;
+        virtual ~Article() = default;
 
         // returns the next category id, to which the article is assigned to
         virtual std::string getNextCategory();
@@ -58,6 +59,7 @@ namespace zim
         virtual Blob getData() = 0;
         virtual std::string getUrl() const = 0;
         virtual std::string getTitle() const = 0;
+        virtual ~Category() = default;
     };
 
     class ArticleSource
@@ -74,6 +76,7 @@ namespace zim
         // ids. Using this list, the writer fetches the category data using
         // this method.
         virtual Category* getCategory(const std::string& cid);
+        virtual ~ArticleSource() = default;
     };
 
   }
