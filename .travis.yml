@@ -1,10 +1,6 @@
 language: cpp
 dist: trusty
 sudo: required
-before_install:
-- openssl aes-256-cbc -K $encrypted_082ec5541f87_key -iv $encrypted_082ec5541f87_iv
-  -in travis/travisci_builder_id_key.enc -out travis/travisci_builder_id_key -d
-- chmod 600 travis/travisci_builder_id_key
 cache: ccache
 install: travis/install_deps.sh
 script: travis/compile.sh
@@ -15,5 +11,3 @@ env:
 - PLATFORM="win32_dyn"
 - PLATFORM="android_arm"
 - PLATFORM="android_arm64"
-addons:
-  ssh_known_hosts: download.kiwix.org
