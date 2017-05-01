@@ -289,6 +289,7 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
         case zim::zimcompDefault: std::cout << "default"; break;
         case zim::zimcompNone:    std::cout << "none"; break;
         case zim::zimcompZip:     std::cout << "zip"; break;
+        case zim::zimcompBzip2:   std::cout << "bzip2 (not supported anymore)"; break;
         case zim::zimcompLzma:    std::cout << "lzma"; break;
         default:                  std::cout << "unknown (" << static_cast<unsigned>(cluster.getCompression()) << ')'; break;
       }

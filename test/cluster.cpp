@@ -42,9 +42,6 @@ class ClusterTest : public cxxtools::unit::TestSuite
 #if defined(ENABLE_ZLIB)
       registerMethod("ReadWriteClusterZ", *this, &ClusterTest::ReadWriteClusterZ);
 #endif
-#if defined(ENABLE_BZIP2)
-      registerMethod("ReadWriteClusterBz2", *this, &ClusterTest::ReadWriteClusterBz2);
-#endif
 #if defined(ENABLE_LZMA)
       registerMethod("ReadWriteClusterLzma", *this, &ClusterTest::ReadWriteClusterLzma);
 #endif
@@ -153,44 +150,6 @@ class ClusterTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT(!is.fail());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getCompression(), zim::zimcompZip);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), blob0.size());
-      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(1), blob1.size());
-      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(2), blob2.size());
-      CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(0), cluster2.getBlobPtr(0) + cluster2.getBlobSize(0), blob0.data()));
-      CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(1), cluster2.getBlobPtr(1) + cluster2.getBlobSize(1), blob1.data()));
-      CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(2), cluster2.getBlobPtr(2) + cluster2.getBlobSize(2), blob2.data()));
-      std::remove(name.c_str());
-    }
-
-#endif
-
-#if defined(ENABLE_BZIP2)
-    void ReadWriteClusterBz2()
-    {
-      std::string name = std::tmpnam(NULL);
-      std::ofstream os;
-      os.open(name.c_str());
-
-      zim::Cluster cluster;
-
-      std::string blob0("123456789012345678901234567890");
-      std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-      std::string blob2("abcdefghijklmnopqrstuvwxyz");
-
-      cluster.addBlob(blob0.data(), blob0.size());
-      cluster.addBlob(blob1.data(), blob1.size());
-      cluster.addBlob(blob2.data(), blob2.size());
-      cluster.setCompression(zim::zimcompBzip2);
-
-      os << cluster;
-      os.close();
-
-      zim::ifstream is(name);
-      zim::Cluster cluster2;
-      cluster2.init_from_stream(is, 0);
-      CXXTOOLS_UNIT_ASSERT(!is.fail());
-      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getCompression(), zim::zimcompBzip2);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), blob0.size());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(1), blob1.size());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(2), blob2.size());
