@@ -41,11 +41,11 @@ libraries need to be available:
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
 compilation script will tell you if one of them is missing or too old.
-In the worse case, you will have to download and compile bleeding edge
+In the worse case, you will have to download and compile a more recent
 version by hand.
 
-If you want to install these dependencies locally, then use the ZIM
-library directory as install prefix.
+If you want to install these dependencies locally, then ensure that
+meson (through pkg-config) will properly find them.
 
 Environnement
 -------------
@@ -64,11 +64,12 @@ Then install Meson itself:
 ```
 virtualenv -p python3 ./ # Create virtualenv
 source bin/activate      # Activate the virtualenv
-pip install meson        # Install Meson
+pip3 install meson       # Install Meson
 hash -r                  # Refresh bash paths
 ```
 
-Finally download and build Ninja locally:
+Finally we need the Ninja tool (available in the $PATH). Here is a
+solution to download, build and install it locally:
 ```
 git clone git://github.com/ninja-build/ninja.git
 cd ninja

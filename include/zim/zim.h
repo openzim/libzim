@@ -119,7 +119,7 @@ namespace zim
     zimcompDefault,
     zimcompNone,
     zimcompZip,
-    zimcompBzip2,
+    zimcompBzip2, // Not supported anymore in the libzim
     zimcompLzma
   };
 

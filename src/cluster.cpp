@@ -219,6 +219,12 @@ namespace zim
           break;
         }
 
+      case zimcompBzip2:
+        {
+	  throw std::runtime_error("bzip2 not enabled in this library");
+	  break;
+	      }
+
       case zimcompLzma:
         {
 #if defined(ENABLE_LZMA)
@@ -266,6 +272,12 @@ namespace zim
 #endif
           break;
         }
+
+      case zimcompBzip2:
+        {
+	  throw std::runtime_error("bzip2 not enabled in this library");
+	  break;
+       	}
 
       case zimcompLzma:
         {
