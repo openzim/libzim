@@ -72,12 +72,14 @@ std::map<std::string, int> read_valuesmap(const std::string &s) {
 Search::Search(const std::vector<const File*> zimfiles) :
     internal(new InternalData),
     zimfiles(zimfiles),
-    search_started(false)
+    search_started(false),
+    has_database(false)
 {}
 
 Search::Search(const File* zimfile) :
     internal(new InternalData),
-    search_started(false)
+    search_started(false),
+    has_database(false)
 {
     zimfiles.push_back(zimfile);
 }
@@ -88,7 +90,8 @@ Search::Search(const Search& it) :
      query(it.query),
      range_start(it.range_start),
      range_end(it.range_end),
-     search_started(false)
+     search_started(false),
+     has_database(false)
 { }
 
 Search& Search::operator=(const Search& it)
@@ -98,7 +101,8 @@ Search& Search::operator=(const Search& it)
      query = it.query;
      range_start = it.range_start;
      range_end = it.range_end;
-     search_started = false; 
+     search_started = false;
+     has_database = false;
      return *this;
 }
 
@@ -193,6 +197,12 @@ Search::iterator Search::begin() const {
         }
         internal->xapian_databases.push_back(database);
         internal->database.add_database(database);
+        has_database = true;
+    }
+
+    if ( ! has_database ) {
+        estimated_matches_number = 0;
+        return nullptr;
     }
     
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
@@ -216,6 +226,9 @@ Search::iterator Search::begin() const {
 
 Search::iterator Search::end() const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! has_database ) {
+        return nullptr;
+    }
     return new search_iterator::InternalData(this, internal->results.end());
 #else
     return nullptr;
