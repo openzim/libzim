@@ -62,6 +62,7 @@ class Search
          int range_start;
          int range_end;
          mutable bool search_started;
+         mutable bool has_database;
          mutable int estimated_matches_number;
 };
 

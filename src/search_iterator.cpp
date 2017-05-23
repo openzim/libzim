@@ -35,6 +35,8 @@ search_iterator & search_iterator::operator=(const search_iterator& it) {
 
 bool search_iterator::operator==(const search_iterator& it) const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal && ! it.internal)
+        return true;
     if ( ! internal || ! it.internal)
         return false;
     return (internal->search == it.internal->search
@@ -52,6 +54,9 @@ bool search_iterator::operator!=(const search_iterator& it) const {
 
 search_iterator& search_iterator::operator++() {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return *this;
+    }
     ++(internal->iterator);
     internal->document_fetched = false;
     internal->article_fetched = false;
@@ -67,6 +72,9 @@ search_iterator search_iterator::operator++(int) {
 
 search_iterator& search_iterator::operator--() {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return *this;
+    }
     --(internal->iterator);
     internal->document_fetched = false;
     internal->article_fetched = false;
@@ -82,6 +90,9 @@ search_iterator search_iterator::operator--(int) {
 
 std::string search_iterator::get_url() const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return "";
+    }
     return internal->get_document().get_data();
 #else
     return "";
@@ -90,6 +101,9 @@ std::string search_iterator::get_url() const {
 
 std::string search_iterator::get_title() const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return "";
+    }
     if ( internal->search->valuesmap.empty() )
     {
         /* This is the old legacy version. Guess and try */
@@ -105,6 +119,9 @@ std::string search_iterator::get_title() const {
 
 int search_iterator::get_score() const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return 0;
+    }
     return internal->iterator.get_percent();
 #else
     return 0;
@@ -113,6 +130,9 @@ int search_iterator::get_score() const {
 
 std::string search_iterator::get_snippet() const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return "";
+    }
     if ( internal->search->valuesmap.empty() )
     {
         /* This is the old legacy version. Guess and try */
@@ -145,6 +165,9 @@ std::string search_iterator::get_snippet() const {
 
 int search_iterator::get_size() const {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return -1;
+    }
     if ( internal->search->valuesmap.empty() )
     {
         /* This is the old legacy version. Guess and try */
@@ -162,6 +185,9 @@ int search_iterator::get_size() const {
 
 int search_iterator::get_wordCount() const      {
 #if defined(ENABLE_XAPIAN)
+    if ( ! internal ) {
+        return -1;
+    }
     if ( internal->search->valuesmap.empty() )
     {
         /* This is the old legacy version. Guess and try */
