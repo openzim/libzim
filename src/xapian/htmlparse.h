@@ -28,6 +28,8 @@
 using std::string;
 using std::map;
 
+namespace zim {
+
 class HtmlParser {
 	map<string, string> parameters;
     protected:
@@ -44,6 +46,8 @@ class HtmlParser {
 	virtual void parse_html(const string &text);
 	HtmlParser();
 	virtual ~HtmlParser() { }
+};
+
 };
 
 #endif // OMEGA_INCLUDED_HTMLPARSE_H
