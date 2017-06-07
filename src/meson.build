@@ -27,11 +27,6 @@ common_sources = [
     'zintstream.cpp'
 ]
 
-zlib_sources = [
-    'deflatestream.cpp',
-    'inflatestream.cpp'
-]
-
 lzma_sources = [
     'lzmastream.cpp',
     'unlzmastream.cpp'
@@ -44,11 +39,6 @@ xapian_sources = [
 
 sources = common_sources
 deps = []
-
-if zlib_dep.found()
-    sources += zlib_sources
-    deps += [zlib_dep]
-endif
 
 if lzma_dep.found()
     sources += lzma_sources

@@ -7,8 +7,6 @@
 
 #mesondefine LZMA_MEMORY_SIZE
 
-#mesondefine ENABLE_ZLIB
-
 #mesondefine ENABLE_LZMA
 
 #mesondefine ENABLE_XAPIAN

@@ -57,8 +57,6 @@ namespace zim
         nextMimeIdx(0),
 #if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif defined(ENABLE_ZLIB)
-        compression(zimcompZip),
 #else
         compression(zimcompNone),
 #endif
@@ -70,8 +68,6 @@ namespace zim
       : nextMimeIdx(0),
 #if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif defined( ENABLE_ZLIB)
-        compression(zimcompZip),
 #else
         compression(zimcompNone),
 #endif
@@ -83,10 +79,6 @@ namespace zim
       else
         minChunkSize = Arg<unsigned>(argc, argv, 's', 1024-64);
 
-#if defined(ENABLE_ZLIB)
-      if (Arg<bool>(argc, argv, "--zlib"))
-        compression = zimcompZip;
-#endif
 #if defined(ENABLE_LZMA)
       if (Arg<bool>(argc, argv, "--lzma"))
         compression = zimcompLzma;

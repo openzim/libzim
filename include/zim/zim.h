@@ -118,7 +118,7 @@ namespace zim
   {
     zimcompDefault,
     zimcompNone,
-    zimcompZip,
+    zimcompZip, // Not supported anymore in the libzim
     zimcompBzip2, // Not supported anymore in the libzim
     zimcompLzma
   };

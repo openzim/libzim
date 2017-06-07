@@ -29,8 +29,6 @@ The Kiwix library relies on many third parts software libraries. They
 are prerequisites to the Kiwix library compilation. Following
 libraries need to be available:
 
-* Z ................................................. http://zlib.net/
-(package zlib1g-dev on Ubuntu)
 * Lzma ...................................... http://tukaani.org/lzma/
 (package lzma-dev on Ubuntu)
 * ICU ................................... http://site.icu-project.org/

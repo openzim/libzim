@@ -10,9 +10,6 @@ zimlibtest_sources = [
     'template.cpp'
 ]
 
-if zlib_dep.found()
-    zimlibtest_sources += ['zlibstream.cpp']
-endif
 if lzma_dep.found()
     zimlibtest_sources += ['lzmastream.cpp']
 endif

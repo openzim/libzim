@@ -13,8 +13,6 @@ conf.set('DIRENT_CACHE_SIZE', get_option('DIRENT_CACHE_SIZE'))
 conf.set('CLUSTER_CACHE_SIZE', get_option('CLUSTER_CACHE_SIZE'))
 conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
 
-zlib_dep = dependency('zlib', required:false)
-conf.set('ENABLE_ZLIB', zlib_dep.found())
 lzma_dep = dependency('liblzma', required:false)
 conf.set('ENABLE_LZMA', lzma_dep.found())
 
@@ -22,9 +20,6 @@ xapian_dep = dependency('xapian-core', required:false)
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
 pkg_requires = []
-if zlib_dep.found()
-    pkg_requires += ['zlib']
-endif
 if lzma_dep.found()
     pkg_requires += ['liblzma']
 endif

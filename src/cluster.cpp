@@ -28,11 +28,6 @@
 
 #include "config.h"
 
-#if defined(ENABLE_ZLIB)
-#include "deflatestream.h"
-#include "inflatestream.h"
-#endif
-
 #if defined(ENABLE_LZMA)
 #include "lzmastream.h"
 #include "unlzmastream.h"
@@ -207,15 +202,7 @@ namespace zim
 
       case zimcompZip:
         {
-#if defined(ENABLE_ZLIB)
-          log_debug("uncompress data (zlib)");
-          zim::InflateStream is(in);
-          is.exceptions(std::ios::failbit | std::ios::badbit);
-          read_header(is);
-          read_content(is);
-#else
           throw std::runtime_error("zlib not enabled in this library");
-#endif
           break;
         }
 
@@ -261,15 +248,7 @@ namespace zim
 
       case zimcompZip:
         {
-#if defined(ENABLE_ZLIB)
-          log_debug("compress data (zlib)");
-          zim::DeflateStream os(out);
-          os.exceptions(std::ios::failbit | std::ios::badbit);
-          clusterImpl.write(os);
-          os.flush();
-#else
           throw std::runtime_error("zlib not enabled in this library");
-#endif
           break;
         }
 
