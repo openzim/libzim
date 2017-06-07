@@ -152,7 +152,7 @@ std::string search_iterator::get_snippet() const {
     /* Get the content of the article to generate a snippet.
        We parse it and use the html dump to avoid remove html tags in the
        content and be able to nicely cut the text at random place. */
-    MyHtmlParser htmlParser;
+    zim::MyHtmlParser htmlParser;
     std::string content = article.getData();
     try {
         htmlParser.parse_html(content, "UTF-8", true);

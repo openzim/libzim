@@ -45,7 +45,7 @@ lowercase_string(string &str)
     }
 }
 
-map<string, unsigned int> HtmlParser::named_ents;
+map<string, unsigned int> zim::HtmlParser::named_ents;
 
 inline static bool
 p_notdigit(char c)
@@ -91,7 +91,7 @@ p_whitespaceeqgt(char c)
 }
 
 bool
-HtmlParser::get_parameter(const string & param, string & value)
+zim::HtmlParser::get_parameter(const string & param, string & value)
 {
     map<string, string>::const_iterator i = parameters.find(param);
     if (i == parameters.end()) return false;
@@ -99,7 +99,7 @@ HtmlParser::get_parameter(const string & param, string & value)
     return true;
 }
 
-HtmlParser::HtmlParser()
+zim::HtmlParser::HtmlParser()
 {
     static const struct ent { const char *n; unsigned int v; } ents[] = {
 #include "namedentities.h"
@@ -115,7 +115,7 @@ HtmlParser::HtmlParser()
 }
 
 void
-HtmlParser::decode_entities(string &s)
+zim::HtmlParser::decode_entities(string &s)
 {
     // We need a const_iterator version of s.end() - otherwise the
     // find() and find_if() templates don't work...
@@ -164,7 +164,7 @@ HtmlParser::decode_entities(string &s)
 }
 
 void
-HtmlParser::parse_html(const string &body)
+zim::HtmlParser::parse_html(const string &body)
 {
     in_script = false;
 

@@ -37,7 +37,7 @@ lowercase_string(string &str)
 }
 
 void
-MyHtmlParser::parse_html(const string &text, const string &charset_,
+zim::MyHtmlParser::parse_html(const string &text, const string &charset_,
 			 bool charset_from_meta_)
 {
     charset = charset_;
@@ -46,7 +46,7 @@ MyHtmlParser::parse_html(const string &text, const string &charset_,
 }
 
 void
-MyHtmlParser::process_text(const string &text)
+zim::MyHtmlParser::process_text(const string &text)
 {
     if (!text.empty() && !in_script_tag && !in_style_tag) {
 	string::size_type b = text.find_first_not_of(WHITESPACE);
@@ -66,7 +66,7 @@ MyHtmlParser::process_text(const string &text)
 }
 
 void
-MyHtmlParser::opening_tag(const string &tag)
+zim::MyHtmlParser::opening_tag(const string &tag)
 {
     if (tag.empty()) return;
     switch (tag[0]) {
@@ -226,7 +226,7 @@ MyHtmlParser::opening_tag(const string &tag)
 }
 
 void
-MyHtmlParser::closing_tag(const string &tag)
+zim::MyHtmlParser::closing_tag(const string &tag)
 {
     if (tag.empty()) return;
     switch (tag[0]) {

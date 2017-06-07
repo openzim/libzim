@@ -29,6 +29,8 @@
 // \xa0?
 #define WHITESPACE " \t\n\r"
 
+namespace zim {
+
 class MyHtmlParser : public HtmlParser {
     public:
 	bool in_script_tag;
@@ -60,6 +62,8 @@ class MyHtmlParser : public HtmlParser {
 	    keywords.resize(0);
 	    dump.resize(0);
 	}
+};
+
 };
 
 #endif // OMEGA_INCLUDED_MYHTMLPARSE_H
