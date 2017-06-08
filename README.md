@@ -1,10 +1,10 @@
 ZIM library
 =============
 
-The ZIM library is the reference implementation for the openZIM file
-format. It's a solution to read and write ZIM file on many systems and
-architectures. More information about the ZIM format and the openZIM
-project at http://www.openzim.org/
+The ZIM library is the reference implementation for the ZIM file
+format. It's a solution to read and write ZIM files on many systems
+and architectures. More information about the ZIM format and the
+openZIM project at http://www.openzim.org/
 
 Disclaimer
 ----------
@@ -51,7 +51,7 @@ Environnement
 -------------
 
 The ZIM library builds using [Meson](http://mesonbuild.com/) version
-0.34 or higher. Meson relies itself on Ninja, pkg-config and few other
+0.39 or higher. Meson relies itself on Ninja, pkg-config and few other
 compilation tools.
 
 Install first the few common compilation tools:
@@ -101,16 +101,28 @@ Depending of you system, `ninja` may be called `ninja-build`.
 Installation
 ------------
 
-If you want to install the libraries you just have compiled on your
-system, here we go:
+If you want to install the libzim and the headers you just have
+compiled on your system, here we go:
 
 ```
-ninja install
-cd ..
+ninja install # You have to be in the "build" directory
 ```
 
-You might need to run the command as root, depending where you want to
-install the libraries.
+You might need to run the command as root (or using 'sudo'), depending
+where you want to install the libraries. After the installation
+succeeded, you may need to run ldconfig (as root).
+
+Uninstallation
+------------
+
+If you want to uninstall the libzim:
+
+```
+ninja uninstall # You have to be in the "build" directory
+```
+
+Like for the installation, you might need to run the command as root
+(or using 'sudo').
 
 License
 -------
