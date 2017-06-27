@@ -64,6 +64,7 @@ libzim = library('zim',
                  sources,
                  include_directories : inc,
                  dependencies : deps,
+                 version: meson.project_version(),
                  install : true)
 
 subdir('tools')
