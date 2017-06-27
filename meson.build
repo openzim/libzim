@@ -1,9 +1,9 @@
 project('libzim', ['c', 'cpp'],
-  version : '1.4',
+  version : '2.0',
   license : 'GPL2',
   default_options : ['c_std=c11', 'cpp_std=c++11'])
 
-abi_current=2
+abi_current=3
 abi_revision=0
 abi_age=0
   
@@ -42,7 +42,7 @@ inc = include_directories('include')
 subdir('include')
 subdir('src')
 subdir('examples')
-#subdir('test')
+subdir('test')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : libzim,

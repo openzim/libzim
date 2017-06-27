@@ -1,0 +1,21 @@
+
+
+libzim 2.0.0
+============
+
+ * Move to meson build system
+   `libzim` now use `meson` as build system instead of `autotools`
+ * Move to C++11 standard.
+ * Fulltext search in zim file.
+   We have integrated the xapian fulltext search in libzim.
+   So now, libzim provide an API to search in a zim containing embeded fulltext
+   index. This means that :
+    *libzim need xapian as (optional) dependencies (if you want compile with
+     xapian support).
+    * The old and unused search API has been removed.
+ * Remove bzip2 support.
+ * Remove Symbian support.
+ * Few API hanges
+   * Make some header files private (not installed);
+   * A `Blob` can now be cast to a `string` directly;
+   * Change a lot of `File` methods to const methods.

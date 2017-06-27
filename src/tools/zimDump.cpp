@@ -395,14 +395,22 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
 void ZimDumper::dumpFiles(const std::string& directory)
 {
   unsigned int truncatedFiles = 0;
+#if defined(_WIN32)
+  ::mkdir(directory.c_str());
+#else
   ::mkdir(directory.c_str(), 0777);
+#endif
 
   std::set<char> ns;
   for (zim::File::const_iterator it = pos; it != file.end(); ++it)
   {
     std::string d = directory + '/' + it->getNamespace();
     if (ns.find(it->getNamespace()) == ns.end())
+#if defined(_WIN32)
+      ::mkdir(d.c_str());
+#else
       ::mkdir(d.c_str(), 0777);
+#endif
     std::string t = it->getTitle();
     std::string::size_type p;
     while ((p = t.find('/')) != std::string::npos)
