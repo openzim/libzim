@@ -1,12 +1,8 @@
 project('libzim', ['c', 'cpp'],
-  version : '2.0',
+  version : '2.0.0',
   license : 'GPL2',
   default_options : ['c_std=c11', 'cpp_std=c++11'])
 
-abi_current=3
-abi_revision=0
-abi_age=0
-  
 conf = configuration_data()
 conf.set('VERSION', '"@0@"'.format(meson.project_version()))
 conf.set('DIRENT_CACHE_SIZE', get_option('DIRENT_CACHE_SIZE'))
