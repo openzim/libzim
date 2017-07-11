@@ -89,6 +89,7 @@ namespace zim
       const_iterator find(const std::string& url) const;
 
       const Search* search(const std::string& query, int start, int end) const;
+      const Search* suggestions(const std::string& query, int start, int end) const;
 
       bool good() const    { return impl.getPointer() != 0; }
       time_t getMTime() const   { return impl->getMTime(); }
