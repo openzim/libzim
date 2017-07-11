@@ -72,12 +72,14 @@ std::map<std::string, int> read_valuesmap(const std::string &s) {
 Search::Search(const std::vector<const File*> zimfiles) :
     internal(new InternalData),
     zimfiles(zimfiles),
+    suggestion_mode(false),
     search_started(false),
     has_database(false)
 {}
 
 Search::Search(const File* zimfile) :
     internal(new InternalData),
+    suggestion_mode(false),
     search_started(false),
     has_database(false)
 {
@@ -90,6 +92,7 @@ Search::Search(const Search& it) :
      query(it.query),
      range_start(it.range_start),
      range_end(it.range_end),
+     suggestion_mode(it.suggestion_mode),
      search_started(false),
      has_database(false)
 { }
@@ -101,6 +104,7 @@ Search& Search::operator=(const Search& it)
      query = it.query;
      range_start = it.range_start;
      range_end = it.range_end;
+     suggestion_mode = it.suggestion_mode;
      search_started = false;
      has_database = false;
      return *this;
@@ -123,6 +127,11 @@ Search& Search::set_query(const std::string& query) {
 Search& Search::set_range(int start, int end) {
     this->range_start = start;
     this->range_end = end; 
+    return *this;
+}
+
+Search& Search::set_suggestion_mode(const bool suggestion_mode) {
+    this->suggestion_mode = suggestion_mode;
     return *this;
 }
 
@@ -189,6 +198,7 @@ Search::iterator Search::begin() const {
             this->valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
             language = database.get_metadata("language");
             stopwords = database.get_metadata("stopwords");
+            this->prefixes = database.get_metadata("prefixes");
         } else {
             std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
             if (this->valuesmap != valuesmap ) {
@@ -208,7 +218,15 @@ Search::iterator Search::begin() const {
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
     setup_queryParser(queryParser, internal->database, language, stopwords);
 
-    Xapian::Query query = queryParser->parse_query(this->query);
+    std::string prefix = "";
+    unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
+    if (suggestion_mode) {
+      flags |= Xapian::QueryParser::FLAG_PARTIAL;
+      if (this->prefixes.find("S") != std::string::npos ) {
+        prefix = "S";
+      }
+    }
+    Xapian::Query query = queryParser->parse_query(this->query, flags, prefix);
     delete queryParser;
     
     Xapian::Enquire enquire(internal->database);

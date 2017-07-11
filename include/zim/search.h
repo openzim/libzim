@@ -47,6 +47,7 @@ class Search
         Search& add_zimfile(const File* zimfile);
         Search& set_query(const std::string& query);
         Search& set_range(int start, int end);
+        Search& set_suggestion_mode(bool suggestion_mode);
 
         search_iterator begin() const;
         search_iterator end() const;
@@ -58,9 +59,11 @@ class Search
          std::vector<const File*> zimfiles;
 
          mutable std::map<std::string, int> valuesmap;
+         mutable std::string prefixes;
          std::string query;
          int range_start;
          int range_end;
+         bool suggestion_mode;
          mutable bool search_started;
          mutable bool has_database;
          mutable int estimated_matches_number;

@@ -209,6 +209,14 @@ namespace zim
       return search;
   }
 
+  const Search* File::suggestions(const std::string& query, int start, int end) const {
+      Search* search = new Search(this);
+      search->set_query(query);
+      search->set_range(start, end);
+      search->set_suggestion_mode(true);
+      return search;
+  }
+
   offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
   {
     Cluster cluster = getCluster(clusterIdx);
