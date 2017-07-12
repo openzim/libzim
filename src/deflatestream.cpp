@@ -1,4 +1,4 @@
-/* deflatestream.cpp
+/*
  * Copyright (C) 2003-2005 Tommi Maekitalo
  *
  * This library is free software; you can redistribute it and/or
