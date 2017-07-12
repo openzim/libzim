@@ -21,7 +21,6 @@ common_sources = [
     'search_iterator.cpp',
     'tee.cpp',
     'template.cpp',
-    'unicode.cpp',
     'uuid.cpp',
     'zimcreator.cpp',
     'zintstream.cpp'
