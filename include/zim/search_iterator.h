@@ -52,6 +52,7 @@ class search_iterator : public std::iterator<std::bidirectional_iterator_tag, Ar
         std::string get_snippet() const;
         int get_wordCount() const;
         int get_size() const;
+        int get_fileIndex() const;
         reference operator*() const;
         pointer operator->() const;
 

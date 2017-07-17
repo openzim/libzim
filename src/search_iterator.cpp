@@ -218,6 +218,15 @@ int search_iterator::get_wordCount() const      {
     return -1;
 }
 
+int search_iterator::get_fileIndex() const {
+#if defined(ENABLE_XAPIAN)
+    if ( internal ) {
+        return internal->get_databasenumber();
+    }
+#endif
+    return 0;
+}
+
 search_iterator::reference search_iterator::operator*() const {
     return internal->get_article();
 }

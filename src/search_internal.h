@@ -65,12 +65,18 @@ struct search_iterator::InternalData {
     }
 #endif
 
+    int get_databasenumber() {
+#if defined(ENABLE_XAPIAN)
+        Xapian::docid docid = *iterator;
+        return (docid - 1) % search->zimfiles.size();
+#endif
+        return 0;
+    }
 
     Article& get_article() {
 #if defined(ENABLE_XAPIAN)
         if ( !article_fetched ) {
-            Xapian::docid docid = *iterator;
-            int databasenumber = (docid - 1) % search->zimfiles.size();
+            int databasenumber = get_databasenumber();
             const File* file = search->zimfiles[databasenumber];
             if ( ! file )
                 _article = Article();
