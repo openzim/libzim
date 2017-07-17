@@ -127,4 +127,4 @@ Like for the installation, you might need to run the command as root
 License
 -------
 
-GPLv2, see COPYING for more details.
+GPLv2 or later, see COPYING for more details.
