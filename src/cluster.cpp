@@ -42,27 +42,17 @@ log_define("zim.cluster")
 
 namespace zim
 {
+
   Cluster::Cluster()
-    : impl(0)
-  { }
-
-  ClusterImpl* Cluster::getImpl()
-  {
-    if (impl.getPointer() == 0)
-      impl = new ClusterImpl();
-    return impl;
-  }
-
-  ClusterImpl::ClusterImpl()
     : compression(zimcompNone),
-      startOffset(9),
+      startOffset(0),
       lazy_read_stream(NULL)
   {
     offsets.push_back(0);
   }
 
   /* This return the number of char read */
-  offset_type ClusterImpl::read_header(std::istream& in)
+  offset_type Cluster::read_header(std::istream& in)
   {
     log_debug1("read_header");
     // read first offset, which specifies, how many offsets we need to read
@@ -100,7 +90,7 @@ namespace zim
     return a;
   }
 
-  void ClusterImpl::read_content(std::istream& in)
+  void Cluster::read_content(std::istream& in)
   {
     log_debug1("read_content");
     _data.clear();
@@ -119,7 +109,7 @@ namespace zim
     }
   }
 
-  void ClusterImpl::finalise_read() {
+  void Cluster::finalise_read() {
     if ( !lazy_read_stream )
     {
         std::cerr << "lazy_read null" << std::endl;
@@ -130,31 +120,21 @@ namespace zim
     lazy_read_stream = NULL;
   }
 
-  Blob ClusterImpl::getBlob(size_type n) const
+  Blob Cluster::getBlob(size_type n) const
   {
-    size_type s = getSize();
-    return s > 0 ? Blob(const_cast<ClusterImpl*>(this), getData(n), getSize(n))
+    size_type s = size();
+    return s > 0 ? Blob(shared_from_this(), getBlobPtr(n), getBlobSize(n))
                  : Blob();
   }
 
-  void ClusterImpl::clear()
+  void Cluster::clear()
   {
     offsets.clear();
     _data.clear();
     offsets.push_back(0);
   }
 
-  Blob Cluster::getBlob(size_type n) const
-  {
-    return impl->getBlob(n);
-  }
-
   void Cluster::init_from_stream(ifstream& in, offset_type offset)
-  {
-    getImpl()->init_from_stream(in, offset);
-  }
-
-  void ClusterImpl::init_from_stream(ifstream& in, offset_type offset)
   {
     log_trace("init_from_stream");
     in.seekg(offset);

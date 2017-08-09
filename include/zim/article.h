@@ -74,7 +74,7 @@ namespace zim
               || (getNamespace() == a.getNamespace()
                && getTitle() < a.getTitle()); }
 
-      Cluster getCluster() const
+      std::shared_ptr<Cluster> getCluster() const
         { return file.getCluster(getDirent().getClusterNumber()); }
 
       Blob getData() const

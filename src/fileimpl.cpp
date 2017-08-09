@@ -159,14 +159,14 @@ namespace zim
     return ret;
   }
 
-  Cluster FileImpl::getCluster(size_type idx)
+  std::shared_ptr<Cluster> FileImpl::getCluster(size_type idx)
   {
     log_trace("getCluster(" << idx << ')');
 
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    Cluster cluster(clusterCache.get(idx));
+    auto cluster(clusterCache.get(idx));
     if (cluster)
     {
       log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
@@ -177,12 +177,13 @@ namespace zim
 
     offset_type clusterOffset = getClusterOffset(idx);
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    cluster.init_from_stream(zimFile, clusterOffset);
+    cluster = std::shared_ptr<Cluster>(new Cluster());
+    cluster->init_from_stream(zimFile, clusterOffset);
 
     if (zimFile.fail())
       throw ZimFileFormatError("error reading cluster data");
 
-    if (cacheUncompressedCluster || cluster.isCompressed())
+    if (cacheUncompressedCluster || cluster->isCompressed())
     {
       log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
       clusterCache.put(idx, cluster);

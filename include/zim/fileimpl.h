@@ -40,7 +40,7 @@ namespace zim
       std::string filename;
 
       Cache<size_type, Dirent> direntCache;
-      Cache<offset_type, Cluster> clusterCache;
+      Cache<offset_type, std::shared_ptr<Cluster>> clusterCache;
       bool cacheUncompressedCluster;
       typedef std::map<char, size_type> NamespaceCache;
       NamespaceCache namespaceBeginCache;
@@ -67,7 +67,7 @@ namespace zim
       size_type getIndexByTitle(size_type idx);
       size_type getCountArticles() const       { return header.getArticleCount(); }
 
-      Cluster getCluster(size_type idx);
+      std::shared_ptr<Cluster> getCluster(size_type idx);
       size_type getCountClusters() const       { return header.getClusterCount(); }
       offset_type getClusterOffset(size_type idx)   { return getOffset(header.getClusterPtrPos(), idx); }
 

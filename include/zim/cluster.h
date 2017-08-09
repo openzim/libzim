@@ -21,20 +21,17 @@
 #define ZIM_CLUSTER_H
 
 #include <zim/zim.h>
-#include <zim/refcounted.h>
-#include <zim/smartptr.h>
 #include <zim/fstream.h>
 #include <iosfwd>
 #include <vector>
+#include <memory>
 
 namespace zim
 {
   class Blob;
-  class Cluster;
 
-  class ClusterImpl : public RefCounted
+  class Cluster : public std::enable_shared_from_this<Cluster>
   {
-
       typedef std::vector<size_type> Offsets;
       typedef std::vector<char> Data;
 
@@ -57,55 +54,24 @@ namespace zim
       const Data& data() const {
         if ( !is_fully_initialised() )
         {
-           const_cast<ClusterImpl*>(this)->finalise_read();
+           const_cast<Cluster*>(this)->finalise_read();
         }
         return _data;
       }
 
     public:
-      ClusterImpl();
-
+      Cluster();
       void setCompression(CompressionType c)   { compression = c; }
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 
-      size_type getCount() const               { return offsets.size() - 1; }
-      const char* getData(unsigned n) const    { return &data()[ offsets[n] ]; }
-      size_type getSize(unsigned n) const      { return offsets[n+1] - offsets[n]; }
-      size_type getSize() const                { return offsets.size() * sizeof(size_type) + data().size(); }
-      offset_type getOffset(size_type n) const { return startOffset + offsets[n]; }
+      size_type count() const               { return offsets.size() - 1; }
+      size_type size() const                { return offsets.size() * sizeof(size_type) + data().size(); }
+      const char* getBlobPtr(unsigned n) const    { return &data()[ offsets[n] ]; }
+      size_type getBlobSize(unsigned n) const      { return offsets[n+1] - offsets[n]; }
+      offset_type getBlobOffset(size_type n) const { return startOffset + offsets[n]; }
       Blob getBlob(size_type n) const;
       void clear();
-
-      void init_from_stream(ifstream& in, offset_type offset);
-  };
-
-  class Cluster
-  {
-      SmartPtr<ClusterImpl> impl;
-
-      ClusterImpl* getImpl();
-
-    public:
-      Cluster();
-
-      void setCompression(CompressionType c)  { getImpl()->setCompression(c); }
-      CompressionType getCompression() const  { return impl ? impl->getCompression() : zimcompNone; }
-      bool isCompressed() const
-        { return impl && (impl->getCompression() == zimcompZip
-                       || impl->getCompression() == zimcompBzip2
-                       || impl->getCompression() == zimcompLzma); }
-
-      const char* getBlobPtr(size_type n) const     { return impl->getData(n); }
-      size_type getBlobSize(size_type n) const      { return impl->getSize(n); }
-      offset_type getBlobOffset(size_type n) const  { return impl->getOffset(n); }
-      Blob getBlob(size_type n) const;
-
-      size_type count() const   { return impl ? impl->getCount() : 0; }
-      size_type size() const    { return impl ? impl->getSize(): sizeof(size_type); }
-      void clear()              { if (impl) impl->clear(); }
-
-      operator bool() const   { return impl; }
 
       void init_from_stream(ifstream& in, offset_type offset);
   };

@@ -219,10 +219,10 @@ namespace zim
 
   offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
   {
-    Cluster cluster = getCluster(clusterIdx);
-    if (cluster.isCompressed())
+    auto cluster = getCluster(clusterIdx);
+    if (cluster->isCompressed())
         return 0;
-    return cluster.getBlobOffset(blobIdx);
+    return cluster->getBlobOffset(blobIdx);
   }
 
   std::string urldecode(const std::string& url)

@@ -31,7 +31,7 @@ namespace zim
   {
       const char* _data;
       unsigned _size;
-      SmartPtr<ClusterImpl> _cluster;
+      std::shared_ptr<const Cluster> _cluster;
 
     public:
       Blob()
@@ -43,7 +43,7 @@ namespace zim
           _size(size)
           { }
 
-      Blob(ClusterImpl* cluster, const char* data, unsigned size)
+      Blob(std::shared_ptr<const Cluster> cluster, const char* data, unsigned size)
         : _data(data),
           _size(size),
           _cluster(cluster)
