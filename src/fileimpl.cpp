@@ -20,12 +20,15 @@
 #include <zim/fileimpl.h>
 #include <zim/error.h>
 #include <zim/dirent.h>
+#include <zim/file_compound.h>
+#include <zim/file_reader.h>
 #include "endian_tools.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
 #include <errno.h>
 #include <cstring>
+#include <fstream>
 #include "config.h"
 #include "log.h"
 #include "envvalue.h"
@@ -39,50 +42,72 @@ namespace zim
   // FileImpl
   //
   FileImpl::FileImpl(const char* fname)
-    : zimFile(fname),
+    : zimFile(new FileCompound(fname)),
+      zimReader(new FileReader(zimFile)),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
   {
     log_trace("read file \"" << fname << '"');
 
-    if (!zimFile)
+    if (zimFile->fail())
       throw ZimFileFormatError(std::string("can't open zim-file \"") + fname + '"');
 
     filename = fname;
 
     // read header
-    zimFile >> header;
-    if (zimFile.fail())
+    try {
+      header.read(zimReader->get_buffer(0, Fileheader::size));
+    } catch (...) {
       throw ZimFileFormatError("error reading zim-file header");
+    }
+
+    // ptrOffsetBuffer
+    size_t size = header.getArticleCount() * 8;;
+    urlPtrOffsetBuffer = zimReader->get_buffer(header.getUrlPtrPos(), size);
+
+    // Create titleIndexBuffer
+    size = header.getArticleCount() * 4;
+    titleIndexBuffer = zimReader->get_buffer(header.getTitleIdxPos(), size);
+
+    // clusterOffsetBuffer
+    size = header.getClusterCount() * 8;
+    clusterOffsetBuffer = zimReader->get_buffer(header.getClusterPtrPos(), size);
+
 
     if (getCountClusters() == 0)
       log_warn("no clusters found");
     else
     {
       offset_type lastOffset = getClusterOffset(getCountClusters() - 1);
-      log_debug("last offset=" << lastOffset << " file size=" << zimFile.fsize());
-      if (lastOffset > static_cast<offset_type>(zimFile.fsize()))
+      log_debug("last offset=" << lastOffset << " file size=" << zimFile->fsize());
+      if (lastOffset > static_cast<offset_type>(zimFile->fsize()))
       {
-        log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile.fsize() << ')');
+        log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
     }
 
     // read mime types
-    zimFile.seekg(header.getMimeListPos());
-    std::string mimeType;
-    while (true)
+    size = header.getUrlPtrPos() - header.getMimeListPos();
+    auto buffer = zimReader->get_buffer(header.getMimeListPos(), size);
+    size_t current = 0;
+    while (current < size)
     {
-      std::getline(zimFile, mimeType, '\0');
-
-      if (zimFile.fail())
-        throw ZimFileFormatError("error reading mime type list");
-
-      if (mimeType.empty())
+      size_t len = strlen(buffer->data(current));
+ 
+      if (len == 0) {
         break;
+      }
 
-      mimeTypes.push_back(mimeType);;
+      if (current + len >= size) {
+       throw(ZimFileFormatError("Error getting mimelists."));
+      }
+      
+      std::string mimeType(buffer->data(current), len);
+      mimeTypes.push_back(mimeType);
+
+      current += (len + 1);
     }
   }
 
@@ -90,16 +115,8 @@ namespace zim
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
 
-    zimFile.setBufsize(64);
-
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
-
-    if (!zimFile)
-    {
-      log_warn("file in error state");
-      throw ZimFileFormatError("file in error state");
-    }
 
     std::pair<bool, Dirent> v = direntCache.getx(idx);
     if (v.first)
@@ -110,22 +127,28 @@ namespace zim
 
     log_debug("dirent " << idx << " not found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
 
-    offset_type indexOffset = getOffset(header.getUrlPtrPos(), idx);
+    offset_type indexOffset = getOffset(urlPtrOffsetBuffer.get(), idx);
+    // We don't know the size of the dirent because it depends of the size of
+    // the title, url and extra parameters.
+    // This is a pitty but we have no choices.
+    // We cannot take a buffer of the size of the file, it would be really inefficient.
+    // Let's do try, catch and retry while chosing a smart value for the buffer size.
+    // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
+    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
-    zimFile.seekg(indexOffset);
-    if (!zimFile)
-    {
-      log_warn("failed to seek to directory entry");
-      throw ZimFileFormatError("failed to seek to directory entry");
-    }
-
+    size_t bufferSize = 16 + 256;
     Dirent dirent;
-    zimFile >> dirent;
-
-    if (!zimFile)
-    {
-      log_warn("failed to read to directory entry");
-      throw ZimFileFormatError("failed to read directory entry");
+    while (true) {
+        auto buffer = zimReader->get_buffer(indexOffset, bufferSize);
+        try {
+          dirent = Dirent(buffer);
+        } catch (InvalidSize) {
+          // buffer size is not enougth, try again :
+          bufferSize += 256;
+          continue;
+        }
+        // Success !
+        break;
     }
 
     log_debug("dirent read from " << indexOffset);
@@ -146,23 +169,13 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    zimFile.seekg(header.getTitleIdxPos() + sizeof(size_type) * idx);
-    size_type ret;
-    zimFile.read(reinterpret_cast<char*>(&ret), sizeof(size_type));
-
-    if (!zimFile)
-      throw ZimFileFormatError("error reading title index");
-
-    if (isBigEndian())
-      ret = fromLittleEndian(&ret);
+    size_type ret = fromLittleEndian(titleIndexBuffer->as<size_type>(sizeof(size_type)*idx));
 
     return ret;
   }
 
   std::shared_ptr<Cluster> FileImpl::getCluster(size_type idx)
   {
-    log_trace("getCluster(" << idx << ')');
-
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
@@ -173,39 +186,24 @@ namespace zim
       return cluster;
     }
 
-    zimFile.setBufsize(16384);
-
     offset_type clusterOffset = getClusterOffset(idx);
+    auto next_idx = idx + 1;
+    offset_type nextClusterOffset = (next_idx < getCountClusters()) ? getClusterOffset(next_idx) : header.getChecksumPos();
+    size_t clusterSize = nextClusterOffset - clusterOffset;
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    cluster = std::shared_ptr<Cluster>(new Cluster());
-    cluster->init_from_stream(zimFile, clusterOffset);
+    CompressionType comp;
+    std::shared_ptr<Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp);
+    cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp));
 
-    if (zimFile.fail())
-      throw ZimFileFormatError("error reading cluster data");
-
-    if (cacheUncompressedCluster || cluster->isCompressed())
-    {
-      log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-      clusterCache.put(idx, cluster);
-    }
-    else
-      log_debug("cluster " << idx << " is not compressed - do not cache");
+    log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
+    clusterCache.put(idx, cluster);
 
     return cluster;
   }
 
-  offset_type FileImpl::getOffset(offset_type ptrOffset, size_type idx)
+  offset_type FileImpl::getOffset(Buffer* buffer, size_type idx)
   {
-    zimFile.seekg(ptrOffset + sizeof(offset_type) * idx);
-    offset_type offset;
-    zimFile.read(reinterpret_cast<char*>(&offset), sizeof(offset_type));
-
-    if (!zimFile)
-      throw ZimFileFormatError("error reading offset");
-
-    if (isBigEndian())
-      offset = fromLittleEndian(&offset);
-
+    offset_type offset = fromLittleEndian(buffer->as<offset_type>(sizeof(offset_type)*idx));
     return offset;
   }
 
@@ -299,10 +297,10 @@ namespace zim
     if (!header.hasChecksum())
       return std::string();
 
-    zimFile.seekg(header.getChecksumPos());
-    unsigned char chksum[16];
-    zimFile.read(reinterpret_cast<char*>(chksum), 16);
-    if (!zimFile)
+    std::shared_ptr<Buffer> chksum;
+    try {
+      chksum = zimReader->get_buffer(header.getChecksumPos(), 16);
+    } catch (BufferError)
     {
       log_warn("error reading checksum");
       return std::string();
@@ -314,8 +312,8 @@ namespace zim
     char* p = hexdigest;
     for (int i = 0; i < 16; ++i)
     {
-      *p++ = hex[chksum[i] >> 4];
-      *p++ = hex[chksum[i] & 0xf];
+      *p++ = hex[chksum->at(i) >> 4];
+      *p++ = hex[chksum->at(i) & 0xf];
     }
     log_debug("chksum=" << hexdigest);
     return hexdigest;
@@ -328,28 +326,41 @@ namespace zim
 
     Md5stream md5;
 
-    zimFile.seekg(0);
-    char ch;
-    for (offset_type n = 0; n < header.getChecksumPos() && zimFile.get(ch); ++n)
-      md5 << ch;
+    size_t checksumPos = header.getChecksumPos();
+    size_t currentPos = 0;
+    for(auto part = zimFile->begin();
+        part != zimFile->end();
+        part++) {
+      std::fstream stream(part->second->filename());
+      char ch;
+      for(/*NOTHING*/ ; currentPos < checksumPos && stream.get(ch); currentPos++) {
+        md5 << ch;
+      }
+      if (currentPos == checksumPos) {
+        break;
+      }
+    }
+           
 
-    unsigned char chksumFile[16];
     unsigned char chksumCalc[16];
-
-    zimFile.read(reinterpret_cast<char*>(chksumFile), 16);
-
-    if (!zimFile)
-      throw ZimFileFormatError("failed to read checksum from zim file");
+    auto chksumFile = zimReader->get_buffer(header.getChecksumPos(), 16);
 
     md5.getDigest(chksumCalc);
-    if (std::memcmp(chksumFile, chksumCalc, 16) != 0)
+    if (std::memcmp(chksumFile->data(), chksumCalc, 16) != 0)
       throw ZimFileFormatError("invalid checksum in zim file");
 
     return true;
   }
 
-  bool FileImpl::is_multiPart() const {
-    return zimFile.is_multiPart();
+  time_t FileImpl::getMTime() const {
+    return zimFile->getMTime();
   }
 
+  zim::offset_type FileImpl::getFilesize() const {
+    return zimFile->fsize();
+  }
+
+  bool FileImpl::is_multiPart() const {
+    return zimFile->is_multiPart();
+  }
 }

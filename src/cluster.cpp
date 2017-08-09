@@ -21,6 +21,7 @@
 #include <zim/blob.h>
 #include "endian_tools.h"
 #include <zim/error.h>
+#include <zim/file_reader.h>
 #include <stdlib.h>
 #include <sstream>
 
@@ -28,171 +29,76 @@
 
 #include "config.h"
 
-#if defined(ENABLE_ZLIB)
-#include "inflatestream.h"
-#endif
-
-#if defined(ENABLE_LZMA)
-#include "unlzmastream.h"
-#endif
-
 log_define("zim.cluster")
 
 #define log_debug1(e)
 
 namespace zim
 {
-
-  Cluster::Cluster()
-    : compression(zimcompNone),
-      startOffset(0),
-      lazy_read_stream(NULL)
+  Cluster::Cluster(std::shared_ptr<Reader> reader_, CompressionType comp)
+    : compression(comp),
+      reader(reader_),
+      startOffset(0)
   {
-    offsets.push_back(0);
+    auto d = reader->offset();
+    startOffset = read_header();
+    reader = reader->sub_reader(startOffset);
+    auto d1 = reader->offset();
+    assert((d+startOffset)==d1);
   }
 
   /* This return the number of char read */
-  offset_type Cluster::read_header(std::istream& in)
+  offset_type Cluster::read_header()
   {
-    log_debug1("read_header");
     // read first offset, which specifies, how many offsets we need to read
     size_type offset;
-    in.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-    if (in.fail())
-    {
-      std::cerr << "fail at read offset" << std::endl;
-      throw ZimFileFormatError("fail at read first offset");
-    }
-
+    offset = reader->read<size_type>(0);
     offset = fromLittleEndian(&offset);
 
-    size_type n = offset / 4;
-    size_type a = offset;
-
-    log_debug1("first offset is " << offset << " n=" << n << " a=" << a);
+    size_type n_offset = offset / 4;
+    size_type data_address = offset;
 
     // read offsets
     offsets.clear();
-    offsets.reserve(n);
+    offsets.reserve(n_offset);
     offsets.push_back(0);
-    while (--n)
+    
+    auto buffer = reader->get_buffer(0, offset);
+    std::size_t current = 4;
+    while (--n_offset)
     {
-      in.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-      if (in.fail())
-      {
-        log_debug("fail at " << n);
-        throw ZimFileFormatError("fail at read offset");
-      }
-      offset = fromLittleEndian(&offset);
-      log_debug1("offset=" << offset << '(' << offset-a << ')');
-      offsets.push_back(offset - a);
+      size_type new_offset = fromLittleEndian(buffer->as<size_type>(current));
+      assert(new_offset >= offset);
+      assert(offset >= data_address);
+      assert(offset <= reader->size());
+      
+      offset = new_offset;
+      offsets.push_back(offset - data_address);
+      current += sizeof(size_type);
     }
-    return a;
-  }
-
-  void Cluster::read_content(std::istream& in)
-  {
-    log_debug1("read_content");
-    _data.clear();
-    // last offset points past the end of the cluster, so we know now, how may bytes to read
-    if (offsets.size() > 1)
-    {
-      size_type n = offsets.back() - offsets.front();
-      if (n > 0)
-      {
-        _data.resize(n);
-        log_debug("read " << n << " bytes of data");
-        in.read(&(_data[0]), n);
-      }
-      else
-        log_warn("read empty cluster");
-    }
-  }
-
-  void Cluster::finalise_read() {
-    if ( !lazy_read_stream )
-    {
-        std::cerr << "lazy_read null" << std::endl;
-        return;
-    }
-    lazy_read_stream->seekg(startOffset);
-    read_content(*lazy_read_stream);
-    lazy_read_stream = NULL;
+    assert(offset==reader->size());
+    return data_address;
   }
 
   Blob Cluster::getBlob(size_type n) const
   {
-    size_type s = size();
-    return s > 0 ? Blob(shared_from_this(), getBlobPtr(n), getBlobSize(n))
-                 : Blob();
-  }
-
-  void Cluster::clear()
-  {
-    offsets.clear();
-    _data.clear();
-    offsets.push_back(0);
-  }
-
-  void Cluster::init_from_stream(ifstream& in, offset_type offset)
-  {
-    log_trace("init_from_stream");
-    in.seekg(offset);
-
-    clear();
-
-    char c;
-    in.get(c);
-    setCompression(static_cast<CompressionType>(c));
-
-    switch (static_cast<CompressionType>(c))
-    {
-      case zimcompDefault:
-      case zimcompNone:
-        startOffset = read_header(in);
-        startOffset += sizeof(char) + offset;
-        set_lazy_read(&in);
-        break;
-
-      case zimcompZip:
-        {
-#if defined(ENABLE_ZLIB)
-          log_debug("uncompress data (zlib)");
-          zim::InflateStream is(in);
-          is.exceptions(std::ios::failbit | std::ios::badbit);
-          read_header(is);
-          read_content(is);
-#else
-          throw std::runtime_error("zlib not enabled in this library");
-#endif
-          break;
-        }
-
-      case zimcompBzip2:
-        {
-          throw std::runtime_error("bzip2 not enabled in this library");
-          break;
-        }
-
-      case zimcompLzma:
-        {
-#if defined(ENABLE_LZMA)
-          log_debug("uncompress data (lzma)");
-          zim::UnlzmaStream is(in);
-          is.exceptions(std::ios::failbit | std::ios::badbit);
-          read_header(is);
-          read_content(is);
-#else
-          throw std::runtime_error("lzma not enabled in this library");
-#endif
-          break;
-        }
-
-      default:
-        log_error("invalid compression flag " << c);
-        in.setstate(std::ios::failbit);
-        break;
+    if (size()) {
+      auto buffer = reader->get_buffer(offsets[n], getBlobSize(n));
+      return Blob(buffer);
+    } else {
+      return Blob();
     }
+  }
+
+  const char* Cluster::getBlobPtr(unsigned n) const
+  {
+     auto d = reader->get_buffer(offsets[n], getBlobSize(n))->data();
+     return d;
+  }
+
+  size_type Cluster::size() const
+  {
+    return offsets.size() * sizeof(size_type) + reader->size();
   }
 
 }

@@ -11,10 +11,10 @@ zimlibtest_sources = [
 ]
 
 if zlib_dep.found()
-    zimlibtest_sources += ['zlibstream.cpp']
+#    zimlibtest_sources += ['zlibstream.cpp']
 endif
 if lzma_dep.found()
-    zimlibtest_sources += ['lzmastream.cpp']
+#    zimlibtest_sources += ['lzmastream.cpp']
 endif
 
 cxxtools_dep = dependency('cxxtools-unit', required:false)

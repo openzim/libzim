@@ -222,7 +222,7 @@ namespace zim
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed())
         return 0;
-    return cluster->getBlobOffset(blobIdx);
+    return impl->getClusterOffset(clusterIdx) + 1 + cluster->getBlobOffset(blobIdx);
   }
 
   std::string urldecode(const std::string& url)

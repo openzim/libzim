@@ -21,7 +21,7 @@
 #define ZIM_CLUSTER_H
 
 #include <zim/zim.h>
-#include <zim/fstream.h>
+#include <zim/buffer.h>
 #include <iosfwd>
 #include <vector>
 #include <memory>
@@ -29,51 +29,34 @@
 namespace zim
 {
   class Blob;
+  class Reader;
 
-  class Cluster : public std::enable_shared_from_this<Cluster>
-  {
+  class Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<size_type> Offsets;
-      typedef std::vector<char> Data;
 
       CompressionType compression;
       Offsets offsets;
-      Data _data;
+      std::shared_ptr<Reader> reader;
       offset_type startOffset;
 
-      ifstream* lazy_read_stream;
-
-      offset_type read_header(std::istream& in);
-      void read_content(std::istream& in);
-
-      void set_lazy_read(ifstream* in) {
-        lazy_read_stream = in;
-      }
-
-      bool is_fully_initialised() const { return lazy_read_stream == 0; }
-      void finalise_read();
-      const Data& data() const {
-        if ( !is_fully_initialised() )
-        {
-           const_cast<Cluster*>(this)->finalise_read();
-        }
-        return _data;
-      }
+      offset_type read_header();
 
     public:
-      Cluster();
+      Cluster(std::shared_ptr<Reader> reader, CompressionType comp);
       void setCompression(CompressionType c)   { compression = c; }
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 
       size_type count() const               { return offsets.size() - 1; }
-      size_type size() const                { return offsets.size() * sizeof(size_type) + data().size(); }
-      const char* getBlobPtr(unsigned n) const    { return &data()[ offsets[n] ]; }
-      size_type getBlobSize(unsigned n) const      { return offsets[n+1] - offsets[n]; }
+      size_type size() const;
+
+      const char* getBlobPtr(unsigned n) const;
+      size_type getBlobSize(unsigned n) const  { return offsets[n+1] - offsets[n]; }
       offset_type getBlobOffset(size_type n) const { return startOffset + offsets[n]; }
       Blob getBlob(size_type n) const;
       void clear();
 
-      void init_from_stream(ifstream& in, offset_type offset);
+      void init_from_buffer(Buffer& buffer);
   };
 
 }

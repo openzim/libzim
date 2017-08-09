@@ -20,8 +20,10 @@
 #ifndef ZIM_FILEHEADER_H
 #define ZIM_FILEHEADER_H
 
+#include <memory>
 #include <zim/zim.h>
 #include <zim/uuid.h>
+#include <zim/buffer.h>
 #include <iosfwd>
 #include <limits>
 
@@ -65,6 +67,8 @@ namespace zim
           checksumPos(std::numeric_limits<offset_type>::max())
       {}
 
+      void read(std::shared_ptr<Buffer> buffer);
+
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }
 
@@ -100,7 +104,6 @@ namespace zim
   };
 
   std::ostream& operator<< (std::ostream& out, const Fileheader& fh);
-  std::istream& operator>> (std::istream& in, Fileheader& fh);
 
 }
 

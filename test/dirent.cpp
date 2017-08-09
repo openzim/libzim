@@ -18,8 +18,10 @@
  */
 
 #include <zim/dirent.h>
+#include <zim/buffer.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 #include <cxxtools/unit/testsuite.h>
 #include <cxxtools/unit/registertest.h>
@@ -84,12 +86,14 @@ class DirentTest : public cxxtools::unit::TestSuite
       std::stringstream s;
       s << dirent;
 
-      zim::Dirent dirent2;
-      s >> dirent2;
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      zim::Dirent dirent2(buffer);
 
       CXXTOOLS_UNIT_ASSERT(!s.fail());
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
@@ -118,12 +122,14 @@ class DirentTest : public cxxtools::unit::TestSuite
       std::stringstream s;
       s << dirent;
 
-      zim::Dirent dirent2;
-      s >> dirent2;
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      zim::Dirent dirent2(buffer);
 
       CXXTOOLS_UNIT_ASSERT(!s.fail());
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
@@ -153,12 +159,14 @@ class DirentTest : public cxxtools::unit::TestSuite
       std::stringstream s;
       s << dirent;
 
-      zim::Dirent dirent2;
-      s >> dirent2;
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      zim::Dirent dirent2(buffer);
 
       CXXTOOLS_UNIT_ASSERT(!s.fail());
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
@@ -183,10 +191,13 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       std::stringstream s;
       s << dirent;
-      zim::Dirent dirent2;
-      s >> dirent2;
 
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      zim::Dirent dirent2(buffer);
 
       CXXTOOLS_UNIT_ASSERT(dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
@@ -210,10 +221,13 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       std::stringstream s;
       s << dirent;
-      zim::Dirent dirent2;
-      s >> dirent2;
 
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      zim::Dirent dirent2(buffer);
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT(dirent2.isLinktarget());
@@ -237,10 +251,13 @@ class DirentTest : public cxxtools::unit::TestSuite
 
       std::stringstream s;
       s << dirent;
-      zim::Dirent dirent2;
-      s >> dirent2;
 
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      zim::Dirent dirent2(buffer);
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT(!dirent2.isLinktarget());

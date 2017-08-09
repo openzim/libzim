@@ -13,7 +13,10 @@ common_sources = [
     'file.cpp',
     'fileheader.cpp',
     'fileimpl.cpp',
-    'fstream.cpp',
+    'file_compound.cpp',
+    'file_part.cpp',
+    'file_reader.cpp',
+    'buffer.cpp',
     'md5.c',
     'md5stream.cpp',
     'ptrstream.cpp',
@@ -28,13 +31,11 @@ common_sources = [
 ]
 
 zlib_sources = [
-    'writer/deflatestream.cpp',
-    'inflatestream.cpp'
+    'writer/deflatestream.cpp'
 ]
 
 lzma_sources = [
-    'writer/lzmastream.cpp',
-    'unlzmastream.cpp'
+    'writer/lzmastream.cpp'
 ]
 
 xapian_sources = [

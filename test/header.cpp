@@ -57,10 +57,13 @@ class FileheaderTest : public cxxtools::unit::TestSuite
       std::stringstream s;
       s << header;
 
+      std::string str_content = s.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
       zim::Fileheader header2;
-      s >> header2;
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(s.tellg(), s.tellp());
+      header2.read(buffer);
 
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getUuid(), "1234567890abcdef");
       CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getArticleCount(), 4711);

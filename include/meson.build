@@ -11,7 +11,6 @@ install_headers(
     'zim/fileheader.h',
     'zim/fileimpl.h',
     'zim/fileiterator.h',
-    'zim/fstream.h',
     'zim/noncopyable.h',
     'zim/search.h',
     'zim/search_iterator.h',
@@ -20,6 +19,7 @@ install_headers(
     'zim/template.h',
     'zim/uuid.h',
     'zim/zim.h',
+    'zim/buffer.h',
     subdir:'zim'
 )
 
