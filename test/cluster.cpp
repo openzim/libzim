@@ -25,8 +25,11 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "../src/writer/cluster.h"
+
 #include <cxxtools/unit/testsuite.h>
 #include <cxxtools/unit/registertest.h>
+
 
 #include "../src/config.h"
 
@@ -49,7 +52,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
 
     void CreateCluster()
     {
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster.count(), 0);
 
@@ -73,7 +76,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       std::ofstream os;
       os.open(name.c_str());
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       std::string blob0("123456789012345678901234567890");
       std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -103,7 +106,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       std::ofstream os;
       os.open(name.c_str());
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       cluster.addBlob(0, 0);
       cluster.addBlob(0, 0);
@@ -130,7 +133,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       std::ofstream os;
       os.open(name.c_str());
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       std::string blob0("123456789012345678901234567890");
       std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -168,7 +171,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       std::ofstream os;
       os.open(name.c_str());
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       std::string blob0("123456789012345678901234567890");
       std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");

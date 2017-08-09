@@ -166,7 +166,7 @@ namespace zim
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    Cluster cluster = clusterCache.get(idx);
+    Cluster cluster(clusterCache.get(idx));
     if (cluster)
     {
       log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());

@@ -19,7 +19,7 @@
 
 #include <zim/writer/zimcreator.h>
 #include <zim/fileheader.h>
-#include <zim/cluster.h>
+#include "cluster.h"
 #include <zim/blob.h>
 #include "endian_tools.h"
 #include <algorithm>

@@ -29,12 +29,10 @@
 #include "config.h"
 
 #if defined(ENABLE_ZLIB)
-#include "deflatestream.h"
 #include "inflatestream.h"
 #endif
 
 #if defined(ENABLE_LZMA)
-#include "lzmastream.h"
 #include "unlzmastream.h"
 #endif
 
@@ -46,7 +44,7 @@ namespace zim
 {
   Cluster::Cluster()
     : impl(0)
-    { }
+  { }
 
   ClusterImpl* Cluster::getImpl()
   {
@@ -57,7 +55,7 @@ namespace zim
 
   ClusterImpl::ClusterImpl()
     : compression(zimcompNone),
-      startOffset(0),
+      startOffset(9),
       lazy_read_stream(NULL)
   {
     offsets.push_back(0);
@@ -132,30 +130,6 @@ namespace zim
     lazy_read_stream = NULL;
   }
 
-  void ClusterImpl::write(std::ostream& out) const
-  {
-    size_type a = offsets.size() * sizeof(size_type);
-    for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
-    {
-      size_type o = *it;
-      o += a;
-      o = fromLittleEndian(&o);
-      out.write(reinterpret_cast<const char*>(&o), sizeof(size_type));
-    }
-
-    if (_data.size() > 0)
-      out.write(&(_data[0]), _data.size());
-    else
-      log_warn("write empty cluster");
-  }
-
-  void ClusterImpl::addBlob(const Blob& blob)
-  {
-    log_debug1("addBlob(ptr, " << blob.size() << ')');
-    _data.insert(_data.end(), blob.data(), blob.end());
-    offsets.push_back(_data.size());
-  }
-
   Blob ClusterImpl::getBlob(size_type n) const
   {
     size_type s = getSize();
@@ -168,11 +142,6 @@ namespace zim
     offsets.clear();
     _data.clear();
     offsets.push_back(0);
-  }
-
-  void ClusterImpl::addBlob(const char* data, unsigned size)
-  {
-    addBlob(Blob(data, size));
   }
 
   Blob Cluster::getBlob(size_type n) const
@@ -246,85 +215,4 @@ namespace zim
     }
   }
 
-  std::ostream& operator<< (std::ostream& out, const ClusterImpl& clusterImpl)
-  {
-    log_trace("write cluster");
-
-    out.put(static_cast<char>(clusterImpl.getCompression()));
-
-    switch(clusterImpl.getCompression())
-    {
-      case zimcompDefault:
-      case zimcompNone:
-        clusterImpl.write(out);
-        break;
-
-      case zimcompZip:
-        {
-#if defined(ENABLE_ZLIB)
-          log_debug("compress data (zlib)");
-          zim::DeflateStream os(out);
-          os.exceptions(std::ios::failbit | std::ios::badbit);
-          clusterImpl.write(os);
-          os.flush();
-#else
-          throw std::runtime_error("zlib not enabled in this library");
-#endif
-          break;
-        }
-
-      case zimcompBzip2:
-        {
-          throw std::runtime_error("bzip2 not enabled in this library");
-          break;
-        }
-
-      case zimcompLzma:
-        {
-#if defined(ENABLE_LZMA)
-          uint32_t lzmaPreset = 3 | LZMA_PRESET_EXTREME;
-          /**
-           * read lzma preset from environment
-           * ZIM_LZMA_PRESET is a number followed optionally by a
-           * suffix 'e'. The number gives the preset and the suffix tells,
-           * if LZMA_PRESET_EXTREME should be set.
-           * e.g.:
-           *   ZIM_LZMA_LEVEL=9   => 9
-           *   ZIM_LZMA_LEVEL=3e  => 3 + extreme
-           */
-          const char* e = ::getenv("ZIM_LZMA_LEVEL");
-          if (e)
-          {
-            char flag = '\0';
-            std::istringstream s(e);
-            s >> lzmaPreset >> flag;
-            if (flag == 'e')
-              lzmaPreset |= LZMA_PRESET_EXTREME;
-          }
-
-          log_debug("compress data (lzma, " << std::hex << lzmaPreset << ")");
-          zim::LzmaStream os(out, lzmaPreset);
-          os.exceptions(std::ios::failbit | std::ios::badbit);
-          clusterImpl.write(os);
-          os.end();
-#else
-          throw std::runtime_error("lzma not enabled in this library");
-#endif
-          break;
-        }
-
-      default:
-        std::ostringstream msg;
-        msg << "invalid compression flag " << clusterImpl.getCompression();
-        log_error(msg.str());
-        throw std::runtime_error(msg.str());
-    }
-
-    return out;
-  }
-
-  std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
-  {
-    return out << *cluster.impl;
-  }
 }

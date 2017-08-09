@@ -22,17 +22,18 @@ common_sources = [
     'tee.cpp',
     'template.cpp',
     'uuid.cpp',
-    'zimcreator.cpp',
-    'zintstream.cpp'
+    'zintstream.cpp',
+    'writer/zimcreator.cpp',
+    'writer/cluster.cpp'
 ]
 
 zlib_sources = [
-    'deflatestream.cpp',
+    'writer/deflatestream.cpp',
     'inflatestream.cpp'
 ]
 
 lzma_sources = [
-    'lzmastream.cpp',
+    'writer/lzmastream.cpp',
     'unlzmastream.cpp'
 ]
 

@@ -34,7 +34,6 @@ namespace zim
 
   class ClusterImpl : public RefCounted
   {
-      friend std::ostream& operator<< (std::ostream& out, const ClusterImpl& blobImpl);
 
       typedef std::vector<size_type> Offsets;
       typedef std::vector<char> Data;
@@ -48,7 +47,6 @@ namespace zim
 
       offset_type read_header(std::istream& in);
       void read_content(std::istream& in);
-      void write(std::ostream& out) const;
 
       void set_lazy_read(ifstream* in) {
         lazy_read_stream = in;
@@ -79,16 +77,11 @@ namespace zim
       Blob getBlob(size_type n) const;
       void clear();
 
-      void addBlob(const Blob& blob);
-      void addBlob(const char* data, unsigned size);
-
       void init_from_stream(ifstream& in, offset_type offset);
   };
 
   class Cluster
   {
-      friend std::ostream& operator<< (std::ostream& out, const Cluster& blob);
-
       SmartPtr<ClusterImpl> impl;
 
       ClusterImpl* getImpl();
@@ -112,16 +105,10 @@ namespace zim
       size_type size() const    { return impl ? impl->getSize(): sizeof(size_type); }
       void clear()              { if (impl) impl->clear(); }
 
-      void addBlob(const char* data, unsigned size) { getImpl()->addBlob(data, size); }
-      void addBlob(const Blob& blob)                { getImpl()->addBlob(blob); }
-
       operator bool() const   { return impl; }
 
       void init_from_stream(ifstream& in, offset_type offset);
   };
-
-  std::ostream& operator<< (std::ostream& out, const ClusterImpl& blobImpl);
-  std::ostream& operator<< (std::ostream& out, const Cluster& blob);
 
 }
 

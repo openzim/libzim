@@ -27,6 +27,9 @@ log_define("zim.lzma.compress")
 
 namespace zim
 {
+
+namespace writer
+{
   namespace
   {
     lzma_ret checkError(lzma_ret ret)
@@ -178,5 +181,5 @@ namespace zim
     if (streambuf.end() != 0)
       setstate(failbit);
   }
-
+}
 }

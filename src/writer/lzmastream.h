@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_LZMASTREAM_H
-#define ZIM_LZMASTREAM_H
+#ifndef ZIM_WRITER_LZMASTREAM_H
+#define ZIM_WRITER_LZMASTREAM_H
 
 #include <iostream>
 #include <stdexcept>
@@ -26,6 +26,8 @@
 #include <vector>
 
 namespace zim
+{
+namespace writer
 {
   class LzmaError : public std::runtime_error
   {
@@ -90,5 +92,6 @@ namespace zim
       void setSink(std::ostream& sink)     { streambuf.setSink(sink.rdbuf()); }
   };
 }
+}
 
-#endif // ZIM_LZMASTREAM_H
+#endif // ZIM_WRITER_LZMASTREAM_H
