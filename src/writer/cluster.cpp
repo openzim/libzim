@@ -97,6 +97,7 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
         os.exceptions(std::ios::failbit | std::ios::badbit);
         cluster.write(os);
         os.flush();
+        os.end();
 #else
         throw std::runtime_error("zlib not enabled in this library");
 #endif
