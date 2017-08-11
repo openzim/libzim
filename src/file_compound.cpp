@@ -35,37 +35,35 @@ namespace zim {
 
 FileCompound::FileCompound(const std::string& filename)
 {
-  try {
-    // [TODO]
-    auto part = new FilePart(filename);
+  auto part = new FilePart(filename);
+  if (part->good())
+  {
     emplace(Range(0, part->size()), part);
     _fsize = part->size();
-  } catch (...) {
+  } else {
     int errnoSave = errno;
     _fsize = 0;
-    try
+    for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
     {
-      for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
+      std::string fname0 = filename + ch0;
+      for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
       {
-        std::string fname0 = filename + ch0;
-        for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
-        {
-          std::string fname1 = fname0 + ch1;
+        std::string fname1 = fname0 + ch1;
 
-          auto currentPart = new FilePart(fname1);
-          emplace(Range(_fsize, _fsize+currentPart->size()), currentPart);
-          _fsize += currentPart->size();
+        auto currentPart = new FilePart(fname1);
+        if (currentPart->fail())  {
+          break;
         }
+        emplace(Range(_fsize, _fsize+currentPart->size()), currentPart);
+        _fsize += currentPart->size();
       }
     }
-    catch (...)
+
+    if (empty())
     {
-      if (empty())
-      {
-//        std::ostringstream msg;
-//        msg << "error " << errnoSave << " opening file \"" << fname << "\": " << strerror(errnoSave);
-////        throw std::runtime_error(msg.str());
-      }
+      std::ostringstream msg;
+      msg << "error " << errnoSave << " opening file \"" << filename;
+      throw std::runtime_error(msg.str());
     }
   }
 }

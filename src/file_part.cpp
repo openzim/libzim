@@ -28,7 +28,9 @@ FilePart::FilePart(const std::string& filename)
     size_(0)
 {
   std::ifstream in(filename, std::ios::binary|std::ios::ate);
-  size_ = in.tellg();
+  if ( in.good() ) {
+    size_ = in.tellg();
+  }
 }
 
 

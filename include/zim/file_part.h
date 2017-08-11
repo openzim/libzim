@@ -30,6 +30,8 @@ class FilePart {
     const std::string& filename() const { return filename_; };
 
     std::size_t size() const { return size_; };
+    bool fail() const { return size_ == 0; };
+    bool good() const { return size_; };
 
   private:
     const std::string filename_;
