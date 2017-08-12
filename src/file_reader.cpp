@@ -194,21 +194,19 @@ char* zip_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) {
 
 std::shared_ptr<Buffer> Reader::get_clusterBuffer(std::size_t offset, std::size_t size, CompressionType comp)
 {
-  char* raw_data = new char[size];
+  auto raw_buffer = get_buffer(offset, size);
   size_t uncompressed_size;
   char* uncompressed_data = nullptr;
-  read(raw_data, offset, size);
   switch (comp) {
     case zimcompLzma:
-      uncompressed_data = lzma_uncompress(raw_data, size, &uncompressed_size);
+      uncompressed_data = lzma_uncompress(raw_buffer->data(), size, &uncompressed_size);
       break;
     case zimcompZip:
-      uncompressed_data = zip_uncompress(raw_data, size, &uncompressed_size);
+      uncompressed_data = zip_uncompress(raw_buffer->data(), size, &uncompressed_size);
       break;
     default:
       throw(5);
   }
-  delete[] raw_data;
   return std::shared_ptr<Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
 
