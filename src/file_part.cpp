@@ -19,7 +19,10 @@
 
 #include <zim/file_part.h>
 
-#include <fstream>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <cstdlib>
+#include <unistd.h>
 
 namespace zim {
 
@@ -27,10 +30,16 @@ FilePart::FilePart(const std::string& filename)
   : filename_(filename),
     size_(0)
 {
-  std::ifstream in(filename, std::ios::binary|std::ios::ate);
-  if ( in.good() ) {
-    size_ = in.tellg();
+  fd_ = open(filename.c_str(), O_RDONLY);
+  struct stat sb;
+  if ( fd_ >= 0 ) {
+    fstat(fd_, &sb);
+    size_ = sb.st_size;
   }
+}
+
+FilePart::~FilePart() {
+  close(fd_);
 }
 
 

@@ -37,24 +37,17 @@ std::shared_ptr<Buffer> Buffer::sub_buffer(std::size_t offset, std::size_t size)
 }
 
 #if !defined(_WIN32)
-MMapBuffer::MMapBuffer(const std::string& filename, std::size_t offset, std::size_t size):
+MMapBuffer::MMapBuffer(int fd, std::size_t offset, std::size_t size):
   Buffer(size)
 {
-  fd = open(filename.c_str(), O_RDONLY);
-  struct stat filesize;
-  fstat(fd, &filesize);
   std::size_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
   _offset = offset-pa_offset;
-  assert(pa_offset < filesize.st_size);
-  assert(offset+size <= filesize.st_size);
-
-  _data = (char*)mmap(NULL, size + _offset, PROT_READ, MAP_PRIVATE, fd, pa_offset);
+  _data = (char*)mmap(NULL, size + _offset, PROT_READ, MAP_PRIVATE|MAP_POPULATE, fd, pa_offset);
 }
 
 MMapBuffer::~MMapBuffer()
 {
   munmap(_data, size_ + _offset);
-  close(fd);
 }
 
 #endif

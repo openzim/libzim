@@ -27,7 +27,9 @@ namespace zim {
 class FilePart {
   public:
     FilePart(const std::string& filename);
+    ~FilePart();
     const std::string& filename() const { return filename_; };
+    const int fd() const { return fd_; };
 
     std::size_t size() const { return size_; };
     bool fail() const { return size_ == 0; };
@@ -35,6 +37,7 @@ class FilePart {
 
   private:
     const std::string filename_;
+    int fd_;
     std::size_t size_;
 };
 

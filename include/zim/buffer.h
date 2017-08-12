@@ -80,7 +80,7 @@ class MemoryBuffer : public Buffer {
 #if !defined(_WIN32)
 class MMapBuffer : public Buffer {
   public:
-    MMapBuffer(const std::string& filename, std::size_t offset, std::size_t size);
+    MMapBuffer(int fd, std::size_t offset, std::size_t size);
     ~MMapBuffer();
 
     const char* data(std::size_t offset) const {
@@ -89,7 +89,6 @@ class MMapBuffer : public Buffer {
     }
 
   private:
-    int fd;
     std::size_t _offset;
     char* _data;
 };

@@ -25,14 +25,27 @@
 #include "envvalue.h"
 #include <cstring>
 #include <cassert>
-#include <fstream>
-#include <iostream>
+#include <fcntl.h>
 #include <lzma.h>
 #include <zlib.h>
 
 
 namespace zim {
 
+#if !defined(_WIN32)
+static int read_at(int fd, char* dest, std::size_t size, std::size_t offset)
+{
+  return pread(fd, dest, size, offset);
+}
+#else
+static int read_at(int fd, char* dest, std::size_t size, std::size_t offset)
+{
+  if (_lseek(fd, offset, SEEK_SET) != offset) {
+    return -1;
+  }
+  return read(fd, dest, size);
+}
+#endif
 
 FileReader::FileReader(std::shared_ptr<FileCompound> source)
   : FileReader(source, 0, source->fsize()) {}
@@ -53,12 +66,11 @@ char FileReader::read(std::size_t offset) {
   assert(offset < _size);
   offset += _offset;
   auto part_pair = source->lower_bound(offset);
-  std::fstream stream(part_pair->second->filename());
-  std::size_t local_offset = offset-part_pair->first.min;
+  int fd = part_pair->second->fd();
+  std::size_t local_offset = offset - part_pair->first.min;
   assert(local_offset<=part_pair->first.max);
-  stream.seekg(local_offset);
   char ret;
-  stream.read(&ret, 1);
+  read_at(fd, &ret, 1, local_offset);
   return ret;
 }
 
@@ -78,9 +90,8 @@ void FileReader::read(char* dest, std::size_t offset, std::size_t size) {
     std::size_t local_offset = offset-partRange.min;
     assert(size>0);
     size_t size_to_get = std::min(size, part->size()-local_offset);
-    std::fstream stream(part->filename());
-    stream.seekg(local_offset);
-    stream.read(dest, size_to_get);
+    int fd = part->fd();
+    read_at(fd, dest, size_to_get, local_offset);
     dest += size_to_get;
     size -= size_to_get;
     offset += size_to_get;
@@ -101,7 +112,9 @@ std::shared_ptr<Buffer> FileReader::get_buffer(std::size_t offset, std::size_t s
     auto part = found_range.first->second;
     auto local_offset = offset + _offset - range.min;
     assert(size<=part->size());
-    return std::unique_ptr<Buffer>(new MMapBuffer(part->filename(), local_offset, size));
+    int fd = part->fd();
+    auto buffer = std::unique_ptr<Buffer>(new MMapBuffer(fd, local_offset, size));
+    return std::move(buffer);
   } else
 #endif
   {
