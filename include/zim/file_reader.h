@@ -59,6 +59,7 @@ class Reader {
 
   private:
     std::shared_ptr<Buffer> get_clusterBuffer(std::size_t offset, std::size_t size, CompressionType comp);
+    virtual std::unique_ptr<Reader> get_mmap_sub_reader(std::size_t offset, std::size_t size) = 0;
 
 };
 
@@ -80,6 +81,8 @@ class FileReader : public Reader {
     FileReader(std::shared_ptr<FileCompound> source, std::size_t offset);
     FileReader(std::shared_ptr<FileCompound> source, std::size_t offset, std::size_t size);
 
+     virtual std::unique_ptr<Reader> get_mmap_sub_reader(std::size_t offset, std::size_t size);
+
     std::shared_ptr<FileCompound> source;
     std::size_t _offset;
     std::size_t _size;
@@ -100,6 +103,7 @@ class BufferReader : public Reader {
     std::unique_ptr<Reader> sub_reader(std::size_t offset, std::size_t size);
 
   private:
+     virtual std::unique_ptr<Reader> get_mmap_sub_reader(std::size_t offset, std::size_t size) { return std::unique_ptr<Reader>(); }
     std::shared_ptr<Buffer> source;
 };
 
