@@ -19,6 +19,15 @@
 
 #include <zim/buffer.h>
 
+#include <sys/stat.h>
+#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
+#include <fcntl.h>
+
+#if !defined(_WIN32)
+#include <sys/mman.h>
+#endif
 
 namespace zim {
 
@@ -26,5 +35,28 @@ std::shared_ptr<Buffer> Buffer::sub_buffer(std::size_t offset, std::size_t size)
 {
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
 }
+
+#if !defined(_WIN32)
+MMapBuffer::MMapBuffer(const std::string& filename, std::size_t offset, std::size_t size):
+  Buffer(size)
+{
+  fd = open(filename.c_str(), O_RDONLY);
+  struct stat filesize;
+  fstat(fd, &filesize);
+  std::size_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
+  _offset = offset-pa_offset;
+  assert(pa_offset < filesize.st_size);
+  assert(offset+size <= filesize.st_size);
+
+  _data = (char*)mmap(NULL, size + _offset, PROT_READ, MAP_PRIVATE, fd, pa_offset);
+}
+
+MMapBuffer::~MMapBuffer()
+{
+  munmap(_data, size_ + _offset);
+  close(fd);
+}
+
+#endif
 
 } //zim

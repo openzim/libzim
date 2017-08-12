@@ -91,25 +91,28 @@ void FileReader::read(char* dest, std::size_t offset, std::size_t size) {
 
 std::shared_ptr<Buffer> FileReader::get_buffer(std::size_t offset, std::size_t size) {
   assert(size <= _size);
+#if !defined(_WIN32)
   auto search_range = Range(_offset+offset, _offset+offset+size);
   auto found_range = source->equal_range(search_range);
   auto first_part_containing_it = found_range.first;
-#if 0
   if (++first_part_containing_it == found_range.second) {
     // The range is in only one part
     auto range = found_range.first->first;
     auto part = found_range.first->second;
-    auto local_offset = offset - range.min;
+    auto local_offset = offset + _offset - range.min;
     assert(size<=part->size());
     return std::unique_ptr<Buffer>(new MMapBuffer(part->filename(), local_offset, size));
-  } else {
+  } else
 #endif
-    // The range is several part. We will have to do somie memory copies :/
+  {
+    // The range is several part, or we are on Windows.
+    // We will have to do some memory copies :/
+    // [TODO] Use Windows equivalent for mmap.
     char* p = new char[size];
     auto ret_buffer = std::unique_ptr<Buffer>(new MemoryBuffer<true>(p, size));
     read(p, offset, size);
     return std::move(ret_buffer);
-//  }
+  }
 }
 
 char* lzma_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) {

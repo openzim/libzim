@@ -77,14 +77,24 @@ class MemoryBuffer : public Buffer {
 };
 
 
+#if !defined(_WIN32)
 class MMapBuffer : public Buffer {
   public:
     MMapBuffer(const std::string& filename, std::size_t offset, std::size_t size);
-    std::shared_ptr<Buffer> sub_buffer(std::size_t start_offset);
+    ~MMapBuffer();
 
-    const char* data(std::size_t offset) const;
+    const char* data(std::size_t offset) const {
+      offset += _offset;
+      return _data + offset;
+    }
 
+  private:
+    int fd;
+    std::size_t _offset;
+    char* _data;
 };
+#endif
+
 
 class SubBuffer : public Buffer {
   public:
