@@ -44,6 +44,7 @@ namespace zim
   FileImpl::FileImpl(const char* fname)
     : zimFile(new FileCompound(fname)),
       zimReader(new FileReader(zimFile)),
+      bufferDirentZone(256),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
@@ -136,12 +137,14 @@ namespace zim
     // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
     // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
-    size_t bufferSize = 16 + 256;
+    size_t bufferSize = 256;
     Dirent dirent;
     while (true) {
-        auto buffer = zimReader->get_buffer(indexOffset, bufferSize);
+        bufferDirentZone.reserve(bufferSize);
+        zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
+        auto direntBuffer = std::unique_ptr<Buffer>(new MemoryBuffer<false>(bufferDirentZone.data(), bufferSize));
         try {
-          dirent = Dirent(buffer);
+          dirent = Dirent(std::move(direntBuffer));
         } catch (InvalidSize) {
           // buffer size is not enougth, try again :
           bufferSize += 256;

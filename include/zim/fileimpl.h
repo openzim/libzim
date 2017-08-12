@@ -40,6 +40,7 @@ namespace zim
   {
       std::shared_ptr<FileCompound> zimFile;
       std::shared_ptr<FileReader> zimReader;
+      std::vector<char> bufferDirentZone;
       Fileheader header;
       std::string filename;
 

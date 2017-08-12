@@ -90,8 +90,8 @@ class DirentTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Dirent dirent2(buffer);
+      auto buffer = std::unique_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
+      zim::Dirent dirent2(std::move(buffer));
 
       CXXTOOLS_UNIT_ASSERT(!s.fail());
 
@@ -126,8 +126,8 @@ class DirentTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Dirent dirent2(buffer);
+      auto buffer = std::unique_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
+      zim::Dirent dirent2(std::move(buffer));
 
       CXXTOOLS_UNIT_ASSERT(!s.fail());
 
@@ -163,8 +163,8 @@ class DirentTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Dirent dirent2(buffer);
+      auto buffer = std::unique_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
+      zim::Dirent dirent2(std::move(buffer));
 
       CXXTOOLS_UNIT_ASSERT(!s.fail());
 
@@ -196,8 +196,8 @@ class DirentTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Dirent dirent2(buffer);
+      auto buffer = std::unique_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
+      zim::Dirent dirent2(std::move(buffer));
 
       CXXTOOLS_UNIT_ASSERT(dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT_EQUALS(dirent2.getNamespace(), 'A');
@@ -226,8 +226,8 @@ class DirentTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Dirent dirent2(buffer);
+      auto buffer = std::unique_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
+      zim::Dirent dirent2(std::move(buffer));
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT(dirent2.isLinktarget());
@@ -256,8 +256,8 @@ class DirentTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Dirent dirent2(buffer);
+      auto buffer = std::unique_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
+      zim::Dirent dirent2(std::move(buffer));
 
       CXXTOOLS_UNIT_ASSERT(!dirent2.isRedirect());
       CXXTOOLS_UNIT_ASSERT(!dirent2.isLinktarget());

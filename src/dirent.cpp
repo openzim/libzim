@@ -78,7 +78,7 @@ namespace zim
     return out;
   }
 
-  Dirent::Dirent(std::shared_ptr<Buffer> buffer)
+  Dirent::Dirent(std::unique_ptr<Buffer> buffer)
   {
     uint16_t mimeType = fromLittleEndian(buffer->as<uint16_t>(0));
     bool redirect = (mimeType == Dirent::redirectMimeType);
