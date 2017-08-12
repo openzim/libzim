@@ -92,7 +92,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       char* content = new char[str_content.size()-1];
       memcpy(content, str_content.c_str()+1, str_content.size()-1);
       auto buffer = std::shared_ptr<zim::Buffer>(
-        new zim::MemoryBuffer(content, str_content.size()-1));
+        new zim::MemoryBuffer<true>(content, str_content.size()-1));
       auto reader = std::shared_ptr<zim::Reader>(
         new zim::BufferReader(buffer));
       zim::Cluster cluster2(reader, zim::zimcompNone);
@@ -118,7 +118,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       char* content = new char[str_content.size()-1];
       memcpy(content, str_content.c_str()+1, str_content.size()-1);
       auto buffer = std::shared_ptr<zim::Buffer>(
-        new zim::MemoryBuffer(content, str_content.size()-1));
+        new zim::MemoryBuffer<true>(content, str_content.size()-1));
       auto reader = std::shared_ptr<zim::Reader>(
         new zim::BufferReader(buffer));
       zim::Cluster cluster2(reader, zim::zimcompNone);
@@ -151,7 +151,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
       auto buffer = std::shared_ptr<zim::Buffer>(
-        new zim::MemoryBuffer(content, size));
+        new zim::MemoryBuffer<true>(content, size));
       auto reader = std::shared_ptr<zim::Reader>(
         new zim::BufferReader(buffer));
       zim::CompressionType comp;
@@ -193,7 +193,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
       auto buffer = std::shared_ptr<zim::Buffer>(
-        new zim::MemoryBuffer(content, size));
+        new zim::MemoryBuffer<true>(content, size));
       auto reader = std::shared_ptr<zim::Reader>(
         new zim::BufferReader(buffer));
       zim::CompressionType comp;

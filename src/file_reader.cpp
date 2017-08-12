@@ -106,7 +106,7 @@ std::shared_ptr<Buffer> FileReader::get_buffer(std::size_t offset, std::size_t s
 #endif
     // The range is several part. We will have to do somie memory copies :/
     char* p = new char[size];
-    auto ret_buffer = std::unique_ptr<Buffer>(new MemoryBuffer(p, size));
+    auto ret_buffer = std::unique_ptr<Buffer>(new MemoryBuffer<true>(p, size));
     read(p, offset, size);
     return std::move(ret_buffer);
 //  }
@@ -206,7 +206,7 @@ std::shared_ptr<Buffer> Reader::get_clusterBuffer(std::size_t offset, std::size_
       throw(5);
   }
   delete[] raw_data;
-  return std::shared_ptr<Buffer>(new MemoryBuffer(uncompressed_data, uncompressed_size));
+  return std::shared_ptr<Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
 
 std::unique_ptr<Reader> Reader::sub_clusterReader(std::size_t offset, std::size_t size, CompressionType* comp) {

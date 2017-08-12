@@ -53,6 +53,8 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
     std::size_t size_;
 };
 
+
+template<bool CLEAN_AT_END>
 class MemoryBuffer : public Buffer {
   public:
     MemoryBuffer(const char* buffer, std::size_t size)
@@ -61,7 +63,9 @@ class MemoryBuffer : public Buffer {
     {}
 
     virtual ~MemoryBuffer() {
-        delete [] _data;
+        if ( CLEAN_AT_END ) {
+          delete [] _data;
+        }
     }
 
     const char* data(std::size_t offset) const {
@@ -71,6 +75,7 @@ class MemoryBuffer : public Buffer {
   private:
     const char* _data;
 };
+
 
 class MMapBuffer : public Buffer {
   public:

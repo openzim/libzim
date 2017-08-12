@@ -61,7 +61,7 @@ class FileheaderTest : public cxxtools::unit::TestSuite
       int size = str_content.size();
       char* content = new char[size];
       memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer(content, size));
+      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
       zim::Fileheader header2;
       header2.read(buffer);
 
