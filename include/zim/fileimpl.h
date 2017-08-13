@@ -44,11 +44,11 @@ namespace zim
       Fileheader header;
       std::string filename;
 
-      std::shared_ptr<Buffer> titleIndexBuffer;
-      std::shared_ptr<Buffer> urlPtrOffsetBuffer;
-      std::shared_ptr<Buffer> clusterOffsetBuffer;
+      std::shared_ptr<const Buffer> titleIndexBuffer;
+      std::shared_ptr<const Buffer> urlPtrOffsetBuffer;
+      std::shared_ptr<const Buffer> clusterOffsetBuffer;
 
-      Cache<size_type, Dirent> direntCache;
+      Cache<size_type, const Dirent> direntCache;
       Cache<offset_type, std::shared_ptr<Cluster>> clusterCache;
       bool cacheUncompressedCluster;
       typedef std::map<char, size_type> NamespaceCache;
@@ -60,7 +60,7 @@ namespace zim
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      offset_type getOffset(Buffer* buffer, size_type idx);
+      offset_type getOffset(const Buffer* buffer, size_type idx);
 
     public:
       explicit FileImpl(const char* fname);
@@ -71,8 +71,8 @@ namespace zim
       const Fileheader& getFileheader() const  { return header; }
       offset_type getFilesize() const;
 
-      Dirent getDirent(size_type idx);
-      Dirent getDirentByTitle(size_type idx);
+      const Dirent getDirent(size_type idx);
+      const Dirent getDirentByTitle(size_type idx);
       size_type getIndexByTitle(size_type idx);
       size_type getCountArticles() const       { return header.getArticleCount(); }
 

@@ -36,11 +36,11 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
       : size_(size) {};
     virtual ~Buffer() {};
     virtual const char* data(std::size_t offset=0) const = 0;
-    virtual char at(std::size_t offset) {
+    virtual char at(std::size_t offset) const {
         return *(data(offset));
     }
     std::size_t size() const { return size_; }
-    virtual std::shared_ptr<Buffer> sub_buffer(std::size_t offset, std::size_t size);
+    virtual std::shared_ptr<const Buffer> sub_buffer(std::size_t offset, std::size_t size) const;
 
     template<typename T>
     const T* as(size_t offset) const {
@@ -97,7 +97,7 @@ class MMapBuffer : public Buffer {
 
 class SubBuffer : public Buffer {
   public:
-    SubBuffer(const std::shared_ptr<Buffer> src, std::size_t offset, std::size_t size)
+    SubBuffer(const std::shared_ptr<const Buffer> src, std::size_t offset, std::size_t size)
       : Buffer(size),
         _data(src, src->data(offset))
     {

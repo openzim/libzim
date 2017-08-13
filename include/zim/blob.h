@@ -31,7 +31,7 @@ namespace zim
   {
       const char* _data;
       unsigned _size;
-      std::shared_ptr<Buffer> _buffer;
+      std::shared_ptr<const Buffer> _buffer;
 
     public:
       Blob()
@@ -43,7 +43,7 @@ namespace zim
           _size(size)
           { }
 
-      Blob(std::shared_ptr<Buffer> buffer)
+      Blob(std::shared_ptr<const Buffer> buffer)
         : _data(buffer->data()),
           _size(buffer->size()),
           _buffer(buffer)

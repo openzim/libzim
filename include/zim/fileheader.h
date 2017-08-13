@@ -67,7 +67,7 @@ namespace zim
           checksumPos(std::numeric_limits<offset_type>::max())
       {}
 
-      void read(std::shared_ptr<Buffer> buffer);
+      void read(std::shared_ptr<const Buffer> buffer);
 
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }

@@ -52,7 +52,7 @@ namespace zim
     return out;
   }
 
-  void Fileheader::read(std::shared_ptr<Buffer> buffer)
+  void Fileheader::read(std::shared_ptr<const Buffer> buffer)
   {
     size_type magicNumber = fromLittleEndian(buffer->as<size_type>(0));
     if (magicNumber != Fileheader::zimMagic)

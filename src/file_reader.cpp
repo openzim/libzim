@@ -47,13 +47,13 @@ static int read_at(int fd, char* dest, std::size_t size, std::size_t offset)
 }
 #endif
 
-FileReader::FileReader(std::shared_ptr<FileCompound> source)
+FileReader::FileReader(std::shared_ptr<const FileCompound> source)
   : FileReader(source, 0, source->fsize()) {}
 
-FileReader::FileReader(std::shared_ptr<FileCompound> source, std::size_t offset)
+FileReader::FileReader(std::shared_ptr<const FileCompound> source, std::size_t offset)
   : FileReader(source, offset, source->fsize()-offset) {}
 
-FileReader::FileReader(std::shared_ptr<FileCompound> source, std::size_t offset, std::size_t size)
+FileReader::FileReader(std::shared_ptr<const FileCompound> source, std::size_t offset, std::size_t size)
   : source(source),
     _offset(offset),
     _size(size)
@@ -62,7 +62,7 @@ FileReader::FileReader(std::shared_ptr<FileCompound> source, std::size_t offset,
   assert((offset+size)<=source->fsize());
 }
 
-char FileReader::read(std::size_t offset) {
+char FileReader::read(std::size_t offset) const {
   assert(offset < _size);
   offset += _offset;
   auto part_pair = source->lower_bound(offset);
@@ -75,7 +75,7 @@ char FileReader::read(std::size_t offset) {
 }
 
 
-void FileReader::read(char* dest, std::size_t offset, std::size_t size) {
+void FileReader::read(char* dest, std::size_t offset, std::size_t size) const {
   assert(offset < _size);
   assert(offset+size <= _size);
   if (! size ) {
@@ -100,7 +100,7 @@ void FileReader::read(char* dest, std::size_t offset, std::size_t size) {
 }
 
 
-std::shared_ptr<Buffer> FileReader::get_buffer(std::size_t offset, std::size_t size) {
+std::shared_ptr<const Buffer> FileReader::get_buffer(std::size_t offset, std::size_t size) const {
   assert(size <= _size);
 #if !defined(_WIN32)
   auto search_range = Range(_offset+offset, _offset+offset+size);
@@ -205,7 +205,7 @@ char* zip_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) {
   return ret_data;
 }
 
-std::shared_ptr<Buffer> Reader::get_clusterBuffer(std::size_t offset, std::size_t size, CompressionType comp)
+std::shared_ptr<const Buffer> Reader::get_clusterBuffer(std::size_t offset, std::size_t size, CompressionType comp) const
 {
   auto raw_buffer = get_buffer(offset, size);
   size_t uncompressed_size;
@@ -220,10 +220,10 @@ std::shared_ptr<Buffer> Reader::get_clusterBuffer(std::size_t offset, std::size_
     default:
       throw(5);
   }
-  return std::shared_ptr<Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
+  return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
 
-std::unique_ptr<Reader> FileReader::get_mmap_sub_reader(std::size_t offset, std::size_t size) {
+std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(std::size_t offset, std::size_t size) const {
 #if !defined(_WIN32)
   auto search_range = Range(_offset+offset, _offset+offset+size);
   auto found_range = source->equal_range(search_range);
@@ -236,14 +236,14 @@ std::unique_ptr<Reader> FileReader::get_mmap_sub_reader(std::size_t offset, std:
     assert(size<=part->size());
     int fd = part->fd();
     auto buffer = std::shared_ptr<Buffer>(new MMapBuffer(fd, local_offset, size));
-    return std::unique_ptr<Reader>(new BufferReader(buffer));
+    return std::unique_ptr<const Reader>(new BufferReader(buffer));
   }
 #endif
-  return std::unique_ptr<Reader>();
+  return std::unique_ptr<const Reader>();
 }
 
 
-std::unique_ptr<Reader> Reader::sub_clusterReader(std::size_t offset, std::size_t size, CompressionType* comp) {
+std::unique_ptr<const Reader> Reader::sub_clusterReader(std::size_t offset, std::size_t size, CompressionType* comp) const {
   *comp = static_cast<CompressionType>(read(offset));
   switch (*comp) {
     case zimcompDefault:
@@ -270,7 +270,7 @@ std::unique_ptr<Reader> Reader::sub_clusterReader(std::size_t offset, std::size_
   }
 }
 
-std::unique_ptr<Reader> FileReader::sub_reader(std::size_t offset, std::size_t size)
+std::unique_ptr<const Reader> FileReader::sub_reader(std::size_t offset, std::size_t size) const
 {
   assert(size<=_size);
   return std::unique_ptr<Reader>(new FileReader(source, _offset+offset, size));
@@ -280,17 +280,17 @@ std::unique_ptr<Reader> FileReader::sub_reader(std::size_t offset, std::size_t s
 //BufferReader::BufferReader(std::shared_ptr<Buffer> source)
 //  : source(source) {}
 
-std::shared_ptr<Buffer> BufferReader::get_buffer(std::size_t offset, std::size_t size)
+std::shared_ptr<const Buffer> BufferReader::get_buffer(std::size_t offset, std::size_t size) const
 {
   return source->sub_buffer(offset, size);
 }
 
-std::unique_ptr<Reader> BufferReader::sub_reader(std::size_t offset, std::size_t size)
+std::unique_ptr<const Reader> BufferReader::sub_reader(std::size_t offset, std::size_t size) const
 {
   auto source_addr = source->data(0);
   auto sub_buff = get_buffer(offset, size);
   auto buff_addr = sub_buff->data(0);
-  std::unique_ptr<Reader> sub_read(new BufferReader(sub_buff));
+  std::unique_ptr<const Reader> sub_read(new BufferReader(sub_buff));
   return sub_read;
 }
 
@@ -305,7 +305,7 @@ std::size_t BufferReader::offset() const
 }
 
 
-void BufferReader::read(char* dest, std::size_t offset, std::size_t size) {
+void BufferReader::read(char* dest, std::size_t offset, std::size_t size) const {
   assert(offset < source->size());
   assert(offset+size <= source->size());
   if (! size ) {
@@ -315,7 +315,7 @@ void BufferReader::read(char* dest, std::size_t offset, std::size_t size) {
 }
 
 
-char BufferReader::read(std::size_t offset) {
+char BufferReader::read(std::size_t offset) const {
   assert(offset < source->size());
   char dest;
   dest = *source->data(offset);

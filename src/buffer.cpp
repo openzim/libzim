@@ -31,7 +31,7 @@
 
 namespace zim {
 
-std::shared_ptr<Buffer> Buffer::sub_buffer(std::size_t offset, std::size_t size)
+std::shared_ptr<const Buffer> Buffer::sub_buffer(std::size_t offset, std::size_t size) const
 {
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
 }

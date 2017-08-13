@@ -36,13 +36,13 @@ namespace zim
 
       CompressionType compression;
       Offsets offsets;
-      std::shared_ptr<Reader> reader;
+      std::shared_ptr<const Reader> reader;
       offset_type startOffset;
 
       offset_type read_header();
 
     public:
-      Cluster(std::shared_ptr<Reader> reader, CompressionType comp);
+      Cluster(std::shared_ptr<const Reader> reader, CompressionType comp);
       void setCompression(CompressionType c)   { compression = c; }
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }

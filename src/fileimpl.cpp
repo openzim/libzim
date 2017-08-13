@@ -112,14 +112,14 @@ namespace zim
     }
   }
 
-  Dirent FileImpl::getDirent(size_type idx)
+  const Dirent FileImpl::getDirent(size_type idx)
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
 
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    std::pair<bool, Dirent> v = direntCache.getx(idx);
+    std::pair<bool, const Dirent> v = direntCache.getx(idx);
     if (v.first)
     {
       log_debug("dirent " << idx << " found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
@@ -160,7 +160,7 @@ namespace zim
     return dirent;
   }
 
-  Dirent FileImpl::getDirentByTitle(size_type idx)
+  const Dirent FileImpl::getDirentByTitle(size_type idx)
   {
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
@@ -195,7 +195,7 @@ namespace zim
     size_t clusterSize = nextClusterOffset - clusterOffset;
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
-    std::shared_ptr<Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp);
+    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp);
     cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp));
 
     log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
@@ -204,7 +204,7 @@ namespace zim
     return cluster;
   }
 
-  offset_type FileImpl::getOffset(Buffer* buffer, size_type idx)
+  offset_type FileImpl::getOffset(const Buffer* buffer, size_type idx)
   {
     offset_type offset = fromLittleEndian(buffer->as<offset_type>(sizeof(offset_type)*idx));
     return offset;
@@ -300,7 +300,7 @@ namespace zim
     if (!header.hasChecksum())
       return std::string();
 
-    std::shared_ptr<Buffer> chksum;
+    std::shared_ptr<const Buffer> chksum;
     try {
       chksum = zimReader->get_buffer(header.getChecksumPos(), 16);
     } catch (BufferError)

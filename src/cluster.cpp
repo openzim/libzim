@@ -35,7 +35,7 @@ log_define("zim.cluster")
 
 namespace zim
 {
-  Cluster::Cluster(std::shared_ptr<Reader> reader_, CompressionType comp)
+  Cluster::Cluster(std::shared_ptr<const Reader> reader_, CompressionType comp)
     : compression(comp),
       reader(reader_),
       startOffset(0)

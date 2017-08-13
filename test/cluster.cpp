@@ -155,7 +155,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       auto reader = std::shared_ptr<zim::Reader>(
         new zim::BufferReader(buffer));
       zim::CompressionType comp;
-      std::shared_ptr<zim::Reader> clusterReader = reader->sub_clusterReader(0, size, &comp);
+      std::shared_ptr<const zim::Reader> clusterReader = reader->sub_clusterReader(0, size, &comp);
       CXXTOOLS_UNIT_ASSERT_EQUALS(comp, zim::zimcompZip);
       zim::Cluster cluster2(clusterReader, comp);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
@@ -197,7 +197,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
       auto reader = std::shared_ptr<zim::Reader>(
         new zim::BufferReader(buffer));
       zim::CompressionType comp;
-      std::shared_ptr<zim::Reader> clusterReader = reader->sub_clusterReader(0, size, &comp);
+      std::shared_ptr<const zim::Reader> clusterReader = reader->sub_clusterReader(0, size, &comp);
       CXXTOOLS_UNIT_ASSERT_EQUALS(comp, zim::zimcompLzma);
       zim::Cluster cluster2(clusterReader, comp);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
