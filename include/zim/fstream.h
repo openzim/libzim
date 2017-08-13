@@ -77,6 +77,7 @@ namespace zim
       { buffer.resize(s); setg(0, 0, 0);}
       zim::offset_type fsize() const;
       time_t getMTime() const;
+      bool is_multiPart() const { return files.size() > 1; }
   };
 
   class ifstream : public std::istream
@@ -95,6 +96,7 @@ namespace zim
       void setBufsize(unsigned s) { myStreambuf.setBufsize(s); }
       zim::offset_type fsize() const  { return myStreambuf.fsize(); }
       time_t getMTime() const     { return myStreambuf.getMTime(); }
+      bool is_multiPart() const { return myStreambuf.is_multiPart(); }
   };
 
 }
