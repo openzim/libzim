@@ -197,6 +197,17 @@ Search::iterator Search::begin() const {
         if ( first ) {
             this->valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
             language = database.get_metadata("language");
+            if (language.empty() ) {
+              // Database created before 2017/03 has no language metadata.
+              // However, term were stemmed anyway and we need to stem our
+              // search query the same the database was created.
+              // So we need a language, let's use the one of the zim.
+              // If zimfile has no language metadata, we can't do lot more here :/
+              auto article = zimfile->getArticle('M', "Language");
+              if ( article.good() ) {
+                language = article.getData();
+              }
+            }
             stopwords = database.get_metadata("stopwords");
             this->prefixes = database.get_metadata("prefixes");
         } else {
