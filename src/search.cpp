@@ -186,11 +186,17 @@ Search::iterator Search::begin() const {
     for(it=zimfiles.begin(); it!=zimfiles.end(); it++)
     {
         const File* zimfile = *it;
+        if (zimfile->is_multiPart()) {
+            continue;
+        }
         zim::Article xapianArticle = zimfile->getArticle('Z', "/fulltextIndex/xapian");
         if (!xapianArticle.good()) {
             continue;
         }
         zim::offset_type dbOffset = xapianArticle.getOffset();
+        if (dbOffset == 0) {
+            continue;
+        }
         int databasefd = open(zimfile->getFilename().c_str(), O_RDONLY);
         lseek(databasefd, dbOffset, SEEK_SET);
         Xapian::Database database(databasefd);

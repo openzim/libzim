@@ -83,6 +83,7 @@ namespace zim
 
       std::string getChecksum();
       bool verify();
+      bool is_multiPart() const;
   };
 
 }

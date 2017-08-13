@@ -98,6 +98,8 @@ namespace zim
 
       std::string getChecksum()   { return impl->getChecksum(); }
       bool verify()               { return impl->verify(); }
+
+      bool is_multiPart() const   { return impl->is_multiPart(); }
   };
 
   std::string urldecode(const std::string& url);

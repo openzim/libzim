@@ -347,4 +347,8 @@ namespace zim
     return true;
   }
 
+  bool FileImpl::is_multiPart() const {
+    return zimFile.is_multiPart();
+  }
+
 }
