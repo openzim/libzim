@@ -19,9 +19,11 @@
 
 #include <zim/dirent.h>
 #include <zim/zim.h>
+#include <zim/buffer.h>
 #include "endian_tools.h"
 #include "log.h"
 #include <algorithm>
+#include <cstring>
 
 log_define("zim.dirent")
 
@@ -76,104 +78,76 @@ namespace zim
     return out;
   }
 
-  std::istream& operator>> (std::istream& in, Dirent& dirent)
+  Dirent::Dirent(std::unique_ptr<Buffer> buffer)
   {
-    union
-    {
-      long a;
-      char d[16];
-    } header;
-
-    in.read(header.d, 8);
-    if (in.fail())
-    {
-      log_warn("error reading dirent header");
-      return in;
-    }
-
-    if (in.gcount() != 8)
-    {
-      log_warn("error reading dirent header (2)");
-      in.setstate(std::ios::failbit);
-      return in;
-    }
-
-    uint16_t mimeType = fromLittleEndian(reinterpret_cast<const uint16_t*>(header.d));
+    uint16_t mimeType = fromLittleEndian(buffer->as<uint16_t>(0));
     bool redirect = (mimeType == Dirent::redirectMimeType);
     bool linktarget = (mimeType == Dirent::linktargetMimeType);
     bool deleted = (mimeType == Dirent::deletedMimeType);
-    char ns = header.d[3];
-    size_type version = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 4));
-    dirent.setVersion(version);
+    uint8_t extraLen = *(buffer->as<uint8_t>(2));
+    char ns = buffer->data()[3];
+    size_type version = fromLittleEndian(buffer->as<size_type>(4));
+    setVersion(version);
+
+    std::size_t current = 8;
 
     if (redirect)
     {
-      in.read(header.d + 8, 4);
-      if (in.fail())
-      {
-        log_warn("error reading redirect dirent header");
-        return in;
-      }
-
-      size_type redirectIndex = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
+      size_type redirectIndex = fromLittleEndian(buffer->as<size_type>(current));
+      current += sizeof(size_type);
 
       log_debug("redirectIndex=" << redirectIndex);
 
-      dirent.setRedirect(redirectIndex);
+      setRedirect(redirectIndex);
     }
     else if (linktarget || deleted)
     {
       log_debug("linktarget or deleted entry");
-      dirent.setArticle(mimeType, 0, 0);
+      setArticle(mimeType, 0, 0);
     }
     else
     {
       log_debug("read article entry");
 
-      in.read(header.d + 8, 8);
-      if (in.fail())
-      {
-        log_warn("error reading article dirent header");
-        return in;
-      }
-
-      if (in.gcount() != 8)
-      {
-        log_warn("error reading article dirent header (2)");
-        in.setstate(std::ios::failbit);
-        return in;
-      }
-
-      size_type clusterNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 8));
-      size_type blobNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header.d + 12));
+      size_type clusterNumber = fromLittleEndian(buffer->as<const size_type>(current));
+      current += sizeof(size_type);
+      size_type blobNumber = fromLittleEndian(buffer->as<const size_type>(current));
+      current += sizeof(size_type);
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber);
 
-      dirent.setArticle(mimeType, clusterNumber, blobNumber);
+      setArticle(mimeType, clusterNumber, blobNumber);
     }
     
-    char ch;
     std::string url;
     std::string title;
     std::string parameter;
 
     log_debug("read url, title and parameters");
 
-    while (in.get(ch) && ch != '\0')
-      url += ch;
+    std::size_t url_size = strlen(buffer->data(current));
+    if (current + url_size >= buffer->size()) {
+      throw(InvalidSize());
+    }
+    url = std::string(buffer->data(current), url_size);
+    current += url_size + 1;
+    
+    std::size_t title_size = strlen(buffer->data(current));
+    if (current + title_size >= buffer->size()) {
+      throw(InvalidSize());
+    }
+    title = std::string(buffer->data(current), title_size);
+    current += title_size + 1;
 
-    while (in.get(ch) && ch != '\0')
-      title += ch;
+    if (current + extraLen > buffer->size()) {
+       throw(InvalidSize());
+    }
+    parameter = std::string(buffer->data(current), extraLen);
 
-    uint8_t extraLen = static_cast<uint8_t>(header.d[2]);
-    while (extraLen-- > 0 && in.get(ch))
-      parameter += ch;
+    setUrl(ns, url);
+    setTitle(title);
+    setParameter(parameter);
 
-    dirent.setUrl(ns, url);
-    dirent.setTitle(title);
-    dirent.setParameter(parameter);
-
-    return in;
   }
 
   std::string Dirent::getLongUrl() const

@@ -21,6 +21,7 @@
 #include <zim/blob.h>
 #include "endian_tools.h"
 #include <zim/error.h>
+#include <zim/file_reader.h>
 #include <stdlib.h>
 #include <sstream>
 
@@ -28,303 +29,76 @@
 
 #include "config.h"
 
-#if defined(ENABLE_ZLIB)
-#include "deflatestream.h"
-#include "inflatestream.h"
-#endif
-
-#if defined(ENABLE_LZMA)
-#include "lzmastream.h"
-#include "unlzmastream.h"
-#endif
-
 log_define("zim.cluster")
 
 #define log_debug1(e)
 
 namespace zim
 {
-  Cluster::Cluster()
-    : impl(0)
-    { }
-
-  ClusterImpl* Cluster::getImpl()
+  Cluster::Cluster(std::shared_ptr<const Reader> reader_, CompressionType comp)
+    : compression(comp),
+      reader(reader_),
+      startOffset(0)
   {
-    if (impl.getPointer() == 0)
-      impl = new ClusterImpl();
-    return impl;
-  }
-
-  ClusterImpl::ClusterImpl()
-    : compression(zimcompNone),
-      startOffset(0),
-      lazy_read_stream(NULL)
-  {
-    offsets.push_back(0);
+    auto d = reader->offset();
+    startOffset = read_header();
+    reader = reader->sub_reader(startOffset);
+    auto d1 = reader->offset();
+    assert((d+startOffset)==d1);
   }
 
   /* This return the number of char read */
-  offset_type ClusterImpl::read_header(std::istream& in)
+  offset_type Cluster::read_header()
   {
-    log_debug1("read_header");
     // read first offset, which specifies, how many offsets we need to read
     size_type offset;
-    in.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-    if (in.fail())
-    {
-      std::cerr << "fail at read offset" << std::endl;
-      throw ZimFileFormatError("fail at read first offset");
-    }
-
+    offset = reader->read<size_type>(0);
     offset = fromLittleEndian(&offset);
 
-    size_type n = offset / 4;
-    size_type a = offset;
-
-    log_debug1("first offset is " << offset << " n=" << n << " a=" << a);
+    size_type n_offset = offset / 4;
+    size_type data_address = offset;
 
     // read offsets
     offsets.clear();
-    offsets.reserve(n);
+    offsets.reserve(n_offset);
     offsets.push_back(0);
-    while (--n)
+    
+    auto buffer = reader->get_buffer(0, offset);
+    std::size_t current = 4;
+    while (--n_offset)
     {
-      in.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-      if (in.fail())
-      {
-        log_debug("fail at " << n);
-        throw ZimFileFormatError("fail at read offset");
-      }
-      offset = fromLittleEndian(&offset);
-      log_debug1("offset=" << offset << '(' << offset-a << ')');
-      offsets.push_back(offset - a);
+      size_type new_offset = fromLittleEndian(buffer->as<size_type>(current));
+      assert(new_offset >= offset);
+      assert(offset >= data_address);
+      assert(offset <= reader->size());
+      
+      offset = new_offset;
+      offsets.push_back(offset - data_address);
+      current += sizeof(size_type);
     }
-    return a;
-  }
-
-  void ClusterImpl::read_content(std::istream& in)
-  {
-    log_debug1("read_content");
-    _data.clear();
-    // last offset points past the end of the cluster, so we know now, how may bytes to read
-    if (offsets.size() > 1)
-    {
-      size_type n = offsets.back() - offsets.front();
-      if (n > 0)
-      {
-        _data.resize(n);
-        log_debug("read " << n << " bytes of data");
-        in.read(&(_data[0]), n);
-      }
-      else
-        log_warn("read empty cluster");
-    }
-  }
-
-  void ClusterImpl::finalise_read() {
-    if ( !lazy_read_stream )
-    {
-        std::cerr << "lazy_read null" << std::endl;
-        return;
-    }
-    lazy_read_stream->seekg(startOffset);
-    read_content(*lazy_read_stream);
-    lazy_read_stream = NULL;
-  }
-
-  void ClusterImpl::write(std::ostream& out) const
-  {
-    size_type a = offsets.size() * sizeof(size_type);
-    for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
-    {
-      size_type o = *it;
-      o += a;
-      o = fromLittleEndian(&o);
-      out.write(reinterpret_cast<const char*>(&o), sizeof(size_type));
-    }
-
-    if (_data.size() > 0)
-      out.write(&(_data[0]), _data.size());
-    else
-      log_warn("write empty cluster");
-  }
-
-  void ClusterImpl::addBlob(const Blob& blob)
-  {
-    log_debug1("addBlob(ptr, " << blob.size() << ')');
-    _data.insert(_data.end(), blob.data(), blob.end());
-    offsets.push_back(_data.size());
-  }
-
-  Blob ClusterImpl::getBlob(size_type n) const
-  {
-    size_type s = getSize();
-    return s > 0 ? Blob(const_cast<ClusterImpl*>(this), getData(n), getSize(n))
-                 : Blob();
-  }
-
-  void ClusterImpl::clear()
-  {
-    offsets.clear();
-    _data.clear();
-    offsets.push_back(0);
-  }
-
-  void ClusterImpl::addBlob(const char* data, unsigned size)
-  {
-    addBlob(Blob(data, size));
+    assert(offset==reader->size());
+    return data_address;
   }
 
   Blob Cluster::getBlob(size_type n) const
   {
-    return impl->getBlob(n);
-  }
-
-  void Cluster::init_from_stream(ifstream& in, offset_type offset)
-  {
-    getImpl()->init_from_stream(in, offset);
-  }
-
-  void ClusterImpl::init_from_stream(ifstream& in, offset_type offset)
-  {
-    log_trace("init_from_stream");
-    in.seekg(offset);
-
-    clear();
-
-    char c;
-    in.get(c);
-    setCompression(static_cast<CompressionType>(c));
-
-    switch (static_cast<CompressionType>(c))
-    {
-      case zimcompDefault:
-      case zimcompNone:
-        startOffset = read_header(in);
-        startOffset += sizeof(char) + offset;
-        set_lazy_read(&in);
-        break;
-
-      case zimcompZip:
-        {
-#if defined(ENABLE_ZLIB)
-          log_debug("uncompress data (zlib)");
-          zim::InflateStream is(in);
-          is.exceptions(std::ios::failbit | std::ios::badbit);
-          read_header(is);
-          read_content(is);
-#else
-          throw std::runtime_error("zlib not enabled in this library");
-#endif
-          break;
-        }
-
-      case zimcompBzip2:
-        {
-          throw std::runtime_error("bzip2 not enabled in this library");
-          break;
-        }
-
-      case zimcompLzma:
-        {
-#if defined(ENABLE_LZMA)
-          log_debug("uncompress data (lzma)");
-          zim::UnlzmaStream is(in);
-          is.exceptions(std::ios::failbit | std::ios::badbit);
-          read_header(is);
-          read_content(is);
-#else
-          throw std::runtime_error("lzma not enabled in this library");
-#endif
-          break;
-        }
-
-      default:
-        log_error("invalid compression flag " << c);
-        in.setstate(std::ios::failbit);
-        break;
+    if (size()) {
+      auto buffer = reader->get_buffer(offsets[n], getBlobSize(n));
+      return Blob(buffer);
+    } else {
+      return Blob();
     }
   }
 
-  std::ostream& operator<< (std::ostream& out, const ClusterImpl& clusterImpl)
+  const char* Cluster::getBlobPtr(unsigned n) const
   {
-    log_trace("write cluster");
-
-    out.put(static_cast<char>(clusterImpl.getCompression()));
-
-    switch(clusterImpl.getCompression())
-    {
-      case zimcompDefault:
-      case zimcompNone:
-        clusterImpl.write(out);
-        break;
-
-      case zimcompZip:
-        {
-#if defined(ENABLE_ZLIB)
-          log_debug("compress data (zlib)");
-          zim::DeflateStream os(out);
-          os.exceptions(std::ios::failbit | std::ios::badbit);
-          clusterImpl.write(os);
-          os.flush();
-#else
-          throw std::runtime_error("zlib not enabled in this library");
-#endif
-          break;
-        }
-
-      case zimcompBzip2:
-        {
-          throw std::runtime_error("bzip2 not enabled in this library");
-          break;
-        }
-
-      case zimcompLzma:
-        {
-#if defined(ENABLE_LZMA)
-          uint32_t lzmaPreset = 3 | LZMA_PRESET_EXTREME;
-          /**
-           * read lzma preset from environment
-           * ZIM_LZMA_PRESET is a number followed optionally by a
-           * suffix 'e'. The number gives the preset and the suffix tells,
-           * if LZMA_PRESET_EXTREME should be set.
-           * e.g.:
-           *   ZIM_LZMA_LEVEL=9   => 9
-           *   ZIM_LZMA_LEVEL=3e  => 3 + extreme
-           */
-          const char* e = ::getenv("ZIM_LZMA_LEVEL");
-          if (e)
-          {
-            char flag = '\0';
-            std::istringstream s(e);
-            s >> lzmaPreset >> flag;
-            if (flag == 'e')
-              lzmaPreset |= LZMA_PRESET_EXTREME;
-          }
-
-          log_debug("compress data (lzma, " << std::hex << lzmaPreset << ")");
-          zim::LzmaStream os(out, lzmaPreset);
-          os.exceptions(std::ios::failbit | std::ios::badbit);
-          clusterImpl.write(os);
-          os.end();
-#else
-          throw std::runtime_error("lzma not enabled in this library");
-#endif
-          break;
-        }
-
-      default:
-        std::ostringstream msg;
-        msg << "invalid compression flag " << clusterImpl.getCompression();
-        log_error(msg.str());
-        throw std::runtime_error(msg.str());
-    }
-
-    return out;
+     auto d = reader->get_buffer(offsets[n], getBlobSize(n))->data();
+     return d;
   }
 
-  std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
+  size_type Cluster::size() const
   {
-    return out << *cluster.impl;
+    return offsets.size() * sizeof(size_type) + reader->size();
   }
+
 }

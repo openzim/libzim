@@ -18,12 +18,17 @@
  */
 
 #include <zim/cluster.h>
-#include <zim/fstream.h>
 #include <zim/zim.h>
+#include <zim/buffer.h>
+#include <zim/file_reader.h>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <memory>
 #include <cstdio>
+#include <cstring>
+
+#include "../src/writer/cluster.h"
 
 #include <cxxtools/unit/testsuite.h>
 #include <cxxtools/unit/registertest.h>
@@ -49,7 +54,7 @@ class ClusterTest : public cxxtools::unit::TestSuite
 
     void CreateCluster()
     {
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster.count(), 0);
 
@@ -69,11 +74,9 @@ class ClusterTest : public cxxtools::unit::TestSuite
 
     void ReadWriteCluster()
     {
-      std::string name = std::tmpnam(NULL);
-      std::ofstream os;
-      os.open(name.c_str());
+      std::stringstream stream;
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       std::string blob0("123456789012345678901234567890");
       std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -83,54 +86,54 @@ class ClusterTest : public cxxtools::unit::TestSuite
       cluster.addBlob(blob1.data(), blob1.size());
       cluster.addBlob(blob2.data(), blob2.size());
 
-      os << cluster;
-      os.close();
+      stream << cluster;
 
-      zim::ifstream is(name);
-      zim::Cluster cluster2;
-      cluster2.init_from_stream(is, 0);
-      CXXTOOLS_UNIT_ASSERT(!is.fail());
+      std::string str_content = stream.str();
+      char* content = new char[str_content.size()-1];
+      memcpy(content, str_content.c_str()+1, str_content.size()-1);
+      auto buffer = std::shared_ptr<zim::Buffer>(
+        new zim::MemoryBuffer<true>(content, str_content.size()-1));
+      auto reader = std::shared_ptr<zim::Reader>(
+        new zim::BufferReader(buffer));
+      zim::Cluster cluster2(reader, zim::zimcompNone);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), blob0.size());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(1), blob1.size());
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(2), blob2.size());
-      std::remove(name.c_str());
     }
 
     void ReadWriteEmpty()
     {
-      std::string name = std::tmpnam(NULL);
-      std::ofstream os;
-      os.open(name.c_str());
+      std::stringstream stream;
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       cluster.addBlob(0, 0);
       cluster.addBlob(0, 0);
       cluster.addBlob(0, 0);
 
-      os << cluster;
-      os.close();
+      stream << cluster;
 
-      zim::ifstream is(name);
-      zim::Cluster cluster2;
-      cluster2.init_from_stream(is, 0);
-      CXXTOOLS_UNIT_ASSERT(!is.fail());
+      std::string str_content = stream.str();
+      char* content = new char[str_content.size()-1];
+      memcpy(content, str_content.c_str()+1, str_content.size()-1);
+      auto buffer = std::shared_ptr<zim::Buffer>(
+        new zim::MemoryBuffer<true>(content, str_content.size()-1));
+      auto reader = std::shared_ptr<zim::Reader>(
+        new zim::BufferReader(buffer));
+      zim::Cluster cluster2(reader, zim::zimcompNone);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), 0);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(1), 0);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(2), 0);
-      std::remove(name.c_str());
     }
 
 #if defined(ENABLE_ZLIB)
     void ReadWriteClusterZ()
     {
-      std::string name = std::tmpnam(NULL);
-      std::ofstream os;
-      os.open(name.c_str());
+      std::stringstream stream;
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       std::string blob0("123456789012345678901234567890");
       std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -141,13 +144,20 @@ class ClusterTest : public cxxtools::unit::TestSuite
       cluster.addBlob(blob2.data(), blob2.size());
       cluster.setCompression(zim::zimcompZip);
 
-      os << cluster;
-      os.close();
+      stream << cluster;
 
-      zim::ifstream is(name);
-      zim::Cluster cluster2;
-      cluster2.init_from_stream(is, 0);
-      CXXTOOLS_UNIT_ASSERT(!is.fail());
+      std::string str_content = stream.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(
+        new zim::MemoryBuffer<true>(content, size));
+      auto reader = std::shared_ptr<zim::Reader>(
+        new zim::BufferReader(buffer));
+      zim::CompressionType comp;
+      std::shared_ptr<const zim::Reader> clusterReader = reader->sub_clusterReader(0, size, &comp);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(comp, zim::zimcompZip);
+      zim::Cluster cluster2(clusterReader, comp);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getCompression(), zim::zimcompZip);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), blob0.size());
@@ -156,7 +166,6 @@ class ClusterTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(0), cluster2.getBlobPtr(0) + cluster2.getBlobSize(0), blob0.data()));
       CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(1), cluster2.getBlobPtr(1) + cluster2.getBlobSize(1), blob1.data()));
       CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(2), cluster2.getBlobPtr(2) + cluster2.getBlobSize(2), blob2.data()));
-      std::remove(name.c_str());
     }
 
 #endif
@@ -164,11 +173,9 @@ class ClusterTest : public cxxtools::unit::TestSuite
 #if defined(ENABLE_LZMA)
     void ReadWriteClusterLzma()
     {
-      std::string name = std::tmpnam(NULL);
-      std::ofstream os;
-      os.open(name.c_str());
+      std::stringstream stream;
 
-      zim::Cluster cluster;
+      zim::writer::Cluster cluster;
 
       std::string blob0("123456789012345678901234567890");
       std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -179,13 +186,20 @@ class ClusterTest : public cxxtools::unit::TestSuite
       cluster.addBlob(blob2.data(), blob2.size());
       cluster.setCompression(zim::zimcompLzma);
 
-      os << cluster;
-      os.close();
+      stream << cluster;
 
-      zim::ifstream is(name);
-      zim::Cluster cluster2;
-      cluster2.init_from_stream(is, 0);
-      CXXTOOLS_UNIT_ASSERT(!is.fail());
+      std::string str_content = stream.str();
+      int size = str_content.size();
+      char* content = new char[size];
+      memcpy(content, str_content.c_str(), size);
+      auto buffer = std::shared_ptr<zim::Buffer>(
+        new zim::MemoryBuffer<true>(content, size));
+      auto reader = std::shared_ptr<zim::Reader>(
+        new zim::BufferReader(buffer));
+      zim::CompressionType comp;
+      std::shared_ptr<const zim::Reader> clusterReader = reader->sub_clusterReader(0, size, &comp);
+      CXXTOOLS_UNIT_ASSERT_EQUALS(comp, zim::zimcompLzma);
+      zim::Cluster cluster2(clusterReader, comp);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.count(), 3);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getCompression(), zim::zimcompLzma);
       CXXTOOLS_UNIT_ASSERT_EQUALS(cluster2.getBlobSize(0), blob0.size());
@@ -194,7 +208,6 @@ class ClusterTest : public cxxtools::unit::TestSuite
       CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(0), cluster2.getBlobPtr(0) + cluster2.getBlobSize(0), blob0.data()));
       CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(1), cluster2.getBlobPtr(1) + cluster2.getBlobSize(1), blob1.data()));
       CXXTOOLS_UNIT_ASSERT(std::equal(cluster2.getBlobPtr(2), cluster2.getBlobPtr(2) + cluster2.getBlobSize(2), blob2.data()));
-      std::remove(name.c_str());
     }
 
 #endif

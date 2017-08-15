@@ -18,8 +18,8 @@
  */
 
 
-#ifndef ZIM_DEFLATESTREAM_H
-#define ZIM_DEFLATESTREAM_H
+#ifndef ZIM_WRITER_DEFLATESTREAM_H
+#define ZIM_WRITER_DEFLATESTREAM_H
 
 #include <iostream>
 #include <stdexcept>
@@ -27,6 +27,9 @@
 #include <vector>
 
 namespace zim
+{
+
+namespace writer
 {
   class DeflateError : public std::runtime_error
   {
@@ -84,7 +87,9 @@ namespace zim
       void setSink(std::ostream& sink)     { streambuf.setSink(sink.rdbuf()); }
       uLong getAdler() const   { return streambuf.getAdler(); }
   };
+
+}
 }
 
-#endif // ZIM_DEFLATESTREAM_H
+#endif // ZIM_WRITER_DEFLATESTREAM_H
 

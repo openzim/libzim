@@ -31,7 +31,7 @@ namespace zim
   {
       const char* _data;
       unsigned _size;
-      SmartPtr<ClusterImpl> _cluster;
+      std::shared_ptr<const Buffer> _buffer;
 
     public:
       Blob()
@@ -43,11 +43,11 @@ namespace zim
           _size(size)
           { }
 
-      Blob(ClusterImpl* cluster, const char* data, unsigned size)
-        : _data(data),
-          _size(size),
-          _cluster(cluster)
-          { }
+      Blob(std::shared_ptr<const Buffer> buffer)
+        : _data(buffer->data()),
+          _size(buffer->size()),
+          _buffer(buffer)
+          {}
 
       operator std::string() const { return std::string(_data, _size); }
       const char* data() const  { return _data; }

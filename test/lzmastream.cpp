@@ -17,7 +17,7 @@
  *
  */
 
-#include "../src/lzmastream.h"
+#include "../src/writer/lzmastream.h"
 #include "../src/unlzmastream.h"
 #include <iostream>
 #include <sstream>
@@ -44,7 +44,7 @@ class LzmastreamTest : public cxxtools::unit::TestSuite
     {
       // test 
       std::stringstream lzmatarget;
-      zim::LzmaStream compressor(lzmatarget);
+      zim::writer::LzmaStream compressor(lzmatarget);
       compressor << testtext << std::flush;
 
       {
@@ -70,7 +70,7 @@ class LzmastreamTest : public cxxtools::unit::TestSuite
     {
       // test 
       std::stringstream lzmatarget;
-      zim::LzmaStream compressor(lzmatarget);
+      zim::writer::LzmaStream compressor(lzmatarget);
       compressor << testtext << std::flush;
 
       {

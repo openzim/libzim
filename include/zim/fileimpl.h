@@ -23,24 +23,33 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <zim/fstream.h>
+#include <memory>
 #include <zim/refcounted.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include <zim/cache.h>
 #include <zim/dirent.h>
 #include <zim/cluster.h>
+#include <zim/buffer.h>
 
 namespace zim
 {
+  class FileReader;
+  class FileCompound;
   class FileImpl : public RefCounted
   {
-      ifstream zimFile;
+      std::shared_ptr<FileCompound> zimFile;
+      std::shared_ptr<FileReader> zimReader;
+      std::vector<char> bufferDirentZone;
       Fileheader header;
       std::string filename;
 
-      Cache<size_type, Dirent> direntCache;
-      Cache<offset_type, Cluster> clusterCache;
+      std::shared_ptr<const Buffer> titleIndexBuffer;
+      std::shared_ptr<const Buffer> urlPtrOffsetBuffer;
+      std::shared_ptr<const Buffer> clusterOffsetBuffer;
+
+      Cache<size_type, const Dirent> direntCache;
+      Cache<offset_type, std::shared_ptr<Cluster>> clusterCache;
       bool cacheUncompressedCluster;
       typedef std::map<char, size_type> NamespaceCache;
       NamespaceCache namespaceBeginCache;
@@ -51,25 +60,25 @@ namespace zim
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      offset_type getOffset(offset_type ptrOffset, size_type idx);
+      offset_type getOffset(const Buffer* buffer, size_type idx);
 
     public:
       explicit FileImpl(const char* fname);
 
-      time_t getMTime() const   { return zimFile.getMTime(); }
+      time_t getMTime() const;
 
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
-      offset_type getFilesize() const          { return zimFile.fsize(); }
+      offset_type getFilesize() const;
 
-      Dirent getDirent(size_type idx);
-      Dirent getDirentByTitle(size_type idx);
+      const Dirent getDirent(size_type idx);
+      const Dirent getDirentByTitle(size_type idx);
       size_type getIndexByTitle(size_type idx);
       size_type getCountArticles() const       { return header.getArticleCount(); }
 
-      Cluster getCluster(size_type idx);
+      std::shared_ptr<Cluster> getCluster(size_type idx);
       size_type getCountClusters() const       { return header.getClusterCount(); }
-      offset_type getClusterOffset(size_type idx)   { return getOffset(header.getClusterPtrPos(), idx); }
+      offset_type getClusterOffset(size_type idx)   { return getOffset(clusterOffsetBuffer.get(), idx); }
 
       size_type getNamespaceBeginOffset(char ch);
       size_type getNamespaceEndOffset(char ch);

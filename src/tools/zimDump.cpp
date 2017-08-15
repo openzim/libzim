@@ -275,23 +275,23 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
 
     if (verbose)
     {
-      zim::Cluster cluster = article.getCluster();
+      auto cluster = article.getCluster();
 
       std::cout <<
       "\tcluster number:  " << dirent.getClusterNumber() << "\n"
-      "\tcluster count:   " << cluster.count() << "\n"
-      "\tcluster size:    " << cluster.size() << "\n"
+      "\tcluster count:   " << cluster->count() << "\n"
+      "\tcluster size:    " << cluster->size() << "\n"
       "\tcluster offset:  " << file.getClusterOffset(dirent.getClusterNumber()) << "\n"
       "\tblob number:     " << dirent.getBlobNumber() << "\n"
       "\tcompression:     ";
-      switch (cluster.getCompression())
+      switch (cluster->getCompression())
       {
         case zim::zimcompDefault: std::cout << "default"; break;
         case zim::zimcompNone:    std::cout << "none"; break;
         case zim::zimcompZip:     std::cout << "zip"; break;
         case zim::zimcompBzip2:   std::cout << "bzip2 (not supported anymore)"; break;
         case zim::zimcompLzma:    std::cout << "lzma"; break;
-        default:                  std::cout << "unknown (" << static_cast<unsigned>(cluster.getCompression()) << ')'; break;
+        default:                  std::cout << "unknown (" << static_cast<unsigned>(cluster->getCompression()) << ')'; break;
       }
       std::cout << "\n";
     }
@@ -355,14 +355,14 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
 
     if (verbose)
     {
-      zim::Cluster cluster = article.getCluster();
+      auto cluster = article.getCluster();
 
       std::cout << '\t' << dirent.getClusterNumber()
-                << '\t' << cluster.count()
-                << '\t' << cluster.size()
+                << '\t' << cluster->count()
+                << '\t' << cluster->size()
                 << '\t' << file.getClusterOffset(dirent.getClusterNumber())
                 << '\t' << dirent.getBlobNumber()
-                << '\t' << static_cast<unsigned>(cluster.getCompression());
+                << '\t' << static_cast<unsigned>(cluster->getCompression());
     }
   }
 

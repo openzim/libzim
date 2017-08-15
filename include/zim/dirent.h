@@ -22,9 +22,13 @@
 
 #include <string>
 #include <zim/zim.h>
+#include <exception>
+#include <memory>
 
 namespace zim
 {
+  class Buffer;
+  class InvalidSize : public std::exception {};
   class Dirent
   {
       uint16_t mimeType;
@@ -55,6 +59,8 @@ namespace zim
           redirectIndex(0),
           ns('\0')
       {}
+
+      Dirent(std::unique_ptr<Buffer> buffer);
 
       bool isRedirect() const                 { return mimeType == redirectMimeType; }
       bool isLinktarget() const               { return mimeType == linktargetMimeType; }
@@ -139,7 +145,6 @@ namespace zim
   };
 
   std::ostream& operator<< (std::ostream& out, const Dirent& fh);
-  std::istream& operator>> (std::istream& in, Dirent& fh);
 
 }
 

@@ -18,7 +18,7 @@
  */
 
 #include "../src/inflatestream.h"
-#include "../src/deflatestream.h"
+#include "../src/writer/deflatestream.h"
 #include <iostream>
 #include <sstream>
 
@@ -44,7 +44,7 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
     {
       // test 
       std::stringstream deflatetarget;
-      zim::DeflateStream deflator(deflatetarget);
+      zim::writer::DeflateStream deflator(deflatetarget);
       deflator << testtext << std::flush;
 
       {
@@ -70,7 +70,7 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
     {
       // test 
       std::stringstream deflatetarget;
-      zim::DeflateStream deflator(deflatetarget);
+      zim::writer::DeflateStream deflator(deflatetarget);
       deflator << testtext << std::flush;
 
       {

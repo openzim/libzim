@@ -52,60 +52,35 @@ namespace zim
     return out;
   }
 
-  std::istream& operator>> (std::istream& in, Fileheader& fh)
+  void Fileheader::read(std::shared_ptr<const Buffer> buffer)
   {
-    char header[Fileheader::size];
-    in.read(header, Fileheader::size);
-    if (in.fail())
-      return in;
-    if (static_cast<size_type>(in.gcount()) != Fileheader::size)
-    {
-      in.setstate(std::ios::failbit);
-      return in;
-    }
-
-    size_type magicNumber = fromLittleEndian(reinterpret_cast<const size_type*>(header));
+    size_type magicNumber = fromLittleEndian(buffer->as<size_type>(0));
     if (magicNumber != Fileheader::zimMagic)
     {
       log_error("invalid magic number " << magicNumber << " found - "
           << Fileheader::zimMagic << " expected");
-      in.setstate(std::ios::failbit);
-      return in;
     }
 
-    uint16_t version = fromLittleEndian(reinterpret_cast<const uint16_t*>(header + 4));
+    uint16_t version = fromLittleEndian(buffer->as<uint16_t>(4));
     if (version != static_cast<size_type>(Fileheader::zimVersion))
     {
       log_error("invalid zimfile version " << version << " found - "
           << Fileheader::zimVersion << " expected");
-      in.setstate(std::ios::failbit);
-      return in;
     }
 
     Uuid uuid;
-    std::copy(header + 8, header + 24, uuid.data);
-    size_type articleCount = fromLittleEndian(reinterpret_cast<const size_type*>(header + 24));
-    size_type clusterCount = fromLittleEndian(reinterpret_cast<const size_type*>(header + 28));
-    offset_type urlPtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 32));
-    offset_type titleIdxPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 40));
-    offset_type clusterPtrPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 48));
-    offset_type mimeListPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 56));
-    size_type mainPage = fromLittleEndian(reinterpret_cast<const size_type*>(header + 64));
-    size_type layoutPage = fromLittleEndian(reinterpret_cast<const size_type*>(header + 68));
-    offset_type checksumPos = fromLittleEndian(reinterpret_cast<const offset_type*>(header + 72));
+    std::copy(buffer->data(8), buffer->data(24), uuid.data);
+    setUuid(uuid);
 
-    fh.setUuid(uuid);
-    fh.setArticleCount(articleCount);
-    fh.setClusterCount(clusterCount);
-    fh.setUrlPtrPos(urlPtrPos);
-    fh.setTitleIdxPos(titleIdxPos);
-    fh.setClusterPtrPos(clusterPtrPos);
-    fh.setMimeListPos(mimeListPos);
-    fh.setMainPage(mainPage);
-    fh.setLayoutPage(layoutPage);
-    fh.setChecksumPos(checksumPos);
-
-    return in;
+    setArticleCount(fromLittleEndian(buffer->as<size_type>(24)));
+    setClusterCount(fromLittleEndian(buffer->as<size_type>(28)));
+    setUrlPtrPos(fromLittleEndian(buffer->as<offset_type>(32)));
+    setTitleIdxPos(fromLittleEndian(buffer->as<offset_type>(40)));
+    setClusterPtrPos(fromLittleEndian(buffer->as<offset_type>(48)));
+    setMimeListPos(fromLittleEndian(buffer->as<offset_type>(56)));
+    setMainPage(fromLittleEndian(buffer->as<size_type>(64)));
+    setLayoutPage(fromLittleEndian(buffer->as<size_type>(68)));
+    setChecksumPos(fromLittleEndian(buffer->as<offset_type>(72)));
   }
 
 }

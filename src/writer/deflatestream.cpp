@@ -27,6 +27,9 @@ log_define("zim.deflatestream")
 
 namespace zim
 {
+
+namespace writer
+{
   namespace
   {
     int checkError(int ret, z_stream& stream)
@@ -173,4 +176,6 @@ namespace zim
     if (streambuf.end() != 0)
       setstate(failbit);
   }
+
+}
 }

@@ -32,7 +32,7 @@ namespace zim
   {
     Dirent dirent = getDirent();
     return file.getCluster(dirent.getClusterNumber())
-               .getBlobSize(dirent.getBlobNumber());
+               ->getBlobSize(dirent.getBlobNumber());
   }
 
   namespace

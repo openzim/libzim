@@ -57,12 +57,12 @@ namespace zim
       Article getArticleByTitle(size_type idx) const;
       Article getArticleByTitle(char ns, const std::string& title) const;
 
-      Cluster getCluster(size_type idx) const  { return impl->getCluster(idx); }
+      std::shared_ptr<Cluster> getCluster(size_type idx) const  { return impl->getCluster(idx); }
       size_type getCountClusters() const       { return impl->getCountClusters(); }
       offset_type getClusterOffset(size_type idx) const    { return impl->getClusterOffset(idx); }
 
       Blob getBlob(size_type clusterIdx, size_type blobIdx) const
-        { return getCluster(clusterIdx).getBlob(blobIdx); }
+        { return getCluster(clusterIdx)->getBlob(blobIdx); }
       offset_type getOffset(size_type clusterIdx, size_type blobIdx) const;
 
       size_type getNamespaceBeginOffset(char ch) const

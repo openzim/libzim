@@ -13,7 +13,10 @@ common_sources = [
     'file.cpp',
     'fileheader.cpp',
     'fileimpl.cpp',
-    'fstream.cpp',
+    'file_compound.cpp',
+    'file_part.cpp',
+    'file_reader.cpp',
+    'buffer.cpp',
     'md5.c',
     'md5stream.cpp',
     'ptrstream.cpp',
@@ -22,18 +25,17 @@ common_sources = [
     'tee.cpp',
     'template.cpp',
     'uuid.cpp',
-    'zimcreator.cpp',
-    'zintstream.cpp'
+    'zintstream.cpp',
+    'writer/zimcreator.cpp',
+    'writer/cluster.cpp'
 ]
 
 zlib_sources = [
-    'deflatestream.cpp',
-    'inflatestream.cpp'
+    'writer/deflatestream.cpp'
 ]
 
 lzma_sources = [
-    'lzmastream.cpp',
-    'unlzmastream.cpp'
+    'writer/lzmastream.cpp'
 ]
 
 xapian_sources = [
