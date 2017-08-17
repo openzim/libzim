@@ -51,7 +51,8 @@ struct search_iterator::InternalData {
     InternalData(const Search* search, Xapian::MSetIterator iterator) : 
         search(search),
         iterator(iterator),
-        document_fetched(false)
+        document_fetched(false),
+        article_fetched(false)
     {};
     
     Xapian::Document get_document() {
