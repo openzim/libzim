@@ -42,7 +42,13 @@ MMapBuffer::MMapBuffer(int fd, std::size_t offset, std::size_t size):
 {
   std::size_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
   _offset = offset-pa_offset;
-  _data = (char*)mmap(NULL, size + _offset, PROT_READ, MAP_PRIVATE|MAP_POPULATE, fd, pa_offset);
+#if defined(__APPLE__)
+  #define MAP_FLAGS MAP_PRIVATE
+#else
+  #define MAP_FLAGS MAP_PRIVATE|MAP_POPULATE
+#endif
+  _data = (char*)mmap(NULL, size + _offset, PROT_READ, MAP_FLAGS, fd, pa_offset);
+#undef MAP_FLAGS
 }
 
 MMapBuffer::~MMapBuffer()
