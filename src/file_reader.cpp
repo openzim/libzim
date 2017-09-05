@@ -164,6 +164,7 @@ char* lzma_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) 
     }
   } while (errcode != LZMA_STREAM_END);
   *dest_size = stream.total_out;
+  lzma_end(&stream);
   return ret_data;
 }
 
