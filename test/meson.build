@@ -1,13 +1,12 @@
 
 
-zimlibtest_sources = [
-    'cluster.cpp',
-    'dirent.cpp',
-    'header.cpp',
-    'main.cpp',
-    'uuid.cpp',
-    'zint.cpp',
-    'template.cpp'
+tests = [
+    'cluster',
+    'dirent',
+    'header',
+    'uuid',
+    'zint',
+    'template'
 ]
 
 if zlib_dep.found()
@@ -17,15 +16,13 @@ if lzma_dep.found()
 #    zimlibtest_sources += ['lzmastream.cpp']
 endif
 
-cxxtools_dep = dependency('cxxtools-unit', required:false)
+gtest_dep = gtest_sp.get_variable('gtest_dep')
 
-if cxxtools_dep.found()
-    zimlibtest = executable('zimlib-test', zimlibtest_sources,
-                            include_directories : include_directory,
-                            link_with : libzim,
-                            dependencies : [cxxtools_dep])
-                        
-    test('zimlib test', zimlibtest)
-else
-    message('cxxtools-unit not found, tests are disabled.')
-endif
+foreach test_name : tests
+    test_exe = executable(test_name, [test_name+'.cpp'],
+                          include_directories : include_directory,
+                          link_with : libzim,
+                          dependencies : deps + [gtest_dep])
+    test(test_name, test_exe)
+endforeach
+

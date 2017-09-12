@@ -17,65 +17,63 @@
  *
  */
 
+#include <zim/fileheader.h>
 #include <iostream>
 #include <sstream>
-#include <zim/fileheader.h>
 
-#include <cxxtools/unit/testsuite.h>
-#include <cxxtools/unit/registertest.h>
+#include "gtest/gtest.h"
 
-class FileheaderTest : public cxxtools::unit::TestSuite
+namespace
 {
-  public:
-    FileheaderTest()
-      : cxxtools::unit::TestSuite("zim::FileheaderTest")
-    {
-      registerMethod("ReadWriteHeader", *this, &FileheaderTest::ReadWriteHeader);
-    }
+TEST(HeaderTest, read_write_header)
+{
+  zim::Fileheader header;
+  header.setUuid("1234567890abcdef");
+  header.setArticleCount(4711);
+  header.setUrlPtrPos(12345);
+  header.setTitleIdxPos(23456);
+  header.setClusterCount(14);
+  header.setClusterPtrPos(45678);
+  header.setMainPage(11);
+  header.setLayoutPage(13);
+  header.setMimeListPos(76);
 
-    void ReadWriteHeader()
-    {
-      zim::Fileheader header;
-      header.setUuid("1234567890abcdef");
-      header.setArticleCount(4711);
-      header.setUrlPtrPos(12345);
-      header.setTitleIdxPos(23456);
-      header.setClusterCount(14);
-      header.setClusterPtrPos(45678);
-      header.setMainPage(11);
-      header.setLayoutPage(13);
+  ASSERT_EQ(header.getUuid(), "1234567890abcdef");
+  ASSERT_EQ(header.getArticleCount(), 4711);
+  ASSERT_EQ(header.getUrlPtrPos(), 12345);
+  ASSERT_EQ(header.getTitleIdxPos(), 23456);
+  ASSERT_EQ(header.getClusterCount(), 14);
+  ASSERT_EQ(header.getClusterPtrPos(), 45678);
+  ASSERT_EQ(header.getMainPage(), 11);
+  ASSERT_EQ(header.getLayoutPage(), 13);
+  ASSERT_EQ(header.getMimeListPos(), 76);
 
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getUuid(), "1234567890abcdef");
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getArticleCount(), 4711);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getUrlPtrPos(), 12345);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getTitleIdxPos(), 23456);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getClusterCount(), 14);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getClusterPtrPos(), 45678);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getMainPage(), 11);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header.getLayoutPage(), 13);
+  std::stringstream s;
+  s << header;
 
-      std::stringstream s;
-      s << header;
+  std::string str_content = s.str();
+  int size = str_content.size();
+  char* content = new char[size];
+  memcpy(content, str_content.c_str(), size);
+  auto buffer = std::shared_ptr<zim::Buffer>(
+      new zim::MemoryBuffer<true>(content, size));
+  zim::Fileheader header2;
+  header2.read(buffer);
 
-      std::string str_content = s.str();
-      int size = str_content.size();
-      char* content = new char[size];
-      memcpy(content, str_content.c_str(), size);
-      auto buffer = std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, size));
-      zim::Fileheader header2;
-      header2.read(buffer);
+  ASSERT_EQ(header2.getUuid(), "1234567890abcdef");
+  ASSERT_EQ(header2.getArticleCount(), 4711);
+  ASSERT_EQ(header2.getUrlPtrPos(), 12345);
+  ASSERT_EQ(header2.getTitleIdxPos(), 23456);
+  ASSERT_EQ(header2.getClusterCount(), 14);
+  ASSERT_EQ(header2.getClusterPtrPos(), 45678);
+  ASSERT_EQ(header2.getMainPage(), 11);
+  ASSERT_EQ(header2.getLayoutPage(), 13);
+}
 
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getUuid(), "1234567890abcdef");
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getArticleCount(), 4711);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getUrlPtrPos(), 12345);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getTitleIdxPos(), 23456);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getClusterCount(), 14);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getClusterPtrPos(), 45678);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getMainPage(), 11);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(header2.getLayoutPage(), 13);
+}  // namespace
 
-    }
-
-};
-
-cxxtools::unit::RegisterTest<FileheaderTest> register_FileheaderTest;
+int main(int argc, char** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

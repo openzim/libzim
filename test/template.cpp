@@ -18,79 +18,67 @@
  */
 
 #include <zim/template.h>
-#include <cxxtools/unit/testsuite.h>
-#include <cxxtools/unit/registertest.h>
 
-class TemplateTest : public cxxtools::unit::TestSuite, private zim::TemplateParser::Event
+#include "gtest/gtest.h"
+
+namespace
 {
-    zim::TemplateParser parser;
-    std::string result;
+class TemplateTest : public ::testing::Test, private zim::TemplateParser::Event
+{
+ public:
+  std::string result;
+  zim::TemplateParser parser;
 
-  public:
-    TemplateTest()
-      : cxxtools::unit::TestSuite("zim::TemplateTest"),
-        parser(this)
-    {
-      registerMethod("ZeroTemplate", *this, &TemplateTest::ZeroTemplate);
-      registerMethod("Token", *this, &TemplateTest::Token);
-      registerMethod("Link", *this, &TemplateTest::Link);
-    }
+  TemplateTest() : parser(this) {}
 
-    void setUp()
-    {
-      result.clear();
-    }
+ private:
+  void onData(const std::string& data) { result += data; }
 
-    void tearDown()
-    {
-    }
+  void onToken(const std::string& token)
+  {
+    result += "T(";
+    result += token;
+    result += ')';
+  }
 
-    void ZeroTemplate()
-    {
-      parser.parse("<html><body><h1>Hi</h1></body></html>");
-      parser.flush();
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(result, "<html><body><h1>Hi</h1></body></html>");
-    }
-
-    void Token()
-    {
-      parser.parse("<html><%content%></html>");
-      parser.flush();
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(result, "<html>T(content)</html>");
-    }
-
-    void Link()
-    {
-      parser.parse("<html><%/A/Article%></html>");
-      parser.flush();
-
-      CXXTOOLS_UNIT_ASSERT_EQUALS(result, "<html>L(A, Article)</html>");
-    }
-
-  private:
-    void onData(const std::string& data)
-    {
-      result += data;
-    }
-
-    void onToken(const std::string& token)
-    {
-      result += "T(";
-      result += token;
-      result += ')';
-    }
-
-    void onLink(char ns, const std::string& title)
-    {
-      result += "L(";
-      result += ns;
-      result += ", ";
-      result += title;
-      result += ')';
-    }
-
+  void onLink(char ns, const std::string& title)
+  {
+    result += "L(";
+    result += ns;
+    result += ", ";
+    result += title;
+    result += ')';
+  }
 };
 
-cxxtools::unit::RegisterTest<TemplateTest> register_TemplateTest;
+TEST_F(TemplateTest, ZeroTemplate)
+{
+  parser.parse("<html><body><h1>Hi</h1></body></html>");
+  parser.flush();
+
+  ASSERT_EQ(result, "<html><body><h1>Hi</h1></body></html>");
+}
+
+TEST_F(TemplateTest, Token)
+{
+  parser.parse("<html><%content%></html>");
+  parser.flush();
+
+  ASSERT_EQ(result, "<html>T(content)</html>");
+}
+
+TEST_F(TemplateTest, Link)
+{
+  parser.parse("<html><%/A/Article%></html>");
+  parser.flush();
+
+  ASSERT_EQ(result, "<html>L(A, Article)</html>");
+}
+
+}  // namespace
+
+int main(int argc, char** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

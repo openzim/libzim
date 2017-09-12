@@ -32,6 +32,7 @@ else
     icu_dep = dependency('icu-i18n', required:false)
 endif
 
+gtest_sp = subproject('gtest')
 
 inc = include_directories('include')
 
