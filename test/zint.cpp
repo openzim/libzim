@@ -17,52 +17,47 @@
  *
  */
 
-#include <cxxtools/unit/testsuite.h>
-#include <cxxtools/unit/registertest.h>
-#include "../src/zintstream.h"
 #include <sstream>
+#include "../src/zintstream.h"
 
-class ZIntTest : public cxxtools::unit::TestSuite
+#include "gtest/gtest.h"
+
+namespace
 {
-    void testNumber(zim::size_type num)
-    {
-      std::stringstream data;
-      zim::ZIntStream zint(data);
+void testNumber(zim::size_type num)
+{
+  std::stringstream data;
+  zim::ZIntStream zint(data);
 
-      zint.put(num);
-      unsigned n;
-      zint.get(n);
+  zint.put(num);
+  unsigned n;
+  zint.get(n);
 
-      CXXTOOLS_UNIT_ASSERT_EQUALS(n, num);
-      CXXTOOLS_UNIT_ASSERT_EQUALS(data.get(), std::ios::traits_type::eof());
-    }
+  ASSERT_EQ(n, num);
+  ASSERT_EQ(data.get(), std::ios::traits_type::eof());
+}
 
-  public:
-    ZIntTest()
-      : cxxtools::unit::TestSuite("zim::ZIntTest")
-    {
-      registerMethod("zcompress1", *this, &ZIntTest::zcompress1);
-      registerMethod("zcompress2", *this, &ZIntTest::zcompress2);
-      registerMethod("zcompress3", *this, &ZIntTest::zcompress3);
-    }
+TEST(ZintTest, zcompress1)
+{
+  testNumber(34);
+}
 
-    void zcompress1()
-    {
-      testNumber(34);
-    }
+TEST(ZintTest, zcompress2)
+{
+  testNumber(128);
+  testNumber(234);
+}
 
-    void zcompress2()
-    {
-      testNumber(128);
-      testNumber(234);
-    }
+TEST(ZintTest, zcompress3)
+{
+  testNumber(17000);
+  testNumber(16512);
+}
 
-    void zcompress3()
-    {
-      testNumber(17000);
-      testNumber(16512);
-    }
+}  // namespace
 
-};
-
-cxxtools::unit::RegisterTest<ZIntTest> register_ZIntTest;
+int main(int argc, char** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
