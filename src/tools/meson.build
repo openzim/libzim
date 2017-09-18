@@ -14,12 +14,8 @@ executable('zimsearch', 'zimSearch.cpp',
            include_directories: include_dirs,
            install: true)
 
-cxxtools_dep = dependency('cxxtools', required:false)
-
-if cxxtools_dep.found()
-    executable('zimbench', 'zimBench.cpp',
+executable('zimbench', 'zimBench.cpp',
            link_with: libzim,
-           dependencies : deps + [cxxtools_dep],
+           dependencies : deps,
            include_directories: include_dirs,
            install: true)
-endif
