@@ -22,50 +22,51 @@
 
 #include <string>
 #include <zim/zim.h>
-#include <zim/dirent.h>
-#include <zim/file.h>
 #include <zim/blob.h>
 #include <limits>
 #include <iosfwd>
 
 namespace zim
 {
+  class Cluster;
+  class Dirent;
+  class FileImpl;
+
   class Article
   {
     private:
-      File file;
+      std::shared_ptr<FileImpl> file;
       size_type idx;
+
+      std::shared_ptr<const Dirent> getDirent() const;
 
     public:
       Article()
         : idx(std::numeric_limits<size_type>::max())
           { }
 
-      Article(const File& file_, size_type idx_)
+      Article(std::shared_ptr<FileImpl> file_, size_type idx_)
         : file(file_),
           idx(idx_)
           { }
 
-      Dirent getDirent() const                { return const_cast<File&>(file).getDirent(idx); }
+      std::string getParameter() const;
 
-      std::string getParameter() const        { return getDirent().getParameter(); }
+      std::string getTitle() const;
+      std::string getUrl() const;
+      std::string getLongUrl() const;
 
-      std::string getTitle() const            { return getDirent().getTitle(); }
-      std::string getUrl() const              { return getDirent().getUrl(); }
-      std::string getLongUrl() const          { return getDirent().getLongUrl(); }
+      uint16_t    getLibraryMimeType() const;
+      const std::string&  getMimeType() const;
 
-      uint16_t    getLibraryMimeType() const  { return getDirent().getMimeType(); }
-      const std::string&
-                  getMimeType() const         { return file.getMimeType(getLibraryMimeType()); }
+      bool        isRedirect() const;
+      bool        isLinktarget() const;
+      bool        isDeleted() const;
 
-      bool        isRedirect() const          { return getDirent().isRedirect(); }
-      bool        isLinktarget() const        { return getDirent().isLinktarget(); }
-      bool        isDeleted() const           { return getDirent().isDeleted(); }
+      char        getNamespace() const;
 
-      char        getNamespace() const        { return getDirent().getNamespace(); }
-
-      size_type   getRedirectIndex() const    { return getDirent().getRedirectIndex(); }
-      Article     getRedirectArticle() const  { return Article(file, getRedirectIndex()); }
+      size_type   getRedirectIndex() const;
+      Article     getRedirectArticle() const;
 
       size_type   getArticleSize() const;
 
@@ -74,32 +75,15 @@ namespace zim
               || (getNamespace() == a.getNamespace()
                && getTitle() < a.getTitle()); }
 
-      std::shared_ptr<Cluster> getCluster() const
-        { return file.getCluster(getDirent().getClusterNumber()); }
+      std::shared_ptr<const Cluster> getCluster() const;
 
-      Blob getData() const
-      {
-        Dirent dirent = getDirent();
-        return dirent.isRedirect()
-            || dirent.isLinktarget()
-            || dirent.isDeleted() ? Blob()
-                                  : const_cast<File&>(file).getBlob(dirent.getClusterNumber(), dirent.getBlobNumber());
-      }
+      Blob getData() const;
 
-      offset_type getOffset() const
-      {
-        Dirent dirent = getDirent();
-        return dirent.isRedirect()
-            || dirent.isLinktarget()
-            || dirent.isDeleted() ? 0
-                                  : const_cast<File&>(file).getOffset(dirent.getClusterNumber(), dirent.getBlobNumber());
-      }
+      offset_type getOffset() const;
 
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);
       void getPage(std::ostream&, bool layout = true, unsigned maxRecurse = 10);
 
-      const File& getFile() const    { return file; }
-      File& getFile()                { return file; }
       size_type   getIndex() const   { return idx; }
 
       bool good() const   { return idx != std::numeric_limits<size_type>::max(); }

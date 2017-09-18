@@ -17,8 +17,8 @@
  *
  */
 
-#include <zim/file_compound.h>
-#include <zim/buffer.h>
+#include "file_compound.h"
+#include "buffer.h"
 
 #include <errno.h>
 #include <string.h>
@@ -65,6 +65,13 @@ FileCompound::FileCompound(const std::string& filename)
       msg << "error " << errnoSave << " opening file \"" << filename;
       throw std::runtime_error(msg.str());
     }
+  }
+}
+
+FileCompound::~FileCompound() {
+  for(auto it=begin(); it!=end(); it++) {
+    auto filepart = it->second;
+    delete filepart;
   }
 }
 

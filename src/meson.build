@@ -16,6 +16,7 @@ common_sources = [
     'file_compound.cpp',
     'file_part.cpp',
     'file_reader.cpp',
+    'blob.cpp',
     'buffer.cpp',
     'md5.c',
     'md5stream.cpp',
@@ -26,7 +27,7 @@ common_sources = [
     'template.cpp',
     'uuid.cpp',
     'zintstream.cpp',
-    'writer/zimcreator.cpp',
+    'writer/zimcreatorimpl.cpp',
     'writer/cluster.cpp'
 ]
 

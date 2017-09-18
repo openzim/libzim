@@ -17,9 +17,6 @@
  *
  */
 
-#include <zim/buffer.h>
-#include <zim/cluster.h>
-#include <zim/file_reader.h>
 #include <zim/zim.h>
 #include <algorithm>
 #include <cstdio>
@@ -30,6 +27,9 @@
 
 #include "gtest/gtest.h"
 
+#include "../src/buffer.h"
+#include "../src/cluster.h"
+#include "../src/file_reader.h"
 #include "../src/writer/cluster.h"
 
 #include "../src/config.h"

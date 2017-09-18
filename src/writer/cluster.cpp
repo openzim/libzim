@@ -19,7 +19,7 @@
 
 #include "cluster.h"
 #include "../log.h"
-#include <zim/endian_tools.h>
+#include "../endian_tools.h"
 
 #include <sstream>
 

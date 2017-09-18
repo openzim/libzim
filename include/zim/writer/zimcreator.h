@@ -20,75 +20,33 @@
 #ifndef ZIM_WRITER_ZIMCREATOR_H
 #define ZIM_WRITER_ZIMCREATOR_H
 
+#include <memory>
+#include <zim/zim.h>
 #include <zim/writer/articlesource.h>
-#include <zim/writer/dirent.h>
-#include <vector>
-#include <map>
 
 namespace zim
 {
   namespace writer
   {
+    class ZimCreatorImpl;
     class ZimCreator
     {
-      public:
-        typedef std::vector<Dirent> DirentsType;
-        typedef std::vector<DirentsType::size_type> DirentPtrsType;
-        typedef std::vector<size_type> SizeVectorType;
-        typedef std::vector<offset_type> OffsetsType;
-        typedef std::map<std::string, uint16_t> MimeTypes;
-        typedef std::map<uint16_t, std::string> RMimeTypes;
-
       private:
-        unsigned minChunkSize;
-
-        Fileheader header;
-
-        DirentsType dirents;
-        SizeVectorType titleIdx;
-        OffsetsType clusterOffsets;
-        MimeTypes mimeTypes;
-        RMimeTypes rmimeTypes;
-        uint16_t nextMimeIdx;
-        CompressionType compression;
-        bool isEmpty;
-        offset_type clustersSize;
-        offset_type currentSize;
-
-        void createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname);
-        void createTitleIndex(ArticleSource& src);
-        void fillHeader(ArticleSource& src);
-        void write(const std::string& fname, const std::string& tmpfname);
-
-        size_type clusterCount() const        { return clusterOffsets.size(); }
-        size_type articleCount() const        { return dirents.size(); }
-        offset_type mimeListSize() const;
-        offset_type mimeListPos() const       { return Fileheader::size; }
-        offset_type urlPtrSize() const        { return articleCount() * sizeof(offset_type); }
-        offset_type urlPtrPos() const         { return mimeListPos() + mimeListSize(); }
-        offset_type titleIdxSize() const      { return articleCount() * sizeof(size_type); }
-        offset_type titleIdxPos() const       { return urlPtrPos() + urlPtrSize(); }
-        offset_type indexSize() const;
-        offset_type indexPos() const          { return titleIdxPos() + titleIdxSize(); }
-        offset_type clusterPtrSize() const    { return clusterCount() * sizeof(offset_type); }
-        offset_type clusterPtrPos() const     { return indexPos() + indexSize(); }
-        offset_type checksumPos() const       { return clusterPtrPos() + clusterPtrSize() + clustersSize; }
-
-        uint16_t getMimeTypeIdx(const std::string& mimeType);
-        const std::string& getMimeType(uint16_t mimeTypeIdx) const;
+        std::unique_ptr<ZimCreatorImpl> impl;
 
       public:
         ZimCreator();
         ZimCreator(int& argc, char* argv[]);
+        ~ZimCreator();
 
-        unsigned getMinChunkSize()    { return minChunkSize; }
-        void setMinChunkSize(int s)   { minChunkSize = s; }
+        unsigned getMinChunkSize() const;
+        void setMinChunkSize(int s);
 
         void create(const std::string& fname, ArticleSource& src);
 
         /* The user can query `currentSize` after each article has been
          * added to the ZIM file. */
-        offset_type getCurrentSize() { return currentSize; }
+        zim::offset_type getCurrentSize() const;
     };
 
   }

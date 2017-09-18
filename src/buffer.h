@@ -27,7 +27,7 @@
 #include <iostream>
 
 #include <zim/zim.h>
-#include <zim/endian_tools.h>
+#include "endian_tools.h"
 
 namespace zim {
 

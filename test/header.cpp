@@ -22,6 +22,7 @@
 #include <sstream>
 
 #include "gtest/gtest.h"
+#include "../src/buffer.h"
 
 namespace
 {

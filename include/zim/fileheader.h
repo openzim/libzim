@@ -23,7 +23,6 @@
 #include <memory>
 #include <zim/zim.h>
 #include <zim/uuid.h>
-#include <zim/buffer.h>
 #include <iosfwd>
 #include <limits>
 
@@ -36,6 +35,7 @@
 
 namespace zim
 {
+  class Buffer;
   class Fileheader
   {
     public:

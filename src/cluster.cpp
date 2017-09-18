@@ -17,11 +17,11 @@
  *
  */
 
-#include <zim/cluster.h>
+#include "cluster.h"
 #include <zim/blob.h>
-#include <zim/endian_tools.h>
 #include <zim/error.h>
-#include <zim/file_reader.h>
+#include "file_reader.h"
+#include "endian_tools.h"
 #include <stdlib.h>
 #include <sstream>
 

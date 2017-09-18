@@ -17,30 +17,19 @@
  *
  */
 
-#include "file_part.h"
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <cstdlib>
-#include <unistd.h>
+#include "zim/blob.h"
+#include "buffer.h"
 
 namespace zim {
 
-FilePart::FilePart(const std::string& filename)
-  : filename_(filename),
-    size_(0)
-{
-  fd_ = open(filename.c_str(), O_RDONLY);
-  struct stat sb;
-  if ( fd_ >= 0 ) {
-    fstat(fd_, &sb);
-    size_ = sb.st_size;
-  }
-}
-
-FilePart::~FilePart() {
-  close(fd_);
-}
+Blob::Blob(std::shared_ptr<const Buffer> buffer)
+ : _data(buffer->data()),
+   _size(buffer->size()),
+   _buffer(buffer)
+   {}
 
 
-} // zim
+
+
+} //zim

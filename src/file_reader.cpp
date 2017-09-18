@@ -18,9 +18,9 @@
  */
 
 #include <zim/zim.h>
-#include <zim/file_reader.h>
-#include <zim/file_compound.h>
-#include <zim/buffer.h>
+#include "file_reader.h"
+#include "file_compound.h"
+#include "buffer.h"
 #include "config.h"
 #include "envvalue.h"
 #include <cstring>
@@ -113,7 +113,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
     auto local_offset = offset + _offset - range.min;
     assert(size<=part->size());
     int fd = part->fd();
-    auto buffer = std::unique_ptr<Buffer>(new MMapBuffer(fd, local_offset, size));
+    auto buffer = std::shared_ptr<const Buffer>(new MMapBuffer(fd, local_offset, size));
     return std::move(buffer);
   } else
 #endif
@@ -122,7 +122,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
     char* p = new char[size];
-    auto ret_buffer = std::unique_ptr<Buffer>(new MemoryBuffer<true>(p, size));
+    auto ret_buffer = std::shared_ptr<const Buffer>(new MemoryBuffer<true>(p, size));
     read(p, offset, size);
     return std::move(ret_buffer);
   }
@@ -288,9 +288,9 @@ std::shared_ptr<const Buffer> BufferReader::get_buffer(offset_type offset, offse
 
 std::unique_ptr<const Reader> BufferReader::sub_reader(offset_type offset, offset_type size) const
 {
-  auto source_addr = source->data(0);
+  //auto source_addr = source->data(0);
   auto sub_buff = get_buffer(offset, size);
-  auto buff_addr = sub_buff->data(0);
+  //auto buff_addr = sub_buff->data(0);
   std::unique_ptr<const Reader> sub_read(new BufferReader(sub_buff));
   return sub_read;
 }

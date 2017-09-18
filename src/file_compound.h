@@ -20,7 +20,7 @@
 #ifndef ZIM_FILE_COMPOUND_H_
 #define ZIM_FILE_COMPOUND_H_
 
-#include <zim/file_part.h>
+#include "file_part.h"
 #include <map>
 #include <memory>
 
@@ -45,6 +45,7 @@ struct less_range : public std::binary_function< Range, Range, bool>
 class FileCompound : public std::map<Range, FilePart*, less_range> {
   public:
     FileCompound(const std::string& filename);
+    ~FileCompound();
 
     offset_type fsize() const { return _fsize; };
     time_t getMTime() const;

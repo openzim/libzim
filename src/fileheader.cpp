@@ -21,7 +21,8 @@
 #include <iostream>
 #include <algorithm>
 #include "log.h"
-#include <zim/endian_tools.h>
+#include "endian_tools.h"
+#include "buffer.h"
 
 log_define("zim.file.header")
 

@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <zim/blob.h>
 #include <zim/zim.h>
-#include <zim/fileheader.h>
+#include <zim/uuid.h>
 #include <string>
 
 namespace zim

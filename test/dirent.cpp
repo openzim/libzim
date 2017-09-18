@@ -17,13 +17,14 @@
  *
  */
 
-#include <zim/buffer.h>
-#include <zim/dirent.h>
 #include <cstring>
 #include <iostream>
 #include <sstream>
 
 #include "gtest/gtest.h"
+
+#include "../src/buffer.h"
+#include "../src/dirent.h"
 
 namespace
 {

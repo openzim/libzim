@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/template.h>
+#include "template.h"
 
 namespace zim
 {

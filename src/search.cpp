@@ -18,6 +18,7 @@
  */
 
 #include <zim/search.h>
+#include <zim/file.h>
 #include "search_internal.h"
 
 #include <sstream>

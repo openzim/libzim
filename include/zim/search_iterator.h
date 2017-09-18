@@ -22,11 +22,11 @@
 
 #include <memory>
 #include <iterator>
-#include "article.h"
+#include <zim/article.h>
 
 namespace zim
 {
-
+class Search;
 class search_iterator : public std::iterator<std::bidirectional_iterator_tag, Article>
 {
     friend class zim::Search;

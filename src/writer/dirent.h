@@ -20,7 +20,7 @@
 #ifndef ZIM_WRITER_DIRENT_H
 #define ZIM_WRITER_DIRENT_H
 
-#include <zim/dirent.h>
+#include "../dirent.h"
 
 namespace zim
 {
