@@ -40,14 +40,14 @@ TEST(HeaderTest, read_write_header)
   header.setMimeListPos(76);
 
   ASSERT_EQ(header.getUuid(), "1234567890abcdef");
-  ASSERT_EQ(header.getArticleCount(), 4711);
-  ASSERT_EQ(header.getUrlPtrPos(), 12345);
-  ASSERT_EQ(header.getTitleIdxPos(), 23456);
-  ASSERT_EQ(header.getClusterCount(), 14);
-  ASSERT_EQ(header.getClusterPtrPos(), 45678);
-  ASSERT_EQ(header.getMainPage(), 11);
-  ASSERT_EQ(header.getLayoutPage(), 13);
-  ASSERT_EQ(header.getMimeListPos(), 76);
+  ASSERT_EQ(header.getArticleCount(), 4711U);
+  ASSERT_EQ(header.getUrlPtrPos(), 12345U);
+  ASSERT_EQ(header.getTitleIdxPos(), 23456U);
+  ASSERT_EQ(header.getClusterCount(), 14U);
+  ASSERT_EQ(header.getClusterPtrPos(), 45678U);
+  ASSERT_EQ(header.getMainPage(), 11U);
+  ASSERT_EQ(header.getLayoutPage(), 13U);
+  ASSERT_EQ(header.getMimeListPos(), 76U);
 
   std::stringstream s;
   s << header;
@@ -62,13 +62,13 @@ TEST(HeaderTest, read_write_header)
   header2.read(buffer);
 
   ASSERT_EQ(header2.getUuid(), "1234567890abcdef");
-  ASSERT_EQ(header2.getArticleCount(), 4711);
-  ASSERT_EQ(header2.getUrlPtrPos(), 12345);
-  ASSERT_EQ(header2.getTitleIdxPos(), 23456);
-  ASSERT_EQ(header2.getClusterCount(), 14);
-  ASSERT_EQ(header2.getClusterPtrPos(), 45678);
-  ASSERT_EQ(header2.getMainPage(), 11);
-  ASSERT_EQ(header2.getLayoutPage(), 13);
+  ASSERT_EQ(header2.getArticleCount(), 4711U);
+  ASSERT_EQ(header2.getUrlPtrPos(), 12345U);
+  ASSERT_EQ(header2.getTitleIdxPos(), 23456U);
+  ASSERT_EQ(header2.getClusterCount(), 14U);
+  ASSERT_EQ(header2.getClusterPtrPos(), 45678U);
+  ASSERT_EQ(header2.getMainPage(), 11U);
+  ASSERT_EQ(header2.getLayoutPage(), 13U);
 }
 
 }  // namespace

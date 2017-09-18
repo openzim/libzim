@@ -44,11 +44,11 @@ std::string randomUrl()
 
 int main(int argc, char* argv[])
 {
-  int count = 1000;
+  unsigned int count = 1000;
   bool randomCountSet = false;
-  int randomCount = 1000;
+  unsigned int randomCount = 1000;
   bool distinctCountSet = false;
-  int distinctCount = 1000;
+  unsigned int distinctCount = 1000;
   char ns = 'A';
   std::string filename;
 

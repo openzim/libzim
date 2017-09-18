@@ -40,9 +40,9 @@ TEST(DirentTest, set_get_data_dirent)
   ASSERT_EQ(dirent.getUrl(), "Bar");
   ASSERT_EQ(dirent.getTitle(), "Bar");
   ASSERT_EQ(dirent.getParameter(), "");
-  ASSERT_EQ(dirent.getClusterNumber(), 45);
-  ASSERT_EQ(dirent.getBlobNumber(), 1234);
-  ASSERT_EQ(dirent.getVersion(), 54346);
+  ASSERT_EQ(dirent.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent.getBlobNumber(), 1234U);
+  ASSERT_EQ(dirent.getVersion(), 54346U);
 
   dirent.setTitle("Foo");
   ASSERT_EQ(dirent.getNamespace(), 'A');
@@ -64,9 +64,9 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent.getUrl(), "Bar");
   ASSERT_EQ(dirent.getTitle(), "Foo");
   ASSERT_EQ(dirent.getParameter(), "");
-  ASSERT_EQ(dirent.getClusterNumber(), 45);
-  ASSERT_EQ(dirent.getBlobNumber(), 1234);
-  ASSERT_EQ(dirent.getVersion(), 54346);
+  ASSERT_EQ(dirent.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent.getBlobNumber(), 1234U);
+  ASSERT_EQ(dirent.getVersion(), 54346U);
 
   std::stringstream s;
   s << dirent;
@@ -85,9 +85,9 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent2.getNamespace(), 'A');
   ASSERT_EQ(dirent2.getTitle(), "Foo");
   ASSERT_EQ(dirent2.getParameter(), "");
-  ASSERT_EQ(dirent2.getClusterNumber(), 45);
-  ASSERT_EQ(dirent2.getBlobNumber(), 1234);
-  ASSERT_EQ(dirent2.getVersion(), 54346);
+  ASSERT_EQ(dirent2.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent2.getBlobNumber(), 1234U);
+  ASSERT_EQ(dirent2.getVersion(), 54346U);
 }
 
 TEST(DirentTest, read_write_article_dirent_unicode)
@@ -101,8 +101,8 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   ASSERT_EQ(dirent.getUrl(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent.getTitle(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent.getParameter(), "");
-  ASSERT_EQ(dirent.getClusterNumber(), 45);
-  ASSERT_EQ(dirent.getBlobNumber(), 1234);
+  ASSERT_EQ(dirent.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent.getBlobNumber(), 1234U);
 
   std::stringstream s;
   s << dirent;
@@ -122,8 +122,8 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   ASSERT_EQ(dirent2.getUrl(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent2.getTitle(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent2.getParameter(), "");
-  ASSERT_EQ(dirent2.getClusterNumber(), 45);
-  ASSERT_EQ(dirent2.getBlobNumber(), 1234);
+  ASSERT_EQ(dirent2.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent2.getBlobNumber(), 1234U);
 }
 
 TEST(DirentTest, read_write_article_dirent_parameter)
@@ -138,8 +138,8 @@ TEST(DirentTest, read_write_article_dirent_parameter)
   ASSERT_EQ(dirent.getUrl(), "Foo");
   ASSERT_EQ(dirent.getTitle(), "Foo");
   ASSERT_EQ(dirent.getParameter(), "bar");
-  ASSERT_EQ(dirent.getClusterNumber(), 45);
-  ASSERT_EQ(dirent.getBlobNumber(), 1234);
+  ASSERT_EQ(dirent.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent.getBlobNumber(), 1234U);
 
   std::stringstream s;
   s << dirent;
@@ -158,8 +158,8 @@ TEST(DirentTest, read_write_article_dirent_parameter)
   ASSERT_EQ(dirent2.getNamespace(), 'A');
   ASSERT_EQ(dirent2.getTitle(), "Foo");
   ASSERT_EQ(dirent2.getParameter(), "bar");
-  ASSERT_EQ(dirent2.getClusterNumber(), 45);
-  ASSERT_EQ(dirent2.getBlobNumber(), 1234);
+  ASSERT_EQ(dirent2.getClusterNumber(), 45U);
+  ASSERT_EQ(dirent2.getBlobNumber(), 1234U);
 }
 
 TEST(DirentTest, read_write_redirect_dirent)
@@ -173,7 +173,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent.getNamespace(), 'A');
   ASSERT_EQ(dirent.getUrl(), "Bar");
   ASSERT_EQ(dirent.getParameter(), "baz");
-  ASSERT_EQ(dirent.getRedirectIndex(), 321);
+  ASSERT_EQ(dirent.getRedirectIndex(), 321U);
 
   std::stringstream s;
   s << dirent;
@@ -191,7 +191,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent2.getUrl(), "Bar");
   ASSERT_EQ(dirent2.getTitle(), "Bar");
   ASSERT_EQ(dirent2.getParameter(), "baz");
-  ASSERT_EQ(dirent2.getRedirectIndex(), 321);
+  ASSERT_EQ(dirent2.getRedirectIndex(), 321U);
 }
 
 TEST(DirentTest, read_write_linktarget_dirent)
