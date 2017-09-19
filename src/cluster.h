@@ -34,7 +34,7 @@ namespace zim
   class Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<size_type> Offsets;
 
-      CompressionType compression;
+      const CompressionType compression;
       Offsets offsets;
       std::shared_ptr<const Reader> reader;
       offset_type startOffset;
@@ -43,7 +43,6 @@ namespace zim
 
     public:
       Cluster(std::shared_ptr<const Reader> reader, CompressionType comp);
-      void setCompression(CompressionType c)   { compression = c; }
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 

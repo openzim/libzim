@@ -53,7 +53,7 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
     }
 
   protected:
-    offset_type size_;
+    const offset_type size_;
 };
 
 
