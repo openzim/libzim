@@ -20,15 +20,14 @@ common_sources = [
     'buffer.cpp',
     'md5.c',
     'md5stream.cpp',
-    'ptrstream.cpp',
     'search.cpp',
     'search_iterator.cpp',
-    'tee.cpp',
     'template.cpp',
     'uuid.cpp',
     'zintstream.cpp',
     'writer/zimcreatorimpl.cpp',
-    'writer/cluster.cpp'
+    'writer/cluster.cpp',
+    'writer/tee.cpp'
 ]
 
 zlib_sources = [
