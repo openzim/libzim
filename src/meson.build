@@ -44,7 +44,7 @@ xapian_sources = [
 ]
 
 sources = common_sources
-deps = []
+deps = [thread_dep]
 
 if zlib_dep.found()
     sources += zlib_sources

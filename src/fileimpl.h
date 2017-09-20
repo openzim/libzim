@@ -40,6 +40,7 @@ namespace zim
       std::shared_ptr<FileCompound> zimFile;
       std::shared_ptr<FileReader> zimReader;
       std::vector<char> bufferDirentZone;
+      pthread_mutex_t bufferDirentLock;
       Fileheader header;
       std::string filename;
 
@@ -48,13 +49,18 @@ namespace zim
       std::shared_ptr<const Buffer> clusterOffsetBuffer;
 
       Cache<size_type, std::shared_ptr<const Dirent>> direntCache;
+      pthread_mutex_t direntCacheLock;
+
       Cache<offset_type, std::shared_ptr<Cluster>> clusterCache;
+      pthread_mutex_t clusterCacheLock;
+
       bool cacheUncompressedCluster;
       typedef std::map<char, size_type> NamespaceCache;
-      NamespaceCache namespaceBeginCache;
-      NamespaceCache namespaceEndCache;
 
-      std::string namespaces;
+      NamespaceCache namespaceBeginCache;
+      pthread_mutex_t namespaceBeginLock;
+      NamespaceCache namespaceEndCache;
+      pthread_mutex_t namespaceEndLock;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
@@ -62,7 +68,7 @@ namespace zim
       offset_type getOffset(const Buffer* buffer, size_type idx);
 
     public:
-      
+
       explicit FileImpl(const std::string& fname);
 
       time_t getMTime() const;
