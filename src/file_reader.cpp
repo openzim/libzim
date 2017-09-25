@@ -33,12 +33,12 @@
 namespace zim {
 
 #if !defined(_WIN32)
-static int read_at(int fd, char* dest, std::size_t size, std::size_t offset)
+static int read_at(int fd, char* dest, offset_type size, offset_type offset)
 {
   return pread(fd, dest, size, offset);
 }
 #else
-static int read_at(int fd, char* dest, std::size_t size, std::size_t offset)
+static int read_at(int fd, char* dest, offset_type size, offset_type offset)
 {
   if (_lseek(fd, offset, SEEK_SET) != offset) {
     return -1;
@@ -50,10 +50,10 @@ static int read_at(int fd, char* dest, std::size_t size, std::size_t offset)
 FileReader::FileReader(std::shared_ptr<const FileCompound> source)
   : FileReader(source, 0, source->fsize()) {}
 
-FileReader::FileReader(std::shared_ptr<const FileCompound> source, std::size_t offset)
+FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_type offset)
   : FileReader(source, offset, source->fsize()-offset) {}
 
-FileReader::FileReader(std::shared_ptr<const FileCompound> source, std::size_t offset, std::size_t size)
+FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_type offset, offset_type size)
   : source(source),
     _offset(offset),
     _size(size)
@@ -62,12 +62,12 @@ FileReader::FileReader(std::shared_ptr<const FileCompound> source, std::size_t o
   assert((offset+size)<=source->fsize());
 }
 
-char FileReader::read(std::size_t offset) const {
+char FileReader::read(offset_type offset) const {
   assert(offset < _size);
   offset += _offset;
   auto part_pair = source->lower_bound(offset);
   int fd = part_pair->second->fd();
-  std::size_t local_offset = offset - part_pair->first.min;
+  offset_type local_offset = offset - part_pair->first.min;
   assert(local_offset<=part_pair->first.max);
   char ret;
   read_at(fd, &ret, 1, local_offset);
@@ -75,7 +75,7 @@ char FileReader::read(std::size_t offset) const {
 }
 
 
-void FileReader::read(char* dest, std::size_t offset, std::size_t size) const {
+void FileReader::read(char* dest, offset_type offset, offset_type size) const {
   assert(offset < _size);
   assert(offset+size <= _size);
   if (! size ) {
@@ -87,9 +87,9 @@ void FileReader::read(char* dest, std::size_t offset, std::size_t size) const {
   for(auto current = found_range.first; current!=found_range.second; current++){
     FilePart* part = current->second;
     Range partRange = current->first;
-    std::size_t local_offset = offset-partRange.min;
+    offset_type local_offset = offset-partRange.min;
     assert(size>0);
-    size_t size_to_get = std::min(size, part->size()-local_offset);
+    offset_type size_to_get = std::min(size, part->size()-local_offset);
     int fd = part->fd();
     read_at(fd, dest, size_to_get, local_offset);
     dest += size_to_get;
@@ -100,7 +100,7 @@ void FileReader::read(char* dest, std::size_t offset, std::size_t size) const {
 }
 
 
-std::shared_ptr<const Buffer> FileReader::get_buffer(std::size_t offset, std::size_t size) const {
+std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_type size) const {
   assert(size <= _size);
 #if !defined(_WIN32)
   auto search_range = Range(_offset+offset, _offset+offset+size);
@@ -128,10 +128,10 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(std::size_t offset, std::si
   }
 }
 
-char* lzma_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) {
+char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
   // We don't know what will be the result size.
   // Let's assume it will be something like the minChunkSize used at creation
-  size_t _dest_size = 1024*1024;
+  offset_type _dest_size = 1024*1024;
   char* ret_data = new char[_dest_size];
   lzma_stream stream = LZMA_STREAM_INIT;
   unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
@@ -168,8 +168,8 @@ char* lzma_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) 
   return ret_data;
 }
 
-char* zip_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) {
-  size_t _dest_size = 1024*1024;
+char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
+  offset_type _dest_size = 1024*1024;
   char* ret_data = new char[_dest_size];
 
   z_stream stream;
@@ -206,10 +206,10 @@ char* zip_uncompress(const char* raw_data, size_t raw_size, size_t* dest_size) {
   return ret_data;
 }
 
-std::shared_ptr<const Buffer> Reader::get_clusterBuffer(std::size_t offset, std::size_t size, CompressionType comp) const
+std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offset_type size, CompressionType comp) const
 {
   auto raw_buffer = get_buffer(offset, size);
-  size_t uncompressed_size;
+  offset_type uncompressed_size;
   char* uncompressed_data = nullptr;
   switch (comp) {
     case zimcompLzma:
@@ -224,7 +224,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(std::size_t offset, std:
   return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
 
-std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(std::size_t offset, std::size_t size) const {
+std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_type offset, offset_type size) const {
 #if !defined(_WIN32)
   auto search_range = Range(_offset+offset, _offset+offset+size);
   auto found_range = source->equal_range(search_range);
@@ -244,7 +244,7 @@ std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(std::size_t offset
 }
 
 
-std::unique_ptr<const Reader> Reader::sub_clusterReader(std::size_t offset, std::size_t size, CompressionType* comp) const {
+std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_type offset, offset_type size, CompressionType* comp) const {
   *comp = static_cast<CompressionType>(read(offset));
   switch (*comp) {
     case zimcompDefault:
@@ -271,7 +271,7 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(std::size_t offset, std:
   }
 }
 
-std::unique_ptr<const Reader> FileReader::sub_reader(std::size_t offset, std::size_t size) const
+std::unique_ptr<const Reader> FileReader::sub_reader(offset_type offset, offset_type size) const
 {
   assert(size<=_size);
   return std::unique_ptr<Reader>(new FileReader(source, _offset+offset, size));
@@ -281,12 +281,12 @@ std::unique_ptr<const Reader> FileReader::sub_reader(std::size_t offset, std::si
 //BufferReader::BufferReader(std::shared_ptr<Buffer> source)
 //  : source(source) {}
 
-std::shared_ptr<const Buffer> BufferReader::get_buffer(std::size_t offset, std::size_t size) const
+std::shared_ptr<const Buffer> BufferReader::get_buffer(offset_type offset, offset_type size) const
 {
   return source->sub_buffer(offset, size);
 }
 
-std::unique_ptr<const Reader> BufferReader::sub_reader(std::size_t offset, std::size_t size) const
+std::unique_ptr<const Reader> BufferReader::sub_reader(offset_type offset, offset_type size) const
 {
   auto source_addr = source->data(0);
   auto sub_buff = get_buffer(offset, size);
@@ -295,18 +295,18 @@ std::unique_ptr<const Reader> BufferReader::sub_reader(std::size_t offset, std::
   return sub_read;
 }
 
-std::size_t BufferReader::size() const
+offset_type BufferReader::size() const
 {
   return source->size();
 }
 
-std::size_t BufferReader::offset() const
+offset_type BufferReader::offset() const
 {
-  return (std::size_t)(static_cast<const void*>(source->data(0)));
+  return (offset_type)(static_cast<const void*>(source->data(0)));
 }
 
 
-void BufferReader::read(char* dest, std::size_t offset, std::size_t size) const {
+void BufferReader::read(char* dest, offset_type offset, offset_type size) const {
   assert(offset < source->size());
   assert(offset+size <= source->size());
   if (! size ) {
@@ -316,7 +316,7 @@ void BufferReader::read(char* dest, std::size_t offset, std::size_t size) const 
 }
 
 
-char BufferReader::read(std::size_t offset) const {
+char BufferReader::read(offset_type offset) const {
   assert(offset < source->size());
   char dest;
   dest = *source->data(offset);

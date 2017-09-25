@@ -31,16 +31,16 @@
 
 namespace zim {
 
-std::shared_ptr<const Buffer> Buffer::sub_buffer(std::size_t offset, std::size_t size) const
+std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_type offset, offset_type size) const
 {
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
 }
 
 #if !defined(_WIN32)
-MMapBuffer::MMapBuffer(int fd, std::size_t offset, std::size_t size):
+MMapBuffer::MMapBuffer(int fd, offset_type offset, offset_type size):
   Buffer(size)
 {
-  std::size_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
+  offset_type pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
   _offset = offset-pa_offset;
 #if defined(__APPLE__)
   #define MAP_FLAGS MAP_PRIVATE

@@ -26,38 +26,40 @@
 #include <cassert>
 #include <iostream>
 
+#include <zim/zim.h>
+
 namespace zim {
 
 class BufferError : std::exception {};
 
 class Buffer : public std::enable_shared_from_this<Buffer> {
   public:
-    Buffer(std::size_t size)
+    Buffer(offset_type size)
       : size_(size) {};
     virtual ~Buffer() {};
-    virtual const char* data(std::size_t offset=0) const = 0;
-    virtual char at(std::size_t offset) const {
+    virtual const char* data(offset_type offset=0) const = 0;
+    virtual char at(offset_type offset) const {
         return *(data(offset));
     }
-    std::size_t size() const { return size_; }
-    virtual std::shared_ptr<const Buffer> sub_buffer(std::size_t offset, std::size_t size) const;
+    offset_type size() const { return size_; }
+    virtual std::shared_ptr<const Buffer> sub_buffer(offset_type offset, offset_type size) const;
 
     template<typename T>
-    const T* as(size_t offset) const {
+    const T* as(offset_type offset) const {
       assert(offset < size_);
       assert(offset+sizeof(T) <= size_);
       return reinterpret_cast<const T*>(data(offset));
     }
 
   protected:
-    std::size_t size_;
+    offset_type size_;
 };
 
 
 template<bool CLEAN_AT_END>
 class MemoryBuffer : public Buffer {
   public:
-    MemoryBuffer(const char* buffer, std::size_t size)
+    MemoryBuffer(const char* buffer, offset_type size)
       : Buffer(size),
         _data(buffer)
     {}
@@ -68,7 +70,7 @@ class MemoryBuffer : public Buffer {
         }
     }
 
-    const char* data(std::size_t offset) const {
+    const char* data(offset_type offset) const {
         assert(offset <= size_);
         return _data + offset;
     }
@@ -80,16 +82,16 @@ class MemoryBuffer : public Buffer {
 #if !defined(_WIN32)
 class MMapBuffer : public Buffer {
   public:
-    MMapBuffer(int fd, std::size_t offset, std::size_t size);
+    MMapBuffer(int fd, offset_type offset, offset_type size);
     ~MMapBuffer();
 
-    const char* data(std::size_t offset) const {
+    const char* data(offset_type offset) const {
       offset += _offset;
       return _data + offset;
     }
 
   private:
-    std::size_t _offset;
+    offset_type _offset;
     char* _data;
 };
 #endif
@@ -97,17 +99,17 @@ class MMapBuffer : public Buffer {
 
 class SubBuffer : public Buffer {
   public:
-    SubBuffer(const std::shared_ptr<const Buffer> src, std::size_t offset, std::size_t size)
+    SubBuffer(const std::shared_ptr<const Buffer> src, offset_type offset, offset_type size)
       : Buffer(size),
         _data(src, src->data(offset))
     {
       assert((offset+size <= src->size()));
     }
 
-  const char* data(std::size_t offset) const {
+  const char* data(offset_type offset) const {
         assert(offset <= size_);
         return _data.get() + offset;
-    }    
+    }
 
   private:
     std::shared_ptr<const char> _data;

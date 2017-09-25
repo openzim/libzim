@@ -64,7 +64,7 @@ namespace zim
     }
 
     // ptrOffsetBuffer
-    size_t size = header.getArticleCount() * 8;;
+    offset_type size = header.getArticleCount() * 8;;
     urlPtrOffsetBuffer = zimReader->get_buffer(header.getUrlPtrPos(), size);
 
     // Create titleIndexBuffer
@@ -82,9 +82,9 @@ namespace zim
     {
       offset_type lastOffset = getClusterOffset(getCountClusters() - 1);
       log_debug("last offset=" << lastOffset << " file size=" << zimFile->fsize());
-      if (lastOffset > static_cast<offset_type>(zimFile->fsize()))
+      if (lastOffset > zimFile->fsize())
       {
-        log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
+        std::cerr << "last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')' << std::endl;
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
     }
@@ -92,11 +92,11 @@ namespace zim
     // read mime types
     size = header.getUrlPtrPos() - header.getMimeListPos();
     auto buffer = zimReader->get_buffer(header.getMimeListPos(), size);
-    size_t current = 0;
+    offset_type current = 0;
     while (current < size)
     {
-      size_t len = strlen(buffer->data(current));
- 
+      offset_type len = strlen(buffer->data(current));
+
       if (len == 0) {
         break;
       }
@@ -137,7 +137,7 @@ namespace zim
     // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
     // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
-    size_t bufferSize = 256;
+    offset_type bufferSize = 256;
     Dirent dirent;
     while (true) {
         bufferDirentZone.reserve(bufferSize);
@@ -192,7 +192,7 @@ namespace zim
     offset_type clusterOffset = getClusterOffset(idx);
     auto next_idx = idx + 1;
     offset_type nextClusterOffset = (next_idx < getCountClusters()) ? getClusterOffset(next_idx) : header.getChecksumPos();
-    size_t clusterSize = nextClusterOffset - clusterOffset;
+    offset_type clusterSize = nextClusterOffset - clusterOffset;
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
     std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp);
@@ -329,8 +329,8 @@ namespace zim
 
     Md5stream md5;
 
-    size_t checksumPos = header.getChecksumPos();
-    size_t currentPos = 0;
+    offset_type checksumPos = header.getChecksumPos();
+    offset_type currentPos = 0;
     for(auto part = zimFile->begin();
         part != zimFile->end();
         part++) {

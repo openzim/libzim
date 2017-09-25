@@ -89,7 +89,7 @@ namespace zim
     size_type version = fromLittleEndian(buffer->as<size_type>(4));
     setVersion(version);
 
-    std::size_t current = 8;
+    offset_type current = 8;
 
     if (redirect)
     {
@@ -125,14 +125,14 @@ namespace zim
 
     log_debug("read url, title and parameters");
 
-    std::size_t url_size = strlen(buffer->data(current));
+    offset_type url_size = strlen(buffer->data(current));
     if (current + url_size >= buffer->size()) {
       throw(InvalidSize());
     }
     url = std::string(buffer->data(current), url_size);
     current += url_size + 1;
     
-    std::size_t title_size = strlen(buffer->data(current));
+    offset_type title_size = strlen(buffer->data(current));
     if (current + title_size >= buffer->size()) {
       throw(InvalidSize());
     }

@@ -31,35 +31,35 @@ class FileCompound;
 class Reader {
   public:
     Reader() {};
-    virtual std::size_t size() const = 0;
+    virtual offset_type size() const = 0;
     virtual ~Reader() {};
 
-    virtual void read(char* dest, std::size_t offset, std::size_t size) const = 0;
+    virtual void read(char* dest, offset_type offset, offset_type size) const = 0;
     template<typename T>
-    T read(std::size_t offset) const {
+    T read(offset_type offset) const {
       assert(offset < size());
       assert(offset+sizeof(T) <= size());
       T ret;
       read(reinterpret_cast<char*>(&ret), offset, sizeof(T));
       return ret;
     }
-    virtual char read(std::size_t offset) const = 0;
+    virtual char read(offset_type offset) const = 0;
 
-    virtual std::shared_ptr<const Buffer> get_buffer(std::size_t offset, std::size_t size) const = 0;
-    std::shared_ptr<const Buffer> get_buffer(std::size_t offset) const {
+    virtual std::shared_ptr<const Buffer> get_buffer(offset_type offset, offset_type size) const = 0;
+    std::shared_ptr<const Buffer> get_buffer(offset_type offset) const {
       return get_buffer(offset, size()-offset);
     }
-    virtual std::unique_ptr<const Reader> sub_reader(std::size_t offset, std::size_t size) const = 0;
-    std::unique_ptr<const Reader> sub_reader(std::size_t offset) const {
+    virtual std::unique_ptr<const Reader> sub_reader(offset_type offset, offset_type size) const = 0;
+    std::unique_ptr<const Reader> sub_reader(offset_type offset) const {
       return sub_reader(offset, size()-offset);
     }
-    virtual std::size_t offset() const = 0;
+    virtual offset_type offset() const = 0;
 
-    std::unique_ptr<const Reader> sub_clusterReader(std::size_t offset, std::size_t size, CompressionType* comp) const;
+    std::unique_ptr<const Reader> sub_clusterReader(offset_type offset, offset_type size, CompressionType* comp) const;
 
   private:
-    std::shared_ptr<const Buffer> get_clusterBuffer(std::size_t offset, std::size_t size, CompressionType comp) const;
-    virtual std::unique_ptr<const Reader> get_mmap_sub_reader(std::size_t offset, std::size_t size) const = 0;
+    std::shared_ptr<const Buffer> get_clusterBuffer(offset_type offset, offset_type size, CompressionType comp) const;
+    virtual std::unique_ptr<const Reader> get_mmap_sub_reader(offset_type offset, offset_type size) const = 0;
 
 };
 
@@ -68,24 +68,24 @@ class FileReader : public Reader {
     FileReader(std::shared_ptr<const FileCompound> source);
     ~FileReader() {};
 
-    std::size_t size() const { return _size; };
-    std::size_t offset() const { return _offset; };
+    offset_type size() const { return _size; };
+    offset_type offset() const { return _offset; };
 
-    char read(std::size_t offset) const;
-    void read(char* dest, std::size_t offset, std::size_t size) const;
-    std::shared_ptr<const Buffer> get_buffer(std::size_t offset, std::size_t size) const;
+    char read(offset_type offset) const;
+    void read(char* dest, offset_type offset, offset_type size) const;
+    std::shared_ptr<const Buffer> get_buffer(offset_type offset, offset_type size) const;
 
-    std::unique_ptr<const Reader> sub_reader(std::size_t offest, std::size_t size) const;
+    std::unique_ptr<const Reader> sub_reader(offset_type offest, offset_type size) const;
 
   private:
-    FileReader(std::shared_ptr<const FileCompound> source, std::size_t offset);
-    FileReader(std::shared_ptr<const FileCompound> source, std::size_t offset, std::size_t size);
+    FileReader(std::shared_ptr<const FileCompound> source, offset_type offset);
+    FileReader(std::shared_ptr<const FileCompound> source, offset_type offset, offset_type size);
 
-    virtual std::unique_ptr<const Reader> get_mmap_sub_reader(std::size_t offset, std::size_t size) const;
+    virtual std::unique_ptr<const Reader> get_mmap_sub_reader(offset_type offset, offset_type size) const;
 
     std::shared_ptr<const FileCompound> source;
-    std::size_t _offset;
-    std::size_t _size;
+    offset_type _offset;
+    offset_type _size;
 };
 
 class BufferReader : public Reader {
@@ -94,16 +94,16 @@ class BufferReader : public Reader {
       : source(source) {}
     virtual ~BufferReader() {};
 
-    std::size_t size() const;
-    std::size_t offset() const;
+    offset_type size() const;
+    offset_type offset() const;
 
-    void read(char* dest, std::size_t offset, std::size_t size) const;
-    char read(std::size_t offset) const;
-    std::shared_ptr<const Buffer> get_buffer(std::size_t offset, std::size_t size) const;
-    std::unique_ptr<const Reader> sub_reader(std::size_t offset, std::size_t size) const;
+    void read(char* dest, offset_type offset, offset_type size) const;
+    char read(offset_type offset) const;
+    std::shared_ptr<const Buffer> get_buffer(offset_type offset, offset_type size) const;
+    std::unique_ptr<const Reader> sub_reader(offset_type offset, offset_type size) const;
 
   private:
-    virtual std::unique_ptr<const Reader> get_mmap_sub_reader(std::size_t offset, std::size_t size) const 
+    virtual std::unique_ptr<const Reader> get_mmap_sub_reader(offset_type offset, offset_type size) const
       { return std::unique_ptr<Reader>(); }
     std::shared_ptr<const Buffer> source;
 };

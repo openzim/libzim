@@ -41,8 +41,8 @@ class Cluster {
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
-    std::size_t count() const  { return offsets.size() - 1; }
-    std::size_t size() const   { return offsets.size() * sizeof(size_type) + _data.size(); }
+    offset_type count() const  { return offsets.size() - 1; }
+    offset_type size() const   { return offsets.size() * sizeof(size_type) + _data.size(); }
     void clear();
 
     size_type getBlobSize(unsigned n) const { return offsets[n+1] - offsets[n]; }

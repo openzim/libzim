@@ -64,7 +64,7 @@ namespace zim
     offsets.push_back(0);
     
     auto buffer = reader->get_buffer(0, offset);
-    std::size_t current = 4;
+    offset_type current = 4;
     while (--n_offset)
     {
       size_type new_offset = fromLittleEndian(buffer->as<size_type>(current));
