@@ -22,6 +22,8 @@
 
 #include <string>
 
+#include <zim/zim.h>
+
 namespace zim {
 
 class FilePart {
@@ -31,14 +33,14 @@ class FilePart {
     const std::string& filename() const { return filename_; };
     const int fd() const { return fd_; };
 
-    std::size_t size() const { return size_; };
+    offset_type size() const { return size_; };
     bool fail() const { return size_ == 0; };
     bool good() const { return size_; };
 
   private:
     const std::string filename_;
     int fd_;
-    std::size_t size_;
+    offset_type size_;
 };
 
 };

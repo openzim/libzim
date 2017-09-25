@@ -29,10 +29,10 @@ namespace zim {
 class FileReader;
 
 struct Range {
-  Range(const size_t point ) : min(point), max(point) {}
-  Range(const size_t min, const size_t max) : min(min), max(max) {}
-  const size_t min;
-  const size_t max;
+  Range(const offset_type point ) : min(point), max(point) {}
+  Range(const offset_type  min, const offset_type max) : min(min), max(max) {}
+  const offset_type min;
+  const offset_type max;
 };
 
 struct less_range : public std::binary_function< Range, Range, bool>
@@ -46,13 +46,13 @@ class FileCompound : public std::map<Range, FilePart*, less_range> {
   public:
     FileCompound(const std::string& filename);
 
-    size_t fsize() const { return _fsize; };
+    offset_type fsize() const { return _fsize; };
     time_t getMTime() const;
     bool fail() const { return empty(); };
     bool is_multiPart() const { return size() > 1; };
 
   private:
-    size_t _fsize;
+    offset_type _fsize;
     mutable time_t mtime;
 };
 
