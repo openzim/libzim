@@ -30,8 +30,7 @@
 #include <zim/blob.h>
 
 #include "../log.h"
-#include <cxxtools/arg.h>
-#include <cxxtools/clock.h>
+#include <getopt.h>
 
 log_define("zim.bench")
 
@@ -45,16 +44,60 @@ std::string randomUrl()
 
 int main(int argc, char* argv[])
 {
+  int count = 1000;
+  bool randomCountSet = false;
+  int randomCount = 1000;
+  bool distinctCountSet = false;
+  int distinctCount = 1000;
+  char ns = 'A';
+  std::string filename;
+
+  static struct option long_options[]
+    = {{"ns", required_argument, 0, 's'}};
   try
   {
     log_init();
 
-    cxxtools::Arg<unsigned> count(argc, argv, 'n', 1000);   // number of linear accessed articles
-    cxxtools::Arg<unsigned> randomCount(argc, argv, 'r', count);  // number of random accesses
-    cxxtools::Arg<unsigned> distinctCount(argc, argv, 'd', randomCount);  // number of distinct articles used for random access
-    cxxtools::Arg<char> ns(argc, argv, "--ns", 'A');
+    while (true) {
+      int option_index = 0;
+      int c = getopt_long(argc, argv, "sn:r:d:",
+              long_options, &option_index);
 
-    if (argc != 2)
+      if (c!= -1) {
+        switch (c) {
+          case 's':
+            ns = optarg[0];
+            break;
+          case 'n':
+            count = atoi(optarg);
+            if (! randomCountSet ) {
+              randomCount = count;
+              if (! distinctCountSet ) {
+                distinctCount = count;
+              }
+            }
+            break;
+          case 'r':
+            randomCountSet = true;
+            randomCount = atoi(optarg);
+            if (! distinctCountSet ) {
+              distinctCount = count;
+            }
+            break;
+          case 'd':
+            distinctCountSet = true;
+            distinctCount = atoi(optarg);
+            break;
+        };
+      } else {
+        if (optind < argc ) {
+          filename = argv[optind++];
+        }
+        break;
+      }
+    }
+
+    if (filename.empty())
     {
       std::cerr << "usage: " << argv[0] << " [options] zimfile\n"
                    "\t-n number\tnumber of linear accessed articles (default 1000)\n"
@@ -65,8 +108,6 @@ int main(int argc, char* argv[])
     }
 
     srand(time(0));
-
-    std::string filename = argv[1];
 
     std::cout << "open file " << filename << std::endl;
     zim::File file(filename);
@@ -80,7 +121,7 @@ int main(int argc, char* argv[])
     std::cout << "collect linear urls" << std::endl;
     for (zim::File::const_iterator it = file.begin(); it != file.end() && urls.size() < count; ++it)
     {
-      log_debug("check url " << it->getUrl() << '\t' << urls.size() << " found");
+      std::cout << "check url " << it->getUrl() << '\t' << urls.size() << " found" << std::endl;
       if (!it->isRedirect())
         urls.insert(it->getUrl());
     }
@@ -104,15 +145,27 @@ int main(int argc, char* argv[])
 
     // linear read
     std::cout << "linear:" << std::flush;
-    cxxtools::Clock clock;
-    clock.start();
+    struct timespec time_start;
+    struct timespec time_stop;
+    long long milliseconds_start, milliseconds_stop, milliseconds_delta;
+
+    clock_gettime(CLOCK_REALTIME, &time_start);
+    milliseconds_start = time_start.tv_sec*1000LL + time_start.tv_nsec/1000;
 
     unsigned size = 0;
-    for (UrlsType::const_iterator it = urls.begin(); it != urls.end(); ++it)
-      size += file.getArticle(ns, *it).getData().size();
+    for (UrlsType::const_iterator it = urls.begin(); it != urls.end(); ++it) {
+      auto article = file.getArticle(ns, *it);
+      if (article.good()) {
+        size += file.getArticle(ns, *it).getData().size();
+      } else {
+        std::cerr << "Impossible to get article '" << *it << "' in namespace " << ns << std::endl;
+      }
+    }
 
-    cxxtools::Timespan t = clock.stop();
-    std::cout << "\tsize=" << size << "\tt=" << (t.totalMSecs() / 1000.0) << "s\t" << (static_cast<double>(urls.size()) / t.totalMSecs() * 1000.0) << " articles/s" << std::endl;
+    clock_gettime(CLOCK_REALTIME, &time_stop);
+    milliseconds_stop = time_stop.tv_sec*1000LL + time_stop.tv_nsec/1000;
+    milliseconds_delta = milliseconds_stop - milliseconds_start;
+    std::cout << "\tsize=" << size << "\tt=" << (milliseconds_delta / 1000.0) << "s\t" << (static_cast<double>(urls.size()) / milliseconds_delta * 1000.0) << " articles/s" << std::endl;
 
     // reopen file
     file = zim::File();
@@ -120,7 +173,9 @@ int main(int argc, char* argv[])
 
     // random access
     std::cout << "random:" << std::flush;
-    clock.start();
+
+    clock_gettime(CLOCK_REALTIME, &time_start);
+    milliseconds_start = time_start.tv_sec*1000LL + time_start.tv_nsec/1000;
 
     size = 0;
     for (unsigned r = 0; r < randomCount; ++r)
@@ -129,8 +184,10 @@ int main(int argc, char* argv[])
     //for (UrlsType::const_iterator it = randomUrls.begin(); it != randomUrls.end(); ++it)
       //size += file.getArticle(ns, *it).getData().size();
 
-    t = clock.stop();
-    std::cout << "\tsize=" << size << "\tt=" << (t.totalMSecs() / 1000.0) << "s\t" << (static_cast<double>(randomCount) / t.totalMSecs() * 1000.0) << " articles/s" << std::endl;
+    clock_gettime(CLOCK_REALTIME, &time_stop);
+    milliseconds_stop = time_stop.tv_sec*1000LL + time_stop.tv_nsec/1000;
+    milliseconds_delta = milliseconds_stop - milliseconds_start;
+    std::cout << "\tsize=" << size << "\tt=" << (milliseconds_delta / 1000.0) << "s\t" << (static_cast<double>(randomCount) / milliseconds_delta * 1000.0) << " articles/s" << std::endl;
   }
   catch (const std::exception& e)
   {
