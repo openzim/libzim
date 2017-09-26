@@ -6,6 +6,7 @@ install_headers(
     'zim/cache.h',
     'zim/cluster.h',
     'zim/dirent.h',
+    'zim/endian_tools.h',
     'zim/error.h',
     'zim/file.h',
     'zim/fileheader.h',

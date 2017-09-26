@@ -27,6 +27,7 @@
 #include <iostream>
 
 #include <zim/zim.h>
+#include <zim/endian_tools.h>
 
 namespace zim {
 
@@ -45,10 +46,10 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
     virtual std::shared_ptr<const Buffer> sub_buffer(offset_type offset, offset_type size) const;
 
     template<typename T>
-    const T* as(offset_type offset) const {
+    T as(offset_type offset) const {
       assert(offset < size_);
       assert(offset+sizeof(T) <= size_);
-      return reinterpret_cast<const T*>(data(offset));
+      return fromLittleEndian<T>(data(offset));
     }
 
   protected:

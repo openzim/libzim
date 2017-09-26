@@ -20,7 +20,7 @@
 #include <zim/dirent.h>
 #include <zim/zim.h>
 #include <zim/buffer.h>
-#include "endian_tools.h"
+#include <zim/endian_tools.h>
 #include "log.h"
 #include <algorithm>
 #include <cstring>
@@ -80,20 +80,20 @@ namespace zim
 
   Dirent::Dirent(std::unique_ptr<Buffer> buffer)
   {
-    uint16_t mimeType = fromLittleEndian(buffer->as<uint16_t>(0));
+    uint16_t mimeType = buffer->as<uint16_t>(0);
     bool redirect = (mimeType == Dirent::redirectMimeType);
     bool linktarget = (mimeType == Dirent::linktargetMimeType);
     bool deleted = (mimeType == Dirent::deletedMimeType);
-    uint8_t extraLen = *(buffer->as<uint8_t>(2));
+    uint8_t extraLen = buffer->data()[2];
     char ns = buffer->data()[3];
-    size_type version = fromLittleEndian(buffer->as<size_type>(4));
+    size_type version = buffer->as<size_type>(4);
     setVersion(version);
 
     offset_type current = 8;
 
     if (redirect)
     {
-      size_type redirectIndex = fromLittleEndian(buffer->as<size_type>(current));
+      size_type redirectIndex = buffer->as<size_type>(current);
       current += sizeof(size_type);
 
       log_debug("redirectIndex=" << redirectIndex);
@@ -109,9 +109,9 @@ namespace zim
     {
       log_debug("read article entry");
 
-      size_type clusterNumber = fromLittleEndian(buffer->as<const size_type>(current));
+      size_type clusterNumber = buffer->as<size_type>(current);
       current += sizeof(size_type);
-      size_type blobNumber = fromLittleEndian(buffer->as<const size_type>(current));
+      size_type blobNumber = buffer->as<size_type>(current);
       current += sizeof(size_type);
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber);

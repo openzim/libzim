@@ -23,6 +23,8 @@
 #include <memory>
 #include <cassert>
 
+#include <zim/endian_tools.h>
+
 namespace zim {
 
 class Buffer;
@@ -39,9 +41,9 @@ class Reader {
     T read(offset_type offset) const {
       assert(offset < size());
       assert(offset+sizeof(T) <= size());
-      T ret;
-      read(reinterpret_cast<char*>(&ret), offset, sizeof(T));
-      return ret;
+      char tmp_buf[sizeof(T)];
+      read(tmp_buf, offset, sizeof(T));
+      return fromLittleEndian<T>(tmp_buf);
     }
     virtual char read(offset_type offset) const = 0;
 
