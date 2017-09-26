@@ -19,7 +19,7 @@
 
 #include "cluster.h"
 #include "../log.h"
-#include "../endian_tools.h"
+#include <zim/endian_tools.h>
 
 #include <sstream>
 
@@ -66,8 +66,9 @@ void Cluster::write(std::ostream& out) const
   {
     size_type o = *it;
     o += a;
-    o = fromLittleEndian(&o);
-    out.write(reinterpret_cast<const char*>(&o), sizeof(size_type));
+    char out_buf[sizeof(size_type)];
+    toLittleEndian(o, out_buf);
+    out.write(out_buf, sizeof(size_type));
   }
 
   if (_data.size() > 0)

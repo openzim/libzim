@@ -21,7 +21,7 @@
 #include <iostream>
 #include <algorithm>
 #include "log.h"
-#include "endian_tools.h"
+#include <zim/endian_tools.h>
 
 log_define("zim.file.header")
 
@@ -54,14 +54,14 @@ namespace zim
 
   void Fileheader::read(std::shared_ptr<const Buffer> buffer)
   {
-    size_type magicNumber = fromLittleEndian(buffer->as<size_type>(0));
+    size_type magicNumber = buffer->as<size_type>(0);
     if (magicNumber != Fileheader::zimMagic)
     {
       log_error("invalid magic number " << magicNumber << " found - "
           << Fileheader::zimMagic << " expected");
     }
 
-    uint16_t version = fromLittleEndian(buffer->as<uint16_t>(4));
+    uint16_t version = buffer->as<uint16_t>(4);
     if (version != static_cast<size_type>(Fileheader::zimVersion))
     {
       log_error("invalid zimfile version " << version << " found - "
@@ -72,15 +72,15 @@ namespace zim
     std::copy(buffer->data(8), buffer->data(24), uuid.data);
     setUuid(uuid);
 
-    setArticleCount(fromLittleEndian(buffer->as<size_type>(24)));
-    setClusterCount(fromLittleEndian(buffer->as<size_type>(28)));
-    setUrlPtrPos(fromLittleEndian(buffer->as<offset_type>(32)));
-    setTitleIdxPos(fromLittleEndian(buffer->as<offset_type>(40)));
-    setClusterPtrPos(fromLittleEndian(buffer->as<offset_type>(48)));
-    setMimeListPos(fromLittleEndian(buffer->as<offset_type>(56)));
-    setMainPage(fromLittleEndian(buffer->as<size_type>(64)));
-    setLayoutPage(fromLittleEndian(buffer->as<size_type>(68)));
-    setChecksumPos(fromLittleEndian(buffer->as<offset_type>(72)));
+    setArticleCount(buffer->as<size_type>(24));
+    setClusterCount(buffer->as<size_type>(28));
+    setUrlPtrPos(buffer->as<offset_type>(32));
+    setTitleIdxPos(buffer->as<offset_type>(40));
+    setClusterPtrPos(buffer->as<offset_type>(48));
+    setMimeListPos(buffer->as<offset_type>(56));
+    setMainPage(buffer->as<size_type>(64));
+    setLayoutPage(buffer->as<size_type>(68));
+    setChecksumPos(buffer->as<offset_type>(72));
   }
 
 }

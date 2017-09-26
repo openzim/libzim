@@ -22,7 +22,6 @@
 #include <zim/dirent.h>
 #include <zim/file_compound.h>
 #include <zim/file_reader.h>
-#include "endian_tools.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
@@ -172,7 +171,7 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    size_type ret = fromLittleEndian(titleIndexBuffer->as<size_type>(sizeof(size_type)*idx));
+    size_type ret = titleIndexBuffer->as<size_type>(sizeof(size_type)*idx);
 
     return ret;
   }
@@ -206,7 +205,7 @@ namespace zim
 
   offset_type FileImpl::getOffset(const Buffer* buffer, size_type idx)
   {
-    offset_type offset = fromLittleEndian(buffer->as<offset_type>(sizeof(offset_type)*idx));
+    offset_type offset = buffer->as<offset_type>(sizeof(offset_type)*idx);
     return offset;
   }
 

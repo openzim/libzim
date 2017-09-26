@@ -21,7 +21,7 @@
 #include <zim/fileheader.h>
 #include "cluster.h"
 #include <zim/blob.h>
-#include "endian_tools.h"
+#include <zim/endian_tools.h>
 #include <algorithm>
 #include <fstream>
 
@@ -482,8 +482,9 @@ namespace zim
       offset_type off = indexPos();
       for (DirentsType::const_iterator it = dirents.begin(); it != dirents.end(); ++it)
       {
-        offset_type ptr0 = fromLittleEndian<offset_type>(&off);
-        out.write(reinterpret_cast<const char*>(&ptr0), sizeof(ptr0));
+        char tmp_buff[sizeof(offset_type)];
+        toLittleEndian(off, tmp_buff);
+        out.write(tmp_buff, sizeof(offset_type));
         off += it->getDirentSize();
       }
 
@@ -493,8 +494,9 @@ namespace zim
 
       for (SizeVectorType::const_iterator it = titleIdx.begin(); it != titleIdx.end(); ++it)
       {
-        size_type v = fromLittleEndian<size_type>(&*it);
-        out.write(reinterpret_cast<const char*>(&v), sizeof(v));
+        char tmp_buff[sizeof(size_type)];
+        toLittleEndian(*it, tmp_buff);
+        out.write(tmp_buff, sizeof(size_type));
       }
 
       log_debug("after writing fileIdxList - pos=" << out.tellp());
@@ -515,8 +517,9 @@ namespace zim
       for (OffsetsType::const_iterator it = clusterOffsets.begin(); it != clusterOffsets.end(); ++it)
       {
         offset_type o = (off + *it);
-        offset_type ptr0 = fromLittleEndian<offset_type>(&o);
-        out.write(reinterpret_cast<const char*>(&ptr0), sizeof(ptr0));
+        char tmp_buff[sizeof(offset_type)];
+        toLittleEndian(o, tmp_buff);
+        out.write(tmp_buff, sizeof(offset_type));
       }
 
       log_debug("after writing clusterOffsets - pos=" << out.tellp());

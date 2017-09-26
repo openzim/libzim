@@ -19,7 +19,7 @@
 
 #include <zim/cluster.h>
 #include <zim/blob.h>
-#include "endian_tools.h"
+#include <zim/endian_tools.h>
 #include <zim/error.h>
 #include <zim/file_reader.h>
 #include <stdlib.h>
@@ -53,7 +53,6 @@ namespace zim
     // read first offset, which specifies, how many offsets we need to read
     size_type offset;
     offset = reader->read<size_type>(0);
-    offset = fromLittleEndian(&offset);
 
     size_type n_offset = offset / 4;
     size_type data_address = offset;
@@ -67,7 +66,7 @@ namespace zim
     offset_type current = 4;
     while (--n_offset)
     {
-      size_type new_offset = fromLittleEndian(buffer->as<size_type>(current));
+      size_type new_offset = buffer->as<size_type>(current);
       assert(new_offset >= offset);
       assert(offset >= data_address);
       assert(offset <= reader->size());
