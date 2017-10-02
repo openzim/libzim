@@ -14,7 +14,9 @@ conf.set('ENABLE_ZLIB', zlib_dep.found())
 lzma_dep = dependency('liblzma', required:false)
 conf.set('ENABLE_LZMA', lzma_dep.found())
 
-xapian_dep = dependency('xapian-core', required:false)
+xapian_dep = dependency('xapian-core',
+                        required:false,
+                        static:(get_option('default_library')=='static'))
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
 pkg_requires = []
@@ -31,6 +33,9 @@ if xapian_dep.found()
 else
     icu_dep = dependency('icu-i18n', required:false)
 endif
+
+compiler = meson.get_compiler('cpp')
+rt_dep = compiler.find_library('rt', required:false)
 
 gtest_sp = subproject('gtest')
 
