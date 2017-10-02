@@ -16,6 +16,6 @@ executable('zimsearch', 'zimSearch.cpp',
 
 executable('zimbench', 'zimBench.cpp',
            link_with: libzim,
-           dependencies : deps,
+           dependencies : deps + [rt_dep],
            include_directories: include_dirs,
            install: true)

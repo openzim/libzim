@@ -32,6 +32,9 @@ else
     icu_dep = dependency('icu-i18n', required:false)
 endif
 
+compiler = meson.get_compiler('cpp')
+rt_dep = compiler.find_library('rt', required:false)
+
 gtest_sp = subproject('gtest')
 
 inc = include_directories('include')
