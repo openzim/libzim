@@ -22,6 +22,7 @@
 #include <zim/error.h>
 #include "file_reader.h"
 #include "endian_tools.h"
+#include <algorithm>
 #include <stdlib.h>
 #include <sstream>
 
@@ -83,6 +84,18 @@ namespace zim
   {
     if (size()) {
       auto buffer = reader->get_buffer(offsets[n], getBlobSize(n));
+      return Blob(buffer);
+    } else {
+      return Blob();
+    }
+  }
+
+  Blob Cluster::getBlob(size_type n, size_type offset, size_type size) const
+  {
+    if (this->size()) {
+      offset += offsets[n];
+      size = std::min(size, getBlobSize(n));
+      auto buffer = reader->get_buffer(offset, size);
       return Blob(buffer);
     } else {
       return Blob();

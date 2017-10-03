@@ -77,7 +77,8 @@ namespace zim
 
       std::shared_ptr<const Cluster> getCluster() const;
 
-      Blob getData() const;
+      Blob getData(size_type offset=0) const;
+      Blob getData(size_type offset, size_type size) const;
 
       offset_type getOffset() const;
 
