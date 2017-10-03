@@ -16,18 +16,18 @@ common_sources = [
     'file_compound.cpp',
     'file_part.cpp',
     'file_reader.cpp',
+    'blob.cpp',
     'buffer.cpp',
     'md5.c',
     'md5stream.cpp',
-    'ptrstream.cpp',
     'search.cpp',
     'search_iterator.cpp',
-    'tee.cpp',
     'template.cpp',
     'uuid.cpp',
     'zintstream.cpp',
-    'writer/zimcreator.cpp',
-    'writer/cluster.cpp'
+    'writer/zimcreatorimpl.cpp',
+    'writer/cluster.cpp',
+    'writer/tee.cpp'
 ]
 
 zlib_sources = [

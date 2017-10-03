@@ -18,6 +18,7 @@
  */
 
 #include <zim/file.h>
+#include "fileimpl.h"
 #include <zim/article.h>
 #include <zim/search.h>
 #include "log.h"
@@ -42,43 +43,108 @@ namespace zim
     }
   }
 
+  File::File(const std::string& fname)
+    : impl(new FileImpl(fname))
+    { }
+
+  const std::string& File::getFilename() const
+  {
+    return impl->getFilename();
+  }
+
+  const Fileheader& File::getFileheader() const
+  {
+    return impl->getFileheader();
+  }
+
+  offset_type File::getFilesize() const
+  {
+    return impl->getFilesize();
+  }
+
+  size_type File::getCountArticles() const
+  {
+    return impl->getCountArticles();
+  }
+
+
   Article File::getArticle(size_type idx) const
   {
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
-    return Article(*this, idx);
+    return Article(impl, idx);
   }
 
   Article File::getArticle(char ns, const std::string& url) const
   {
     log_trace("File::getArticle('" << ns << "', \"" << url << ')');
-    std::pair<bool, const_iterator> r = findx(ns, url);
-    return r.first ? *r.second : Article();
+    std::pair<bool, size_type> r = impl->findx(ns, url);
+    return r.first ? Article(impl, r.second) : Article();
   }
 
   Article File::getArticleByUrl(const std::string& url) const
   {
     log_trace("File::getArticle(\"" << url << ')');
-    std::pair<bool, const_iterator> r = findx(url);
-    return r.first ? *r.second : Article();
+    std::pair<bool, size_type> r = impl->findx(url);
+    return r.first ? Article(impl, r.second) : Article();
   }
 
   Article File::getArticleByTitle(size_type idx) const
   {
-    return Article(*this, impl->getIndexByTitle(idx));
+    return Article(impl, impl->getIndexByTitle(idx));
   }
 
   Article File::getArticleByTitle(char ns, const std::string& title) const
   {
     log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
-    std::pair<bool, const_iterator> r = findxByTitle(ns, title);
-    return r.first ? *r.second : Article();
+    std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
+    return r.first ? Article(impl, r.second) : Article();
+  }
+
+  std::shared_ptr<const Cluster> File::getCluster(size_type idx) const
+  {
+    return impl->getCluster(idx);
+  }
+
+  size_type File::getCountClusters() const
+  {
+    return impl->getCountClusters();
+  }
+
+  offset_type File::getClusterOffset(size_type idx) const
+  {
+    return impl->getClusterOffset(idx);
+  }
+
+  Blob File::getBlob(size_type clusterIdx, size_type blobIdx) const
+  {
+    return getCluster(clusterIdx)->getBlob(blobIdx);
+  }
+
+  size_type File::getNamespaceBeginOffset(char ch) const
+  {
+    return impl->getNamespaceBeginOffset(ch);
+  }
+
+  size_type File::getNamespaceEndOffset(char ch) const
+  {
+    return impl->getNamespaceEndOffset(ch);
+  }
+
+  size_type File::getNamespaceCount(char ns) const
+  {
+    return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns);
+  }
+
+  std::string File::getNamespaces() const
+  {
+    return impl->getNamespaces();
   }
 
   bool File::hasNamespace(char ch) const
   {
     size_type off = getNamespaceBeginOffset(ch);
-    return off < getCountArticles() && getDirent(off).getNamespace() == ch;
+    return off < getCountArticles() && impl->getDirent(off)->getNamespace() == ch;
   }
 
   File::const_iterator File::begin() const
@@ -90,117 +156,32 @@ namespace zim
   File::const_iterator File::end() const
   { return const_iterator(this, getCountArticles()); }
 
-  std::pair<bool, File::const_iterator> File::findx(char ns, const std::string& url) const
-  {
-    log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
-
-    size_type l = getNamespaceBeginOffset(ns);
-    size_type u = getNamespaceEndOffset(ns);
-
-    if (l == u)
-    {
-      log_debug("namespace " << ns << " not found");
-      return std::pair<bool, const_iterator>(false, end());
-    }
-
-    unsigned itcount = 0;
-    while (u - l > 1)
-    {
-      ++itcount;
-      size_type p = l + (u - l) / 2;
-      Dirent d = getDirent(p);
-
-      int c = ns < d.getNamespace() ? -1
-            : ns > d.getNamespace() ? 1
-            : url.compare(d.getUrl());
-
-      if (c < 0)
-        u = p;
-      else if (c > 0)
-        l = p;
-      else
-      {
-        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, const_iterator>(true, const_iterator(this, p));
-      }
-    }
-
-    Dirent d = getDirent(l);
-    int c = url.compare(d.getUrl());
-
-    if (c == 0)
-    {
-      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, const_iterator>(true, const_iterator(this, l));
-    }
-
-    log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
-    return std::pair<bool, const_iterator>(false, const_iterator(this, c < 0 ? l : u));
-  }
-
-  std::pair<bool, File::const_iterator> File::findx(const std::string& url) const
-  {
-    if (url.size() < 2 || url[1] != '/')
-      return std::pair<bool, const_iterator>(false, const_iterator());
-    return findx(url[0], url.substr(2));
-  }
-
-  std::pair<bool, File::const_iterator> File::findxByTitle(char ns, const std::string& title) const
-  {
-    log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
-
-    size_type l = getNamespaceBeginOffset(ns);
-    size_type u = getNamespaceEndOffset(ns);
-
-    if (l == u)
-    {
-      log_debug("namespace " << ns << " not found");
-      return std::pair<bool, const_iterator>(false, end());
-    }
-
-    unsigned itcount = 0;
-    while (u - l > 1)
-    {
-      ++itcount;
-      size_type p = l + (u - l) / 2;
-      Dirent d = getDirentByTitle(p);
-
-      int c = ns < d.getNamespace() ? -1
-            : ns > d.getNamespace() ? 1
-            : title.compare(d.getTitle());
-
-      if (c < 0)
-        u = p;
-      else if (c > 0)
-        l = p;
-      else
-      {
-        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, const_iterator>(true, const_iterator(this, p, const_iterator::ArticleIterator));
-      }
-    }
-
-    Dirent d = getDirentByTitle(l);
-    int c = title.compare(d.getTitle());
-
-    if (c == 0)
-    {
-      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, const_iterator>(true, const_iterator(this, l, const_iterator::ArticleIterator));
-    }
-
-    log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return std::pair<bool, const_iterator>(false, const_iterator(this, c < 0 ? l : u, const_iterator::ArticleIterator));
-  }
-
   File::const_iterator File::find(char ns, const std::string& url) const
-  { return findx(ns, url).second; }
+  {
+    std::pair<bool, size_type> r = impl->findx(ns, url);
+    if (!r.first) {
+      return end();
+    }
+    return File::const_iterator(this, r.second);
+  }
 
   File::const_iterator File::find(const std::string& url) const
-  { return findx(url).second; }
+  {
+    std::pair<bool, size_type> r = impl->findx(url);
+    if (!r.first) {
+      return end();
+    }
+    return File::const_iterator(this, r.second);
+  }
 
   File::const_iterator File::findByTitle(char ns, const std::string& title) const
-  { return findxByTitle(ns, title).second; }
+  {
+    std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
+    if (!r.first) {
+      return end();
+    }
+    return File::const_iterator(this, r.second, const_iterator::ArticleIterator);
+  }
 
   const Search* File::search(const std::string& query, int start, int end) const {
       Search* search = new Search(this);
@@ -219,11 +200,34 @@ namespace zim
 
   offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
   {
-    auto cluster = getCluster(clusterIdx);
-    if (cluster->isCompressed())
-        return 0;
-    return impl->getClusterOffset(clusterIdx) + 1 + cluster->getBlobOffset(blobIdx);
+    return impl->getBlobOffset(clusterIdx, blobIdx);
   }
+
+  time_t File::getMTime() const
+  {
+    return impl->getMTime();
+  }
+
+  const std::string& File::getMimeType(uint16_t idx) const
+  {
+    return impl->getMimeType(idx);
+  }
+
+  std::string File::getChecksum()
+  {
+    return impl->getChecksum();
+  }
+
+  bool File::verify()
+  {
+    return impl->verify();
+  }
+
+  bool File::is_multiPart() const
+  {
+    return impl->is_multiPart();
+  }
+
 
   std::string urldecode(const std::string& url)
   {

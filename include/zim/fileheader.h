@@ -23,12 +23,11 @@
 #include <memory>
 #include <zim/zim.h>
 #include <zim/uuid.h>
-#include <zim/buffer.h>
 #include <iosfwd>
 #include <limits>
 
 #ifdef _WIN32
-#define NOMINMAX
+#define NOMINMAX 1
 #include <windows.h>
 #undef NOMINMAX
 #undef max
@@ -36,6 +35,7 @@
 
 namespace zim
 {
+  class Buffer;
   class Fileheader
   {
     public:

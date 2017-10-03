@@ -26,6 +26,9 @@
 #include "../zintstream.h"
 #include "../arg.h"
 #include "../log.h"
+#include "../dirent.h"
+#include "../cluster.h"
+#include "../fileimpl.h"
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -242,28 +245,28 @@ void ZimDumper::listArticles(bool info, bool listTable, bool extra)
 
 void ZimDumper::listArticle(const zim::Article& article, bool extra)
 {
-  zim::Dirent dirent = article.getDirent();
+  auto dirent = file.impl->getDirent(article.getIndex());
 
   std::cout <<
-      "url: "             << dirent.getUrl() << "\n"
-    "\ttitle:           " << dirent.getTitle() << "\n"
+      "url: "             << dirent->getUrl() << "\n"
+    "\ttitle:           " << dirent->getTitle() << "\n"
     "\tidx:             " << article.getIndex() << "\n"
-    "\tnamespace:       " << dirent.getNamespace() << "\n"
-    "\ttype:            " << (dirent.isRedirect()   ? "redirect"
-                            : dirent.isLinktarget() ? "linktarget"
-                            : dirent.isDeleted()    ? "deleted"
+    "\tnamespace:       " << dirent->getNamespace() << "\n"
+    "\ttype:            " << (dirent->isRedirect()   ? "redirect"
+                            : dirent->isLinktarget() ? "linktarget"
+                            : dirent->isDeleted()    ? "deleted"
                             :                         "article") << "\n";
 
-  if (dirent.isRedirect())
+  if (dirent->isRedirect())
   {
     std::cout <<
-      "\tredirect index:  " << dirent.getRedirectIndex() << "\n";
+      "\tredirect index:  " << dirent->getRedirectIndex() << "\n";
   }
-  else if (dirent.isLinktarget())
+  else if (dirent->isLinktarget())
   {
     // nothing else
   }
-  else if (dirent.isDeleted())
+  else if (dirent->isDeleted())
   {
     // nothing else
   }
@@ -278,11 +281,11 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
       auto cluster = article.getCluster();
 
       std::cout <<
-      "\tcluster number:  " << dirent.getClusterNumber() << "\n"
+      "\tcluster number:  " << dirent->getClusterNumber() << "\n"
       "\tcluster count:   " << cluster->count() << "\n"
       "\tcluster size:    " << cluster->size() << "\n"
-      "\tcluster offset:  " << file.getClusterOffset(dirent.getClusterNumber()) << "\n"
-      "\tblob number:     " << dirent.getBlobNumber() << "\n"
+      "\tcluster offset:  " << file.getClusterOffset(dirent->getClusterNumber()) << "\n"
+      "\tblob number:     " << dirent->getBlobNumber() << "\n"
       "\tcompression:     ";
       switch (cluster->getCompression())
       {
@@ -299,7 +302,7 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
 
   if (extra)
   {
-    std::string parameter = dirent.getParameter();
+    std::string parameter = dirent->getParameter();
     std::cout << "\textra:           ";
     static char hexdigit[] = "0123456789abcdef";
     for (std::string::const_iterator it = parameter.begin(); it != parameter.end(); ++it)
@@ -325,50 +328,50 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
 
 void ZimDumper::listArticleT(const zim::Article& article, bool extra)
 {
-  zim::Dirent dirent = article.getDirent();
+  auto dirent = file.impl->getDirent(article.getIndex());
 
-  std::cout << dirent.getNamespace()
-    << '\t' << dirent.getUrl()
-    << '\t' << dirent.getTitle()
+  std::cout << dirent->getNamespace()
+    << '\t' << dirent->getUrl()
+    << '\t' << dirent->getTitle()
     << '\t' << article.getIndex()
-    << '\t' << (dirent.isRedirect()   ? 'R'
-              : dirent.isLinktarget() ? 'L'
-              : dirent.isDeleted()    ? 'D'
+    << '\t' << (dirent->isRedirect()   ? 'R'
+              : dirent->isLinktarget() ? 'L'
+              : dirent->isDeleted()    ? 'D'
               :                         'A');
 
-  if (dirent.isRedirect())
+  if (dirent->isRedirect())
   {
-    std::cout << '\t' << dirent.getRedirectIndex();
+    std::cout << '\t' << dirent->getRedirectIndex();
   }
-  else if (dirent.isLinktarget())
+  else if (dirent->isLinktarget())
   {
     // nothing else
   }
-  else if (dirent.isDeleted())
+  else if (dirent->isDeleted())
   {
     // nothing else
   }
   else
   {
-    std::cout << '\t' << dirent.getMimeType()
+    std::cout << '\t' << dirent->getMimeType()
               << '\t' << article.getArticleSize();
 
     if (verbose)
     {
       auto cluster = article.getCluster();
 
-      std::cout << '\t' << dirent.getClusterNumber()
+      std::cout << '\t' << dirent->getClusterNumber()
                 << '\t' << cluster->count()
                 << '\t' << cluster->size()
-                << '\t' << file.getClusterOffset(dirent.getClusterNumber())
-                << '\t' << dirent.getBlobNumber()
+                << '\t' << file.getClusterOffset(dirent->getClusterNumber())
+                << '\t' << dirent->getBlobNumber()
                 << '\t' << static_cast<unsigned>(cluster->getCompression());
     }
   }
 
   if (extra)
   {
-    std::string parameter = dirent.getParameter();
+    std::string parameter = dirent->getParameter();
     std::cout << '\t';
     static char hexdigit[] = "0123456789abcdef";
     for (std::string::const_iterator it = parameter.begin(); it != parameter.end(); ++it)

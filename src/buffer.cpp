@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/buffer.h>
+#include "buffer.h"
 
 #include <sys/stat.h>
 #include <unistd.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Tommi Maekitalo
+ * Copyright (C) 2017 Matthieu Gautier <mgautier@kymeria.fr>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,23 +17,19 @@
  *
  */
 
-#include "ptrstream.h"
 
-namespace zim
-{
-  std::streambuf::int_type ptrstreambuf::overflow(int_type c)
-  {
-    return traits_type::eof();
-  }
+#include "zim/blob.h"
+#include "buffer.h"
 
-  std::streambuf::int_type ptrstreambuf::underflow()
-  {
-    return traits_type::eof();
-  }
+namespace zim {
 
-  int ptrstreambuf::sync()
-  {
-    return 0;
-  }
+Blob::Blob(std::shared_ptr<const Buffer> buffer)
+ : _data(buffer->data()),
+   _size(buffer->size()),
+   _buffer(buffer)
+   {}
 
-}
+
+
+
+} //zim

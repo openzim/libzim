@@ -17,11 +17,11 @@
  *
  */
 
-#include <zim/writer/zimcreator.h>
-#include <zim/fileheader.h>
+#include "zimcreatorimpl.h"
 #include "cluster.h"
 #include <zim/blob.h>
-#include <zim/endian_tools.h>
+#include <zim/writer/zimcreator.h>
+#include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
 
@@ -52,7 +52,7 @@ namespace zim
 {
   namespace writer
   {
-    ZimCreator::ZimCreator()
+    ZimCreatorImpl::ZimCreatorImpl()
       : minChunkSize(1024-64),
         nextMimeIdx(0),
 #if defined(ENABLE_LZMA)
@@ -66,7 +66,7 @@ namespace zim
     {
     }
 
-    ZimCreator::ZimCreator(int& argc, char* argv[])
+    ZimCreatorImpl::ZimCreatorImpl(int& argc, char* argv[])
       : nextMimeIdx(0),
 #if defined(ENABLE_LZMA)
         compression(zimcompLzma),
@@ -93,7 +93,7 @@ namespace zim
 #endif
     }
 
-    void ZimCreator::create(const std::string& fname, ArticleSource& src)
+    void ZimCreatorImpl::create(const std::string& fname, ArticleSource& src)
     {
       isEmpty = true;
 
@@ -124,7 +124,7 @@ namespace zim
       INFO("ready");
     }
 
-    void ZimCreator::createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname)
+    void ZimCreatorImpl::createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname)
     {
       INFO("collect articles");
       std::ofstream out(tmpfname.c_str());
@@ -347,10 +347,10 @@ namespace zim
     {
       class CompareTitle
       {
-          ZimCreator::DirentsType& dirents;
+          ZimCreatorImpl::DirentsType& dirents;
 
         public:
-          explicit CompareTitle(ZimCreator::DirentsType& dirents_)
+          explicit CompareTitle(ZimCreatorImpl::DirentsType& dirents_)
             : dirents(dirents_)
             { }
           bool operator() (size_type titleIdx1, size_type titleIdx2) const
@@ -364,7 +364,7 @@ namespace zim
       };
     }
 
-    void ZimCreator::createTitleIndex(ArticleSource& src)
+    void ZimCreatorImpl::createTitleIndex(ArticleSource& src)
     {
       titleIdx.resize(dirents.size());
       for (DirentsType::size_type n = 0; n < dirents.size(); ++n)
@@ -374,7 +374,7 @@ namespace zim
       std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
     }
 
-    void ZimCreator::fillHeader(ArticleSource& src)
+    void ZimCreatorImpl::fillHeader(ArticleSource& src)
     {
       std::string mainAid = src.getMainPage();
       std::string layoutAid = src.getLayoutPage();
@@ -431,7 +431,7 @@ namespace zim
            );
     }
 
-    void ZimCreator::write(const std::string& fname, const std::string& tmpfname)
+    void ZimCreatorImpl::write(const std::string& fname, const std::string& tmpfname)
     {
       std::ofstream zimfile(fname.c_str());
       Md5stream md5;
@@ -543,7 +543,7 @@ namespace zim
       zimfile.write(reinterpret_cast<const char*>(digest), 16);
     }
 
-    offset_type ZimCreator::mimeListSize() const
+    offset_type ZimCreatorImpl::mimeListSize() const
     {
       offset_type ret = 1;
       for (RMimeTypes::const_iterator it = rmimeTypes.begin(); it != rmimeTypes.end(); ++it)
@@ -551,7 +551,7 @@ namespace zim
       return ret;
     }
 
-    offset_type ZimCreator::indexSize() const
+    offset_type ZimCreatorImpl::indexSize() const
     {
       offset_type s = 0;
 
@@ -561,7 +561,7 @@ namespace zim
       return s;
     }
 
-    uint16_t ZimCreator::getMimeTypeIdx(const std::string& mimeType)
+    uint16_t ZimCreatorImpl::getMimeTypeIdx(const std::string& mimeType)
     {
       MimeTypes::const_iterator it = mimeTypes.find(mimeType);
       if (it == mimeTypes.end())
@@ -576,12 +576,42 @@ namespace zim
       return it->second;
     }
 
-    const std::string& ZimCreator::getMimeType(uint16_t mimeTypeIdx) const
+    const std::string& ZimCreatorImpl::getMimeType(uint16_t mimeTypeIdx) const
     {
       RMimeTypes::const_iterator it = rmimeTypes.find(mimeTypeIdx);
       if (it == rmimeTypes.end())
         throw std::runtime_error("mime type index not found");
       return it->second;
+    }
+
+    ZimCreator::ZimCreator():
+      impl(new ZimCreatorImpl())
+    {};
+
+    ZimCreator::ZimCreator(int& argc, char* argv[]):
+      impl(new ZimCreatorImpl(argc, argv))
+    {};
+
+    ZimCreator::~ZimCreator() = default;
+
+    unsigned ZimCreator::getMinChunkSize() const
+    {
+      return impl->getMinChunkSize();
+    }
+
+    void ZimCreator::setMinChunkSize(int s)
+    {
+      impl->setMinChunkSize(s);
+    }
+
+    void ZimCreator::create(const std::string& fname, ArticleSource& src)
+    {
+      impl->create(fname, src);
+    }
+
+    offset_type ZimCreator::getCurrentSize() const
+    {
+      return impl->getCurrentSize();
     }
 
   }

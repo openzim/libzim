@@ -20,6 +20,7 @@
 #include "xapian/myhtmlparse.h"
 #include <zim/search_iterator.h>
 #include <zim/search.h>
+#include <zim/file.h>
 #include "search_internal.h"
 
 namespace zim {

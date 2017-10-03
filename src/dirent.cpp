@@ -17,10 +17,10 @@
  *
  */
 
-#include <zim/dirent.h>
+#include "dirent.h"
 #include <zim/zim.h>
-#include <zim/buffer.h>
-#include <zim/endian_tools.h>
+#include "buffer.h"
+#include "endian_tools.h"
 #include "log.h"
 #include <algorithm>
 #include <cstring>

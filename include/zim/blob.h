@@ -22,11 +22,12 @@
 
 #include <iostream>
 #include <string>
-#include <zim/cluster.h>
 #include <algorithm>
+#include <memory>
 
 namespace zim
 {
+  class Buffer;
   class Blob
   {
       const char* _data;
@@ -43,11 +44,7 @@ namespace zim
           _size(size)
           { }
 
-      Blob(std::shared_ptr<const Buffer> buffer)
-        : _data(buffer->data()),
-          _size(buffer->size()),
-          _buffer(buffer)
-          {}
+      Blob(std::shared_ptr<const Buffer> buffer);
 
       operator std::string() const { return std::string(_data, _size); }
       const char* data() const  { return _data; }

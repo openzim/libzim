@@ -21,7 +21,7 @@
 #define ZIM_CLUSTER_H
 
 #include <zim/zim.h>
-#include <zim/buffer.h>
+#include "buffer.h"
 #include <iosfwd>
 #include <vector>
 #include <memory>

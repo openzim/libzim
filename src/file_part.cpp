@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/file_part.h>
+#include "file_part.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>

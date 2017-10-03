@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/template.h>
+#include "../src/template.h"
 
 #include "gtest/gtest.h"
 

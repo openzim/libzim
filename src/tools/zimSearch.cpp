@@ -21,6 +21,7 @@
 #include "../log.h"
 #include "../arg.h"
 #include <../../include/zim/search.h>
+#include <../../include/zim/file.h>
 
 void zimSearch(zim::Search& search)
 {
