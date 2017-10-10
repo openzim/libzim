@@ -53,6 +53,7 @@ namespace zim
       size_type getBlobSize(unsigned n) const  { return offsets[n+1] - offsets[n]; }
       offset_type getBlobOffset(size_type n) const { return startOffset + offsets[n]; }
       Blob getBlob(size_type n) const;
+      Blob getBlob(size_type n, size_type offset, size_type size) const;
       void clear();
 
       void init_from_buffer(Buffer& buffer);

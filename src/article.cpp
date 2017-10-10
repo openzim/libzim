@@ -178,13 +178,19 @@ namespace zim
     return file->getCluster(dirent->getClusterNumber());
   }
 
-  Blob Article::getData() const
+  Blob Article::getData(size_type offset) const
+  {
+    auto size = getArticleSize()-offset;
+    return getData(offset, size);
+  }
+
+  Blob Article::getData(size_type offset, size_type size) const
   {
     std::shared_ptr<const Cluster> cluster = getCluster();
     if (!cluster) {
       return Blob();
     }
-    return cluster->getBlob(getDirent()->getBlobNumber());
+    return cluster->getBlob(getDirent()->getBlobNumber(), offset, size);
   }
 
   offset_type Article::getOffset() const
