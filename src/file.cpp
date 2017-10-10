@@ -98,7 +98,7 @@ namespace zim
   {
     log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
     std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
-    return r.first ? Article(impl, r.second) : Article();
+    return r.first ? Article(impl, impl->getIndexByTitle(r.second)) : Article();
   }
 
   std::shared_ptr<const Cluster> File::getCluster(size_type idx) const
@@ -159,27 +159,18 @@ namespace zim
   File::const_iterator File::find(char ns, const std::string& url) const
   {
     std::pair<bool, size_type> r = impl->findx(ns, url);
-    if (!r.first) {
-      return end();
-    }
     return File::const_iterator(this, r.second);
   }
 
   File::const_iterator File::find(const std::string& url) const
   {
     std::pair<bool, size_type> r = impl->findx(url);
-    if (!r.first) {
-      return end();
-    }
     return File::const_iterator(this, r.second);
   }
 
   File::const_iterator File::findByTitle(char ns, const std::string& title) const
   {
     std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
-    if (!r.first) {
-      return end();
-    }
     return File::const_iterator(this, r.second, const_iterator::ArticleIterator);
   }
 
