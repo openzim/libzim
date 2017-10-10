@@ -98,7 +98,7 @@ namespace zim
   {
     log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
     std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
-    return r.first ? Article(impl, r.second) : Article();
+    return r.first ? Article(impl, impl->getIndexByTitle(r.second)) : Article();
   }
 
   std::shared_ptr<const Cluster> File::getCluster(size_type idx) const
