@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <lzma.h>
 #include <zlib.h>
+#include <pthread.h>
 
 
 namespace zim {
@@ -40,10 +41,17 @@ static int read_at(int fd, char* dest, offset_type size, offset_type offset)
 #else
 static int read_at(int fd, char* dest, offset_type size, offset_type offset)
 {
+  // [TODO] We are locking all fd at the same time here.
+  // We should find a way to have a lock per fd.
+  static pthread_mutex_t fd_lock = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_lock(&fd_lock);
   if (_lseek(fd, offset, SEEK_SET) != offset) {
+    pthread_mutex_unlock(&fd_lock);
     return -1;
   }
-  return read(fd, dest, size);
+  int ret = read(fd, dest, size);
+  pthread_mutex_unlock(&fd_lock);
+  return ret;
 }
 #endif
 

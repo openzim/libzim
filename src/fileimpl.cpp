@@ -22,6 +22,7 @@
 #include "dirent.h"
 #include "file_compound.h"
 #include "file_reader.h"
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
@@ -49,8 +50,12 @@ namespace zim
       urlPtrOffsetBuffer(0),
       clusterOffsetBuffer(0),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
+      direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
-      cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
+      clusterCacheLock(PTHREAD_MUTEX_INITIALIZER),
+      cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
+      namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
+      namespaceEndLock(PTHREAD_MUTEX_INITIALIZER)
   {
     log_trace("read file \"" << fname << '"');
 
@@ -225,14 +230,24 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
+    pthread_mutex_lock(&direntCacheLock);
     auto v = direntCache.getx(idx);
     if (v.first)
     {
-      log_debug("dirent " << idx << " found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
+      log_debug("dirent " << idx << " found in cache; hits "
+                << direntCache.getHits() << " misses "
+                << direntCache.getMisses() << " ratio "
+                << direntCache.hitRatio() * 100 << "% fillfactor "
+                << direntCache.fillfactor());
+      pthread_mutex_unlock(&direntCacheLock);
       return v.second;
     }
 
-    log_debug("dirent " << idx << " not found in cache; hits " << direntCache.getHits() << " misses " << direntCache.getMisses() << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor " << direntCache.fillfactor());
+    log_debug("dirent " << idx << " not found in cache; hits "
+              << direntCache.getHits() << " misses " << direntCache.getMisses()
+              << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor "
+              << direntCache.fillfactor());
+    pthread_mutex_unlock(&direntCacheLock);
 
     offset_type indexOffset = getOffset(urlPtrOffsetBuffer.get(), idx);
     // We don't know the size of the dirent because it depends of the size of
@@ -261,7 +276,9 @@ namespace zim
     }
 
     log_debug("dirent read from " << indexOffset);
+    pthread_mutex_lock(&direntCacheLock);
     direntCache.put(idx, dirent);
+    pthread_mutex_unlock(&direntCacheLock);
 
     return dirent;
   }
@@ -288,7 +305,9 @@ namespace zim
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
+    pthread_mutex_lock(&clusterCacheLock);
     auto cluster(clusterCache.get(idx));
+    pthread_mutex_unlock(&clusterCacheLock);
     if (cluster)
     {
       log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
@@ -305,7 +324,9 @@ namespace zim
     cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp));
 
     log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
+    pthread_mutex_lock(&clusterCacheLock);
     clusterCache.put(idx, cluster);
+    pthread_mutex_unlock(&clusterCacheLock);
 
     return cluster;
   }
@@ -329,9 +350,15 @@ namespace zim
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
 
+    pthread_mutex_lock(&namespaceBeginLock);
     NamespaceCache::const_iterator it = namespaceBeginCache.find(ch);
     if (it != namespaceBeginCache.end())
-      return it->second;
+    {
+      size_type ret = it->second;
+      pthread_mutex_unlock(&namespaceBeginLock);
+      return ret;
+    }
+    pthread_mutex_unlock(&namespaceBeginLock);
 
     size_type lower = 0;
     size_type upper = getCountArticles();
@@ -347,7 +374,9 @@ namespace zim
     }
 
     size_type ret = d->getNamespace() <= ch ? upper : lower;
+    pthread_mutex_lock(&namespaceBeginLock);
     namespaceBeginCache[ch] = ret;
+    pthread_mutex_unlock(&namespaceBeginLock);
 
     return ret;
   }
@@ -356,9 +385,15 @@ namespace zim
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
 
+    pthread_mutex_lock(&namespaceEndLock);
     NamespaceCache::const_iterator it = namespaceEndCache.find(ch);
     if (it != namespaceEndCache.end())
-      return it->second;
+    {
+      size_type ret = it->second;
+      pthread_mutex_unlock(&namespaceEndLock);
+      return ret;
+    }
+    pthread_mutex_unlock(&namespaceEndLock);
 
     size_type lower = 0;
     size_type upper = getCountArticles();
@@ -374,7 +409,9 @@ namespace zim
       log_debug("namespace " << d->getNamespace() << " m=" << m << " lower=" << lower << " upper=" << upper);
     }
 
+    pthread_mutex_lock(&namespaceEndLock);
     namespaceEndCache[ch] = upper;
+    pthread_mutex_unlock(&namespaceEndLock);
 
     return upper;
 
@@ -382,19 +419,18 @@ namespace zim
 
   std::string FileImpl::getNamespaces()
   {
-    if (namespaces.empty())
+    std::string namespaces;
+
+    auto d = getDirent(0);
+    namespaces = d->getNamespace();
+
+    size_type idx;
+    while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
     {
-      auto d = getDirent(0);
-      namespaces = d->getNamespace();
-
-      size_type idx;
-      while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
-      {
-        d = getDirent(idx);
-        namespaces += d->getNamespace();
-      }
-
+      d = getDirent(idx);
+      namespaces += d->getNamespace();
     }
+
     return namespaces;
   }
 

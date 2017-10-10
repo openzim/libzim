@@ -21,6 +21,8 @@ xapian_dep = dependency('xapian-core',
                         static:(get_option('default_library')=='static'))
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
+thread_dep = dependency('threads')
+
 pkg_requires = []
 if zlib_dep.found()
     pkg_requires += ['zlib']
