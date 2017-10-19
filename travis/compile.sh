@@ -23,10 +23,10 @@ case ${PLATFORM} in
          MESON_OPTION="--default-library=shared --cross-file ${BUILD_DIR}/meson_cross_file.txt"
          ;;
     "android_arm")
-         MESON_OPTION="-Dandroid=true --default-library=shared --cross-file ${BUILD_DIR}/meson_cross_file.txt"
+         MESON_OPTION="-Dandroid=true --default-library=static --cross-file ${BUILD_DIR}/meson_cross_file.txt"
          ;;
     "android_arm64")
-         MESON_OPTION="-Dandroid=true --default-library=shared --cross-file ${BUILD_DIR}/meson_cross_file.txt"
+         MESON_OPTION="-Dandroid=true --default-library=static --cross-file ${BUILD_DIR}/meson_cross_file.txt"
          ;;
 
 esac
