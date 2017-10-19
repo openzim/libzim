@@ -7,15 +7,3 @@ executable('zimdump', 'zimDump.cpp',
            dependencies : deps,
            include_directories: include_dirs,
            install: true)
-
-executable('zimsearch', 'zimSearch.cpp',
-           link_with: libzim,
-           dependencies : deps,
-           include_directories: include_dirs,
-           install: true)
-
-executable('zimbench', 'zimBench.cpp',
-           link_with: libzim,
-           dependencies : deps + [rt_dep],
-           include_directories: include_dirs,
-           install: true)
