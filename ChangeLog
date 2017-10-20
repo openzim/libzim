@@ -1,3 +1,29 @@
+libzim 3.0.0
+============
+
+This is a major change of the libzim.
+Expect a lot new improvement and API changes.
+
+ * Add a suggestion mode to the search
+ * Fix licensing issues
+ * Fix wrong stemming of the query when searching
+ * Deactivate searching (and so crash) in the embedded database if the zim is
+   splitted
+ * Rewrite the low level memory management of libzim when reading a zim file:
+    * We use a buffer base entity to handle memory and reading file instead of
+      reading file using stream.
+    * MMap the memory when posible to avoid memory copy.
+    * Use const when posible (API break)
+ * Move to googletest instead of cxxtools for unit-tests.
+ * Fix endiannes bug on arm.
+ * Do not install private headers. Those headers declare private structure and
+   should not be visible (API break)
+ * Compile libzim with `-Werror` and `-Wall` options.
+ * Make libzim thread safe for reading article.
+   The search part is not thread safe, and all search operation must be
+   protected by a lock.
+ * Add method to get only a part of a article.
+ * Move some tools to zim-tools repository.
 
 
 libzim 2.0.0
