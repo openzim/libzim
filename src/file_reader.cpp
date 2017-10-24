@@ -158,15 +158,25 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   do {
     errcode = lzma_code(&stream, LZMA_FINISH);
     if (errcode == LZMA_BUF_ERROR) {
-      //Not enought output size
-      _dest_size *= 2;
-      char * new_ret_data = new char[_dest_size];
-      memcpy(new_ret_data, ret_data, stream.total_out);
-      stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-      stream.avail_out = _dest_size - stream.total_out;
-      delete [] ret_data;
-      ret_data = new_ret_data;
-      continue;
+      if (stream.avail_in == 0 && stream.avail_out != 0)  {
+        // End of input stream.
+        // lzma haven't recognize the end of the input stream but there is no
+        // more input.
+        // As we know that we should have all the input stream, it is probably
+        // because the stream has not been close correctly at zim creation.
+        // It means that the lzma stream is not full and this is an error in the
+        // zim file.
+      } else {
+        //Not enought output size
+        _dest_size *= 2;
+        char * new_ret_data = new char[_dest_size];
+        memcpy(new_ret_data, ret_data, stream.total_out);
+        stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+        stream.avail_out = _dest_size - stream.total_out;
+        delete [] ret_data;
+        ret_data = new_ret_data;
+        continue;
+      }
     }
     if (errcode != LZMA_STREAM_END && errcode != LZMA_OK) {
       throw ZimFileFormatError("Invalid lzma stream for cluster.");
@@ -197,15 +207,25 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
 
     errcode = ::inflate(&stream, Z_FINISH);
     if (errcode == Z_BUF_ERROR ) {
-      //Not enought output size
-      _dest_size *= 2;
-      char * new_ret_data = new char[_dest_size];
-      memcpy(new_ret_data, ret_data, stream.total_out);
-      stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-      stream.avail_out = _dest_size - stream.total_out;
-      delete [] ret_data;
-      ret_data = new_ret_data;
-      continue;
+      if (stream.avail_in == 0 && stream.avail_out != 0)  {
+        // End of input stream.
+        // zlib haven't recognize the end of the input stream but there is no
+        // more input.
+        // As we know that we should have all the input stream, it is probably
+        // because the stream has not been close correctly at zim creation.
+        // It means that the zlib stream is not full and this is an error in the
+        // zim file.
+      } else {
+        //Not enought output size
+        _dest_size *= 2;
+        char * new_ret_data = new char[_dest_size];
+        memcpy(new_ret_data, ret_data, stream.total_out);
+        stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+        stream.avail_out = _dest_size - stream.total_out;
+        delete [] ret_data;
+        ret_data = new_ret_data;
+        continue;
+     }
     }
     if (errcode != Z_STREAM_END && errcode != Z_OK) {
       throw ZimFileFormatError("Invalid zlib stream for cluster.");
