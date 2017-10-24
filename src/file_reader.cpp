@@ -28,9 +28,11 @@
 #include <cassert>
 #include <fcntl.h>
 #include <lzma.h>
-#include <zlib.h>
 #include <pthread.h>
 
+#if defined(ENABLE_ZLIB)
+#include <zlib.h>
+#endif
 
 namespace zim {
 
@@ -175,6 +177,7 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   return ret_data;
 }
 
+#if defined(ENABLE_ZLIB)
 char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
   offset_type _dest_size = 1024*1024;
   char* ret_data = new char[_dest_size];
@@ -212,6 +215,7 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
   ::inflateEnd(&stream);
   return ret_data;
 }
+#endif
 
 std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offset_type size, CompressionType comp) const
 {
@@ -223,7 +227,11 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offs
       uncompressed_data = lzma_uncompress(raw_buffer->data(), size, &uncompressed_size);
       break;
     case zimcompZip:
+#if defined(ENABLE_ZLIB)
       uncompressed_data = zip_uncompress(raw_buffer->data(), size, &uncompressed_size);
+#else
+      throw std::runtime_error("zlib not enabled in this library");
+#endif
       break;
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma or zimComZip.");
