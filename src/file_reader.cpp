@@ -18,6 +18,7 @@
  */
 
 #include <zim/zim.h>
+#include <zim/error.h>
 #include "file_reader.h"
 #include "file_compound.h"
 #include "buffer.h"
@@ -143,11 +144,9 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   char* ret_data = new char[_dest_size];
   lzma_stream stream = LZMA_STREAM_INIT;
   unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
-  // TODO check error
   auto errcode = lzma_stream_decoder(&stream, memsize, 0);
   if (errcode != LZMA_OK) {
-    //throw UnlzmaError(errcode);
-    throw(6);
+    throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
   }
 
   stream.next_in = (const unsigned char*)raw_data;
@@ -168,7 +167,7 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
       continue;
     }
     if (errcode != LZMA_STREAM_END && errcode != LZMA_OK) {
-      throw(5);
+      throw ZimFileFormatError("Invalid lzma stream for cluster.");
     }
   } while (errcode != LZMA_STREAM_END);
   *dest_size = stream.total_out;
@@ -189,7 +188,7 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
   stream.avail_out = _dest_size;
   auto errcode = ::inflateInit(&stream);
   if (errcode != Z_OK) {
-    throw(6);
+    throw std::runtime_error("Impossible to allocated needed memory to uncompress zlib stream");
   }
   do {
 
@@ -206,7 +205,7 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
       continue;
     }
     if (errcode != Z_STREAM_END && errcode != Z_OK) {
-      throw(5);
+      throw ZimFileFormatError("Invalid zlib stream for cluster.");
     }
   } while ( errcode != Z_STREAM_END );
   *dest_size = stream.total_out;
@@ -227,7 +226,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offs
       uncompressed_data = zip_uncompress(raw_buffer->data(), size, &uncompressed_size);
       break;
     default:
-      throw(5);
+      throw std::logic_error("compressions should not be something else than zimcompLzma or zimComZip.");
   }
   return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
@@ -273,9 +272,10 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_type offset, offs
         return std::unique_ptr<Reader>(new BufferReader(buffer));
       }
       break;
+    case zimcompBzip2:
+      throw std::runtime_error("bzip2 not enabled in this library");
     default:
-      throw(5);
-
+      throw ZimFileFormatError("Invalid compression flag");
   }
 }
 
