@@ -13,8 +13,8 @@ add_global_arguments(['-Werror', '-Wall'], language:'cpp')
 
 zlib_dep = dependency('zlib', required:false)
 conf.set('ENABLE_ZLIB', zlib_dep.found())
-lzma_dep = dependency('liblzma', required:false)
-conf.set('ENABLE_LZMA', lzma_dep.found())
+
+lzma_dep = dependency('liblzma')
 
 xapian_dep = dependency('xapian-core',
                         required:false,
@@ -23,12 +23,9 @@ conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
 thread_dep = dependency('threads')
 
-pkg_requires = []
+pkg_requires = ['liblzma']
 if zlib_dep.found()
     pkg_requires += ['zlib']
-endif
-if lzma_dep.found()
-    pkg_requires += ['liblzma']
 endif
 if xapian_dep.found()
     pkg_requires += ['xapian-core']

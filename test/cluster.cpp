@@ -158,7 +158,6 @@ TEST(ClusterTest, read_write_clusterZ)
 
 #endif
 
-#if defined(ENABLE_LZMA)
 TEST(ClusterTest, read_write_clusterLzma)
 {
   std::stringstream stream;
@@ -203,8 +202,6 @@ TEST(ClusterTest, read_write_clusterLzma)
                          cluster2.getBlobPtr(2) + cluster2.getBlobSize(2),
                          blob2.data()));
 }
-
-#endif
 
 }  // namespace
 
