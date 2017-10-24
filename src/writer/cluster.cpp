@@ -27,9 +27,7 @@
 #include "deflatestream.h"
 #endif
 
-#if defined(ENABLE_LZMA)
 #include "lzmastream.h"
-#endif
 
 namespace zim {
 namespace writer {
@@ -113,7 +111,6 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
 
     case zim::zimcompLzma:
       {
-#if defined(ENABLE_LZMA)
         uint32_t lzmaPreset = 3 | LZMA_PRESET_EXTREME;
         /**
          * read lzma preset from environment
@@ -139,9 +136,6 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
         os.exceptions(std::ios::failbit | std::ios::badbit);
         cluster.write(os);
         os.end();
-#else
-        throw std::runtime_error("lzma not enabled in this library");
-#endif
         break;
       }
 

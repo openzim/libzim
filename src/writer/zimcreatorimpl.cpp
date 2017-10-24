@@ -55,26 +55,14 @@ namespace zim
     ZimCreatorImpl::ZimCreatorImpl()
       : minChunkSize(1024-64),
         nextMimeIdx(0),
-#if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif defined(ENABLE_ZLIB)
-        compression(zimcompZip),
-#else
-        compression(zimcompNone),
-#endif
         currentSize(0)
     {
     }
 
     ZimCreatorImpl::ZimCreatorImpl(int& argc, char* argv[])
       : nextMimeIdx(0),
-#if defined(ENABLE_LZMA)
         compression(zimcompLzma),
-#elif defined( ENABLE_ZLIB)
-        compression(zimcompZip),
-#else
-        compression(zimcompNone),
-#endif
         currentSize(0)
     {
       Arg<unsigned> minChunkSizeArg(argc, argv, "--min-chunk-size");
@@ -86,10 +74,6 @@ namespace zim
 #if defined(ENABLE_ZLIB)
       if (Arg<bool>(argc, argv, "--zlib"))
         compression = zimcompZip;
-#endif
-#if defined(ENABLE_LZMA)
-      if (Arg<bool>(argc, argv, "--lzma"))
-        compression = zimcompLzma;
 #endif
     }
 

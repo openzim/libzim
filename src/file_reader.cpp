@@ -18,6 +18,7 @@
  */
 
 #include <zim/zim.h>
+#include <zim/error.h>
 #include "file_reader.h"
 #include "file_compound.h"
 #include "buffer.h"
@@ -27,9 +28,11 @@
 #include <cassert>
 #include <fcntl.h>
 #include <lzma.h>
-#include <zlib.h>
 #include <pthread.h>
 
+#if defined(ENABLE_ZLIB)
+#include <zlib.h>
+#endif
 
 namespace zim {
 
@@ -143,11 +146,9 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   char* ret_data = new char[_dest_size];
   lzma_stream stream = LZMA_STREAM_INIT;
   unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
-  // TODO check error
   auto errcode = lzma_stream_decoder(&stream, memsize, 0);
   if (errcode != LZMA_OK) {
-    //throw UnlzmaError(errcode);
-    throw(6);
+    throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
   }
 
   stream.next_in = (const unsigned char*)raw_data;
@@ -157,18 +158,28 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   do {
     errcode = lzma_code(&stream, LZMA_FINISH);
     if (errcode == LZMA_BUF_ERROR) {
-      //Not enought output size
-      _dest_size *= 2;
-      char * new_ret_data = new char[_dest_size];
-      memcpy(new_ret_data, ret_data, stream.total_out);
-      stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-      stream.avail_out = _dest_size - stream.total_out;
-      delete [] ret_data;
-      ret_data = new_ret_data;
-      continue;
+      if (stream.avail_in == 0 && stream.avail_out != 0)  {
+        // End of input stream.
+        // lzma haven't recognize the end of the input stream but there is no
+        // more input.
+        // As we know that we should have all the input stream, it is probably
+        // because the stream has not been close correctly at zim creation.
+        // It means that the lzma stream is not full and this is an error in the
+        // zim file.
+      } else {
+        //Not enought output size
+        _dest_size *= 2;
+        char * new_ret_data = new char[_dest_size];
+        memcpy(new_ret_data, ret_data, stream.total_out);
+        stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+        stream.avail_out = _dest_size - stream.total_out;
+        delete [] ret_data;
+        ret_data = new_ret_data;
+        continue;
+      }
     }
     if (errcode != LZMA_STREAM_END && errcode != LZMA_OK) {
-      throw(5);
+      throw ZimFileFormatError("Invalid lzma stream for cluster.");
     }
   } while (errcode != LZMA_STREAM_END);
   *dest_size = stream.total_out;
@@ -176,6 +187,7 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   return ret_data;
 }
 
+#if defined(ENABLE_ZLIB)
 char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
   offset_type _dest_size = 1024*1024;
   char* ret_data = new char[_dest_size];
@@ -189,30 +201,41 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
   stream.avail_out = _dest_size;
   auto errcode = ::inflateInit(&stream);
   if (errcode != Z_OK) {
-    throw(6);
+    throw std::runtime_error("Impossible to allocated needed memory to uncompress zlib stream");
   }
   do {
 
     errcode = ::inflate(&stream, Z_FINISH);
     if (errcode == Z_BUF_ERROR ) {
-      //Not enought output size
-      _dest_size *= 2;
-      char * new_ret_data = new char[_dest_size];
-      memcpy(new_ret_data, ret_data, stream.total_out);
-      stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-      stream.avail_out = _dest_size - stream.total_out;
-      delete [] ret_data;
-      ret_data = new_ret_data;
-      continue;
+      if (stream.avail_in == 0 && stream.avail_out != 0)  {
+        // End of input stream.
+        // zlib haven't recognize the end of the input stream but there is no
+        // more input.
+        // As we know that we should have all the input stream, it is probably
+        // because the stream has not been close correctly at zim creation.
+        // It means that the zlib stream is not full and this is an error in the
+        // zim file.
+      } else {
+        //Not enought output size
+        _dest_size *= 2;
+        char * new_ret_data = new char[_dest_size];
+        memcpy(new_ret_data, ret_data, stream.total_out);
+        stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+        stream.avail_out = _dest_size - stream.total_out;
+        delete [] ret_data;
+        ret_data = new_ret_data;
+        continue;
+     }
     }
     if (errcode != Z_STREAM_END && errcode != Z_OK) {
-      throw(5);
+      throw ZimFileFormatError("Invalid zlib stream for cluster.");
     }
   } while ( errcode != Z_STREAM_END );
   *dest_size = stream.total_out;
   ::inflateEnd(&stream);
   return ret_data;
 }
+#endif
 
 std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offset_type size, CompressionType comp) const
 {
@@ -224,10 +247,14 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offs
       uncompressed_data = lzma_uncompress(raw_buffer->data(), size, &uncompressed_size);
       break;
     case zimcompZip:
+#if defined(ENABLE_ZLIB)
       uncompressed_data = zip_uncompress(raw_buffer->data(), size, &uncompressed_size);
+#else
+      throw std::runtime_error("zlib not enabled in this library");
+#endif
       break;
     default:
-      throw(5);
+      throw std::logic_error("compressions should not be something else than zimcompLzma or zimComZip.");
   }
   return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
@@ -273,9 +300,10 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_type offset, offs
         return std::unique_ptr<Reader>(new BufferReader(buffer));
       }
       break;
+    case zimcompBzip2:
+      throw std::runtime_error("bzip2 not enabled in this library");
     default:
-      throw(5);
-
+      throw ZimFileFormatError("Invalid compression flag");
   }
 }
 

@@ -26,6 +26,7 @@ common_sources = [
     'uuid.cpp',
     'zintstream.cpp',
     'writer/zimcreatorimpl.cpp',
+    'writer/lzmastream.cpp',
     'writer/cluster.cpp',
     'writer/tee.cpp'
 ]
@@ -34,26 +35,17 @@ zlib_sources = [
     'writer/deflatestream.cpp'
 ]
 
-lzma_sources = [
-    'writer/lzmastream.cpp'
-]
-
 xapian_sources = [
     'xapian/htmlparse.cc',
     'xapian/myhtmlparse.cc'
 ]
 
 sources = common_sources
-deps = [thread_dep]
+deps = [thread_dep, lzma_dep]
 
 if zlib_dep.found()
     sources += zlib_sources
     deps += [zlib_dep]
-endif
-
-if lzma_dep.found()
-    sources += lzma_sources
-    deps += [lzma_dep]
 endif
 
 if xapian_dep.found()
