@@ -24,7 +24,6 @@
 #include <zim/file.h>
 #include <zim/fileiterator.h>
 #include "../zintstream.h"
-#include "../arg.h"
 #include "../log.h"
 #include "../dirent.h"
 #include "../cluster.h"
@@ -34,6 +33,7 @@
 #include <sys/types.h>
 
 log_define("zim.dumper")
+#include "arg.h"
 
 class ZimDumper
 {

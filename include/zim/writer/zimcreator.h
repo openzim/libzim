@@ -36,7 +36,6 @@ namespace zim
 
       public:
         ZimCreator();
-        ZimCreator(int& argc, char* argv[]);
         ~ZimCreator();
 
         unsigned getMinChunkSize() const;

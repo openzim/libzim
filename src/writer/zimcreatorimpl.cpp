@@ -35,7 +35,6 @@
 #include <limits>
 #include <stdexcept>
 #include "config.h"
-#include "arg.h"
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
@@ -58,23 +57,6 @@ namespace zim
         compression(zimcompLzma),
         currentSize(0)
     {
-    }
-
-    ZimCreatorImpl::ZimCreatorImpl(int& argc, char* argv[])
-      : nextMimeIdx(0),
-        compression(zimcompLzma),
-        currentSize(0)
-    {
-      Arg<unsigned> minChunkSizeArg(argc, argv, "--min-chunk-size");
-      if (minChunkSizeArg.isSet())
-        minChunkSize = minChunkSizeArg;
-      else
-        minChunkSize = Arg<unsigned>(argc, argv, 's', 1024-64);
-
-#if defined(ENABLE_ZLIB)
-      if (Arg<bool>(argc, argv, "--zlib"))
-        compression = zimcompZip;
-#endif
     }
 
     void ZimCreatorImpl::create(const std::string& fname, ArticleSource& src)
@@ -570,10 +552,6 @@ namespace zim
 
     ZimCreator::ZimCreator():
       impl(new ZimCreatorImpl())
-    {};
-
-    ZimCreator::ZimCreator(int& argc, char* argv[]):
-      impl(new ZimCreatorImpl(argc, argv))
     {};
 
     ZimCreator::~ZimCreator() = default;
