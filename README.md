@@ -35,8 +35,11 @@ libraries need to be available:
 (package lzma-dev on Ubuntu)
 * ICU ................................... http://site.icu-project.org/
 (package libicu-dev on Ubuntu)
-* Xapian ......................................... https://xapian.org/
+* Xapian (optional) .............................. https://xapian.org/
 (package libxapian-dev on Ubuntu)
+* Google test (optional) ........ https://github.com/google/googletest
+(No valid package on Ubuntu, if gtest is not present, libzim will use
+embedded one)
 
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
