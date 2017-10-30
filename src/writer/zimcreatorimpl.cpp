@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <limits>
 #include <stdexcept>
+#include <sstream>
 #include "config.h"
 #include "md5stream.h"
 #include "tee.h"
