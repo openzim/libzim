@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
 {
   try
   {
-    zim::writer::ZimCreator c(argc, argv);
+    zim::writer::ZimCreator c;
     TestArticleSource src;
     c.create("foo.zim", src);
   }

@@ -23,17 +23,11 @@
 #include <set>
 #include <zim/file.h>
 #include <zim/fileiterator.h>
-#include "../zintstream.h"
-#include "../arg.h"
-#include "../log.h"
-#include "../dirent.h"
-#include "../cluster.h"
-#include "../fileimpl.h"
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-log_define("zim.dumper")
+#include "arg.h"
 
 class ZimDumper
 {
@@ -56,7 +50,6 @@ class ZimDumper
     void findArticle(char ns, const char* expr, bool title);
     void findArticleByUrl(const std::string& url);
     void dumpArticle();
-    void dumpIndex();
     void printPage();
     void listArticles(bool info, bool listTable, bool extra);
     void listArticle(const zim::Article& article, bool extra);
@@ -116,18 +109,15 @@ void ZimDumper::printNsInfo(char ch)
 
 void ZimDumper::locateArticle(zim::size_type idx)
 {
-  log_debug("locateArticle(" << idx << ')');
   pos = zim::File::const_iterator(&file, idx);
 }
 
 void ZimDumper::findArticle(char ns, const char* expr, bool title)
 {
-  log_debug("findArticle(" << ns << ", " << expr << ')');
   if (title)
     pos = file.findByTitle(ns, expr);
   else
     pos = file.find(ns, expr);
-  log_debug("findArticle(" << ns << ", " << expr << ") => idx=" << pos.getIndex());
 }
 
 void ZimDumper::findArticleByUrl(const std::string& url)
@@ -137,7 +127,6 @@ void ZimDumper::findArticleByUrl(const std::string& url)
 
 void ZimDumper::printPage()
 {
-  log_trace("print page");
   if(pos!=file.end())
   {
     std::cout << pos->getPage() << std::flush;
@@ -146,92 +135,14 @@ void ZimDumper::printPage()
 
 void ZimDumper::dumpArticle()
 {
-  log_trace("dump article");
   if(pos!=file.end())
   {
     std::cout << pos->getData() << std::flush;
   }
 }
 
-void ZimDumper::dumpIndex()
-{
-  log_trace("dump index");
-
-  if (pos->getNamespace() == 'X')
-  {
-    // prepare parameter stream
-    std::istringstream paramstream(pos->getParameter());
-    zim::ZIntStream parameter(paramstream);
-
-    // read flags
-    unsigned flags, off=0;
-    parameter.get(flags);
-    if (!parameter)
-      throw std::runtime_error("invalid index parameter data");
-
-    // process categories
-    for (unsigned c = 0, flag = 1; c < 4; ++c, flag <<= 1)
-    {
-      if (!(flags & flag))
-        continue;  // category empty
-
-      unsigned len, idx, wpos;
-      parameter.get(len).get(idx).get(wpos);
-      if (!parameter)
-        throw std::runtime_error("invalid index parameter data");
-
-      if (verbose)
-        std::cout << 'c' << c << "\tidx=" << idx << "\tpos=" << wpos << std::endl;
-      else
-        std::cout << 'c' << c << '\t' << idx << ';' << wpos;
-
-      // prepare data stream
-      zim::Blob data = pos->getData();
-
-      if (off + len > data.size())
-        throw std::runtime_error("invalid index data");
-
-      std::string data_s(data.data() + off, len);
-      std::istringstream stream(data_s);
-      zim::ZIntStream in(stream);
-
-      off += len;
-
-      unsigned lastidx = 0, lastpos = 0;
-      while (in.get(idx).get(wpos))
-      {
-        unsigned oidx = idx;
-        unsigned owpos = wpos;
-        if (idx == 0)
-        {
-          idx = lastidx;
-          lastpos = (wpos += lastpos);
-        }
-        else
-        {
-          lastidx = (idx += lastidx);
-          lastpos = wpos;
-        }
-
-        if (verbose)
-          std::cout << 'c' << c << "\tidx=" << oidx << " => " << idx << "\tpos=" << owpos << " => " << wpos << std::endl;
-        else
-          std::cout << '\t' << idx << ';' << wpos;
-      }
-
-      if (!verbose)
-        std::cout << std::endl;
-    }
-
-  }
-  else
-    std::cout << "no index article\n";
-}
-
 void ZimDumper::listArticles(bool info, bool listTable, bool extra)
 {
-  log_trace("listArticles(" << info << ", " << extra << ") verbose=" << verbose);
-
   for (zim::File::const_iterator it = pos; it != file.end(); ++it)
   {
     if (listTable)
@@ -245,28 +156,26 @@ void ZimDumper::listArticles(bool info, bool listTable, bool extra)
 
 void ZimDumper::listArticle(const zim::Article& article, bool extra)
 {
-  auto dirent = file.impl->getDirent(article.getIndex());
-
   std::cout <<
-      "url: "             << dirent->getUrl() << "\n"
-    "\ttitle:           " << dirent->getTitle() << "\n"
+      "url: "             << article.getUrl() << "\n"
+    "\ttitle:           " << article.getTitle() << "\n"
     "\tidx:             " << article.getIndex() << "\n"
-    "\tnamespace:       " << dirent->getNamespace() << "\n"
-    "\ttype:            " << (dirent->isRedirect()   ? "redirect"
-                            : dirent->isLinktarget() ? "linktarget"
-                            : dirent->isDeleted()    ? "deleted"
+    "\tnamespace:       " << article.getNamespace() << "\n"
+    "\ttype:            " << (article.isRedirect()   ? "redirect"
+                            : article.isLinktarget() ? "linktarget"
+                            : article.isDeleted()    ? "deleted"
                             :                         "article") << "\n";
 
-  if (dirent->isRedirect())
+  if (article.isRedirect())
   {
     std::cout <<
-      "\tredirect index:  " << dirent->getRedirectIndex() << "\n";
+      "\tredirect index:  " << article.getRedirectIndex() << "\n";
   }
-  else if (dirent->isLinktarget())
+  else if (article.isLinktarget())
   {
     // nothing else
   }
-  else if (dirent->isDeleted())
+  else if (article.isDeleted())
   {
     // nothing else
   }
@@ -275,34 +184,11 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
     std::cout <<
       "\tmime-type:       " << article.getMimeType() << "\n"
       "\tarticle size:    " << article.getArticleSize() << "\n";
-
-    if (verbose)
-    {
-      auto cluster = article.getCluster();
-
-      std::cout <<
-      "\tcluster number:  " << dirent->getClusterNumber() << "\n"
-      "\tcluster count:   " << cluster->count() << "\n"
-      "\tcluster size:    " << cluster->size() << "\n"
-      "\tcluster offset:  " << file.getClusterOffset(dirent->getClusterNumber()) << "\n"
-      "\tblob number:     " << dirent->getBlobNumber() << "\n"
-      "\tcompression:     ";
-      switch (cluster->getCompression())
-      {
-        case zim::zimcompDefault: std::cout << "default"; break;
-        case zim::zimcompNone:    std::cout << "none"; break;
-        case zim::zimcompZip:     std::cout << "zip"; break;
-        case zim::zimcompBzip2:   std::cout << "bzip2 (not supported anymore)"; break;
-        case zim::zimcompLzma:    std::cout << "lzma"; break;
-        default:                  std::cout << "unknown (" << static_cast<unsigned>(cluster->getCompression()) << ')'; break;
-      }
-      std::cout << "\n";
-    }
   }
 
   if (extra)
   {
-    std::string parameter = dirent->getParameter();
+    std::string parameter = article.getParameter();
     std::cout << "\textra:           ";
     static char hexdigit[] = "0123456789abcdef";
     for (std::string::const_iterator it = parameter.begin(); it != parameter.end(); ++it)
@@ -310,68 +196,42 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
       unsigned val = static_cast<unsigned>(static_cast<unsigned char>(*it));
       std::cout << hexdigit[val >> 4] << hexdigit[val & 0xf] << ' ';
     }
-    std::cout << ':';
-
-    if (parameter.size() > 1)
-    {
-      std::istringstream s(parameter);
-
-      zim::ZIntStream in(s);
-      unsigned val;
-      while (in.get(val))
-        std::cout << '\t' << val;
-    }
-
     std::cout << std::endl;
   }
 }
 
 void ZimDumper::listArticleT(const zim::Article& article, bool extra)
 {
-  auto dirent = file.impl->getDirent(article.getIndex());
-
-  std::cout << dirent->getNamespace()
-    << '\t' << dirent->getUrl()
-    << '\t' << dirent->getTitle()
+  std::cout << article.getNamespace()
+    << '\t' << article.getUrl()
+    << '\t' << article.getTitle()
     << '\t' << article.getIndex()
-    << '\t' << (dirent->isRedirect()   ? 'R'
-              : dirent->isLinktarget() ? 'L'
-              : dirent->isDeleted()    ? 'D'
+    << '\t' << (article.isRedirect()   ? 'R'
+              : article.isLinktarget() ? 'L'
+              : article.isDeleted()    ? 'D'
               :                         'A');
 
-  if (dirent->isRedirect())
+  if (article.isRedirect())
   {
-    std::cout << '\t' << dirent->getRedirectIndex();
+    std::cout << '\t' << article.getRedirectIndex();
   }
-  else if (dirent->isLinktarget())
+  else if (article.isLinktarget())
   {
     // nothing else
   }
-  else if (dirent->isDeleted())
+  else if (article.isDeleted())
   {
     // nothing else
   }
   else
   {
-    std::cout << '\t' << dirent->getMimeType()
+    std::cout << '\t' << article.getMimeType()
               << '\t' << article.getArticleSize();
-
-    if (verbose)
-    {
-      auto cluster = article.getCluster();
-
-      std::cout << '\t' << dirent->getClusterNumber()
-                << '\t' << cluster->count()
-                << '\t' << cluster->size()
-                << '\t' << file.getClusterOffset(dirent->getClusterNumber())
-                << '\t' << dirent->getBlobNumber()
-                << '\t' << static_cast<unsigned>(cluster->getCompression());
-    }
   }
 
   if (extra)
   {
-    std::string parameter = dirent->getParameter();
+    std::string parameter = article.getParameter();
     std::cout << '\t';
     static char hexdigit[] = "0123456789abcdef";
     for (std::string::const_iterator it = parameter.begin(); it != parameter.end(); ++it)
@@ -379,19 +239,7 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
       unsigned val = static_cast<unsigned>(static_cast<unsigned char>(*it));
       std::cout << hexdigit[val >> 4] << hexdigit[val & 0xf] << '\t';
     }
-
-    if (parameter.size() > 1)
-    {
-      std::istringstream s(parameter);
-
-      zim::ZIntStream in(s);
-      unsigned val;
-      while (in.get(val))
-        std::cout << '\t' << val;
-    }
-
   }
-
   std::cout << std::endl;
 }
 
@@ -445,8 +293,6 @@ int main(int argc, char* argv[])
 {
   try
   {
-    log_init();
-
     zim::Arg<bool> fileinfo(argc, argv, 'F');
     zim::Arg<char> nsinfo(argc, argv, 'N');
     zim::Arg<bool> info(argc, argv, 'i');
@@ -461,7 +307,6 @@ int main(int argc, char* argv[])
     zim::Arg<char> ns(argc, argv, 'n', 'A');  // namespace
     zim::Arg<const char*> dumpAll(argc, argv, 'D');
     zim::Arg<bool> verbose(argc, argv, 'v');
-    zim::Arg<bool> zint(argc, argv, 'Z');
     zim::Arg<bool> titleSort(argc, argv, 't');
     zim::Arg<bool> verifyChecksum(argc, argv, 'C');
 
@@ -534,8 +379,6 @@ int main(int argc, char* argv[])
       app.listArticles(info, tableList, extra);
     else if (info)
       app.listArticle(extra);
-    else if (zint)
-      app.dumpIndex();
 
     if (verifyChecksum)
       app.verifyChecksum();
