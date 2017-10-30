@@ -54,7 +54,6 @@ class ZimDumper
     void findArticle(char ns, const char* expr, bool title);
     void findArticleByUrl(const std::string& url);
     void dumpArticle();
-    void dumpIndex();
     void printPage();
     void listArticles(bool info, bool listTable, bool extra);
     void listArticle(const zim::Article& article, bool extra);
@@ -144,79 +143,6 @@ void ZimDumper::dumpArticle()
   {
     std::cout << pos->getData() << std::flush;
   }
-}
-
-void ZimDumper::dumpIndex()
-{
-  if (pos->getNamespace() == 'X')
-  {
-    // prepare parameter stream
-    std::istringstream paramstream(pos->getParameter());
-    zim::ZIntStream parameter(paramstream);
-
-    // read flags
-    unsigned flags, off=0;
-    parameter.get(flags);
-    if (!parameter)
-      throw std::runtime_error("invalid index parameter data");
-
-    // process categories
-    for (unsigned c = 0, flag = 1; c < 4; ++c, flag <<= 1)
-    {
-      if (!(flags & flag))
-        continue;  // category empty
-
-      unsigned len, idx, wpos;
-      parameter.get(len).get(idx).get(wpos);
-      if (!parameter)
-        throw std::runtime_error("invalid index parameter data");
-
-      if (verbose)
-        std::cout << 'c' << c << "\tidx=" << idx << "\tpos=" << wpos << std::endl;
-      else
-        std::cout << 'c' << c << '\t' << idx << ';' << wpos;
-
-      // prepare data stream
-      zim::Blob data = pos->getData();
-
-      if (off + len > data.size())
-        throw std::runtime_error("invalid index data");
-
-      std::string data_s(data.data() + off, len);
-      std::istringstream stream(data_s);
-      zim::ZIntStream in(stream);
-
-      off += len;
-
-      unsigned lastidx = 0, lastpos = 0;
-      while (in.get(idx).get(wpos))
-      {
-        unsigned oidx = idx;
-        unsigned owpos = wpos;
-        if (idx == 0)
-        {
-          idx = lastidx;
-          lastpos = (wpos += lastpos);
-        }
-        else
-        {
-          lastidx = (idx += lastidx);
-          lastpos = wpos;
-        }
-
-        if (verbose)
-          std::cout << 'c' << c << "\tidx=" << oidx << " => " << idx << "\tpos=" << owpos << " => " << wpos << std::endl;
-        else
-          std::cout << '\t' << idx << ';' << wpos;
-      }
-
-      if (!verbose)
-        std::cout << std::endl;
-    }
-
-  }
-  else
-    std::cout << "no index article\n";
 }
 
 void ZimDumper::listArticles(bool info, bool listTable, bool extra)
@@ -448,7 +374,6 @@ int main(int argc, char* argv[])
     zim::Arg<char> ns(argc, argv, 'n', 'A');  // namespace
     zim::Arg<const char*> dumpAll(argc, argv, 'D');
     zim::Arg<bool> verbose(argc, argv, 'v');
-    zim::Arg<bool> zint(argc, argv, 'Z');
     zim::Arg<bool> titleSort(argc, argv, 't');
     zim::Arg<bool> verifyChecksum(argc, argv, 'C');
 
@@ -521,8 +446,6 @@ int main(int argc, char* argv[])
       app.listArticles(info, tableList, extra);
     else if (info)
       app.listArticle(extra);
-    else if (zint)
-      app.dumpIndex();
 
     if (verifyChecksum)
       app.verifyChecksum();
