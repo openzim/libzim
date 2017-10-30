@@ -36,8 +36,8 @@
 namespace zim
 {
 
+#if defined(ENABLE_XAPIAN)
 namespace {
-
 /* Split string in a token array */
 std::vector<std::string> split(const std::string & str,
                                 const std::string & delims=" *-")
@@ -68,7 +68,45 @@ std::map<std::string, int> read_valuesmap(const std::string &s) {
     }
     return result;
 }
+
+
+void
+setup_queryParser(Xapian::QueryParser* queryparser,
+                  Xapian::Database& database,
+                  const std::string& language,
+                  const std::string& stopwords) {
+    queryparser->set_database(database);
+    if ( ! language.empty() )
+    {
+        /* Build ICU Local object to retrieve ISO-639 language code (from
+           ISO-639-3) */
+        icu::Locale languageLocale(language.c_str());
+
+        /* Configuring language base steemming */
+        try {
+            Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
+            queryparser->set_stemmer(stemmer);
+            queryparser->set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
+        } catch (...) {
+            std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+        }
+    }
+
+    if ( ! stopwords.empty() )
+    {
+        std::string stopWord;
+        std::istringstream file(stopwords);
+        Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
+        while (std::getline(file, stopWord, '\n')) {
+            stopper->add(stopWord);
+        }
+        stopper->release();
+        queryparser->set_stopper(stopper);
+    }
 }
+
+}
+#endif
 
 Search::Search(const std::vector<const File*> zimfiles) :
     internal(new InternalData),
@@ -135,44 +173,6 @@ Search& Search::set_suggestion_mode(const bool suggestion_mode) {
     this->suggestion_mode = suggestion_mode;
     return *this;
 }
-
-
-#if defined(ENABLE_XAPIAN)
-void
-setup_queryParser(Xapian::QueryParser* queryparser,
-                  Xapian::Database& database,
-                  const std::string& language,
-                  const std::string& stopwords) {
-    queryparser->set_database(database);
-    if ( ! language.empty() )
-    {
-        /* Build ICU Local object to retrieve ISO-639 language code (from
-           ISO-639-3) */
-        icu::Locale languageLocale(language.c_str());
-
-        /* Configuring language base steemming */
-        try {
-            Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
-            queryparser->set_stemmer(stemmer);
-            queryparser->set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
-        } catch (...) {
-            std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
-        }
-    }
-
-    if ( ! stopwords.empty() )
-    {
-        std::string stopWord;
-        std::istringstream file(stopwords);
-        Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
-        while (std::getline(file, stopWord, '\n')) {
-            stopper->add(stopWord);
-        }
-        stopper->release();
-        queryparser->set_stopper(stopper);
-    }
-}
-#endif
 
 Search::iterator Search::begin() const {
 #if defined(ENABLE_XAPIAN)
