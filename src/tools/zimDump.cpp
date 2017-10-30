@@ -23,7 +23,6 @@
 #include <set>
 #include <zim/file.h>
 #include <zim/fileiterator.h>
-#include "../zintstream.h"
 #include "../dirent.h"
 #include "../cluster.h"
 #include "../fileimpl.h"
@@ -225,18 +224,6 @@ void ZimDumper::listArticle(const zim::Article& article, bool extra)
       unsigned val = static_cast<unsigned>(static_cast<unsigned char>(*it));
       std::cout << hexdigit[val >> 4] << hexdigit[val & 0xf] << ' ';
     }
-    std::cout << ':';
-
-    if (parameter.size() > 1)
-    {
-      std::istringstream s(parameter);
-
-      zim::ZIntStream in(s);
-      unsigned val;
-      while (in.get(val))
-        std::cout << '\t' << val;
-    }
-
     std::cout << std::endl;
   }
 }
@@ -294,19 +281,7 @@ void ZimDumper::listArticleT(const zim::Article& article, bool extra)
       unsigned val = static_cast<unsigned>(static_cast<unsigned char>(*it));
       std::cout << hexdigit[val >> 4] << hexdigit[val & 0xf] << '\t';
     }
-
-    if (parameter.size() > 1)
-    {
-      std::istringstream s(parameter);
-
-      zim::ZIntStream in(s);
-      unsigned val;
-      while (in.get(val))
-        std::cout << '\t' << val;
-    }
-
   }
-
   std::cout << std::endl;
 }
 

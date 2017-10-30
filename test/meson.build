@@ -5,7 +5,6 @@ tests = [
     'dirent',
     'header',
     'uuid',
-    'zint',
     'template'
 ]
 

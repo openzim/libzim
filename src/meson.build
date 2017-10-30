@@ -24,7 +24,6 @@ common_sources = [
     'search_iterator.cpp',
     'template.cpp',
     'uuid.cpp',
-    'zintstream.cpp',
     'writer/zimcreatorimpl.cpp',
     'writer/lzmastream.cpp',
     'writer/cluster.cpp',
