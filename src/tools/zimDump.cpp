@@ -24,7 +24,6 @@
 #include <zim/file.h>
 #include <zim/fileiterator.h>
 #include "../zintstream.h"
-#include "../log.h"
 #include "../dirent.h"
 #include "../cluster.h"
 #include "../fileimpl.h"
@@ -32,7 +31,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-log_define("zim.dumper")
 #include "arg.h"
 
 class ZimDumper
@@ -116,18 +114,15 @@ void ZimDumper::printNsInfo(char ch)
 
 void ZimDumper::locateArticle(zim::size_type idx)
 {
-  log_debug("locateArticle(" << idx << ')');
   pos = zim::File::const_iterator(&file, idx);
 }
 
 void ZimDumper::findArticle(char ns, const char* expr, bool title)
 {
-  log_debug("findArticle(" << ns << ", " << expr << ')');
   if (title)
     pos = file.findByTitle(ns, expr);
   else
     pos = file.find(ns, expr);
-  log_debug("findArticle(" << ns << ", " << expr << ") => idx=" << pos.getIndex());
 }
 
 void ZimDumper::findArticleByUrl(const std::string& url)
@@ -137,7 +132,6 @@ void ZimDumper::findArticleByUrl(const std::string& url)
 
 void ZimDumper::printPage()
 {
-  log_trace("print page");
   if(pos!=file.end())
   {
     std::cout << pos->getPage() << std::flush;
@@ -146,7 +140,6 @@ void ZimDumper::printPage()
 
 void ZimDumper::dumpArticle()
 {
-  log_trace("dump article");
   if(pos!=file.end())
   {
     std::cout << pos->getData() << std::flush;
@@ -155,8 +148,6 @@ void ZimDumper::dumpArticle()
 
 void ZimDumper::dumpIndex()
 {
-  log_trace("dump index");
-
   if (pos->getNamespace() == 'X')
   {
     // prepare parameter stream
@@ -230,8 +221,6 @@ void ZimDumper::dumpIndex()
 
 void ZimDumper::listArticles(bool info, bool listTable, bool extra)
 {
-  log_trace("listArticles(" << info << ", " << extra << ") verbose=" << verbose);
-
   for (zim::File::const_iterator it = pos; it != file.end(); ++it)
   {
     if (listTable)
@@ -445,8 +434,6 @@ int main(int argc, char* argv[])
 {
   try
   {
-    log_init();
-
     zim::Arg<bool> fileinfo(argc, argv, 'F');
     zim::Arg<char> nsinfo(argc, argv, 'N');
     zim::Arg<bool> info(argc, argv, 'i');
