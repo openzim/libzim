@@ -366,14 +366,14 @@ namespace zim
     while (upper - lower > 1)
     {
       size_type m = lower + (upper - lower) / 2;
-      d = getDirent(m);
+      auto d = getDirent(m);
       if (d->getNamespace() >= ch)
         upper = m;
       else
         lower = m;
     }
 
-    size_type ret = d->getNamespace() <= ch ? upper : lower;
+    size_type ret = d->getNamespace() < ch ? upper : lower;
     pthread_mutex_lock(&namespaceBeginLock);
     namespaceBeginCache[ch] = ret;
     pthread_mutex_unlock(&namespaceBeginLock);
