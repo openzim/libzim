@@ -46,6 +46,7 @@ class Search
 
         Search& add_zimfile(const File* zimfile);
         Search& set_query(const std::string& query);
+        Search& set_georange(float latitude, float longitude, float distance);
         Search& set_range(int start, int end);
         Search& set_suggestion_mode(bool suggestion_mode);
 
@@ -61,9 +62,13 @@ class Search
          mutable std::map<std::string, int> valuesmap;
          mutable std::string prefixes;
          std::string query;
+         float latitude;
+         float longitude;
+         float distance;
          int range_start;
          int range_end;
          bool suggestion_mode;
+         bool geo_query;
          mutable bool search_started;
          mutable bool has_database;
          mutable int estimated_matches_number;

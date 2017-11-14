@@ -163,6 +163,14 @@ Search& Search::set_query(const std::string& query) {
     return *this;
 }
 
+Search& Search::set_georange(float latitude, float longitude, float distance) {
+    this->latitude = latitude;
+    this->longitude = longitude;
+    this->distance = distance;
+    geo_query = true;
+    return *this;
+}
+
 Search& Search::set_range(int start, int end) {
     this->range_start = start;
     this->range_end = end; 
@@ -248,6 +256,18 @@ Search::iterator Search::begin() const {
     delete queryParser;
     
     Xapian::Enquire enquire(internal->database);
+
+    if (geo_query && valuesmap.find("geo.position") != valuesmap.end()) {
+        Xapian::GreatCircleMetric metric;
+        Xapian::LatLongCoord centre(latitude, longitude);
+        Xapian::LatLongDistancePostingSource ps(valuesmap["geo.position"], centre, metric, distance);
+        if ( this->query.empty()) {
+          query = Xapian::Query(&ps);
+        } else {
+          query = Xapian::Query(Xapian::Query::OP_FILTER, query, Xapian::Query(&ps));
+        }
+    }
+
     enquire.set_query(query);
     
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
