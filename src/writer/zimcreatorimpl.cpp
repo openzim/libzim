@@ -253,6 +253,9 @@ namespace zim
       DirentsType::size_type di = 0;
       while (di < dirents.size())
       {
+        if (di % 10000 == 0)
+          INFO(di << "directory entries checked for invalid redirects");
+
         if (dirents[di].isRedirect())
         {
           log_debug("check " << dirents[di].getTitle() << " redirect to " << dirents[di].getRedirectAid() << " (" << di << '/' << dirents.size() << ')');
