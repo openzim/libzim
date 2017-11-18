@@ -127,6 +127,14 @@ ninja uninstall # You have to be in the "build" directory
 Like for the installation, you might need to run the command as root
 (or using 'sudo').
 
+Troubleshooting
+---------------
+
+If the compilation fails, you might need to get a more recent version
+of a dependency than the one packaged by your Linux distribution. Try
+then with a source tarball distributed by the problematic upstream
+project or even directly from the source code repository.
+
 License
 -------
 
