@@ -45,6 +45,7 @@ namespace zim
     : zimFile(new FileCompound(fname)),
       zimReader(new FileReader(zimFile)),
       bufferDirentZone(256),
+      bufferDirentLock(PTHREAD_MUTEX_INITIALIZER),
       filename(fname),
       titleIndexBuffer(0),
       urlPtrOffsetBuffer(0),
@@ -258,6 +259,7 @@ namespace zim
     // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
     // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
+    pthread_mutex_lock(&bufferDirentLock);
     offset_type bufferSize = 256;
     std::shared_ptr<const Dirent> dirent;
     while (true) {
@@ -274,6 +276,7 @@ namespace zim
         // Success !
         break;
     }
+    pthread_mutex_unlock(&bufferDirentLock);
 
     log_debug("dirent read from " << indexOffset);
     pthread_mutex_lock(&direntCacheLock);
