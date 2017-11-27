@@ -23,11 +23,11 @@
 #include <cstddef>
 #include <exception>
 #include <memory>
-#include <cassert>
 #include <iostream>
 
 #include <zim/zim.h>
 #include "endian_tools.h"
+#include "debug.h"
 
 namespace zim {
 
@@ -47,8 +47,8 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
     template<typename T>
     T as(offset_type offset) const {
-      assert(offset < size_);
-      assert(offset+sizeof(T) <= size_);
+      ASSERT(offset, <, size_);
+      ASSERT(offset+sizeof(T), <=, size_);
       return fromLittleEndian<T>(data(offset));
     }
 
@@ -72,7 +72,7 @@ class MemoryBuffer : public Buffer {
     }
 
     const char* data(offset_type offset) const {
-        assert(offset <= size_);
+        ASSERT(offset, <=, size_);
         return _data + offset;
     }
   private:
@@ -104,11 +104,11 @@ class SubBuffer : public Buffer {
       : Buffer(size),
         _data(src, src->data(offset))
     {
-      assert((offset+size <= src->size()));
+      ASSERT(offset+size, <=, src->size());
     }
 
   const char* data(offset_type offset) const {
-        assert(offset <= size_);
+        ASSERT(offset, <=, size_);
         return _data.get() + offset;
     }
 
