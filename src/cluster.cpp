@@ -45,7 +45,7 @@ namespace zim
     startOffset = read_header();
     reader = reader->sub_reader(startOffset);
     auto d1 = reader->offset();
-    assert((d+startOffset)==d1);
+    ASSERT(d+startOffset, ==, d1);
   }
 
   /* This return the number of char read */
@@ -68,15 +68,15 @@ namespace zim
     while (--n_offset)
     {
       size_type new_offset = buffer->as<size_type>(current);
-      assert(new_offset >= offset);
-      assert(offset >= data_address);
-      assert(offset <= reader->size());
+      ASSERT(new_offset, >=, offset);
+      ASSERT(offset, >=, data_address);
+      ASSERT(offset, <=, reader->size());
       
       offset = new_offset;
       offsets.push_back(offset - data_address);
       current += sizeof(size_type);
     }
-    assert(offset==reader->size());
+    ASSERT(offset, ==, reader->size());
     return data_address;
   }
 

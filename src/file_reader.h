@@ -21,9 +21,9 @@
 #define ZIM_FILE_READER_H_
 
 #include <memory>
-#include <cassert>
 
 #include "endian_tools.h"
+#include "debug.h"
 
 namespace zim {
 
@@ -39,8 +39,8 @@ class Reader {
     virtual void read(char* dest, offset_type offset, offset_type size) const = 0;
     template<typename T>
     T read(offset_type offset) const {
-      assert(offset < size());
-      assert(offset+sizeof(T) <= size());
+      ASSERT(offset, <, size());
+      ASSERT(offset+sizeof(T), <=, size());
       char tmp_buf[sizeof(T)];
       read(tmp_buf, offset, sizeof(T));
       return fromLittleEndian<T>(tmp_buf);

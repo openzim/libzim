@@ -25,7 +25,6 @@
 #include "config.h"
 #include "envvalue.h"
 #include <cstring>
-#include <cassert>
 #include <fcntl.h>
 #include <lzma.h>
 #include <pthread.h>
@@ -69,17 +68,17 @@ FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_type o
     _offset(offset),
     _size(size)
 {
-  assert(offset<source->fsize());
-  assert((offset+size)<=source->fsize());
+  ASSERT(offset, <, source->fsize());
+  ASSERT(offset+size, <=, source->fsize());
 }
 
 char FileReader::read(offset_type offset) const {
-  assert(offset < _size);
+  ASSERT(offset, <, _size);
   offset += _offset;
   auto part_pair = source->lower_bound(offset);
   int fd = part_pair->second->fd();
   offset_type local_offset = offset - part_pair->first.min;
-  assert(local_offset<=part_pair->first.max);
+  ASSERT(local_offset, <=, part_pair->first.max);
   char ret;
   read_at(fd, &ret, 1, local_offset);
   return ret;
@@ -87,8 +86,8 @@ char FileReader::read(offset_type offset) const {
 
 
 void FileReader::read(char* dest, offset_type offset, offset_type size) const {
-  assert(offset < _size);
-  assert(offset+size <= _size);
+  ASSERT(offset, <, _size);
+  ASSERT(offset+size, <=, _size);
   if (! size ) {
     return;
   }
@@ -99,7 +98,7 @@ void FileReader::read(char* dest, offset_type offset, offset_type size) const {
     FilePart* part = current->second;
     Range partRange = current->first;
     offset_type local_offset = offset-partRange.min;
-    assert(size>0);
+    ASSERT(size, >, 0U);
     offset_type size_to_get = std::min(size, part->size()-local_offset);
     int fd = part->fd();
     read_at(fd, dest, size_to_get, local_offset);
@@ -107,12 +106,12 @@ void FileReader::read(char* dest, offset_type offset, offset_type size) const {
     size -= size_to_get;
     offset += size_to_get;
   }
-  assert(size==0);
+  ASSERT(size, ==, 0U);
 }
 
 
 std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_type size) const {
-  assert(size <= _size);
+  ASSERT(size, <=, _size);
 #if !defined(_WIN32)
   auto search_range = Range(_offset+offset, _offset+offset+size);
   auto found_range = source->equal_range(search_range);
@@ -122,7 +121,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
     auto range = found_range.first->first;
     auto part = found_range.first->second;
     auto local_offset = offset + _offset - range.min;
-    assert(size<=part->size());
+    ASSERT(size, <=, part->size());
     int fd = part->fd();
     auto buffer = std::shared_ptr<const Buffer>(new MMapBuffer(fd, local_offset, size));
     return std::move(buffer);
@@ -269,7 +268,7 @@ std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_type offset
     auto range = found_range.first->first;
     auto part = found_range.first->second;
     auto local_offset = offset + _offset - range.min;
-    assert(size<=part->size());
+    ASSERT(size, <=, part->size());
     int fd = part->fd();
     auto buffer = std::shared_ptr<Buffer>(new MMapBuffer(fd, local_offset, size));
     return std::unique_ptr<const Reader>(new BufferReader(buffer));
@@ -309,7 +308,7 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_type offset, offs
 
 std::unique_ptr<const Reader> FileReader::sub_reader(offset_type offset, offset_type size) const
 {
-  assert(size<=_size);
+  ASSERT(size, <=, _size);
   return std::unique_ptr<Reader>(new FileReader(source, _offset+offset, size));
 }
 
@@ -343,8 +342,8 @@ offset_type BufferReader::offset() const
 
 
 void BufferReader::read(char* dest, offset_type offset, offset_type size) const {
-  assert(offset < source->size());
-  assert(offset+size <= source->size());
+  ASSERT(offset, <, source->size());
+  ASSERT(offset+size, <=, source->size());
   if (! size ) {
     return;
   }
@@ -353,7 +352,7 @@ void BufferReader::read(char* dest, offset_type offset, offset_type size) const 
 
 
 char BufferReader::read(offset_type offset) const {
-  assert(offset < source->size());
+  ASSERT(offset, <, source->size());
   char dest;
   dest = *source->data(offset);
   return dest;
