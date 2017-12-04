@@ -124,7 +124,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
     ASSERT(size, <=, part->size());
     int fd = part->fd();
     auto buffer = std::shared_ptr<const Buffer>(new MMapBuffer(fd, local_offset, size));
-    return std::move(buffer);
+    return buffer;
   } else
 #endif
   {
@@ -134,7 +134,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
     char* p = new char[size];
     auto ret_buffer = std::shared_ptr<const Buffer>(new MemoryBuffer<true>(p, size));
     read(p, offset, size);
-    return std::move(ret_buffer);
+    return ret_buffer;
   }
 }
 

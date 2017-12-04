@@ -55,7 +55,7 @@ class Search
         int get_matches_estimated() const;
 
     private:
-         class InternalData;
+         struct InternalData;
          std::unique_ptr<InternalData> internal;
          std::vector<const File*> zimfiles;
 
