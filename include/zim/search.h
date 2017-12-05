@@ -32,7 +32,7 @@ class File;
 class Search
 {
     friend class search_iterator;
-    friend class search_iterator::InternalData;
+    friend struct search_iterator::InternalData;
     public:
         typedef search_iterator iterator;
 
