@@ -30,8 +30,8 @@ namespace zim
   class Buffer;
   class Blob
   {
-      const char* const _data;
-      const unsigned _size;
+      const char* _data;
+      unsigned _size;
       std::shared_ptr<const Buffer> _buffer;
 
     public:
