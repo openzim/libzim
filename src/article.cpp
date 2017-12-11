@@ -23,6 +23,7 @@
 #include "cluster.h"
 #include <zim/fileheader.h>
 #include "fileimpl.h"
+#include "file_part.h"
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
@@ -200,6 +201,32 @@ namespace zim
         || dirent->isLinktarget()
         || dirent->isDeleted() ? 0
                               : file->getBlobOffset(dirent->getClusterNumber(), dirent->getBlobNumber());
+  }
+
+  std::pair<std::string, offset_type> Article::getDirectAccessInformation() const
+  {
+    auto dirent = getDirent();
+    if ( dirent->isRedirect()
+      || dirent->isLinktarget()
+      || dirent->isDeleted() ) {
+        return std::make_pair("", 0);
+    }
+
+    auto full_offset = file->getBlobOffset(dirent->getClusterNumber(),
+                                           dirent->getBlobNumber());
+
+    if (full_offset == 0 ) {
+      // cluster is compressed
+      return std::make_pair("", 0);
+    }
+    auto part_its = file->getFileParts(full_offset, getArticleSize());
+    auto range = part_its.first->first;
+    auto part = part_its.first->second;
+    if (++part_its.first != part_its.second) {
+      return std::make_pair("", 0);
+    }
+    auto local_offset = full_offset - range.min;
+    return std::make_pair(part->filename(), local_offset);
   }
 
   std::string Article::getPage(bool layout, unsigned maxRecurse)

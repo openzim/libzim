@@ -81,6 +81,7 @@ namespace zim
       Blob getData(size_type offset, size_type size) const;
 
       offset_type getOffset() const;
+      std::pair<std::string, offset_type> getDirectAccessInformation() const;
 
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);
       void getPage(std::ostream&, bool layout = true, unsigned maxRecurse = 10);

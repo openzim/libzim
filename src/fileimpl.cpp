@@ -224,6 +224,12 @@ namespace zim
     return std::pair<bool, size_type>(false, (c < 0 ? l : u));
   }
 
+  std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
+  FileImpl::getFileParts(offset_type offset, offset_type size)
+  {
+    return zimFile->locate(offset, size);
+  }
+
   std::shared_ptr<const Dirent> FileImpl::getDirent(size_type idx)
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
