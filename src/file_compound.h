@@ -52,6 +52,10 @@ class FileCompound : public std::map<Range, FilePart*, less_range> {
     bool fail() const { return empty(); };
     bool is_multiPart() const { return size() > 1; };
 
+    std::pair<FileCompound::const_iterator, FileCompound::const_iterator> locate(offset_type offset, offset_type size) const {
+        return equal_range(Range(offset, offset+size));
+    }
+
   private:
     offset_type _fsize;
     mutable time_t mtime;

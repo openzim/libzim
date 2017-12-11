@@ -92,8 +92,7 @@ void FileReader::read(char* dest, offset_type offset, offset_type size) const {
     return;
   }
   offset += _offset;
-  auto search_range = Range(offset, offset+size);
-  auto found_range = source->equal_range(search_range);
+  auto found_range = source->locate(offset, size);
   for(auto current = found_range.first; current!=found_range.second; current++){
     FilePart* part = current->second;
     Range partRange = current->first;
@@ -113,8 +112,7 @@ void FileReader::read(char* dest, offset_type offset, offset_type size) const {
 std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_type size) const {
   ASSERT(size, <=, _size);
 #if !defined(_WIN32)
-  auto search_range = Range(_offset+offset, _offset+offset+size);
-  auto found_range = source->equal_range(search_range);
+  auto found_range = source->locate(_offset+offset, size);
   auto first_part_containing_it = found_range.first;
   if (++first_part_containing_it == found_range.second) {
     // The range is in only one part
@@ -260,8 +258,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offs
 
 std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_type offset, offset_type size) const {
 #if !defined(_WIN32)
-  auto search_range = Range(_offset+offset, _offset+offset+size);
-  auto found_range = source->equal_range(search_range);
+  auto found_range = source->locate(_offset+offset, size);
   auto first_part_containing_it = found_range.first;
   if (++first_part_containing_it == found_range.second) {
     // The whole range will enter in one part, let's mmap all.
