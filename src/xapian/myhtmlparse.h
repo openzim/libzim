@@ -42,6 +42,7 @@ class MyHtmlParser : public HtmlParser {
 	void process_text(const string &text);
 	void opening_tag(const string &tag);
 	void closing_tag(const string &tag);
+	using HtmlParser::parse_html;
 	void parse_html(const string &text, const string &charset_,
 			bool charset_from_meta_);
 	MyHtmlParser() :
