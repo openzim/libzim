@@ -30,11 +30,11 @@
 #include "dirent.h"
 #include "cluster.h"
 #include "buffer.h"
+#include "file_compound.h"
 
 namespace zim
 {
   class FileReader;
-  class FileCompound;
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
@@ -77,6 +77,8 @@ namespace zim
       const Fileheader& getFileheader() const  { return header; }
       offset_type getFilesize() const;
 
+      std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
+      getFileParts(offset_type offset, offset_type size);
       std::shared_ptr<const Dirent> getDirent(size_type idx);
       std::shared_ptr<const Dirent> getDirentByTitle(size_type idx);
       size_type getIndexByTitle(size_type idx);
