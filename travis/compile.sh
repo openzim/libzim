@@ -40,5 +40,5 @@ if [[ "$TEST" == "1" ]]
 then
     export LD_LIBRARY_PATH=${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64:${INSTALL_DIR}/lib/x86_64-linux-gnu
     echo $LD_LIBRARY_PATH
-    mesontest --verbose
+    meson test --verbose
 fi
