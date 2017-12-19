@@ -44,6 +44,8 @@ class Search
         Search& operator=(Search&& it);
         ~Search();
 
+        void set_verbose(bool verbose);
+
         Search& add_zimfile(const File* zimfile);
         Search& set_query(const std::string& query);
         Search& set_georange(float latitude, float longitude, float distance);
@@ -71,6 +73,7 @@ class Search
          bool geo_query;
          mutable bool search_started;
          mutable bool has_database;
+         mutable bool verbose;
          mutable int estimated_matches_number;
 };
 
