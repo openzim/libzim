@@ -114,14 +114,16 @@ Search::Search(const std::vector<const File*> zimfiles) :
     zimfiles(zimfiles),
     suggestion_mode(false),
     search_started(false),
-    has_database(false)
+    has_database(false),
+    verbose(false)
 {}
 
 Search::Search(const File* zimfile) :
     internal(new InternalData),
     suggestion_mode(false),
     search_started(false),
-    has_database(false)
+    has_database(false),
+    verbose(false)
 {
     zimfiles.push_back(zimfile);
 }
@@ -134,7 +136,8 @@ Search::Search(const Search& it) :
      range_end(it.range_end),
      suggestion_mode(it.suggestion_mode),
      search_started(false),
-     has_database(false)
+     has_database(false),
+     verbose(it.verbose)
 { }
 
 Search& Search::operator=(const Search& it)
@@ -147,12 +150,18 @@ Search& Search::operator=(const Search& it)
      suggestion_mode = it.suggestion_mode;
      search_started = false;
      has_database = false;
+     verbose = it.verbose;
      return *this;
 }
 
 Search::Search(Search&& it) = default;
 Search& Search::operator=(Search&& it) = default;
 Search::~Search() = default;
+
+void Search::set_verbose(bool verbose) {
+    std::cout << "set verbose" << std::endl;
+    this->verbose = verbose;
+}
 
 Search& Search::add_zimfile(const File* zimfile) {
     zimfiles.push_back(zimfile);
@@ -229,7 +238,7 @@ Search::iterator Search::begin() const {
                 language = article.getData();
               }
             }
-		stopwords = database.get_metadata("stopwords");
+            stopwords = database.get_metadata("stopwords");
             this->prefixes = database.get_metadata("prefixes");
         } else {
             std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
@@ -243,22 +252,37 @@ Search::iterator Search::begin() const {
     }
 
     if ( ! has_database ) {
+        if (verbose) {
+          std::cout << "No database, no result" << std::endl;
+        }
         estimated_matches_number = 0;
         return nullptr;
     }
     
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
+    if (verbose) {
+      std::cout << "Setup queryparser using language " << language << std::endl;
+    }
     setup_queryParser(queryParser, internal->database, language, stopwords);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
     if (suggestion_mode) {
+      if (verbose) {
+        std::cout << "Mark query as 'partial'" << std::endl;
+      }
       flags |= Xapian::QueryParser::FLAG_PARTIAL;
       if (this->prefixes.find("S") != std::string::npos ) {
+        if (verbose) {
+          std::cout << "Searching in title namespace" << std::endl;
+        }
         prefix = "S";
       }
     }
     Xapian::Query query = queryParser->parse_query(this->query, flags, prefix);
+    if (verbose) {
+        std::cout << "Parsed query '" << this->query << "' to " << query.get_description() << std::endl;
+    }
     delete queryParser;
     
     Xapian::Enquire enquire(internal->database);
