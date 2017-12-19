@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #if defined(ENABLE_XAPIAN)
 #include "xapian.h"
@@ -207,6 +208,11 @@ Search::iterator Search::begin() const {
             continue;
         }
         int databasefd = open(zimfile->getFilename().c_str(), O_RDONLY);
+        if (databasefd == -1) {
+            std::cerr << "Impossible to open " << zimfile->getFilename() << std::endl;
+            std::cerr << strerror(errno) << std::endl;
+            continue;
+        }
         lseek(databasefd, dbOffset, SEEK_SET);
         Xapian::Database database(databasefd);
         if ( first ) {
@@ -223,7 +229,7 @@ Search::iterator Search::begin() const {
                 language = article.getData();
               }
             }
-            stopwords = database.get_metadata("stopwords");
+		stopwords = database.get_metadata("stopwords");
             this->prefixes = database.get_metadata("prefixes");
         } else {
             std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
