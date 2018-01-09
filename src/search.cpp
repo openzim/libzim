@@ -112,18 +112,28 @@ setup_queryParser(Xapian::QueryParser* queryparser,
 Search::Search(const std::vector<const File*> zimfiles) :
     internal(new InternalData),
     zimfiles(zimfiles),
+    prefixes(""), query(""),
+    latitude(0), longitude(0), distance(0),
+    range_start(0), range_end(0),
     suggestion_mode(false),
+    geo_query(false),
     search_started(false),
     has_database(false),
-    verbose(false)
+    verbose(false),
+    estimated_matches_number(0)
 {}
 
 Search::Search(const File* zimfile) :
     internal(new InternalData),
+    prefixes(""), query(""),
+    latitude(0), longitude(0), distance(0),
+    range_start(0), range_end(0),
     suggestion_mode(false),
+    geo_query(false),
     search_started(false),
     has_database(false),
-    verbose(false)
+    verbose(false),
+    estimated_matches_number(0)
 {
     zimfiles.push_back(zimfile);
 }
@@ -131,26 +141,35 @@ Search::Search(const File* zimfile) :
 Search::Search(const Search& it) :
      internal(new InternalData),
      zimfiles(it.zimfiles),
+     prefixes(it.prefixes),
      query(it.query),
-     range_start(it.range_start),
-     range_end(it.range_end),
+     latitude(it.latitude), longitude(it.longitude), distance(it.distance),
+     range_start(it.range_start), range_end(it.range_end),
      suggestion_mode(it.suggestion_mode),
+     geo_query(it.geo_query),
      search_started(false),
      has_database(false),
-     verbose(it.verbose)
+     verbose(it.verbose),
+     estimated_matches_number(0)
 { }
 
 Search& Search::operator=(const Search& it)
 {
      if ( internal ) internal.reset();
      zimfiles = it.zimfiles;
+     prefixes = it.prefixes;
      query = it.query;
+     latitude = it.latitude;
+     longitude = it.longitude;
+     distance = it.distance;
      range_start = it.range_start;
      range_end = it.range_end;
      suggestion_mode = it.suggestion_mode;
+     geo_query = it.geo_query;
      search_started = false;
      has_database = false;
      verbose = it.verbose;
+     estimated_matches_number = 0;
      return *this;
 }
 
