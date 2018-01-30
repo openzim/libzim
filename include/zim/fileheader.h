@@ -69,6 +69,10 @@ namespace zim
 
       void read(std::shared_ptr<const Buffer> buffer);
 
+      // Do some sanity check, raise a ZimFileFormateError is
+      // something is wrong.
+      void sanity_check() const;
+
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }
 

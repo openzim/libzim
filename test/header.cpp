@@ -37,7 +37,7 @@ TEST(HeaderTest, read_write_header)
   header.setClusterPtrPos(45678);
   header.setMainPage(11);
   header.setLayoutPage(13);
-  header.setMimeListPos(76);
+  header.setMimeListPos(72);
 
   ASSERT_EQ(header.getUuid(), "1234567890abcdef");
   ASSERT_EQ(header.getArticleCount(), 4711U);
@@ -47,7 +47,7 @@ TEST(HeaderTest, read_write_header)
   ASSERT_EQ(header.getClusterPtrPos(), 45678U);
   ASSERT_EQ(header.getMainPage(), 11U);
   ASSERT_EQ(header.getLayoutPage(), 13U);
-  ASSERT_EQ(header.getMimeListPos(), 76U);
+  ASSERT_EQ(header.getMimeListPos(), 72U);
 
   std::stringstream s;
   s << header;

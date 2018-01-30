@@ -18,6 +18,7 @@
  */
 
 #include <zim/fileheader.h>
+#include <zim/error.h>
 #include <iostream>
 #include <algorithm>
 #include "log.h"
@@ -82,6 +83,36 @@ namespace zim
     setMainPage(buffer->as<size_type>(64));
     setLayoutPage(buffer->as<size_type>(68));
     setChecksumPos(buffer->as<offset_type>(72));
+
+    sanity_check();
+  }
+
+  void Fileheader::sanity_check() const {
+    if (!!articleCount != !!blobCount) {
+      throw ZimFileFormatError("No article <=> No cluster");
+    }
+
+    if (mimeListPos != size && mimeListPos != 72) {
+      throw ZimFileFormatError("mimelistPos must be 80.");
+    }
+
+    if (urlPtrPos < mimeListPos) {
+      throw ZimFileFormatError("urlPtrPos must be > mimelistPos.");
+    }
+    if (titleIdxPos < mimeListPos) {
+      throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
+    }
+    if (blobPtrPos < mimeListPos) {
+      throw ZimFileFormatError("clusterPtrPos must be > mimelistPos.");
+    }
+
+    if (blobCount > articleCount) {
+      throw ZimFileFormatError("Cluster count cannot be higher than article count.");
+    }
+
+    if (checksumPos != 0 && checksumPos < mimeListPos) {
+      throw ZimFileFormatError("checksumPos must be > mimeListPos.");
+    }
   }
 
 }
