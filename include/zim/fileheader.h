@@ -40,7 +40,8 @@ namespace zim
   {
     public:
       static const size_type zimMagic;
-      static const size_type zimVersion;
+      static const uint16_t zimMajorVersion;
+      static const uint16_t zimMinorVersion;
       static const size_type size;
 
     private:
