@@ -21,7 +21,7 @@
 #define ZIM_FILEITERATOR_H
 
 #include <iterator>
-#include <zim/article.h>
+#include "article.h"
 
 namespace zim
 {
