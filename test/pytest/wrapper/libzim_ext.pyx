@@ -5,3 +5,6 @@ cdef class File:
 
     def __cinit__(self, bytes filename):
         self.c_file = zim.File(filename)
+
+    def verify(self):
+        return self.c_file.verify()

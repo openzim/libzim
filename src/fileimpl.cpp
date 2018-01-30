@@ -520,12 +520,20 @@ namespace zim
         part++) {
       std::fstream stream(part->second->filename());
       char ch;
-      for(/*NOTHING*/ ; currentPos < checksumPos && stream.get(ch); currentPos++) {
+      for(/*NOTHING*/ ; currentPos < checksumPos && stream.get(ch).good(); currentPos++) {
         md5 << ch;
+      }
+      if (stream.bad()) {
+        perror("error while reading file");
+        return false;
       }
       if (currentPos == checksumPos) {
         break;
       }
+    }
+
+    if (currentPos != checksumPos) {
+      return false;
     }
            
 
@@ -534,7 +542,9 @@ namespace zim
 
     md5.getDigest(chksumCalc);
     if (std::memcmp(chksumFile->data(), chksumCalc, 16) != 0)
-      throw ZimFileFormatError("invalid checksum in zim file");
+    {
+      return false;
+    }
 
     return true;
   }
