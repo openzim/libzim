@@ -59,6 +59,8 @@ class Reader {
 
     std::unique_ptr<const Reader> sub_clusterReader(offset_type offset, offset_type size, CompressionType* comp) const;
 
+    bool can_read(offset_type offset, offset_type size);
+
   private:
     std::shared_ptr<const Buffer> get_clusterBuffer(offset_type offset, offset_type size, CompressionType comp) const;
     virtual std::unique_ptr<const Reader> get_mmap_sub_reader(offset_type offset, offset_type size) const = 0;

@@ -136,6 +136,11 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
   }
 }
 
+bool Reader::can_read(offset_type offset, offset_type size)
+{
+    return (offset <= this->size() && (offset+size) <= this->size());
+}
+
 char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
   // We don't know what will be the result size.
   // Let's assume it will be something like the minChunkSize used at creation

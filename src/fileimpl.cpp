@@ -66,22 +66,36 @@ namespace zim
     filename = fname;
 
     // read header
+    if (zimReader->size() < Fileheader::size) {
+      throw ZimFileFormatError("zim-file is too small to contain a header");
+    }
     try {
       header.read(zimReader->get_buffer(0, Fileheader::size));
+    } catch (ZimFileFormatError e) {
+      throw e;
     } catch (...) {
-      throw ZimFileFormatError("error reading zim-file header");
+      throw ZimFileFormatError("error reading zim-file header.");
     }
 
     // ptrOffsetBuffer
-    offset_type size = header.getArticleCount() * 8;;
+    offset_type size = header.getArticleCount() * 8;
+    if (!zimReader->can_read(header.getUrlPtrPos(), size)) {
+      throw ZimFileFormatError("Reading out of zim file.");
+    }
     urlPtrOffsetBuffer = zimReader->get_buffer(header.getUrlPtrPos(), size);
 
     // Create titleIndexBuffer
     size = header.getArticleCount() * 4;
+    if (!zimReader->can_read(header.getTitleIdxPos(), size)) {
+      throw ZimFileFormatError("Reading out of zim file.");
+    }
     titleIndexBuffer = zimReader->get_buffer(header.getTitleIdxPos(), size);
 
     // clusterOffsetBuffer
     size = header.getClusterCount() * 8;
+    if (!zimReader->can_read(header.getClusterPtrPos(), size)) {
+      throw ZimFileFormatError("Reading out of zim file.");
+    }
     clusterOffsetBuffer = zimReader->get_buffer(header.getClusterPtrPos(), size);
 
 
@@ -98,8 +112,14 @@ namespace zim
       }
     }
 
+    if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize()-16) ) {
+      throw ZimFileFormatError("Checksum position is not valid");
+    }
+
     // read mime types
     size = header.getUrlPtrPos() - header.getMimeListPos();
+    // No need to check access, getUrlPtrPos is in the zim file, and we are
+    // sure that getMimeListPos is 80.
     auto buffer = zimReader->get_buffer(header.getMimeListPos(), size);
     offset_type current = 0;
     while (current < size)
