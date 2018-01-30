@@ -19,3 +19,6 @@ foreach test_name : tests
     test(test_name, test_exe)
 endforeach
 
+if get_option('default_library') != 'static'
+    subdir('pytest')
+endif

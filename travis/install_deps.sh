@@ -11,7 +11,7 @@ case ${PLATFORM} in
          PACKAGES="gcc cmake libbz2-dev ccache zlib1g-dev uuid-dev"
          ;;
      "native_dyn")
-         PACKAGES="gcc cmake libbz2-dev ccache zlib1g-dev uuid-dev"
+         PACKAGES="gcc cmake libbz2-dev ccache zlib1g-dev uuid-dev cython3"
          ;;
      "win32_static")
          PACKAGES="g++-mingw-w64-i686 gcc-mingw-w64-i686 gcc-mingw-w64-base mingw-w64-tools ccache"
@@ -29,7 +29,7 @@ esac
 
 sudo apt-get update -qq
 sudo apt-get install -qq python3-pip ${PACKAGES}
-sudo pip3 install meson
+sudo pip3 install meson pytest
 
 # Ninja
 cd $HOME
