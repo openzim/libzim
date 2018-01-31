@@ -21,8 +21,8 @@
 #define ZIM_ARTICLE_H
 
 #include <string>
-#include <zim/zim.h>
-#include <zim/blob.h>
+#include "zim.h"
+#include "blob.h"
 #include <limits>
 #include <iosfwd>
 

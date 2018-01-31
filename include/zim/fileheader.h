@@ -21,8 +21,8 @@
 #define ZIM_FILEHEADER_H
 
 #include <memory>
-#include <zim/zim.h>
-#include <zim/uuid.h>
+#include "zim.h"
+#include "uuid.h"
 #include <iosfwd>
 #include <limits>
 
@@ -40,7 +40,8 @@ namespace zim
   {
     public:
       static const size_type zimMagic;
-      static const size_type zimVersion;
+      static const uint16_t zimMajorVersion;
+      static const uint16_t zimMinorVersion;
       static const size_type size;
 
     private:
@@ -68,6 +69,10 @@ namespace zim
       {}
 
       void read(std::shared_ptr<const Buffer> buffer);
+
+      // Do some sanity check, raise a ZimFileFormateError is
+      // something is wrong.
+      void sanity_check() const;
 
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }

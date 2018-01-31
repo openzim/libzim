@@ -23,10 +23,10 @@
 #include <string>
 #include <iterator>
 #include <memory>
-#include <zim/zim.h>
-#include <zim/article.h>
-#include <zim/blob.h>
-#include <zim/fileheader.h>
+#include "zim.h"
+#include "article.h"
+#include "blob.h"
+#include "fileheader.h"
 
 class ZimDumper;
 

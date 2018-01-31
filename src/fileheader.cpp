@@ -18,6 +18,7 @@
  */
 
 #include <zim/fileheader.h>
+#include <zim/error.h>
 #include <iostream>
 #include <algorithm>
 #include "log.h"
@@ -29,14 +30,16 @@ log_define("zim.file.header")
 namespace zim
 {
   const size_type Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
-  const size_type Fileheader::zimVersion = 5;
+  const uint16_t Fileheader::zimMajorVersion = 5;
+  const uint16_t Fileheader::zimMinorVersion = 0;
   const size_type Fileheader::size = 80;
 
   std::ostream& operator<< (std::ostream& out, const Fileheader& fh)
   {
     char header[Fileheader::size];
     toLittleEndian(Fileheader::zimMagic, header);
-    toLittleEndian(Fileheader::zimVersion, header + 4);
+    toLittleEndian(Fileheader::zimMajorVersion, header + 4);
+    toLittleEndian(Fileheader::zimMinorVersion, header + 6);
     std::copy(fh.getUuid().data, fh.getUuid().data + sizeof(Uuid), header + 8);
     toLittleEndian(fh.getArticleCount(), header + 24);
     toLittleEndian(fh.getClusterCount(), header + 28);
@@ -60,13 +63,23 @@ namespace zim
     {
       log_error("invalid magic number " << magicNumber << " found - "
           << Fileheader::zimMagic << " expected");
+      throw ZimFileFormatError("Invalid magic number");
     }
 
-    uint16_t version = buffer->as<uint16_t>(4);
-    if (version != static_cast<size_type>(Fileheader::zimVersion))
+    uint16_t major_version = buffer->as<uint16_t>(4);
+    if (major_version != Fileheader::zimMajorVersion)
     {
-      log_error("invalid zimfile version " << version << " found - "
-          << Fileheader::zimVersion << " expected");
+      log_error("invalid zimfile major version " << major_version << " found - "
+          << Fileheader::zimMajorVersion << " expected");
+      throw ZimFileFormatError("Invalid version");
+    }
+
+    uint16_t minor_version = buffer->as<uint16_t>(6);
+    if (minor_version < Fileheader::zimMinorVersion)
+    {
+      log_error("invalid zimfile minor version " << minor_version << " found - "
+          << Fileheader::zimMinorVersion << " expected");
+      throw ZimFileFormatError("Invalid version");
     }
 
     Uuid uuid;
@@ -82,6 +95,36 @@ namespace zim
     setMainPage(buffer->as<size_type>(64));
     setLayoutPage(buffer->as<size_type>(68));
     setChecksumPos(buffer->as<offset_type>(72));
+
+    sanity_check();
+  }
+
+  void Fileheader::sanity_check() const {
+    if (!!articleCount != !!blobCount) {
+      throw ZimFileFormatError("No article <=> No cluster");
+    }
+
+    if (mimeListPos != size && mimeListPos != 72) {
+      throw ZimFileFormatError("mimelistPos must be 80.");
+    }
+
+    if (urlPtrPos < mimeListPos) {
+      throw ZimFileFormatError("urlPtrPos must be > mimelistPos.");
+    }
+    if (titleIdxPos < mimeListPos) {
+      throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
+    }
+    if (blobPtrPos < mimeListPos) {
+      throw ZimFileFormatError("clusterPtrPos must be > mimelistPos.");
+    }
+
+    if (blobCount > articleCount) {
+      throw ZimFileFormatError("Cluster count cannot be higher than article count.");
+    }
+
+    if (checksumPos != 0 && checksumPos < mimeListPos) {
+      throw ZimFileFormatError("checksumPos must be > mimeListPos.");
+    }
   }
 
 }
