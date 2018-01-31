@@ -325,7 +325,11 @@ namespace zim
 
     offset_type clusterOffset = getClusterOffset(idx);
     auto next_idx = idx + 1;
-    offset_type nextClusterOffset = (next_idx < getCountClusters()) ? getClusterOffset(next_idx) : header.getChecksumPos();
+    offset_type nextClusterOffset = (next_idx < getCountClusters())
+                                        ? getClusterOffset(next_idx)
+                                        : (header.hasChecksum())
+                                            ? header.getChecksumPos()
+                                            : zimFile->fsize();
     offset_type clusterSize = nextClusterOffset - clusterOffset;
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
