@@ -1,15 +1,13 @@
 project('libzim', ['c', 'cpp'],
   version : '3.1.0',
   license : 'GPL2',
-  default_options : ['c_std=c11', 'cpp_std=c++11'])
+  default_options : ['c_std=c11', 'cpp_std=c++11', 'werror=true'])
 
 conf = configuration_data()
 conf.set('VERSION', '"@0@"'.format(meson.project_version()))
 conf.set('DIRENT_CACHE_SIZE', get_option('DIRENT_CACHE_SIZE'))
 conf.set('CLUSTER_CACHE_SIZE', get_option('CLUSTER_CACHE_SIZE'))
 conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
-
-add_global_arguments(['-Werror', '-Wall'], language:'cpp')
 
 zlib_dep = dependency('zlib', required:false)
 conf.set('ENABLE_ZLIB', zlib_dep.found())
