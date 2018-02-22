@@ -111,7 +111,12 @@ std::string search_iterator::get_url() const {
     if ( ! internal ) {
         return "";
     }
-    return internal->get_document().get_data();
+    auto url = internal->get_document().get_data();
+    if (url[0] == '/') {
+        return url;
+    } else {
+        return "/" + url;
+    }
 #else
     return "";
 #endif
