@@ -20,6 +20,7 @@
 #include <zim/search.h>
 #include <zim/file.h>
 #include "search_internal.h"
+#include "levenshtein.h"
 
 #include <sstream>
 
@@ -105,6 +106,23 @@ setup_queryParser(Xapian::QueryParser* queryparser,
         queryparser->set_stopper(stopper);
     }
 }
+
+class LevenshteinDistanceMaker : public Xapian::KeyMaker {
+  public:
+    LevenshteinDistanceMaker(const std::string& query, size_t value_index):
+        query(query),
+        value_index(value_index) {}
+    ~LevenshteinDistanceMaker() = default;
+
+    virtual std::string operator() (const Xapian::Document &doc) const {
+       auto document_value = doc.get_value(value_index);
+       return Xapian::sortable_serialise(
+                  levenshtein_distance(document_value, query));
+    }
+  private:
+    std::string query;
+    size_t value_index;
+};
 
 }
 #endif
@@ -217,6 +235,7 @@ Search::iterator Search::begin() const {
         return new search_iterator::InternalData(this, internal->results.begin());
     }
 
+    verbose = true;
     std::vector<const File*>::const_iterator it;
     bool first = true;
     std::string language;
@@ -305,6 +324,7 @@ Search::iterator Search::begin() const {
     delete queryParser;
     
     Xapian::Enquire enquire(internal->database);
+    Xapian::KeyMaker* keyMaker(nullptr);
 
     if (geo_query && valuesmap.find("geo.position") != valuesmap.end()) {
         Xapian::GreatCircleMetric metric;
@@ -318,10 +338,29 @@ Search::iterator Search::begin() const {
     }
 
     enquire.set_query(query);
+
+    if (suggestion_mode) {
+      size_t value_index = 0;
+      bool has_custom_distance_maker = true;
+      if ( !valuesmap.empty() ) {
+        if ( valuesmap.find("title") != valuesmap.end() ) {
+          value_index = valuesmap["title"];
+        } else {
+          // This should not happen as valuesmap has a title entry, but let's
+          // be tolerent.
+          has_custom_distance_maker = false;
+        }
+      }
+      if (has_custom_distance_maker) {
+        keyMaker = new LevenshteinDistanceMaker(this->query, value_index);
+        enquire.set_sort_by_key(keyMaker, false);
+      }
+    }
     
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
     search_started = true;
     estimated_matches_number = internal->results.get_matches_estimated();
+    delete keyMaker;
     return new search_iterator::InternalData(this, internal->results.begin());
 #else
     estimated_matches_number = 0;
