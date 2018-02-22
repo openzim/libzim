@@ -235,7 +235,6 @@ Search::iterator Search::begin() const {
         return new search_iterator::InternalData(this, internal->results.begin());
     }
 
-    verbose = true;
     std::vector<const File*>::const_iterator it;
     bool first = true;
     std::string language;
