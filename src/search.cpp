@@ -260,7 +260,18 @@ Search::iterator Search::begin() const {
             continue;
         }
         lseek(databasefd, dbOffset, SEEK_SET);
-        Xapian::Database database(databasefd);
+        Xapian::Database database;
+        try {
+            database = Xapian::Database(databasefd);
+        } catch( Xapian::DatabaseError& e) {
+            std::cerr << "Something went wrong opening xapian database for zimfile "
+                      << zimfile->getFilename() << std::endl;
+            std::cerr << "dbOffest = " << dbOffset << std::endl;
+            std::cerr << "error = " << e.get_msg() << std::endl;
+            close(databasefd);
+            continue;
+        }
+
         if ( first ) {
             this->valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
             language = database.get_metadata("language");
