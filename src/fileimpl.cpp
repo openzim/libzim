@@ -99,12 +99,12 @@ namespace zim
     clusterOffsetBuffer = zimReader->get_buffer(header.getClusterPtrPos(), size);
 
 
-    if (getCountClusters() == 0)
+    if (!getCountClusters())
       log_warn("no clusters found");
     else
     {
-      offset_type lastOffset = getClusterOffset(getCountClusters() - 1);
-      log_debug("last offset=" << lastOffset << " file size=" << zimFile->fsize());
+      offset_type lastOffset = getClusterOffset(cluster_index_t(cluster_index_type(getCountClusters()) - 1));
+      log_debug("last offset=" << lastOffset.v << " file size=" << zimFile->fsize());
       if (lastOffset > zimFile->fsize())
       {
         log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
@@ -329,7 +329,7 @@ namespace zim
     return ret;
   }
 
-  std::shared_ptr<const Cluster> FileImpl::getCluster(size_type idx)
+  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
   {
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
@@ -344,7 +344,7 @@ namespace zim
     }
 
     offset_type clusterOffset = getClusterOffset(idx);
-    auto next_idx = idx + 1;
+    cluster_index_t next_idx(idx.v + 1);
     offset_type nextClusterOffset = (next_idx < getCountClusters())
                                         ? getClusterOffset(next_idx)
                                         : (header.hasChecksum())
@@ -370,7 +370,7 @@ namespace zim
     return offset;
   }
 
-  offset_type FileImpl::getBlobOffset(size_type clusterIdx, size_type blobIdx)
+  offset_type FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)
   {
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed())

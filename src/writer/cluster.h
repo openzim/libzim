@@ -25,6 +25,8 @@
 #include <iostream>
 #include <vector>
 
+#include "../zim_types.h"
+
 namespace zim {
 
 namespace writer {
@@ -41,11 +43,11 @@ class Cluster {
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
-    offset_type count() const  { return offsets.size() - 1; }
+    blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
     offset_type size() const   { return offsets.size() * sizeof(size_type) + _data.size(); }
     void clear();
 
-    size_type getBlobSize(unsigned n) const { return offsets[n+1] - offsets[n]; }
+    size_type getBlobSize(blob_index_t n) const { return offsets[n.v+1] - offsets[n.v]; }
 
     void addBlob(const Blob& blob);
     void addBlob(const char* data, unsigned size);

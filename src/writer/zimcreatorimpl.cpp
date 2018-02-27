@@ -137,7 +137,7 @@ namespace zim
         else
         {
           uint16_t oldMimeIdx = nextMimeIdx;
-          dirent.setArticle(getMimeTypeIdx(article->getMimeType()), 0, 0);
+          dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
           dirent.setCompress(article->shouldCompress());
           log_debug("is article; mimetype " << dirent.getMimeType());
           if (oldMimeIdx != nextMimeIdx)
@@ -202,20 +202,20 @@ namespace zim
                dpi != otherDirents->end(); ++dpi)
           {
             Dirent *di = &dirents[*dpi];
-            di->setCluster(clusterOffsets.size(), di->getBlobNumber());
+            di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
           }
           offset_type end = out.tellp();
           currentSize += (end - start) +
             sizeof(offset_type) /* for cluster pointer entry */;
         }
 
-        dirents.back().setCluster(clusterOffsets.size(), cluster->count());
+        dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
         cluster->addBlob(blob);
         myDirents->push_back(dirents.size()-1);
       }
 
       // When we've seen all articles, write any remaining clusters.
-      if (compCluster.count() > 0)
+      if (compCluster.count())
       {
         clusterOffsets.push_back(out.tellp());
         out << compCluster;
@@ -223,13 +223,13 @@ namespace zim
              dpi != uncompDirents.end(); ++dpi)
         {
           Dirent *di = &dirents[*dpi];
-          di->setCluster(clusterOffsets.size(), di->getBlobNumber());
+          di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
         }
       }
       compCluster.clear();
       compDirents.clear();
 
-      if (uncompCluster.count() > 0)
+      if (uncompCluster.count())
       {
         clusterOffsets.push_back(out.tellp());
         out << uncompCluster;

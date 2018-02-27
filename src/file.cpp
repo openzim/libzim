@@ -103,24 +103,24 @@ namespace zim
             : Article();
   }
 
-  std::shared_ptr<const Cluster> File::getCluster(size_type idx) const
+  std::shared_ptr<const Cluster> File::getCluster(cluster_index_type idx) const
   {
-    return impl->getCluster(idx);
+    return impl->getCluster(cluster_index_t(idx));
   }
 
-  size_type File::getCountClusters() const
+  cluster_index_type File::getCountClusters() const
   {
-    return impl->getCountClusters();
+    return cluster_index_type(impl->getCountClusters());
   }
 
-  offset_type File::getClusterOffset(size_type idx) const
+  offset_type File::getClusterOffset(cluster_index_type idx) const
   {
-    return impl->getClusterOffset(idx);
+    return impl->getClusterOffset(cluster_index_t(idx));
   }
 
-  Blob File::getBlob(size_type clusterIdx, size_type blobIdx) const
+  Blob File::getBlob(cluster_index_type clusterIdx, blob_index_type blobIdx) const
   {
-    return getCluster(clusterIdx)->getBlob(blobIdx);
+    return impl->getCluster(cluster_index_t(clusterIdx))->getBlob(blob_index_t(blobIdx));
   }
 
   article_index_type File::getNamespaceBeginOffset(char ch) const
@@ -191,9 +191,9 @@ namespace zim
       return search;
   }
 
-  offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
+  offset_type File::getOffset(cluster_index_type clusterIdx, blob_index_type blobIdx) const
   {
-    return impl->getBlobOffset(clusterIdx, blobIdx);
+    return impl->getBlobOffset(cluster_index_t(clusterIdx), blob_index_t(blobIdx));
   }
 
   time_t File::getMTime() const

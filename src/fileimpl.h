@@ -31,6 +31,7 @@
 #include "cluster.h"
 #include "buffer.h"
 #include "file_compound.h"
+#include "zim_types.h"
 
 namespace zim
 {
@@ -51,7 +52,7 @@ namespace zim
       Cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
-      Cache<offset_type, std::shared_ptr<Cluster>> clusterCache;
+      Cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;
@@ -79,12 +80,6 @@ namespace zim
 
       std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
       getFileParts(offset_type offset, offset_type size);
-
-      std::shared_ptr<const Cluster> getCluster(size_type idx);
-      size_type getCountClusters() const       { return header.getClusterCount(); }
-      offset_type getClusterOffset(size_type idx)   { return getOffset(clusterOffsetBuffer.get(), idx); }
-      offset_type getBlobOffset(size_type clusterIdx, size_type blobIdx);
-
       std::shared_ptr<const Dirent> getDirent(article_index_t idx);
       std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
       article_index_t getIndexByTitle(article_index_t idx);
@@ -94,6 +89,12 @@ namespace zim
       std::pair<bool, article_index_t> findx(char ns, const std::string& url);
       std::pair<bool, article_index_t> findx(const std::string& url);
       std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
+
+      std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
+      cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
+      offset_type getClusterOffset(cluster_index_t idx)   { return getOffset(clusterOffsetBuffer.get(), idx.v); }
+      offset_type getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
+
       article_index_t getNamespaceBeginOffset(char ch);
       article_index_t getNamespaceEndOffset(char ch);
       article_index_t getNamespaceCount(char ns)

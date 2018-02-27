@@ -37,8 +37,8 @@ namespace zim
 
       size_type version;
 
-      size_type clusterNumber;  // only used when redirect is false
-      size_type blobNumber;    // only used when redirect is false
+      cluster_index_t clusterNumber;  // only used when redirect is false
+      blob_index_t blobNumber;    // only used when redirect is false
 
       article_index_t redirectIndex;  // only used when redirect is true
 
@@ -73,9 +73,9 @@ namespace zim
       size_type getVersion() const            { return version; }
       void setVersion(size_type v)            { version = v; }
 
-      size_type getClusterNumber() const      { return isRedirect() ? 0 : clusterNumber; }
-      size_type getBlobNumber() const         { return isRedirect() ? 0 : blobNumber; }
-      void setCluster(size_type clusterNumber_, size_type blobNumber_)
+      cluster_index_t getClusterNumber() const      { return isRedirect() ? cluster_index_t(0) : clusterNumber; }
+      blob_index_t  getBlobNumber() const         { return isRedirect() ? blob_index_t(0) : blobNumber; }
+      void setCluster(cluster_index_t clusterNumber_, blob_index_t blobNumber_)
         { clusterNumber = clusterNumber_; blobNumber = blobNumber_; }
 
       article_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : article_index_t(0); }
@@ -114,8 +114,8 @@ namespace zim
       {
         redirectIndex = idx;
         mimeType = redirectMimeType;
-        clusterNumber = 0;
-        blobNumber = 0;
+        clusterNumber = cluster_index_t(0);
+        blobNumber = blob_index_t(0);
       }
 
       void setMimeType(uint16_t mime)
@@ -126,18 +126,18 @@ namespace zim
       void setLinktarget()
       {
         mimeType = linktargetMimeType;
-        clusterNumber = 0;
-        blobNumber = 0;
+        clusterNumber = cluster_index_t(0);
+        blobNumber = blob_index_t(0);
       }
 
       void setDeleted()
       {
         mimeType = deletedMimeType;
-        clusterNumber = 0;
-        blobNumber = 0;
+        clusterNumber = cluster_index_t(0);
+        blobNumber = blob_index_t(0);
       }
 
-      void setArticle(uint16_t mimeType_, size_type clusterNumber_, size_type blobNumber_)
+      void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
         mimeType = mimeType_;
         clusterNumber = clusterNumber_;

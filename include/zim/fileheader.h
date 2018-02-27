@@ -50,8 +50,8 @@ namespace zim
       offset_type titleIdxPos;
       offset_type urlPtrPos;
       offset_type mimeListPos;
-      size_type blobCount;
-      offset_type blobPtrPos;
+      cluster_index_type clusterCount;
+      offset_type clusterPtrPos;
       article_index_type mainPage;
       article_index_type layoutPage;
       offset_type checksumPos;
@@ -61,8 +61,8 @@ namespace zim
         : articleCount(0),
           titleIdxPos(0),
           urlPtrPos(0),
-          blobCount(0),
-          blobPtrPos(0),
+          clusterCount(0),
+          clusterPtrPos(0),
           mainPage(std::numeric_limits<article_index_type>::max()),
           layoutPage(std::numeric_limits<article_index_type>::max()),
           checksumPos(std::numeric_limits<offset_type>::max())
@@ -89,11 +89,11 @@ namespace zim
       offset_type getMimeListPos() const           { return mimeListPos; }
       void        setMimeListPos(offset_type p)    { mimeListPos = p; }
 
-      size_type   getClusterCount() const          { return blobCount; }
-      void        setClusterCount(size_type s)     { blobCount = s; }
+      cluster_index_type   getClusterCount() const          { return clusterCount; }
+      void        setClusterCount(cluster_index_type s)     { clusterCount = s; }
 
-      offset_type getClusterPtrPos() const         { return blobPtrPos; }
-      void        setClusterPtrPos(offset_type p)  { blobPtrPos = p; }
+      offset_type getClusterPtrPos() const         { return clusterPtrPos; }
+      void        setClusterPtrPos(offset_type p)  { clusterPtrPos = p; }
 
       bool        hasMainPage() const              { return mainPage != std::numeric_limits<article_index_type>::max(); }
       article_index_type   getMainPage() const     { return mainPage; }

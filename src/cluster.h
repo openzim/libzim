@@ -26,6 +26,8 @@
 #include <vector>
 #include <memory>
 
+#include "zim_types.h"
+
 namespace zim
 {
   class Blob;
@@ -46,14 +48,14 @@ namespace zim
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 
-      size_type count() const               { return offsets.size() - 1; }
+      blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
       size_type size() const;
 
-      const char* getBlobPtr(unsigned n) const;
-      size_type getBlobSize(unsigned n) const  { return offsets[n+1] - offsets[n]; }
-      offset_type getBlobOffset(size_type n) const { return startOffset + offsets[n]; }
-      Blob getBlob(size_type n) const;
-      Blob getBlob(size_type n, size_type offset, size_type size) const;
+      const char* getBlobPtr(blob_index_t n) const;
+      size_type getBlobSize(blob_index_t n) const  { return offsets[n.v+1] - offsets[n.v]; }
+      offset_type getBlobOffset(blob_index_t n) const { return startOffset + offsets[n.v]; }
+      Blob getBlob(blob_index_t n) const;
+      Blob getBlob(blob_index_t n, offset_type offset, size_type size) const;
       void clear();
 
       void init_from_buffer(Buffer& buffer);

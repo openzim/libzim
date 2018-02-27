@@ -54,7 +54,7 @@ namespace zim
 
     if (dirent.isRedirect())
     {
-      toLittleEndian(article_index_type(dirent.getRedirectIndex()), header.d + 8);
+      toLittleEndian(dirent.getRedirectIndex().v, header.d + 8);
       out.write(header.d, 12);
     }
     else if (dirent.isLinktarget() || dirent.isDeleted())
@@ -63,8 +63,8 @@ namespace zim
     }
     else
     {
-      toLittleEndian(article_index_type(dirent.getClusterNumber()), header.d + 8);
-      toLittleEndian(article_index_type(dirent.getBlobNumber()), header.d + 12);
+      toLittleEndian(cluster_index_type(dirent.getClusterNumber()), header.d + 8);
+      toLittleEndian(blob_index_type(dirent.getBlobNumber()), header.d + 12);
       out.write(header.d, 16);
     }
 
@@ -104,7 +104,7 @@ namespace zim
     else if (linktarget || deleted)
     {
       log_debug("linktarget or deleted entry");
-      setArticle(mimeType, 0, 0);
+      setArticle(mimeType, cluster_index_t(0), blob_index_t(0));
     }
     else
     {
@@ -117,7 +117,7 @@ namespace zim
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber);
 
-      setArticle(mimeType, clusterNumber, blobNumber);
+      setArticle(mimeType, cluster_index_t(clusterNumber), blob_index_t(blobNumber));
     }
     
     std::string url;

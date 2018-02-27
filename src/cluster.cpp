@@ -80,20 +80,20 @@ namespace zim
     return data_address;
   }
 
-  Blob Cluster::getBlob(size_type n) const
+  Blob Cluster::getBlob(blob_index_t n) const
   {
     if (size()) {
-      auto buffer = reader->get_buffer(offsets[n], getBlobSize(n));
+      auto buffer = reader->get_buffer(offsets[blob_index_type(n)], getBlobSize(n));
       return Blob(buffer);
     } else {
       return Blob();
     }
   }
 
-  Blob Cluster::getBlob(size_type n, size_type offset, size_type size) const
+  Blob Cluster::getBlob(blob_index_t n, offset_type offset, size_type size) const
   {
     if (this->size()) {
-      offset += offsets[n];
+      offset += offsets[blob_index_type(n)];
       size = std::min(size, getBlobSize(n));
       auto buffer = reader->get_buffer(offset, size);
       return Blob(buffer);
@@ -102,9 +102,9 @@ namespace zim
     }
   }
 
-  const char* Cluster::getBlobPtr(unsigned n) const
+  const char* Cluster::getBlobPtr(blob_index_t n) const
   {
-     auto d = reader->get_buffer(offsets[n], getBlobSize(n))->data();
+     auto d = reader->get_buffer(offsets[blob_index_type(n)], getBlobSize(n))->data();
      return d;
   }
 

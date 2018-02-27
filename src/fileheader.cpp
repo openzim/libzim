@@ -100,7 +100,7 @@ namespace zim
   }
 
   void Fileheader::sanity_check() const {
-    if (!!articleCount != !!blobCount) {
+    if (!!articleCount != !!clusterCount) {
       throw ZimFileFormatError("No article <=> No cluster");
     }
 
@@ -114,11 +114,11 @@ namespace zim
     if (titleIdxPos < mimeListPos) {
       throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
     }
-    if (blobPtrPos < mimeListPos) {
+    if (clusterPtrPos < mimeListPos) {
       throw ZimFileFormatError("clusterPtrPos must be > mimelistPos.");
     }
 
-    if (blobCount > articleCount) {
+    if (clusterCount > articleCount) {
       throw ZimFileFormatError("Cluster count cannot be higher than article count.");
     }
 
