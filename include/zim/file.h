@@ -50,12 +50,12 @@ namespace zim
       const Fileheader& getFileheader() const;
       offset_type getFilesize() const;
 
-      size_type getCountArticles() const;
+      article_index_type getCountArticles() const;
 
-      Article getArticle(size_type idx) const;
+      Article getArticle(article_index_type idx) const;
       Article getArticle(char ns, const std::string& url) const;
       Article getArticleByUrl(const std::string& url) const;
-      Article getArticleByTitle(size_type idx) const;
+      Article getArticleByTitle(article_index_type idx) const;
       Article getArticleByTitle(char ns, const std::string& title) const;
 
       std::shared_ptr<const Cluster> getCluster(size_type idx) const;
@@ -65,9 +65,9 @@ namespace zim
       Blob getBlob(size_type clusterIdx, size_type blobIdx) const;
       offset_type getOffset(size_type clusterIdx, size_type blobIdx) const;
 
-      size_type getNamespaceBeginOffset(char ch) const;
-      size_type getNamespaceEndOffset(char ch) const;
-      size_type getNamespaceCount(char ns) const;
+      article_index_type getNamespaceBeginOffset(char ch) const;
+      article_index_type getNamespaceEndOffset(char ch) const;
+      article_index_type getNamespaceCount(char ns) const;
 
       std::string getNamespaces() const;
       bool hasNamespace(char ch) const;

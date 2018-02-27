@@ -35,7 +35,7 @@ namespace zim
       public:
         typedef std::vector<Dirent> DirentsType;
         typedef std::vector<DirentsType::size_type> DirentPtrsType;
-        typedef std::vector<size_type> SizeVectorType;
+        typedef std::vector<article_index_t> ArticleIdxVectorType;
         typedef std::vector<offset_type> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypes;
         typedef std::map<uint16_t, std::string> RMimeTypes;
@@ -46,7 +46,7 @@ namespace zim
         Fileheader header;
 
         DirentsType dirents;
-        SizeVectorType titleIdx;
+        ArticleIdxVectorType titleIdx;
         OffsetsType clusterOffsets;
         MimeTypes mimeTypes;
         RMimeTypes rmimeTypes;

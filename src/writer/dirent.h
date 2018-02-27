@@ -30,18 +30,22 @@ namespace zim
     {
         std::string aid;
         std::string redirectAid;
-        size_type idx;
+        article_index_t idx;
         bool compress;
 
       public:
-        Dirent() {}
+        Dirent()
+          : idx(0)
+          {}
 
         Dirent(const std::string& aid_)
-          : aid(aid_)
+          : aid(aid_),
+            idx(0)
           {}
 
         Dirent(char ns, const std::string& url)
-        { setUrl(ns, url); }
+          : idx(0)
+          { setUrl(ns, url); }
 
         void setAid(const std::string&  aid_)      { aid = aid_; }
         const std::string& getAid() const          { return aid; }
@@ -49,8 +53,8 @@ namespace zim
         void setRedirectAid(const std::string&  aid_)     { redirectAid = aid_; }
         const std::string& getRedirectAid() const         { return redirectAid; }
 
-        void setIdx(size_type idx_)      { idx = idx_; }
-        size_type getIdx() const         { return idx; }
+        void setIdx(article_index_t idx_)      { idx = idx_; }
+        article_index_t getIdx() const         { return idx; }
 
         void setCompress(bool sw = true)  { compress = sw; }
         bool isCompress() const           { return compress; }

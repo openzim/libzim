@@ -54,7 +54,7 @@ namespace zim
 
     if (dirent.isRedirect())
     {
-      toLittleEndian(dirent.getRedirectIndex(), header.d + 8);
+      toLittleEndian(article_index_type(dirent.getRedirectIndex()), header.d + 8);
       out.write(header.d, 12);
     }
     else if (dirent.isLinktarget() || dirent.isDeleted())
@@ -63,8 +63,8 @@ namespace zim
     }
     else
     {
-      toLittleEndian(dirent.getClusterNumber(), header.d + 8);
-      toLittleEndian(dirent.getBlobNumber(), header.d + 12);
+      toLittleEndian(article_index_type(dirent.getClusterNumber()), header.d + 8);
+      toLittleEndian(article_index_type(dirent.getBlobNumber()), header.d + 12);
       out.write(header.d, 16);
     }
 
@@ -79,6 +79,7 @@ namespace zim
   }
 
   Dirent::Dirent(std::unique_ptr<Buffer> buffer)
+    : Dirent()
   {
     uint16_t mimeType = buffer->as<uint16_t>(0);
     bool redirect = (mimeType == Dirent::redirectMimeType);
@@ -93,12 +94,12 @@ namespace zim
 
     if (redirect)
     {
-      size_type redirectIndex = buffer->as<size_type>(current);
-      current += sizeof(size_type);
+      article_index_t redirectIndex(buffer->as<article_index_type>(current));
+      current += sizeof(article_index_t);
 
       log_debug("redirectIndex=" << redirectIndex);
 
-      setRedirect(redirectIndex);
+      setRedirect(article_index_t(redirectIndex));
     }
     else if (linktarget || deleted)
     {

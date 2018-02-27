@@ -93,9 +93,9 @@ namespace zim
     {
       if (maxRecurse <= 0)
         throw std::runtime_error("maximum recursive limit is reached");
-      std::pair<bool, size_type> r = file->findx(ns, url);
+      std::pair<bool, article_index_t> r = file->findx(ns, url);
       if (r.first) {
-          Article(file, r.second).getPage(out, false, maxRecurse - 1);
+          Article(file, article_index_type(r.second)).getPage(out, false, maxRecurse - 1);
       } else {
           throw std::runtime_error(std::string("impossible to find article ") + ns + "/" + url);
       }
@@ -105,7 +105,7 @@ namespace zim
 
   std::shared_ptr<const Dirent> Article::getDirent() const
   {
-    return file->getDirent(idx);
+    return file->getDirent(article_index_t(idx));
   }
 
   std::string Article::getParameter() const
@@ -158,9 +158,9 @@ namespace zim
     return getDirent()->getNamespace();
   }
 
-  size_type Article::getRedirectIndex() const
+  article_index_type Article::getRedirectIndex() const
   {
-    return getDirent()->getRedirectIndex();
+    return article_index_type(getDirent()->getRedirectIndex());
   }
 
   Article Article::getRedirectArticle() const

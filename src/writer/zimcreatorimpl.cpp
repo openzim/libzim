@@ -122,7 +122,7 @@ namespace zim
 
         if (article->isRedirect())
         {
-          dirent.setRedirect(0);
+          dirent.setRedirect(article_index_t(0));
           dirent.setRedirectAid(article->getRedirectAid());
           log_debug("is redirect to " << dirent.getRedirectAid());
         }
@@ -151,7 +151,7 @@ namespace zim
         currentSize +=
           dirent.getDirentSize() /* for directory entry */ +
           sizeof(offset_type) /* for url pointer list */ +
-          sizeof(size_type) /* for title pointer list */;
+          sizeof(uint32_t) /* for title pointer list */;
         dirents.push_back(dirent);
 
         // If this is a redirect, we're done: there's no blob to add.
@@ -277,9 +277,11 @@ namespace zim
 
       // set index
       INFO("set index");
-      unsigned idx = 0;
-      for (DirentsType::iterator di = dirents.begin(); di != dirents.end(); ++di)
-        di->setIdx(idx++);
+      article_index_t idx(0);
+      for (DirentsType::iterator di = dirents.begin(); di != dirents.end(); ++di) {
+        di->setIdx(idx);
+        idx += 1;
+      }
 
       // sort
       log_debug("sort " << dirents.size() << " directory entries (aid)");
@@ -323,10 +325,10 @@ namespace zim
           explicit CompareTitle(ZimCreatorImpl::DirentsType& dirents_)
             : dirents(dirents_)
             { }
-          bool operator() (size_type titleIdx1, size_type titleIdx2) const
+          bool operator() (article_index_t titleIdx1, article_index_t titleIdx2) const
           {
-            Dirent d1 = dirents[titleIdx1];
-            Dirent d2 = dirents[titleIdx2];
+            Dirent d1 = dirents[article_index_type(titleIdx1)];
+            Dirent d2 = dirents[article_index_type(titleIdx2)];
             return d1.getNamespace() < d2.getNamespace()
                || (d1.getNamespace() == d2.getNamespace()
                 && d1.getTitle() < d2.getTitle());
@@ -351,8 +353,8 @@ namespace zim
 
       log_debug("main aid=" << mainAid << " layout aid=" << layoutAid);
 
-      header.setMainPage(std::numeric_limits<size_type>::max());
-      header.setLayoutPage(std::numeric_limits<size_type>::max());
+      header.setMainPage(std::numeric_limits<article_index_type>::max());
+      header.setLayoutPage(std::numeric_limits<article_index_type>::max());
 
       if (!mainAid.empty() || !layoutAid.empty())
       {
@@ -361,13 +363,13 @@ namespace zim
           if (mainAid == di->getAid())
           {
             log_debug("main idx=" << di->getIdx());
-            header.setMainPage(di->getIdx());
+            header.setMainPage(article_index_type(di->getIdx()));
           }
 
           if (layoutAid == di->getAid())
           {
             log_debug("layout idx=" << di->getIdx());
-            header.setLayoutPage(di->getIdx());
+            header.setLayoutPage(article_index_type(di->getIdx()));
           }
         }
       }
@@ -462,11 +464,11 @@ namespace zim
 
       // write title index
 
-      for (SizeVectorType::const_iterator it = titleIdx.begin(); it != titleIdx.end(); ++it)
+      for (ArticleIdxVectorType::const_iterator it = titleIdx.begin(); it != titleIdx.end(); ++it)
       {
-        char tmp_buff[sizeof(size_type)];
-        toLittleEndian(*it, tmp_buff);
-        out.write(tmp_buff, sizeof(size_type));
+        char tmp_buff[sizeof(article_index_type)];
+        toLittleEndian(it->v, tmp_buff);
+        out.write(tmp_buff, sizeof(article_index_type));
       }
 
       log_debug("after writing fileIdxList - pos=" << out.tellp());

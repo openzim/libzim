@@ -167,13 +167,13 @@ TEST(DirentTest, read_write_redirect_dirent)
   zim::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setParameter("baz");
-  dirent.setRedirect(321);
+  dirent.setRedirect(zim::article_index_t(321));
 
   ASSERT_TRUE(dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), 'A');
   ASSERT_EQ(dirent.getUrl(), "Bar");
   ASSERT_EQ(dirent.getParameter(), "baz");
-  ASSERT_EQ(dirent.getRedirectIndex(), 321U);
+  ASSERT_EQ(dirent.getRedirectIndex().v, 321U);
 
   std::stringstream s;
   s << dirent;
@@ -191,7 +191,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent2.getUrl(), "Bar");
   ASSERT_EQ(dirent2.getTitle(), "Bar");
   ASSERT_EQ(dirent2.getParameter(), "baz");
-  ASSERT_EQ(dirent2.getRedirectIndex(), 321U);
+  ASSERT_EQ(dirent2.getRedirectIndex().v, 321U);
 }
 
 TEST(DirentTest, read_write_linktarget_dirent)
@@ -295,7 +295,7 @@ TEST(DirentTest, redirect_dirent_size)
   zim::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setParameter("baz");
-  dirent.setRedirect(321);
+  dirent.setRedirect(zim::article_index_t(321));
 
   std::ostringstream d;
   d << dirent;

@@ -25,6 +25,8 @@
 #include <exception>
 #include <memory>
 
+#include "zim_types.h"
+
 namespace zim
 {
   class Buffer;
@@ -38,7 +40,7 @@ namespace zim
       size_type clusterNumber;  // only used when redirect is false
       size_type blobNumber;    // only used when redirect is false
 
-      size_type redirectIndex;  // only used when redirect is true
+      article_index_t redirectIndex;  // only used when redirect is true
 
       char ns;
       std::string title;
@@ -76,7 +78,7 @@ namespace zim
       void setCluster(size_type clusterNumber_, size_type blobNumber_)
         { clusterNumber = clusterNumber_; blobNumber = blobNumber_; }
 
-      size_type getRedirectIndex() const      { return isRedirect() ? redirectIndex : 0; }
+      article_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : article_index_t(0); }
 
       char getNamespace() const               { return ns; }
       const std::string& getTitle() const     { return title.empty() ? url : title; }
@@ -108,7 +110,7 @@ namespace zim
         parameter = parameter_;
       }
 
-      void setRedirect(size_type idx)
+      void setRedirect(article_index_t idx)
       {
         redirectIndex = idx;
         mimeType = redirectMimeType;
