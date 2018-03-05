@@ -76,14 +76,7 @@ namespace zim
     }
     setMajorVersion(major_version);
 
-    uint16_t minor_version = buffer->as<uint16_t>(offset_t(6));
-    if (minor_version < Fileheader::zimMinorVersion)
-    {
-      log_error("invalid zimfile minor version " << minor_version << " found - "
-          << Fileheader::zimMinorVersion << " expected");
-      throw ZimFileFormatError("Invalid version");
-    }
-    setMinorVersion(minor_version);
+    setMinorVersion(buffer->as<uint16_t>(offset_t(6)));
 
     Uuid uuid;
     std::copy(buffer->data(offset_t(8)), buffer->data(offset_t(24)), uuid.data);
