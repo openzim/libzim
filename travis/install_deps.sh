@@ -29,7 +29,7 @@ esac
 
 sudo apt-get update -qq
 sudo apt-get install -qq python3-pip ${PACKAGES}
-sudo pip3 install meson pytest
+sudo pip3 install meson==0.43.0 pytest
 
 # Ninja
 cd $HOME
