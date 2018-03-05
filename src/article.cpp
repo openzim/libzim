@@ -36,8 +36,8 @@ namespace zim
   size_type Article::getArticleSize() const
   {
     auto dirent = getDirent();
-    return file->getCluster(dirent->getClusterNumber())
-               ->getBlobSize(dirent->getBlobNumber());
+    return size_type(file->getCluster(dirent->getClusterNumber())
+                         ->getBlobSize(dirent->getBlobNumber()));
   }
 
   namespace
@@ -179,28 +179,29 @@ namespace zim
     return file->getCluster(dirent->getClusterNumber());
   }
 
-  Blob Article::getData(size_type offset) const
+  Blob Article::getData(offset_type offset) const
   {
     auto size = getArticleSize()-offset;
     return getData(offset, size);
   }
 
-  Blob Article::getData(size_type offset, size_type size) const
+  Blob Article::getData(offset_type offset, size_type size) const
   {
     std::shared_ptr<const Cluster> cluster = getCluster();
     if (!cluster) {
       return Blob();
     }
-    return cluster->getBlob(getDirent()->getBlobNumber(), offset, size);
+    return cluster->getBlob(getDirent()->getBlobNumber(), offset_t(offset), zsize_t(size));
   }
 
   offset_type Article::getOffset() const
   {
     auto dirent = getDirent();
-    return dirent->isRedirect()
+    if (dirent->isRedirect()
         || dirent->isLinktarget()
-        || dirent->isDeleted() ? 0
-                              : file->getBlobOffset(dirent->getClusterNumber(), dirent->getBlobNumber());
+        || dirent->isDeleted())
+        return 0;
+    return offset_type(file->getBlobOffset(dirent->getClusterNumber(), dirent->getBlobNumber()));
   }
 
   std::pair<std::string, offset_type> Article::getDirectAccessInformation() const
@@ -215,18 +216,19 @@ namespace zim
     auto full_offset = file->getBlobOffset(dirent->getClusterNumber(),
                                            dirent->getBlobNumber());
 
-    if (full_offset == 0 ) {
+    if (!full_offset) {
       // cluster is compressed
       return std::make_pair("", 0);
     }
-    auto part_its = file->getFileParts(full_offset, getArticleSize());
+    auto part_its = file->getFileParts(full_offset, zsize_t(getArticleSize()));
     auto range = part_its.first->first;
     auto part = part_its.first->second;
     if (++part_its.first != part_its.second) {
       return std::make_pair("", 0);
     }
     auto local_offset = full_offset - range.min;
-    return std::make_pair(part->filename(), local_offset);
+    return std::make_pair(part->filename(), offset_type(local_offset));
+
   }
 
   std::string Article::getPage(bool layout, unsigned maxRecurse)

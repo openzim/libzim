@@ -39,7 +39,7 @@ namespace zim
   class Fileheader
   {
     public:
-      static const size_type zimMagic;
+      static const uint32_t zimMagic;
       static const uint16_t zimMajorVersion;
       static const uint16_t zimMinorVersion;
       static const size_type size;

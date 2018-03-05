@@ -95,10 +95,10 @@ namespace zim
     {
       INFO("collect articles");
       std::ofstream out(tmpfname.c_str());
-      currentSize =
+      currentSize = zsize_t(
         80 /* for header */ +
         1 /* for mime type table termination */ +
-        16 /* for md5sum */;
+        16 /* for md5sum */);
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
       // because we don't know which one will fill up first.  We also need
@@ -150,7 +150,7 @@ namespace zim
 
         currentSize +=
           dirent.getDirentSize() /* for directory entry */ +
-          sizeof(offset_type) /* for url pointer list */ +
+          sizeof(uint64_t) /* for url pointer list */ +
           sizeof(uint32_t) /* for title pointer list */;
         dirents.push_back(dirent);
 
@@ -185,14 +185,14 @@ namespace zim
         // If cluster will be too large, write it to dis, and open a new
         // one for the content.
         if ( cluster->count()
-          && cluster->size()+blob.size() >= minChunkSize * 1024
+          && cluster->size().v+blob.size() >= minChunkSize * 1024
            )
         {
           log_info("cluster with " << cluster->count() << " articles, " <<
                    cluster->size() << " bytes; current title \"" <<
                    dirent.getTitle() << '\"');
           offset_type start = out.tellp();
-          clusterOffsets.push_back(start);
+          clusterOffsets.push_back(offset_t(start));
           out << *cluster;
           log_debug("cluster written");
           cluster->clear();
@@ -217,7 +217,7 @@ namespace zim
       // When we've seen all articles, write any remaining clusters.
       if (compCluster.count())
       {
-        clusterOffsets.push_back(out.tellp());
+        clusterOffsets.push_back(offset_t(out.tellp()));
         out << compCluster;
         for (DirentPtrsType::iterator dpi = uncompDirents.begin();
              dpi != uncompDirents.end(); ++dpi)
@@ -231,7 +231,7 @@ namespace zim
 
       if (uncompCluster.count())
       {
-        clusterOffsets.push_back(out.tellp());
+        clusterOffsets.push_back(offset_t(out.tellp()));
         out << uncompCluster;
       }
       uncompCluster.clear();
@@ -242,7 +242,7 @@ namespace zim
         throw std::runtime_error("failed to write temporary cluster file");
       }
 
-      clustersSize = out.tellp();
+      clustersSize = zsize_t(out.tellp());
 
       // sort
       INFO("sort " << dirents.size() << " directory entries (aid)");
@@ -376,12 +376,12 @@ namespace zim
 
       header.setUuid( src.getUuid() );
       header.setArticleCount( dirents.size() );
-      header.setUrlPtrPos( urlPtrPos() );
-      header.setMimeListPos( mimeListPos() );
-      header.setTitleIdxPos( titleIdxPos() );
+      header.setUrlPtrPos( offset_type(urlPtrPos()));
+      header.setMimeListPos( offset_type(mimeListPos()) );
+      header.setTitleIdxPos( offset_type(titleIdxPos()) );
       header.setClusterCount( clusterOffsets.size() );
-      header.setClusterPtrPos( clusterPtrPos() );
-      header.setChecksumPos( checksumPos() );
+      header.setClusterPtrPos( offset_type(clusterPtrPos()) );
+      header.setChecksumPos( offset_type(checksumPos()) );
 
       log_debug(
             "mimeListSize=" << mimeListSize() <<
@@ -451,11 +451,11 @@ namespace zim
 
       // write url ptr list
 
-      offset_type off = indexPos();
+      offset_t off(indexPos());
       for (DirentsType::const_iterator it = dirents.begin(); it != dirents.end(); ++it)
       {
         char tmp_buff[sizeof(offset_type)];
-        toLittleEndian(off, tmp_buff);
+        toLittleEndian(off.v, tmp_buff);
         out.write(tmp_buff, sizeof(offset_type));
         off += it->getDirentSize();
       }
@@ -488,9 +488,9 @@ namespace zim
       off += clusterOffsets.size() * sizeof(offset_type);
       for (OffsetsType::const_iterator it = clusterOffsets.begin(); it != clusterOffsets.end(); ++it)
       {
-        offset_type o = (off + *it);
+        offset_t o(off + *it);
         char tmp_buff[sizeof(offset_type)];
-        toLittleEndian(o, tmp_buff);
+        toLittleEndian(o.v, tmp_buff);
         out.write(tmp_buff, sizeof(offset_type));
       }
 
@@ -515,22 +515,22 @@ namespace zim
       zimfile.write(reinterpret_cast<const char*>(digest), 16);
     }
 
-    offset_type ZimCreatorImpl::mimeListSize() const
+    zsize_t ZimCreatorImpl::mimeListSize() const
     {
-      offset_type ret = 1;
+      size_type ret = 1;
       for (RMimeTypes::const_iterator it = rmimeTypes.begin(); it != rmimeTypes.end(); ++it)
         ret += (it->second.size() + 1);
-      return ret;
+      return zsize_t(ret);
     }
 
-    offset_type ZimCreatorImpl::indexSize() const
+    zsize_t ZimCreatorImpl::indexSize() const
     {
-      offset_type s = 0;
+      size_type s = 0;
 
       for (DirentsType::const_iterator it = dirents.begin(); it != dirents.end(); ++it)
         s += it->getDirentSize();
 
-      return s;
+      return zsize_t(s);
     }
 
     uint16_t ZimCreatorImpl::getMimeTypeIdx(const std::string& mimeType)
@@ -562,14 +562,14 @@ namespace zim
 
     ZimCreator::~ZimCreator() = default;
 
-    unsigned ZimCreator::getMinChunkSize() const
+    size_type ZimCreator::getMinChunkSize() const
     {
-      return impl->getMinChunkSize();
+      return size_type(impl->getMinChunkSize());
     }
 
-    void ZimCreator::setMinChunkSize(int s)
+    void ZimCreator::setMinChunkSize(size_type s)
     {
-      impl->setMinChunkSize(s);
+      impl->setMinChunkSize(zsize_t(s));
     }
 
     void ZimCreator::create(const std::string& fname, ArticleSource& src)
@@ -579,7 +579,7 @@ namespace zim
 
     offset_type ZimCreator::getCurrentSize() const
     {
-      return impl->getCurrentSize();
+      return offset_type(impl->getCurrentSize());
     }
 
   }

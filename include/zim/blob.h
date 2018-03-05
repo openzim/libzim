@@ -20,6 +20,8 @@
 #ifndef ZIM_BLOB_H
 #define ZIM_BLOB_H
 
+#include "zim.h"
+
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -31,7 +33,7 @@ namespace zim
   class Blob
   {
       const char* _data;
-      unsigned _size;
+      size_type _size;
       std::shared_ptr<const Buffer> _buffer;
 
     public:
@@ -39,7 +41,7 @@ namespace zim
         : _data(0), _size(0)
           { }
 
-      Blob(const char* data, unsigned size)
+      Blob(const char* data, size_type size)
         : _data(data),
           _size(size)
           { }
@@ -49,7 +51,7 @@ namespace zim
       operator std::string() const { return std::string(_data, _size); }
       const char* data() const  { return _data; }
       const char* end() const   { return _data + _size; }
-      unsigned size() const     { return _size; }
+      size_type size() const     { return _size; }
   };
 
   inline std::ostream& operator<< (std::ostream& out, const Blob& blob)

@@ -49,34 +49,34 @@ namespace zim
   }
 
   /* This return the number of char read */
-  offset_type Cluster::read_header()
+  offset_t Cluster::read_header()
   {
     // read first offset, which specifies, how many offsets we need to read
-    size_type offset;
-    offset = reader->read<size_type>(0);
+    uint32_t offset;
+    offset = reader->read<uint32_t>(offset_t(0));
 
-    size_type n_offset = offset / 4;
-    size_type data_address = offset;
+    size_t n_offset = offset / sizeof(offset);
+    offset_t data_address(offset);
 
     // read offsets
     offsets.clear();
     offsets.reserve(n_offset);
-    offsets.push_back(0);
+    offsets.push_back(offset_t(0));
     
-    auto buffer = reader->get_buffer(0, offset);
-    offset_type current = 4;
+    auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
+    offset_t current = offset_t(sizeof(uint32_t));
     while (--n_offset)
     {
-      size_type new_offset = buffer->as<size_type>(current);
+      uint32_t new_offset = buffer->as<uint32_t>(current);
       ASSERT(new_offset, >=, offset);
-      ASSERT(offset, >=, data_address);
-      ASSERT(offset, <=, reader->size());
+      ASSERT(offset, >=, data_address.v);
+      ASSERT(offset, <=, reader->size().v);
       
       offset = new_offset;
-      offsets.push_back(offset - data_address);
-      current += sizeof(size_type);
+      offsets.push_back(offset_t(offset - data_address.v));
+      current += sizeof(uint32_t);
     }
-    ASSERT(offset, ==, reader->size());
+    ASSERT(offset, ==, reader->size().v);
     return data_address;
   }
 
@@ -90,7 +90,7 @@ namespace zim
     }
   }
 
-  Blob Cluster::getBlob(blob_index_t n, offset_type offset, size_type size) const
+  Blob Cluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   {
     if (this->size()) {
       offset += offsets[blob_index_type(n)];
@@ -108,9 +108,9 @@ namespace zim
      return d;
   }
 
-  size_type Cluster::size() const
+  zsize_t Cluster::size() const
   {
-    return offsets.size() * sizeof(size_type) + reader->size();
+    return zsize_t(offsets.size() * sizeof(uint32_t) + reader->size().v);
   }
 
 }

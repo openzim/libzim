@@ -57,9 +57,9 @@ namespace zim
     return impl->getFileheader();
   }
 
-  offset_type File::getFilesize() const
+  size_type File::getFilesize() const
   {
-    return impl->getFilesize();
+    return impl->getFilesize().v;
   }
 
   article_index_type File::getCountArticles() const
@@ -115,7 +115,7 @@ namespace zim
 
   offset_type File::getClusterOffset(cluster_index_type idx) const
   {
-    return impl->getClusterOffset(cluster_index_t(idx));
+    return offset_type(impl->getClusterOffset(cluster_index_t(idx)));
   }
 
   Blob File::getBlob(cluster_index_type clusterIdx, blob_index_type blobIdx) const
@@ -193,7 +193,9 @@ namespace zim
 
   offset_type File::getOffset(cluster_index_type clusterIdx, blob_index_type blobIdx) const
   {
-    return impl->getBlobOffset(cluster_index_t(clusterIdx), blob_index_t(blobIdx));
+    return offset_type(impl->getBlobOffset(
+                           cluster_index_t(clusterIdx),
+                           blob_index_t(blobIdx)));
   }
 
   time_t File::getMTime() const

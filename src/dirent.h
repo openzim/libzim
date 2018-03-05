@@ -35,7 +35,7 @@ namespace zim
   {
       uint16_t mimeType;
 
-      size_type version;
+      uint32_t version;
 
       cluster_index_t clusterNumber;  // only used when redirect is false
       blob_index_t blobNumber;    // only used when redirect is false
@@ -70,8 +70,8 @@ namespace zim
       bool isArticle() const                  { return !isRedirect() && !isLinktarget() && !isDeleted(); }
       uint16_t getMimeType() const            { return mimeType; }
 
-      size_type getVersion() const            { return version; }
-      void setVersion(size_type v)            { version = v; }
+      uint32_t getVersion() const            { return version; }
+      void setVersion(uint32_t v)            { version = v; }
 
       cluster_index_t getClusterNumber() const      { return isRedirect() ? cluster_index_t(0) : clusterNumber; }
       blob_index_t  getBlobNumber() const         { return isRedirect() ? blob_index_t(0) : blobNumber; }
@@ -86,9 +86,9 @@ namespace zim
       std::string getLongUrl() const;
       const std::string& getParameter() const { return parameter; }
 
-      unsigned getDirentSize() const
+      size_t getDirentSize() const
       {
-        unsigned ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
+        size_t ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
         if (title != url)
           ret += title.size();
         return ret;

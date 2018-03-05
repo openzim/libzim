@@ -66,7 +66,7 @@ namespace zim
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      offset_type getOffset(const Buffer* buffer, size_t idx);
+      offset_t getOffset(const Buffer* buffer, size_t idx);
 
     public:
 
@@ -76,10 +76,10 @@ namespace zim
 
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
-      offset_type getFilesize() const;
+      zsize_t getFilesize() const;
 
       std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
-      getFileParts(offset_type offset, offset_type size);
+      getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(article_index_t idx);
       std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
       article_index_t getIndexByTitle(article_index_t idx);
@@ -92,8 +92,8 @@ namespace zim
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
-      offset_type getClusterOffset(cluster_index_t idx)   { return getOffset(clusterOffsetBuffer.get(), idx.v); }
-      offset_type getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
+      offset_t getClusterOffset(cluster_index_t idx)   { return getOffset(clusterOffsetBuffer.get(), idx.v); }
+      offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
       article_index_t getNamespaceBeginOffset(char ch);
       article_index_t getNamespaceEndOffset(char ch);

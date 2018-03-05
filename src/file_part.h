@@ -24,6 +24,8 @@
 
 #include <zim/zim.h>
 
+#include "zim_types.h"
+
 namespace zim {
 
 class FilePart {
@@ -33,14 +35,14 @@ class FilePart {
     const std::string& filename() const { return filename_; };
     const int fd() const { return fd_; };
 
-    offset_type size() const { return size_; };
-    bool fail() const { return size_ == 0; };
-    bool good() const { return size_; };
+    zsize_t size() const { return size_; };
+    bool fail() const { return !size_; };
+    bool good() const { return bool(size_); };
 
   private:
     const std::string filename_;
     int fd_;
-    offset_type size_;
+    zsize_t size_;
 };
 
 };

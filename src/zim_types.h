@@ -80,7 +80,22 @@ TYPEDEF(article_index_t, article_index_type)
 TYPEDEF(cluster_index_t, cluster_index_type)
 TYPEDEF(blob_index_t, blob_index_type)
 
+TYPEDEF(zsize_t, size_type)
+TYPEDEF(offset_t, offset_type)
+
 #undef TYPEDEF
+
+inline offset_t& operator+= (offset_t& lhs, const zsize_t& rhs)
+{
+  lhs.v += rhs.v;
+  return lhs;
+}
+
+inline offset_t operator+(offset_t lhs, const zsize_t& rhs)
+{
+  lhs += rhs;
+  return lhs;
+}
 
 };
 

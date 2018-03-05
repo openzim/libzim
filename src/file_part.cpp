@@ -34,7 +34,7 @@ FilePart::FilePart(const std::string& filename)
   struct stat sb;
   if ( fd_ >= 0 ) {
     fstat(fd_, &sb);
-    size_ = sb.st_size;
+    size_.v = sb.st_size;
   }
 }
 

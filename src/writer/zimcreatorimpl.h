@@ -36,12 +36,12 @@ namespace zim
         typedef std::vector<Dirent> DirentsType;
         typedef std::vector<DirentsType::size_type> DirentPtrsType;
         typedef std::vector<article_index_t> ArticleIdxVectorType;
-        typedef std::vector<offset_type> OffsetsType;
+        typedef std::vector<offset_t> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypes;
         typedef std::map<uint16_t, std::string> RMimeTypes;
 
       private:
-        unsigned minChunkSize;
+        size_t minChunkSize;
 
         Fileheader header;
 
@@ -53,27 +53,45 @@ namespace zim
         uint16_t nextMimeIdx;
         CompressionType compression;
         bool isEmpty;
-        offset_type clustersSize;
-        offset_type currentSize;
+        zsize_t clustersSize;
+        zsize_t currentSize;
 
         void createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname);
         void createTitleIndex(ArticleSource& src);
         void fillHeader(ArticleSource& src);
         void write(const std::string& fname, const std::string& tmpfname);
 
-        size_type clusterCount() const        { return clusterOffsets.size(); }
-        size_type articleCount() const        { return dirents.size(); }
-        offset_type mimeListSize() const;
-        offset_type mimeListPos() const       { return Fileheader::size; }
-        offset_type urlPtrSize() const        { return articleCount() * sizeof(offset_type); }
-        offset_type urlPtrPos() const         { return mimeListPos() + mimeListSize(); }
-        offset_type titleIdxSize() const      { return articleCount() * sizeof(size_type); }
-        offset_type titleIdxPos() const       { return urlPtrPos() + urlPtrSize(); }
-        offset_type indexSize() const;
-        offset_type indexPos() const          { return titleIdxPos() + titleIdxSize(); }
-        offset_type clusterPtrSize() const    { return clusterCount() * sizeof(offset_type); }
-        offset_type clusterPtrPos() const     { return indexPos() + indexSize(); }
-        offset_type checksumPos() const       { return clusterPtrPos() + clusterPtrSize() + clustersSize; }
+        cluster_index_t clusterCount() const        { return cluster_index_t(clusterOffsets.size()); }
+        article_index_t articleCount() const        { return article_index_t(dirents.size()); }
+        zsize_t mimeListSize() const;
+        offset_t mimeListPos() const
+        { return offset_t(Fileheader::size); }
+
+        zsize_t  urlPtrSize() const
+        { return zsize_t(article_index_type(articleCount()) * sizeof(offset_type)); }
+
+        offset_t urlPtrPos() const
+        { return mimeListPos() + mimeListSize(); }
+
+        zsize_t  titleIdxSize() const
+        { return zsize_t(article_index_type(articleCount()) * sizeof(article_index_type)); }
+
+        offset_t titleIdxPos() const
+        { return urlPtrPos() + urlPtrSize(); }
+
+        zsize_t  indexSize() const;
+
+        offset_t indexPos() const
+        { return titleIdxPos() + titleIdxSize(); }
+
+        zsize_t  clusterPtrSize() const
+        { return zsize_t(cluster_index_type(clusterCount()) * sizeof(offset_type)); }
+
+        offset_t clusterPtrPos() const
+        { return indexPos() + indexSize(); }
+
+        offset_t checksumPos() const
+        { return clusterPtrPos() + clusterPtrSize() + clustersSize; }
 
         uint16_t getMimeTypeIdx(const std::string& mimeType);
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
@@ -82,14 +100,14 @@ namespace zim
         ZimCreatorImpl();
         ZimCreatorImpl(int& argc, char* argv[]);
 
-        unsigned getMinChunkSize()    { return minChunkSize; }
-        void setMinChunkSize(int s)   { minChunkSize = s; }
+        zsize_t getMinChunkSize()    { return zsize_t(minChunkSize); }
+        void setMinChunkSize(zsize_t s)   { minChunkSize = s.v; }
 
         void create(const std::string& fname, ArticleSource& src);
 
         /* The user can query `currentSize` after each article has been
          * added to the ZIM file. */
-        offset_type getCurrentSize() { return currentSize; }
+        zsize_t getCurrentSize() { return currentSize; }
     };
 
   }

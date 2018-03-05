@@ -38,14 +38,14 @@ namespace zim
         ZimCreator();
         ~ZimCreator();
 
-        unsigned getMinChunkSize() const;
-        void setMinChunkSize(int s);
+        zim::size_type getMinChunkSize() const;
+        void setMinChunkSize(zim::size_type s);
 
         void create(const std::string& fname, ArticleSource& src);
 
         /* The user can query `currentSize` after each article has been
          * added to the ZIM file. */
-        zim::offset_type getCurrentSize() const;
+        zim::size_type getCurrentSize() const;
     };
 
   }

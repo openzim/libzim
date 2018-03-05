@@ -81,16 +81,16 @@ namespace zim
   Dirent::Dirent(std::unique_ptr<Buffer> buffer)
     : Dirent()
   {
-    uint16_t mimeType = buffer->as<uint16_t>(0);
+    uint16_t mimeType = buffer->as<uint16_t>(offset_t(0));
     bool redirect = (mimeType == Dirent::redirectMimeType);
     bool linktarget = (mimeType == Dirent::linktargetMimeType);
     bool deleted = (mimeType == Dirent::deletedMimeType);
     uint8_t extraLen = buffer->data()[2];
     char ns = buffer->data()[3];
-    size_type version = buffer->as<size_type>(4);
+    uint32_t version = buffer->as<uint32_t>(offset_t(4));
     setVersion(version);
 
-    offset_type current = 8;
+    offset_t current = offset_t(8);
 
     if (redirect)
     {
@@ -110,10 +110,10 @@ namespace zim
     {
       log_debug("read article entry");
 
-      size_type clusterNumber = buffer->as<size_type>(current);
-      current += sizeof(size_type);
-      size_type blobNumber = buffer->as<size_type>(current);
-      current += sizeof(size_type);
+      uint32_t clusterNumber = buffer->as<uint32_t>(current);
+      current += sizeof(uint32_t);
+      uint32_t blobNumber = buffer->as<uint32_t>(current);
+      current += sizeof(uint32_t);
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber);
 
@@ -127,20 +127,20 @@ namespace zim
     log_debug("read url, title and parameters");
 
     offset_type url_size = strlen(buffer->data(current));
-    if (current + url_size >= buffer->size()) {
+    if (current.v + url_size >= buffer->size().v) {
       throw(InvalidSize());
     }
     url = std::string(buffer->data(current), url_size);
     current += url_size + 1;
     
     offset_type title_size = strlen(buffer->data(current));
-    if (current + title_size >= buffer->size()) {
+    if (current.v + title_size >= buffer->size().v) {
       throw(InvalidSize());
     }
     title = std::string(buffer->data(current), title_size);
     current += title_size + 1;
 
-    if (current + extraLen > buffer->size()) {
+    if (current.v + extraLen > buffer->size().v) {
        throw(InvalidSize());
     }
     parameter = std::string(buffer->data(current), extraLen);

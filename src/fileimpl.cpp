@@ -66,11 +66,11 @@ namespace zim
     filename = fname;
 
     // read header
-    if (zimReader->size() < Fileheader::size) {
+    if (size_type(zimReader->size()) < Fileheader::size) {
       throw ZimFileFormatError("zim-file is too small to contain a header");
     }
     try {
-      header.read(zimReader->get_buffer(0, Fileheader::size));
+      header.read(zimReader->get_buffer(offset_t(0), zsize_t(Fileheader::size)));
     } catch (ZimFileFormatError e) {
       throw e;
     } catch (...) {
@@ -78,51 +78,51 @@ namespace zim
     }
 
     // ptrOffsetBuffer
-    offset_type size = header.getArticleCount() * 8;
-    if (!zimReader->can_read(header.getUrlPtrPos(), size)) {
+    zsize_t size(header.getArticleCount() * 8);
+    if (!zimReader->can_read(offset_t(header.getUrlPtrPos()), size)) {
       throw ZimFileFormatError("Reading out of zim file.");
     }
-    urlPtrOffsetBuffer = zimReader->get_buffer(header.getUrlPtrPos(), size);
+    urlPtrOffsetBuffer = zimReader->get_buffer(offset_t(header.getUrlPtrPos()), size);
 
     // Create titleIndexBuffer
-    size = header.getArticleCount() * 4;
-    if (!zimReader->can_read(header.getTitleIdxPos(), size)) {
+    size = zsize_t(header.getArticleCount() * 4);
+    if (!zimReader->can_read(offset_t(header.getTitleIdxPos()), size)) {
       throw ZimFileFormatError("Reading out of zim file.");
     }
-    titleIndexBuffer = zimReader->get_buffer(header.getTitleIdxPos(), size);
+    titleIndexBuffer = zimReader->get_buffer(offset_t(header.getTitleIdxPos()), size);
 
     // clusterOffsetBuffer
-    size = header.getClusterCount() * 8;
-    if (!zimReader->can_read(header.getClusterPtrPos(), size)) {
+    size = zsize_t(header.getClusterCount() * 8);
+    if (!zimReader->can_read(offset_t(header.getClusterPtrPos()), size)) {
       throw ZimFileFormatError("Reading out of zim file.");
     }
-    clusterOffsetBuffer = zimReader->get_buffer(header.getClusterPtrPos(), size);
+    clusterOffsetBuffer = zimReader->get_buffer(offset_t(header.getClusterPtrPos()), size);
 
 
     if (!getCountClusters())
       log_warn("no clusters found");
     else
     {
-      offset_type lastOffset = getClusterOffset(cluster_index_t(cluster_index_type(getCountClusters()) - 1));
-      log_debug("last offset=" << lastOffset.v << " file size=" << zimFile->fsize());
-      if (lastOffset > zimFile->fsize())
+      offset_t lastOffset = getClusterOffset(cluster_index_t(cluster_index_type(getCountClusters()) - 1));
+      log_debug("last offset=" << lastOffset.v << " file size=" << zimFile->fsize().v);
+      if (lastOffset.v > zimFile->fsize().v)
       {
         log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
     }
 
-    if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize()-16) ) {
+    if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
       throw ZimFileFormatError("Checksum position is not valid");
     }
 
     // read mime types
-    size = header.getUrlPtrPos() - header.getMimeListPos();
+    size = zsize_t(header.getUrlPtrPos() - header.getMimeListPos());
     // No need to check access, getUrlPtrPos is in the zim file, and we are
     // sure that getMimeListPos is 80.
-    auto buffer = zimReader->get_buffer(header.getMimeListPos(), size);
-    offset_type current = 0;
-    while (current < size)
+    auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
+    offset_t current = offset_t(0);
+    while (current.v < size.v)
     {
       offset_type len = strlen(buffer->data(current));
 
@@ -130,7 +130,7 @@ namespace zim
         break;
       }
 
-      if (current + len >= size) {
+      if (current.v + len >= size.v) {
        throw(ZimFileFormatError("Error getting mimelists."));
       }
       
@@ -245,7 +245,7 @@ namespace zim
   }
 
   std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
-  FileImpl::getFileParts(offset_type offset, offset_type size)
+  FileImpl::getFileParts(offset_t offset, zsize_t size)
   {
     return zimFile->locate(offset, size);
   }
@@ -276,7 +276,7 @@ namespace zim
               << direntCache.fillfactor());
     pthread_mutex_unlock(&direntCacheLock);
 
-    offset_type indexOffset = getOffset(urlPtrOffsetBuffer.get(), idx.v);
+    offset_t indexOffset = getOffset(urlPtrOffsetBuffer.get(), idx.v);
     // We don't know the size of the dirent because it depends of the size of
     // the title, url and extra parameters.
     // This is a pitty but we have no choices.
@@ -286,10 +286,10 @@ namespace zim
     // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
     pthread_mutex_lock(&bufferDirentLock);
-    offset_type bufferSize = 256;
+    zsize_t bufferSize = zsize_t(256);
     std::shared_ptr<const Dirent> dirent;
     while (true) {
-        bufferDirentZone.reserve(bufferSize);
+        bufferDirentZone.reserve(size_type(bufferSize));
         zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
         auto direntBuffer = std::unique_ptr<Buffer>(new MemoryBuffer<false>(bufferDirentZone.data(), bufferSize));
         try {
@@ -324,7 +324,8 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    article_index_t ret(titleIndexBuffer->as<article_index_type>(sizeof(article_index_t)*idx.v));
+    article_index_t ret(titleIndexBuffer->as<article_index_type>(
+                            offset_t(sizeof(article_index_t)*idx.v)));
 
     return ret;
   }
@@ -343,14 +344,14 @@ namespace zim
       return cluster;
     }
 
-    offset_type clusterOffset = getClusterOffset(idx);
+    offset_t clusterOffset(getClusterOffset(idx));
     cluster_index_t next_idx(idx.v + 1);
-    offset_type nextClusterOffset = (next_idx < getCountClusters())
-                                        ? getClusterOffset(next_idx)
+    offset_t nextClusterOffset( (next_idx < getCountClusters())
+                                        ? getClusterOffset(next_idx).v
                                         : (header.hasChecksum())
                                             ? header.getChecksumPos()
-                                            : zimFile->fsize();
-    offset_type clusterSize = nextClusterOffset - clusterOffset;
+                                            : zimFile->fsize().v );
+    zsize_t clusterSize(nextClusterOffset.v - clusterOffset.v);
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
     std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp);
@@ -364,18 +365,18 @@ namespace zim
     return cluster;
   }
 
-  offset_type FileImpl::getOffset(const Buffer* buffer, size_t idx)
+  offset_t FileImpl::getOffset(const Buffer* buffer, size_t idx)
   {
-    offset_type offset = buffer->as<offset_type>(sizeof(offset_type)*idx);
+    offset_t offset(buffer->as<offset_type>(offset_t(sizeof(offset_type)*idx)));
     return offset;
   }
 
-  offset_type FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)
+  offset_t FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)
   {
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed())
-      return 0;
-    return getClusterOffset(clusterIdx) + 1 + cluster->getBlobOffset(blobIdx);
+      return offset_t(0);
+    return getClusterOffset(clusterIdx) + offset_t(1) + cluster->getBlobOffset(blobIdx);
   }
 
 
@@ -486,7 +487,7 @@ namespace zim
 
     std::shared_ptr<const Buffer> chksum;
     try {
-      chksum = zimReader->get_buffer(header.getChecksumPos(), 16);
+      chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
     } catch (BufferError)
     {
       log_warn("error reading checksum");
@@ -499,8 +500,8 @@ namespace zim
     char* p = hexdigest;
     for (int i = 0; i < 16; ++i)
     {
-      *p++ = hex[chksum->at(i) >> 4];
-      *p++ = hex[chksum->at(i) & 0xf];
+      *p++ = hex[chksum->at(offset_t(i)) >> 4];
+      *p++ = hex[chksum->at(offset_t(i)) & 0xf];
     }
     log_debug("chksum=" << hexdigest);
     return hexdigest;
@@ -538,7 +539,7 @@ namespace zim
            
 
     unsigned char chksumCalc[16];
-    auto chksumFile = zimReader->get_buffer(header.getChecksumPos(), 16);
+    auto chksumFile = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
 
     md5.getDigest(chksumCalc);
     if (std::memcmp(chksumFile->data(), chksumCalc, 16) != 0)
@@ -553,7 +554,7 @@ namespace zim
     return zimFile->getMTime();
   }
 
-  zim::offset_type FileImpl::getFilesize() const {
+  zim::zsize_t FileImpl::getFilesize() const {
     return zimFile->fsize();
   }
 

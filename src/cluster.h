@@ -22,6 +22,7 @@
 
 #include <zim/zim.h>
 #include "buffer.h"
+#include "zim_types.h"
 #include <iosfwd>
 #include <vector>
 #include <memory>
@@ -34,14 +35,14 @@ namespace zim
   class Reader;
 
   class Cluster : public std::enable_shared_from_this<Cluster> {
-      typedef std::vector<size_type> Offsets;
+      typedef std::vector<offset_t> Offsets;
 
       const CompressionType compression;
       Offsets offsets;
       std::shared_ptr<const Reader> reader;
-      offset_type startOffset;
+      offset_t startOffset;
 
-      offset_type read_header();
+      offset_t read_header();
 
     public:
       Cluster(std::shared_ptr<const Reader> reader, CompressionType comp);
@@ -49,13 +50,14 @@ namespace zim
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
-      size_type size() const;
+      zsize_t size() const;
 
       const char* getBlobPtr(blob_index_t n) const;
-      size_type getBlobSize(blob_index_t n) const  { return offsets[n.v+1] - offsets[n.v]; }
-      offset_type getBlobOffset(blob_index_t n) const { return startOffset + offsets[n.v]; }
+      zsize_t getBlobSize(blob_index_t n) const  { return zsize_t(offsets[blob_index_type(n)+1].v
+                                                                - offsets[blob_index_type(n)].v); }
+      offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
-      Blob getBlob(blob_index_t n, offset_type offset, size_type size) const;
+      Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
       void clear();
 
       void init_from_buffer(Buffer& buffer);

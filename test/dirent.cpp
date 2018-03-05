@@ -76,7 +76,7 @@ TEST(DirentTest, read_write_article_dirent)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!s.fail());
@@ -112,7 +112,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!s.fail());
@@ -149,7 +149,7 @@ TEST(DirentTest, read_write_article_dirent_parameter)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!s.fail());
@@ -183,7 +183,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(dirent2.isRedirect());
@@ -214,7 +214,7 @@ TEST(DirentTest, read_write_linktarget_dirent)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!dirent2.isRedirect());
@@ -245,7 +245,7 @@ TEST(DirentTest, read_write_deleted_dirent)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!dirent2.isRedirect());
