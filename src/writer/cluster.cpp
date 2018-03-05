@@ -33,21 +33,35 @@ namespace zim {
 namespace writer {
 
 Cluster::Cluster()
-  : compression(zimcompNone)
+  : compression(zimcompNone),
+    isExtended(false)
 {
-  offsets.push_back(0);
+  offsets.push_back(offset_t(0));
 }
 
 void Cluster::clear() {
   offsets.clear();
   _data.clear();  
-  offsets.push_back(0);
+  offsets.push_back(offset_t(0));
+  isExtended = false;
 }
 
 void Cluster::addBlob(const Blob& blob)
 {
   _data.insert(_data.end(), blob.data(), blob.end());
-  offsets.push_back(_data.size());
+  offsets.push_back(offset_t(_data.size()));
+  if (blob.size() > UINT32_MAX) {
+    isExtended = true;
+  }
+}
+
+zsize_t Cluster::size() const
+{
+  if (isExtended) {
+    return zsize_t(offsets.size() * sizeof(uint64_t) + _data.size());
+  } else {
+    return zsize_t(offsets.size() * sizeof(uint32_t) + _data.size());
+  }
 }
 
 
@@ -56,17 +70,17 @@ void Cluster::addBlob(const char* data, zsize_t size)
   addBlob(Blob(data, size_type(size)));
 }
 
-
-void Cluster::write(std::ostream& out) const
+template<typename OFFSET_TYPE>
+void Cluster::write_impl(std::ostream& out) const
 {
-  size_t a = offsets.size() * sizeof(uint32_t);
+  size_type a = offsets.size() * sizeof(OFFSET_TYPE);
   for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
   {
-    uint32_t o = *it;
+    offset_t o = *it;
     o += a;
-    char out_buf[sizeof(uint32_t)];
+    char out_buf[sizeof(OFFSET_TYPE)];
     toLittleEndian(o, out_buf);
-    out.write(out_buf, sizeof(uint32_t));
+    out.write(out_buf, sizeof(OFFSET_TYPE));
   }
 
   if (_data.size() > 0)
@@ -75,11 +89,25 @@ void Cluster::write(std::ostream& out) const
     log_warn("write empty cluster");
 }
 
+void Cluster::write(std::ostream& out) const
+{
+  if (isExtended) {
+    write_impl<uint64_t>(out);
+  } else {
+    write_impl<uint32_t>(out);
+  }
+}
+
 std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
 {
   log_trace("write cluster");
 
-  out.put(static_cast<char>(cluster.getCompression()));
+  char clusterInfo = 0;
+  if (cluster.isExtended) {
+    clusterInfo = 0x10;
+  }
+  clusterInfo += cluster.getCompression();
+  out.put(clusterInfo);
 
   switch(cluster.getCompression())
   {

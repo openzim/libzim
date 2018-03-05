@@ -354,8 +354,9 @@ namespace zim
     zsize_t clusterSize(nextClusterOffset.v - clusterOffset.v);
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
-    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp);
-    cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp));
+    bool extended;
+    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp, &extended);
+    cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp, extended));
 
     log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
     pthread_mutex_lock(&clusterCacheLock);

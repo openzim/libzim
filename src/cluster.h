@@ -38,14 +38,16 @@ namespace zim
       typedef std::vector<offset_t> Offsets;
 
       const CompressionType compression;
+      const bool isExtended;
       Offsets offsets;
       std::shared_ptr<const Reader> reader;
       offset_t startOffset;
 
+      template<typename OFFSET_TYPE>
       offset_t read_header();
 
     public:
-      Cluster(std::shared_ptr<const Reader> reader, CompressionType comp);
+      Cluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
 

@@ -40,11 +40,14 @@ namespace zim
   {
     public:
       static const uint32_t zimMagic;
-      static const uint16_t zimMajorVersion;
+      static const uint16_t zimClassicMajorVersion;
+      static const uint16_t zimExtendedMajorVersion;
       static const uint16_t zimMinorVersion;
       static const size_type size;
 
     private:
+      uint16_t majorVersion;
+      uint16_t minorVersion;
       Uuid uuid;
       article_index_type articleCount;
       offset_type titleIdxPos;
@@ -58,7 +61,9 @@ namespace zim
 
     public:
       Fileheader()
-        : articleCount(0),
+        : majorVersion(zimClassicMajorVersion),
+          minorVersion(zimMinorVersion),
+          articleCount(0),
           titleIdxPos(0),
           urlPtrPos(0),
           clusterCount(0),
@@ -73,6 +78,12 @@ namespace zim
       // Do some sanity check, raise a ZimFileFormateError is
       // something is wrong.
       void sanity_check() const;
+
+      uint16_t getMajorVersion() const             { return majorVersion; }
+      void setMajorVersion(uint16_t v)             { majorVersion = v; }
+
+      uint16_t getMinorVersion() const             { return minorVersion; }
+      void setMinorVersion(uint16_t v)             { minorVersion = v; }
 
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }

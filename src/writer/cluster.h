@@ -34,7 +34,7 @@ namespace writer {
 
 class Cluster {
   friend std::ostream& operator<< (std::ostream& out, const Cluster& blobImpl);
-  typedef std::vector<uint32_t> Offsets;
+  typedef std::vector<offset_t> Offsets;
   typedef std::vector<char> Data;
 
 
@@ -44,11 +44,12 @@ class Cluster {
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
     blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
-    zsize_t size() const   { return zsize_t(offsets.size() * sizeof(uint32_t) + _data.size()); }
+    zsize_t size() const;
+    bool is_extended() const { return isExtended; }
     void clear();
 
     zsize_t getBlobSize(blob_index_t n) const
-    { return zsize_t(offsets[blob_index_type(n)+1] - offsets[blob_index_type(n)]); }
+    { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
     void addBlob(const Blob& blob);
     void addBlob(const char* data, zsize_t size);
@@ -56,7 +57,11 @@ class Cluster {
     void write(std::ostream& out) const;
 
   private:
+    template<typename OFFSET_TYPE>
+    void write_impl(std::ostream& out) const;
+
     CompressionType compression;
+    bool isExtended;
     Offsets offsets;
     Data _data;
 

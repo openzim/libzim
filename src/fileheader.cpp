@@ -30,7 +30,8 @@ log_define("zim.file.header")
 namespace zim
 {
   const uint32_t Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
-  const uint16_t Fileheader::zimMajorVersion = 5;
+  const uint16_t Fileheader::zimClassicMajorVersion = 5;
+  const uint16_t Fileheader::zimExtendedMajorVersion = 6;
   const uint16_t Fileheader::zimMinorVersion = 0;
   const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
 
@@ -38,8 +39,8 @@ namespace zim
   {
     char header[Fileheader::size];
     toLittleEndian(Fileheader::zimMagic, header);
-    toLittleEndian(Fileheader::zimMajorVersion, header + 4);
-    toLittleEndian(Fileheader::zimMinorVersion, header + 6);
+    toLittleEndian(fh.getMajorVersion(), header + 4);
+    toLittleEndian(fh.getMinorVersion(), header + 6);
     std::copy(fh.getUuid().data, fh.getUuid().data + sizeof(Uuid), header + 8);
     toLittleEndian(fh.getArticleCount(), header + 24);
     toLittleEndian(fh.getClusterCount(), header + 28);
@@ -67,12 +68,13 @@ namespace zim
     }
 
     uint16_t major_version = buffer->as<uint16_t>(offset_t(4));
-    if (major_version != Fileheader::zimMajorVersion)
+    if (major_version != zimClassicMajorVersion && major_version != zimExtendedMajorVersion)
     {
       log_error("invalid zimfile major version " << major_version << " found - "
           << Fileheader::zimMajorVersion << " expected");
       throw ZimFileFormatError("Invalid version");
     }
+    setMajorVersion(major_version);
 
     uint16_t minor_version = buffer->as<uint16_t>(offset_t(6));
     if (minor_version < Fileheader::zimMinorVersion)
@@ -81,6 +83,7 @@ namespace zim
           << Fileheader::zimMinorVersion << " expected");
       throw ZimFileFormatError("Invalid version");
     }
+    setMinorVersion(minor_version);
 
     Uuid uuid;
     std::copy(buffer->data(offset_t(8)), buffer->data(offset_t(24)), uuid.data);
