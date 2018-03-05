@@ -24,11 +24,6 @@ namespace zim
 {
   namespace writer
   {
-    size_type Article::getVersion() const
-    {
-      return 0;
-    }
-
     bool Article::isRedirect() const
     {
       return false;

@@ -38,7 +38,6 @@ namespace zim
         virtual char getNamespace() const = 0;
         virtual std::string getUrl() const = 0;
         virtual std::string getTitle() const = 0;
-        virtual size_type getVersion() const;
         virtual bool isRedirect() const;
         virtual bool isLinktarget() const;
         virtual bool isDeleted() const;
