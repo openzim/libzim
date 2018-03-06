@@ -36,22 +36,25 @@
 namespace zim {
 
 #if !defined(_WIN32)
-static int read_at(int fd, char* dest, zsize_t size, offset_t offset)
+static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
-  return pread(fd, dest, size.v, offset.v);
+  return pread64(fd, dest, size.v, offset.v);
 }
 #else
-static int read_at(int fd, char* dest, zsize_t size, offset_t offset)
+static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
   // [TODO] We are locking all fd at the same time here.
   // We should find a way to have a lock per fd.
   static pthread_mutex_t fd_lock = PTHREAD_MUTEX_INITIALIZER;
+  if (offset.v > static_cast<uint64_t>(INT64_MAX)) {
+    return -1;
+  }
   pthread_mutex_lock(&fd_lock);
-  if (_lseek(fd, offset.v, SEEK_SET) != offset.v) {
+  if (_lseeki64(fd, offset.v, SEEK_SET) != static_cast<int64_t>(offset.v)) {
     pthread_mutex_unlock(&fd_lock);
     return -1;
   }
-  int ret = read(fd, dest, size.v);
+  int ret = _read(fd, dest, size.v);
   pthread_mutex_unlock(&fd_lock);
   return ret;
 }
@@ -80,7 +83,10 @@ char FileReader::read(offset_t offset) const {
   offset_t local_offset = offset - part_pair->first.min;
   ASSERT(local_offset, <=, part_pair->first.max);
   char ret;
-  read_at(fd, &ret, zsize_t(1), local_offset);
+  if (read_at(fd, &ret, zsize_t(1), local_offset) != 1) {
+    //Error while reading.
+    throw std::ios_base::failure("Cannot read char.");
+  };
   return ret;
 }
 
@@ -100,7 +106,9 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
     ASSERT(size.v, >, 0U);
     zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-local_offset.v));
     int fd = part->fd();
-    read_at(fd, dest, size_to_get, local_offset);
+    if (read_at(fd, dest, size_to_get, local_offset) != static_cast<int64_t>(size_to_get.v)) {
+      throw std::ios_base::failure("Cannot read chars.");
+    };
     ASSERT(size_to_get, <=, size);
     dest += size_to_get.v;
     size -= size_to_get;
