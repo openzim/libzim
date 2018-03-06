@@ -36,58 +36,64 @@
 namespace zim {
 
 #if !defined(_WIN32)
-static int read_at(int fd, char* dest, offset_type size, offset_type offset)
+static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
-  return pread(fd, dest, size, offset);
+  return pread64(fd, dest, size.v, offset.v);
 }
 #else
-static int read_at(int fd, char* dest, offset_type size, offset_type offset)
+static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
   // [TODO] We are locking all fd at the same time here.
   // We should find a way to have a lock per fd.
   static pthread_mutex_t fd_lock = PTHREAD_MUTEX_INITIALIZER;
+  if (offset.v > static_cast<uint64_t>(INT64_MAX)) {
+    return -1;
+  }
   pthread_mutex_lock(&fd_lock);
-  if (_lseek(fd, offset, SEEK_SET) != offset) {
+  if (_lseeki64(fd, offset.v, SEEK_SET) != static_cast<int64_t>(offset.v)) {
     pthread_mutex_unlock(&fd_lock);
     return -1;
   }
-  int ret = read(fd, dest, size);
+  int ret = _read(fd, dest, size.v);
   pthread_mutex_unlock(&fd_lock);
   return ret;
 }
 #endif
 
 FileReader::FileReader(std::shared_ptr<const FileCompound> source)
-  : FileReader(source, 0, source->fsize()) {}
+  : FileReader(source, offset_t(0), source->fsize()) {}
 
-FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_type offset)
-  : FileReader(source, offset, source->fsize()-offset) {}
+FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_t offset)
+  : FileReader(source, offset, zsize_t(source->fsize().v-offset.v)) {}
 
-FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_type offset, offset_type size)
+FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size)
   : source(source),
     _offset(offset),
     _size(size)
 {
-  ASSERT(offset, <, source->fsize());
-  ASSERT(offset+size, <=, source->fsize());
+  ASSERT(offset.v, <, source->fsize().v);
+  ASSERT(offset.v+size.v, <=, source->fsize().v);
 }
 
-char FileReader::read(offset_type offset) const {
-  ASSERT(offset, <, _size);
+char FileReader::read(offset_t offset) const {
+  ASSERT(offset.v, <, _size.v);
   offset += _offset;
   auto part_pair = source->lower_bound(offset);
   int fd = part_pair->second->fd();
-  offset_type local_offset = offset - part_pair->first.min;
+  offset_t local_offset = offset - part_pair->first.min;
   ASSERT(local_offset, <=, part_pair->first.max);
   char ret;
-  read_at(fd, &ret, 1, local_offset);
+  if (read_at(fd, &ret, zsize_t(1), local_offset) != 1) {
+    //Error while reading.
+    throw std::ios_base::failure("Cannot read char.");
+  };
   return ret;
 }
 
 
-void FileReader::read(char* dest, offset_type offset, offset_type size) const {
-  ASSERT(offset, <, _size);
-  ASSERT(offset+size, <=, _size);
+void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
+  ASSERT(offset.v, <, _size.v);
+  ASSERT(offset.v+size.v, <=, _size.v);
   if (! size ) {
     return;
   }
@@ -96,20 +102,23 @@ void FileReader::read(char* dest, offset_type offset, offset_type size) const {
   for(auto current = found_range.first; current!=found_range.second; current++){
     FilePart* part = current->second;
     Range partRange = current->first;
-    offset_type local_offset = offset-partRange.min;
-    ASSERT(size, >, 0U);
-    offset_type size_to_get = std::min(size, part->size()-local_offset);
+    offset_t local_offset = offset-partRange.min;
+    ASSERT(size.v, >, 0U);
+    zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-local_offset.v));
     int fd = part->fd();
-    read_at(fd, dest, size_to_get, local_offset);
-    dest += size_to_get;
+    if (read_at(fd, dest, size_to_get, local_offset) != static_cast<int64_t>(size_to_get.v)) {
+      throw std::ios_base::failure("Cannot read chars.");
+    };
+    ASSERT(size_to_get, <=, size);
+    dest += size_to_get.v;
     size -= size_to_get;
     offset += size_to_get;
   }
-  ASSERT(size, ==, 0U);
+  ASSERT(size.v, ==, 0U);
 }
 
 
-std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_type size) const {
+std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #if !defined(_WIN32)
   auto found_range = source->locate(_offset+offset, size);
@@ -129,23 +138,23 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_type offset, offset_
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
-    char* p = new char[size];
+    char* p = new char[size.v];
     auto ret_buffer = std::shared_ptr<const Buffer>(new MemoryBuffer<true>(p, size));
     read(p, offset, size);
     return ret_buffer;
   }
 }
 
-bool Reader::can_read(offset_type offset, offset_type size)
+bool Reader::can_read(offset_t offset, zsize_t size)
 {
-    return (offset <= this->size() && (offset+size) <= this->size());
+    return (offset.v <= this->size().v && (offset.v+size.v) <= this->size().v);
 }
 
-char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
+char* lzma_uncompress(const char* raw_data, zsize_t raw_size, zsize_t* dest_size) {
   // We don't know what will be the result size.
   // Let's assume it will be something like the minChunkSize used at creation
-  offset_type _dest_size = 1024*1024;
-  char* ret_data = new char[_dest_size];
+  zsize_t _dest_size = zsize_t(1024*1024);
+  char* ret_data = new char[_dest_size.v];
   lzma_stream stream = LZMA_STREAM_INIT;
   unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
   auto errcode = lzma_stream_decoder(&stream, memsize, 0);
@@ -154,9 +163,9 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
   }
 
   stream.next_in = (const unsigned char*)raw_data;
-  stream.avail_in = raw_size;
+  stream.avail_in = raw_size.v;
   stream.next_out = (unsigned char*) ret_data;
-  stream.avail_out = _dest_size;
+  stream.avail_out = _dest_size.v;
   do {
     errcode = lzma_code(&stream, LZMA_FINISH);
     if (errcode == LZMA_BUF_ERROR) {
@@ -170,11 +179,11 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
         // zim file.
       } else {
         //Not enought output size
-        _dest_size *= 2;
-        char * new_ret_data = new char[_dest_size];
+        _dest_size.v *= 2;
+        char * new_ret_data = new char[_dest_size.v];
         memcpy(new_ret_data, ret_data, stream.total_out);
         stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-        stream.avail_out = _dest_size - stream.total_out;
+        stream.avail_out = _dest_size.v - stream.total_out;
         delete [] ret_data;
         ret_data = new_ret_data;
         continue;
@@ -184,23 +193,23 @@ char* lzma_uncompress(const char* raw_data, offset_type raw_size, offset_type* d
       throw ZimFileFormatError("Invalid lzma stream for cluster.");
     }
   } while (errcode != LZMA_STREAM_END);
-  *dest_size = stream.total_out;
+  dest_size->v = stream.total_out;
   lzma_end(&stream);
   return ret_data;
 }
 
 #if defined(ENABLE_ZLIB)
-char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* dest_size) {
-  offset_type _dest_size = 1024*1024;
-  char* ret_data = new char[_dest_size];
+char* zip_uncompress(const char* raw_data, zsize_t raw_size, zsize_t* dest_size) {
+  zsize_t _dest_size = zsize_t(1024*1024);
+  char* ret_data = new char[_dest_size.v];
 
   z_stream stream;
   memset(&stream, 0, sizeof(stream));
 
   stream.next_in = (unsigned char*) raw_data;
-  stream.avail_in = raw_size;
+  stream.avail_in = raw_size.v;
   stream.next_out = (unsigned char*) ret_data;
-  stream.avail_out = _dest_size;
+  stream.avail_out = _dest_size.v;
   auto errcode = ::inflateInit(&stream);
   if (errcode != Z_OK) {
     throw std::runtime_error("Impossible to allocated needed memory to uncompress zlib stream");
@@ -219,11 +228,11 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
         // zim file.
       } else {
         //Not enought output size
-        _dest_size *= 2;
-        char * new_ret_data = new char[_dest_size];
+        _dest_size.v *= 2;
+        char * new_ret_data = new char[_dest_size.v];
         memcpy(new_ret_data, ret_data, stream.total_out);
         stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-        stream.avail_out = _dest_size - stream.total_out;
+        stream.avail_out = _dest_size.v - stream.total_out;
         delete [] ret_data;
         ret_data = new_ret_data;
         continue;
@@ -233,16 +242,16 @@ char* zip_uncompress(const char* raw_data, offset_type raw_size, offset_type* de
       throw ZimFileFormatError("Invalid zlib stream for cluster.");
     }
   } while ( errcode != Z_STREAM_END );
-  *dest_size = stream.total_out;
+  dest_size->v = stream.total_out;
   ::inflateEnd(&stream);
   return ret_data;
 }
 #endif
 
-std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offset_type size, CompressionType comp) const
+std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, zsize_t size, CompressionType comp) const
 {
   auto raw_buffer = get_buffer(offset, size);
-  offset_type uncompressed_size;
+  zsize_t uncompressed_size(0);
   char* uncompressed_data = nullptr;
   switch (comp) {
     case zimcompLzma:
@@ -261,7 +270,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_type offset, offs
   return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
 
-std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_type offset, offset_type size) const {
+std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_t offset, zsize_t size) const {
 #if !defined(_WIN32)
   auto found_range = source->locate(_offset+offset, size);
   auto first_part_containing_it = found_range.first;
@@ -280,24 +289,24 @@ std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_type offset
 }
 
 
-std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_type offset, offset_type size, CompressionType* comp) const {
+std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, zsize_t size, CompressionType* comp) const {
   *comp = static_cast<CompressionType>(read(offset));
   switch (*comp) {
     case zimcompDefault:
     case zimcompNone:
       {
       // No compression, just a sub_reader
-        auto reader = get_mmap_sub_reader(offset+1, size-1);
+        auto reader = get_mmap_sub_reader(offset+offset_t(1), size-zsize_t(1));
         if (reader) {
           return reader;
         }
-        return sub_reader(offset+1, size-1);
+        return sub_reader(offset+offset_t(1), size-zsize_t(1));
       }
       break;
     case zimcompLzma:
     case zimcompZip:
       {
-        auto buffer = get_clusterBuffer(offset+1, size-1, *comp);
+        auto buffer = get_clusterBuffer(offset+offset_t(1), size-zsize_t(1), *comp);
         return std::unique_ptr<Reader>(new BufferReader(buffer));
       }
       break;
@@ -308,7 +317,7 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_type offset, offs
   }
 }
 
-std::unique_ptr<const Reader> FileReader::sub_reader(offset_type offset, offset_type size) const
+std::unique_ptr<const Reader> FileReader::sub_reader(offset_t offset, zsize_t size) const
 {
   ASSERT(size, <=, _size);
   return std::unique_ptr<Reader>(new FileReader(source, _offset+offset, size));
@@ -318,12 +327,12 @@ std::unique_ptr<const Reader> FileReader::sub_reader(offset_type offset, offset_
 //BufferReader::BufferReader(std::shared_ptr<Buffer> source)
 //  : source(source) {}
 
-std::shared_ptr<const Buffer> BufferReader::get_buffer(offset_type offset, offset_type size) const
+std::shared_ptr<const Buffer> BufferReader::get_buffer(offset_t offset, zsize_t size) const
 {
   return source->sub_buffer(offset, size);
 }
 
-std::unique_ptr<const Reader> BufferReader::sub_reader(offset_type offset, offset_type size) const
+std::unique_ptr<const Reader> BufferReader::sub_reader(offset_t offset, zsize_t size) const
 {
   //auto source_addr = source->data(0);
   auto sub_buff = get_buffer(offset, size);
@@ -332,29 +341,29 @@ std::unique_ptr<const Reader> BufferReader::sub_reader(offset_type offset, offse
   return sub_read;
 }
 
-offset_type BufferReader::size() const
+zsize_t BufferReader::size() const
 {
   return source->size();
 }
 
-offset_type BufferReader::offset() const
+offset_t BufferReader::offset() const
 {
-  return (offset_type)(static_cast<const void*>(source->data(0)));
+  return offset_t((offset_type)(static_cast<const void*>(source->data(offset_t(0)))));
 }
 
 
-void BufferReader::read(char* dest, offset_type offset, offset_type size) const {
-  ASSERT(offset, <, source->size());
-  ASSERT(offset+size, <=, source->size());
+void BufferReader::read(char* dest, offset_t offset, zsize_t size) const {
+  ASSERT(offset.v, <, source->size().v);
+  ASSERT(offset+offset_t(size.v), <=, offset_t(source->size().v));
   if (! size ) {
     return;
   }
-  memcpy(dest, source->data(offset), size);
+  memcpy(dest, source->data(offset), size.v);
 }
 
 
-char BufferReader::read(offset_type offset) const {
-  ASSERT(offset, <, source->size());
+char BufferReader::read(offset_t offset) const {
+  ASSERT(offset.v, <, source->size().v);
   char dest;
   dest = *source->data(offset);
   return dest;

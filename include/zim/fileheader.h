@@ -39,21 +39,21 @@ namespace zim
   class Fileheader
   {
     public:
-      static const size_type zimMagic;
+      static const uint32_t zimMagic;
       static const uint16_t zimMajorVersion;
       static const uint16_t zimMinorVersion;
       static const size_type size;
 
     private:
       Uuid uuid;
-      size_type articleCount;
+      article_index_type articleCount;
       offset_type titleIdxPos;
       offset_type urlPtrPos;
       offset_type mimeListPos;
-      size_type blobCount;
-      offset_type blobPtrPos;
-      size_type mainPage;
-      size_type layoutPage;
+      cluster_index_type clusterCount;
+      offset_type clusterPtrPos;
+      article_index_type mainPage;
+      article_index_type layoutPage;
       offset_type checksumPos;
 
     public:
@@ -61,10 +61,10 @@ namespace zim
         : articleCount(0),
           titleIdxPos(0),
           urlPtrPos(0),
-          blobCount(0),
-          blobPtrPos(0),
-          mainPage(std::numeric_limits<size_type>::max()),
-          layoutPage(std::numeric_limits<size_type>::max()),
+          clusterCount(0),
+          clusterPtrPos(0),
+          mainPage(std::numeric_limits<article_index_type>::max()),
+          layoutPage(std::numeric_limits<article_index_type>::max()),
           checksumPos(std::numeric_limits<offset_type>::max())
       {}
 
@@ -77,8 +77,8 @@ namespace zim
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }
 
-      size_type getArticleCount() const            { return articleCount; }
-      void      setArticleCount(size_type s)       { articleCount = s; }
+      article_index_type getArticleCount() const            { return articleCount; }
+      void      setArticleCount(article_index_type s)       { articleCount = s; }
 
       offset_type getTitleIdxPos() const           { return titleIdxPos; }
       void        setTitleIdxPos(offset_type p)    { titleIdxPos = p; }
@@ -89,19 +89,19 @@ namespace zim
       offset_type getMimeListPos() const           { return mimeListPos; }
       void        setMimeListPos(offset_type p)    { mimeListPos = p; }
 
-      size_type   getClusterCount() const          { return blobCount; }
-      void        setClusterCount(size_type s)     { blobCount = s; }
+      cluster_index_type   getClusterCount() const          { return clusterCount; }
+      void        setClusterCount(cluster_index_type s)     { clusterCount = s; }
 
-      offset_type getClusterPtrPos() const         { return blobPtrPos; }
-      void        setClusterPtrPos(offset_type p)  { blobPtrPos = p; }
+      offset_type getClusterPtrPos() const         { return clusterPtrPos; }
+      void        setClusterPtrPos(offset_type p)  { clusterPtrPos = p; }
 
-      bool        hasMainPage() const              { return mainPage != std::numeric_limits<size_type>::max(); }
-      size_type   getMainPage() const              { return mainPage; }
-      void        setMainPage(size_type s)         { mainPage = s; }
+      bool        hasMainPage() const              { return mainPage != std::numeric_limits<article_index_type>::max(); }
+      article_index_type   getMainPage() const     { return mainPage; }
+      void        setMainPage(article_index_type s){ mainPage = s; }
 
-      bool        hasLayoutPage() const            { return layoutPage != std::numeric_limits<size_type>::max(); }
-      size_type   getLayoutPage() const            { return layoutPage; }
-      void        setLayoutPage(size_type s)       { layoutPage = s; }
+      bool        hasLayoutPage() const            { return layoutPage != std::numeric_limits<article_index_type>::max(); }
+      article_index_type   getLayoutPage() const   { return layoutPage; }
+      void        setLayoutPage(article_index_type s)       { layoutPage = s; }
 
       bool        hasChecksum() const              { return getMimeListPos() >= 80; }
       offset_type getChecksumPos() const           { return hasChecksum() ? checksumPos : 0; }

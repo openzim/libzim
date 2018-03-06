@@ -25,7 +25,7 @@
 #include <memory>
 #include <iostream>
 
-#include <zim/zim.h>
+#include "zim_types.h"
 #include "endian_tools.h"
 #include "debug.h"
 
@@ -35,32 +35,32 @@ class BufferError : std::exception {};
 
 class Buffer : public std::enable_shared_from_this<Buffer> {
   public:
-    Buffer(offset_type size)
+    Buffer(zsize_t size)
       : size_(size) {};
     virtual ~Buffer() {};
-    virtual const char* data(offset_type offset=0) const = 0;
-    virtual char at(offset_type offset) const {
+    virtual const char* data(offset_t offset=offset_t(0)) const = 0;
+    virtual char at(offset_t offset) const {
         return *(data(offset));
     }
-    offset_type size() const { return size_; }
-    virtual std::shared_ptr<const Buffer> sub_buffer(offset_type offset, offset_type size) const;
+    zsize_t size() const { return size_; }
+    virtual std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
 
     template<typename T>
-    T as(offset_type offset) const {
-      ASSERT(offset, <, size_);
-      ASSERT(offset+sizeof(T), <=, size_);
+    T as(offset_t offset) const {
+      ASSERT(offset.v, <, size_.v);
+      ASSERT(offset.v+sizeof(T), <=, size_.v);
       return fromLittleEndian<T>(data(offset));
     }
 
   protected:
-    const offset_type size_;
+    const zsize_t size_;
 };
 
 
 template<bool CLEAN_AT_END>
 class MemoryBuffer : public Buffer {
   public:
-    MemoryBuffer(const char* buffer, offset_type size)
+    MemoryBuffer(const char* buffer, zsize_t size)
       : Buffer(size),
         _data(buffer)
     {}
@@ -71,9 +71,9 @@ class MemoryBuffer : public Buffer {
         }
     }
 
-    const char* data(offset_type offset) const {
-        ASSERT(offset, <=, size_);
-        return _data + offset;
+    const char* data(offset_t offset) const {
+        ASSERT(offset.v, <=, size_.v);
+        return _data + offset.v;
     }
   private:
     const char* _data;
@@ -83,16 +83,16 @@ class MemoryBuffer : public Buffer {
 #if !defined(_WIN32)
 class MMapBuffer : public Buffer {
   public:
-    MMapBuffer(int fd, offset_type offset, offset_type size);
+    MMapBuffer(int fd, offset_t offset, zsize_t size);
     ~MMapBuffer();
 
-    const char* data(offset_type offset) const {
+    const char* data(offset_t offset) const {
       offset += _offset;
-      return _data + offset;
+      return _data + offset.v;
     }
 
   private:
-    offset_type _offset;
+    offset_t _offset;
     char* _data;
 };
 #endif
@@ -100,16 +100,16 @@ class MMapBuffer : public Buffer {
 
 class SubBuffer : public Buffer {
   public:
-    SubBuffer(const std::shared_ptr<const Buffer> src, offset_type offset, offset_type size)
+    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
       : Buffer(size),
         _data(src, src->data(offset))
     {
-      ASSERT(offset+size, <=, src->size());
+      ASSERT(offset.v+size.v, <=, src->size().v);
     }
 
-  const char* data(offset_type offset) const {
-        ASSERT(offset, <=, size_);
-        return _data.get() + offset;
+  const char* data(offset_t offset) const {
+        ASSERT(offset.v, <=, size_.v);
+        return _data.get() + offset.v;
     }
 
   private:

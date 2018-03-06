@@ -57,20 +57,20 @@ namespace zim
     return impl->getFileheader();
   }
 
-  offset_type File::getFilesize() const
+  size_type File::getFilesize() const
   {
-    return impl->getFilesize();
+    return impl->getFilesize().v;
   }
 
-  size_type File::getCountArticles() const
+  article_index_type File::getCountArticles() const
   {
-    return impl->getCountArticles();
+    return article_index_type(impl->getCountArticles());
   }
 
 
-  Article File::getArticle(size_type idx) const
+  Article File::getArticle(article_index_type idx) const
   {
-    if (idx >= getCountArticles())
+    if (idx >= article_index_type(impl->getCountArticles()))
       throw ZimFileFormatError("article index out of range");
     return Article(impl, idx);
   }
@@ -78,60 +78,62 @@ namespace zim
   Article File::getArticle(char ns, const std::string& url) const
   {
     log_trace("File::getArticle('" << ns << "', \"" << url << ')');
-    std::pair<bool, size_type> r = impl->findx(ns, url);
-    return r.first ? Article(impl, r.second) : Article();
+    std::pair<bool, article_index_t> r = impl->findx(ns, url);
+    return r.first ? Article(impl, article_index_type(r.second)) : Article();
   }
 
   Article File::getArticleByUrl(const std::string& url) const
   {
     log_trace("File::getArticle(\"" << url << ')');
-    std::pair<bool, size_type> r = impl->findx(url);
-    return r.first ? Article(impl, r.second) : Article();
+    std::pair<bool, article_index_t> r = impl->findx(url);
+    return r.first ? Article(impl, article_index_type(r.second)) : Article();
   }
 
-  Article File::getArticleByTitle(size_type idx) const
+  Article File::getArticleByTitle(article_index_type idx) const
   {
-    return Article(impl, impl->getIndexByTitle(idx));
+    return Article(impl, article_index_type(impl->getIndexByTitle(article_index_t(idx))));
   }
 
   Article File::getArticleByTitle(char ns, const std::string& title) const
   {
     log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
-    std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
-    return r.first ? Article(impl, impl->getIndexByTitle(r.second)) : Article();
+    std::pair<bool, article_index_t> r = impl->findxByTitle(ns, title);
+    return r.first
+            ? Article(impl, article_index_type(impl->getIndexByTitle(r.second)))
+            : Article();
   }
 
-  std::shared_ptr<const Cluster> File::getCluster(size_type idx) const
+  std::shared_ptr<const Cluster> File::getCluster(cluster_index_type idx) const
   {
-    return impl->getCluster(idx);
+    return impl->getCluster(cluster_index_t(idx));
   }
 
-  size_type File::getCountClusters() const
+  cluster_index_type File::getCountClusters() const
   {
-    return impl->getCountClusters();
+    return cluster_index_type(impl->getCountClusters());
   }
 
-  offset_type File::getClusterOffset(size_type idx) const
+  offset_type File::getClusterOffset(cluster_index_type idx) const
   {
-    return impl->getClusterOffset(idx);
+    return offset_type(impl->getClusterOffset(cluster_index_t(idx)));
   }
 
-  Blob File::getBlob(size_type clusterIdx, size_type blobIdx) const
+  Blob File::getBlob(cluster_index_type clusterIdx, blob_index_type blobIdx) const
   {
-    return getCluster(clusterIdx)->getBlob(blobIdx);
+    return impl->getCluster(cluster_index_t(clusterIdx))->getBlob(blob_index_t(blobIdx));
   }
 
-  size_type File::getNamespaceBeginOffset(char ch) const
+  article_index_type File::getNamespaceBeginOffset(char ch) const
   {
-    return impl->getNamespaceBeginOffset(ch);
+    return article_index_type(impl->getNamespaceBeginOffset(ch));
   }
 
-  size_type File::getNamespaceEndOffset(char ch) const
+  article_index_type File::getNamespaceEndOffset(char ch) const
   {
-    return impl->getNamespaceEndOffset(ch);
+    return article_index_type(impl->getNamespaceEndOffset(ch));
   }
 
-  size_type File::getNamespaceCount(char ns) const
+  article_index_type File::getNamespaceCount(char ns) const
   {
     return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns);
   }
@@ -143,8 +145,8 @@ namespace zim
 
   bool File::hasNamespace(char ch) const
   {
-    size_type off = getNamespaceBeginOffset(ch);
-    return off < getCountArticles() && impl->getDirent(off)->getNamespace() == ch;
+    article_index_t off = impl->getNamespaceBeginOffset(ch);
+    return off < impl->getCountArticles() && impl->getDirent(off)->getNamespace() == ch;
   }
 
   File::const_iterator File::begin() const
@@ -158,20 +160,20 @@ namespace zim
 
   File::const_iterator File::find(char ns, const std::string& url) const
   {
-    std::pair<bool, size_type> r = impl->findx(ns, url);
-    return File::const_iterator(this, r.second);
+    std::pair<bool, article_index_t> r = impl->findx(ns, url);
+    return File::const_iterator(this, article_index_type(r.second));
   }
 
   File::const_iterator File::find(const std::string& url) const
   {
-    std::pair<bool, size_type> r = impl->findx(url);
-    return File::const_iterator(this, r.second);
+    std::pair<bool, article_index_t> r = impl->findx(url);
+    return File::const_iterator(this, article_index_type(r.second));
   }
 
   File::const_iterator File::findByTitle(char ns, const std::string& title) const
   {
-    std::pair<bool, size_type> r = impl->findxByTitle(ns, title);
-    return File::const_iterator(this, r.second, const_iterator::ArticleIterator);
+    std::pair<bool, article_index_t> r = impl->findxByTitle(ns, title);
+    return File::const_iterator(this, article_index_type(r.second), const_iterator::ArticleIterator);
   }
 
   const Search* File::search(const std::string& query, int start, int end) const {
@@ -189,9 +191,11 @@ namespace zim
       return search;
   }
 
-  offset_type File::getOffset(size_type clusterIdx, size_type blobIdx) const
+  offset_type File::getOffset(cluster_index_type clusterIdx, blob_index_type blobIdx) const
   {
-    return impl->getBlobOffset(clusterIdx, blobIdx);
+    return offset_type(impl->getBlobOffset(
+                           cluster_index_t(clusterIdx),
+                           blob_index_t(blobIdx)));
   }
 
   time_t File::getMTime() const

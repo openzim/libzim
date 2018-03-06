@@ -25,6 +25,8 @@
 #include <exception>
 #include <memory>
 
+#include "zim_types.h"
+
 namespace zim
 {
   class Buffer;
@@ -33,12 +35,12 @@ namespace zim
   {
       uint16_t mimeType;
 
-      size_type version;
+      uint32_t version;
 
-      size_type clusterNumber;  // only used when redirect is false
-      size_type blobNumber;    // only used when redirect is false
+      cluster_index_t clusterNumber;  // only used when redirect is false
+      blob_index_t blobNumber;    // only used when redirect is false
 
-      size_type redirectIndex;  // only used when redirect is true
+      article_index_t redirectIndex;  // only used when redirect is true
 
       char ns;
       std::string title;
@@ -68,15 +70,15 @@ namespace zim
       bool isArticle() const                  { return !isRedirect() && !isLinktarget() && !isDeleted(); }
       uint16_t getMimeType() const            { return mimeType; }
 
-      size_type getVersion() const            { return version; }
-      void setVersion(size_type v)            { version = v; }
+      uint32_t getVersion() const            { return version; }
+      void setVersion(uint32_t v)            { version = v; }
 
-      size_type getClusterNumber() const      { return isRedirect() ? 0 : clusterNumber; }
-      size_type getBlobNumber() const         { return isRedirect() ? 0 : blobNumber; }
-      void setCluster(size_type clusterNumber_, size_type blobNumber_)
+      cluster_index_t getClusterNumber() const      { return isRedirect() ? cluster_index_t(0) : clusterNumber; }
+      blob_index_t  getBlobNumber() const         { return isRedirect() ? blob_index_t(0) : blobNumber; }
+      void setCluster(cluster_index_t clusterNumber_, blob_index_t blobNumber_)
         { clusterNumber = clusterNumber_; blobNumber = blobNumber_; }
 
-      size_type getRedirectIndex() const      { return isRedirect() ? redirectIndex : 0; }
+      article_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : article_index_t(0); }
 
       char getNamespace() const               { return ns; }
       const std::string& getTitle() const     { return title.empty() ? url : title; }
@@ -84,9 +86,9 @@ namespace zim
       std::string getLongUrl() const;
       const std::string& getParameter() const { return parameter; }
 
-      unsigned getDirentSize() const
+      size_t getDirentSize() const
       {
-        unsigned ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
+        size_t ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
         if (title != url)
           ret += title.size();
         return ret;
@@ -108,12 +110,12 @@ namespace zim
         parameter = parameter_;
       }
 
-      void setRedirect(size_type idx)
+      void setRedirect(article_index_t idx)
       {
         redirectIndex = idx;
         mimeType = redirectMimeType;
-        clusterNumber = 0;
-        blobNumber = 0;
+        clusterNumber = cluster_index_t(0);
+        blobNumber = blob_index_t(0);
       }
 
       void setMimeType(uint16_t mime)
@@ -124,18 +126,18 @@ namespace zim
       void setLinktarget()
       {
         mimeType = linktargetMimeType;
-        clusterNumber = 0;
-        blobNumber = 0;
+        clusterNumber = cluster_index_t(0);
+        blobNumber = blob_index_t(0);
       }
 
       void setDeleted()
       {
         mimeType = deletedMimeType;
-        clusterNumber = 0;
-        blobNumber = 0;
+        clusterNumber = cluster_index_t(0);
+        blobNumber = blob_index_t(0);
       }
 
-      void setArticle(uint16_t mimeType_, size_type clusterNumber_, size_type blobNumber_)
+      void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
         mimeType = mimeType_;
         clusterNumber = clusterNumber_;

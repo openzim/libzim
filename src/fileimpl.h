@@ -31,6 +31,7 @@
 #include "cluster.h"
 #include "buffer.h"
 #include "file_compound.h"
+#include "zim_types.h"
 
 namespace zim
 {
@@ -48,14 +49,14 @@ namespace zim
       std::shared_ptr<const Buffer> urlPtrOffsetBuffer;
       std::shared_ptr<const Buffer> clusterOffsetBuffer;
 
-      Cache<size_type, std::shared_ptr<const Dirent>> direntCache;
+      Cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
-      Cache<offset_type, std::shared_ptr<Cluster>> clusterCache;
+      Cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;
-      typedef std::map<char, size_type> NamespaceCache;
+      typedef std::map<char, article_index_t> NamespaceCache;
 
       NamespaceCache namespaceBeginCache;
       pthread_mutex_t namespaceBeginLock;
@@ -65,7 +66,7 @@ namespace zim
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      offset_type getOffset(const Buffer* buffer, size_type idx);
+      offset_t getOffset(const Buffer* buffer, size_t idx);
 
     public:
 
@@ -75,28 +76,28 @@ namespace zim
 
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
-      offset_type getFilesize() const;
+      zsize_t getFilesize() const;
 
       std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
-      getFileParts(offset_type offset, offset_type size);
-      std::shared_ptr<const Dirent> getDirent(size_type idx);
-      std::shared_ptr<const Dirent> getDirentByTitle(size_type idx);
-      size_type getIndexByTitle(size_type idx);
-      size_type getCountArticles() const       { return header.getArticleCount(); }
+      getFileParts(offset_t offset, zsize_t size);
+      std::shared_ptr<const Dirent> getDirent(article_index_t idx);
+      std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
+      article_index_t getIndexByTitle(article_index_t idx);
+      article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
 
 
-      std::pair<bool, size_type> findx(char ns, const std::string& url);
-      std::pair<bool, size_type> findx(const std::string& url);
-      std::pair<bool, size_type> findxByTitle(char ns, const std::string& title);
+      std::pair<bool, article_index_t> findx(char ns, const std::string& url);
+      std::pair<bool, article_index_t> findx(const std::string& url);
+      std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
 
-      std::shared_ptr<const Cluster> getCluster(size_type idx);
-      size_type getCountClusters() const       { return header.getClusterCount(); }
-      offset_type getClusterOffset(size_type idx)   { return getOffset(clusterOffsetBuffer.get(), idx); }
-      offset_type getBlobOffset(size_type clusterIdx, size_type blobIdx);
+      std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
+      cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
+      offset_t getClusterOffset(cluster_index_t idx)   { return getOffset(clusterOffsetBuffer.get(), idx.v); }
+      offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
-      size_type getNamespaceBeginOffset(char ch);
-      size_type getNamespaceEndOffset(char ch);
-      size_type getNamespaceCount(char ns)
+      article_index_t getNamespaceBeginOffset(char ch);
+      article_index_t getNamespaceEndOffset(char ch);
+      article_index_t getNamespaceCount(char ns)
         { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
       std::string getNamespaces();

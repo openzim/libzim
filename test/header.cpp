@@ -57,7 +57,7 @@ TEST(HeaderTest, read_write_header)
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::shared_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, size));
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
   zim::Fileheader header2;
   header2.read(buffer);
 

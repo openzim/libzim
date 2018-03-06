@@ -25,6 +25,8 @@
 #include <iostream>
 #include <vector>
 
+#include "../zim_types.h"
+
 namespace zim {
 
 namespace writer {
@@ -32,7 +34,7 @@ namespace writer {
 
 class Cluster {
   friend std::ostream& operator<< (std::ostream& out, const Cluster& blobImpl);
-  typedef std::vector<size_type> Offsets;
+  typedef std::vector<uint32_t> Offsets;
   typedef std::vector<char> Data;
 
 
@@ -41,14 +43,15 @@ class Cluster {
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
-    offset_type count() const  { return offsets.size() - 1; }
-    offset_type size() const   { return offsets.size() * sizeof(size_type) + _data.size(); }
+    blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
+    zsize_t size() const   { return zsize_t(offsets.size() * sizeof(uint32_t) + _data.size()); }
     void clear();
 
-    size_type getBlobSize(unsigned n) const { return offsets[n+1] - offsets[n]; }
+    zsize_t getBlobSize(blob_index_t n) const
+    { return zsize_t(offsets[blob_index_type(n)+1] - offsets[blob_index_type(n)]); }
 
     void addBlob(const Blob& blob);
-    void addBlob(const char* data, unsigned size);
+    void addBlob(const char* data, zsize_t size);
 
     void write(std::ostream& out) const;
 

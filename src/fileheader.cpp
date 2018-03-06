@@ -29,10 +29,10 @@ log_define("zim.file.header")
 
 namespace zim
 {
-  const size_type Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
+  const uint32_t Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
   const uint16_t Fileheader::zimMajorVersion = 5;
   const uint16_t Fileheader::zimMinorVersion = 0;
-  const size_type Fileheader::size = 80;
+  const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
 
   std::ostream& operator<< (std::ostream& out, const Fileheader& fh)
   {
@@ -58,7 +58,7 @@ namespace zim
 
   void Fileheader::read(std::shared_ptr<const Buffer> buffer)
   {
-    size_type magicNumber = buffer->as<size_type>(0);
+    uint32_t magicNumber = buffer->as<uint32_t>(offset_t(0));
     if (magicNumber != Fileheader::zimMagic)
     {
       log_error("invalid magic number " << magicNumber << " found - "
@@ -66,7 +66,7 @@ namespace zim
       throw ZimFileFormatError("Invalid magic number");
     }
 
-    uint16_t major_version = buffer->as<uint16_t>(4);
+    uint16_t major_version = buffer->as<uint16_t>(offset_t(4));
     if (major_version != Fileheader::zimMajorVersion)
     {
       log_error("invalid zimfile major version " << major_version << " found - "
@@ -74,7 +74,7 @@ namespace zim
       throw ZimFileFormatError("Invalid version");
     }
 
-    uint16_t minor_version = buffer->as<uint16_t>(6);
+    uint16_t minor_version = buffer->as<uint16_t>(offset_t(6));
     if (minor_version < Fileheader::zimMinorVersion)
     {
       log_error("invalid zimfile minor version " << minor_version << " found - "
@@ -83,24 +83,24 @@ namespace zim
     }
 
     Uuid uuid;
-    std::copy(buffer->data(8), buffer->data(24), uuid.data);
+    std::copy(buffer->data(offset_t(8)), buffer->data(offset_t(24)), uuid.data);
     setUuid(uuid);
 
-    setArticleCount(buffer->as<size_type>(24));
-    setClusterCount(buffer->as<size_type>(28));
-    setUrlPtrPos(buffer->as<offset_type>(32));
-    setTitleIdxPos(buffer->as<offset_type>(40));
-    setClusterPtrPos(buffer->as<offset_type>(48));
-    setMimeListPos(buffer->as<offset_type>(56));
-    setMainPage(buffer->as<size_type>(64));
-    setLayoutPage(buffer->as<size_type>(68));
-    setChecksumPos(buffer->as<offset_type>(72));
+    setArticleCount(buffer->as<uint32_t>(offset_t(24)));
+    setClusterCount(buffer->as<uint32_t>(offset_t(28)));
+    setUrlPtrPos(buffer->as<uint64_t>(offset_t(32)));
+    setTitleIdxPos(buffer->as<uint64_t>(offset_t(40)));
+    setClusterPtrPos(buffer->as<uint64_t>(offset_t(48)));
+    setMimeListPos(buffer->as<uint64_t>(offset_t(56)));
+    setMainPage(buffer->as<uint32_t>(offset_t(64)));
+    setLayoutPage(buffer->as<uint32_t>(offset_t(68)));
+    setChecksumPos(buffer->as<uint64_t>(offset_t(72)));
 
     sanity_check();
   }
 
   void Fileheader::sanity_check() const {
-    if (!!articleCount != !!blobCount) {
+    if (!!articleCount != !!clusterCount) {
       throw ZimFileFormatError("No article <=> No cluster");
     }
 
@@ -114,11 +114,11 @@ namespace zim
     if (titleIdxPos < mimeListPos) {
       throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
     }
-    if (blobPtrPos < mimeListPos) {
+    if (clusterPtrPos < mimeListPos) {
       throw ZimFileFormatError("clusterPtrPos must be > mimelistPos.");
     }
 
-    if (blobCount > articleCount) {
+    if (clusterCount > articleCount) {
       throw ZimFileFormatError("Cluster count cannot be higher than article count.");
     }
 

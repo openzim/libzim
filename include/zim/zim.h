@@ -20,99 +20,24 @@
 #ifndef ZIM_ZIM_H
 #define ZIM_ZIM_H
 
-#include <limits.h>
+#include <cstdint>
 
 namespace zim
 {
-// define 8 bit integer types
-//
-  typedef unsigned char uint8_t;
-  typedef char int8_t;
+  // An index of an article (in a zim file)
+  typedef uint32_t article_index_type;
 
-// define 16 bit integer types
-//
-#if USHRT_MAX == 0xffff
+  // An index of an cluster (in a zim file)
+  typedef uint32_t cluster_index_type;
 
-  typedef unsigned short uint16_t;
-  typedef short int16_t;
+  // An index of a blog (in a cluster)
+  typedef uint32_t blob_index_type;
 
-#elif UINT_MAX == 0xffff
-
-  typedef unsigned int uint16_t;
-  typedef int int16_t;
-
-#elif ULONG_MAX == 0xffff
-
-  typedef unsigned long uint16_t;
-  typedef long int16_t;
-
-#else
-
-}
-#include <stdint.h>
-namespace zim
-{
-
-#endif
-
-// define 32 bit integer types
-//
-#if USHRT_MAX == 0xffffffffUL
-
-  typedef unsigned short uint32_t;
-  typedef short int32_t;
-
-#elif UINT_MAX == 0xffffffffUL
-
-  typedef unsigned int uint32_t;
-  typedef int int32_t;
-
-#elif ULONG_MAX == 0xffffffffUL
-
-  typedef unsigned long uint32_t;
-  typedef long int32_t;
-
-#else
-
-}
-#include <stdint.h>
-namespace zim
-{
-
-#endif
-
-// define 64 bit integer types
-//
-#if UINT_MAX == 18446744073709551615ULL
-
-  typedef unsigned int uint64_t;
-  typedef int int64_t;
-
-#elif ULONG_MAX == 18446744073709551615ULL
-
-  typedef unsigned long uint64_t;
-  typedef long int64_t;
-
-#elif ULLONG_MAX == 18446744073709551615ULL
-
-  typedef unsigned long long uint64_t;
-  typedef long long int64_t;
-
-#else
-
-}
-#include <stdint.h>
-namespace zim
-{
-#endif
-
-  typedef uint32_t size_type;
+  // The size of something (article, zim, cluster, blob, ...)
+  typedef uint64_t size_type;
   
-  #ifdef _WIN32
-  typedef __int64 offset_type;
-  #else
+  // An offset.
   typedef uint64_t offset_type;
-  #endif
 
   enum CompressionType
   {

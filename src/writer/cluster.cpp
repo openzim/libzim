@@ -51,22 +51,22 @@ void Cluster::addBlob(const Blob& blob)
 }
 
 
-void Cluster::addBlob(const char* data, unsigned size)
+void Cluster::addBlob(const char* data, zsize_t size)
 {
-  addBlob(Blob(data, size));
+  addBlob(Blob(data, size_type(size)));
 }
 
 
 void Cluster::write(std::ostream& out) const
 {
-  size_type a = offsets.size() * sizeof(size_type);
+  size_t a = offsets.size() * sizeof(uint32_t);
   for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
   {
-    size_type o = *it;
+    uint32_t o = *it;
     o += a;
-    char out_buf[sizeof(size_type)];
+    char out_buf[sizeof(uint32_t)];
     toLittleEndian(o, out_buf);
-    out.write(out_buf, sizeof(size_type));
+    out.write(out_buf, sizeof(uint32_t));
   }
 
   if (_data.size() > 0)

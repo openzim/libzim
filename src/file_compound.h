@@ -21,6 +21,7 @@
 #define ZIM_FILE_COMPOUND_H_
 
 #include "file_part.h"
+#include "zim_types.h"
 #include <map>
 #include <memory>
 
@@ -29,10 +30,10 @@ namespace zim {
 class FileReader;
 
 struct Range {
-  Range(const offset_type point ) : min(point), max(point) {}
-  Range(const offset_type  min, const offset_type max) : min(min), max(max) {}
-  const offset_type min;
-  const offset_type max;
+  Range(const offset_t point ) : min(point), max(point) {}
+  Range(const offset_t  min, const offset_t max) : min(min), max(max) {}
+  const offset_t min;
+  const offset_t max;
 };
 
 struct less_range : public std::binary_function< Range, Range, bool>
@@ -47,17 +48,17 @@ class FileCompound : public std::map<Range, FilePart*, less_range> {
     FileCompound(const std::string& filename);
     ~FileCompound();
 
-    offset_type fsize() const { return _fsize; };
+    zsize_t fsize() const { return _fsize; };
     time_t getMTime() const;
     bool fail() const { return empty(); };
     bool is_multiPart() const { return size() > 1; };
 
-    std::pair<FileCompound::const_iterator, FileCompound::const_iterator> locate(offset_type offset, offset_type size) const {
+    std::pair<FileCompound::const_iterator, FileCompound::const_iterator> locate(offset_t offset, zsize_t size) const {
         return equal_range(Range(offset, offset+size));
     }
 
   private:
-    offset_type _fsize;
+    zsize_t _fsize;
     mutable time_t mtime;
 };
 

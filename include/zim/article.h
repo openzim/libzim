@@ -36,16 +36,16 @@ namespace zim
   {
     private:
       std::shared_ptr<FileImpl> file;
-      size_type idx;
+      article_index_type idx;
 
       std::shared_ptr<const Dirent> getDirent() const;
 
     public:
       Article()
-        : idx(std::numeric_limits<size_type>::max())
+        : idx(std::numeric_limits<article_index_type>::max())
           { }
 
-      Article(std::shared_ptr<FileImpl> file_, size_type idx_)
+      Article(std::shared_ptr<FileImpl> file_, article_index_type idx_)
         : file(file_),
           idx(idx_)
           { }
@@ -65,7 +65,7 @@ namespace zim
 
       char        getNamespace() const;
 
-      size_type   getRedirectIndex() const;
+      article_index_type   getRedirectIndex() const;
       Article     getRedirectArticle() const;
 
       size_type   getArticleSize() const;
@@ -77,8 +77,8 @@ namespace zim
 
       std::shared_ptr<const Cluster> getCluster() const;
 
-      Blob getData(size_type offset=0) const;
-      Blob getData(size_type offset, size_type size) const;
+      Blob getData(offset_type offset=0) const;
+      Blob getData(offset_type offset, size_type size) const;
 
       offset_type getOffset() const;
       std::pair<std::string, offset_type> getDirectAccessInformation() const;
@@ -86,9 +86,9 @@ namespace zim
       std::string getPage(bool layout = true, unsigned maxRecurse = 10);
       void getPage(std::ostream&, bool layout = true, unsigned maxRecurse = 10);
 
-      size_type   getIndex() const   { return idx; }
+      article_index_type   getIndex() const   { return idx; }
 
-      bool good() const   { return idx != std::numeric_limits<size_type>::max(); }
+      bool good() const   { return idx != std::numeric_limits<article_index_type>::max(); }
   };
 
 }

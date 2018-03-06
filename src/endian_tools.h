@@ -67,13 +67,13 @@ struct ToLittleEndianImpl<T, 8>{
 
 ////////////////////////////////////////////////////////////////////////
 template <typename T>
-void toLittleEndian(const T& d, char* dst)
+inline void toLittleEndian(T d, char* dst)
 {
   ToLittleEndianImpl<T, sizeof(T)>::write(d, dst);
 }
 
 template <typename T>
-T fromLittleEndian(const char* ptr)
+inline T fromLittleEndian(const char* ptr)
 {
   T ret = 0;
   for(size_t i=0; i<sizeof(T); i++) {

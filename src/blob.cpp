@@ -25,7 +25,7 @@ namespace zim {
 
 Blob::Blob(std::shared_ptr<const Buffer> buffer)
  : _data(buffer->data()),
-   _size(buffer->size()),
+   _size(size_type(buffer->size())),
    _buffer(buffer)
    {}
 
