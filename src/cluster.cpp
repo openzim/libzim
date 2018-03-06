@@ -36,26 +36,32 @@ log_define("zim.cluster")
 
 namespace zim
 {
-  Cluster::Cluster(std::shared_ptr<const Reader> reader_, CompressionType comp)
+  Cluster::Cluster(std::shared_ptr<const Reader> reader_, CompressionType comp, bool isExtended)
     : compression(comp),
+      isExtended(isExtended),
       reader(reader_),
       startOffset(0)
   {
     auto d = reader->offset();
-    startOffset = read_header();
+    if (isExtended) {
+      startOffset = read_header<uint64_t>();
+    } else {
+      startOffset = read_header<uint32_t>();
+    }
     reader = reader->sub_reader(startOffset);
     auto d1 = reader->offset();
     ASSERT(d+startOffset, ==, d1);
   }
 
   /* This return the number of char read */
+  template<typename OFFSET_TYPE>
   offset_t Cluster::read_header()
   {
     // read first offset, which specifies, how many offsets we need to read
-    uint32_t offset;
-    offset = reader->read<uint32_t>(offset_t(0));
+    OFFSET_TYPE offset;
+    offset = reader->read<OFFSET_TYPE>(offset_t(0));
 
-    size_t n_offset = offset / sizeof(offset);
+    size_t n_offset = offset / sizeof(OFFSET_TYPE);
     offset_t data_address(offset);
 
     // read offsets
@@ -64,17 +70,17 @@ namespace zim
     offsets.push_back(offset_t(0));
     
     auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
-    offset_t current = offset_t(sizeof(uint32_t));
+    offset_t current = offset_t(sizeof(OFFSET_TYPE));
     while (--n_offset)
     {
-      uint32_t new_offset = buffer->as<uint32_t>(current);
+      OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
       ASSERT(new_offset, >=, offset);
       ASSERT(offset, >=, data_address.v);
       ASSERT(offset, <=, reader->size().v);
       
       offset = new_offset;
       offsets.push_back(offset_t(offset - data_address.v));
-      current += sizeof(uint32_t);
+      current += sizeof(OFFSET_TYPE);
     }
     ASSERT(offset, ==, reader->size().v);
     return data_address;
@@ -110,7 +116,10 @@ namespace zim
 
   zsize_t Cluster::size() const
   {
-    return zsize_t(offsets.size() * sizeof(uint32_t) + reader->size().v);
+    if (isExtended)
+      return zsize_t(offsets.size() * sizeof(uint64_t) + reader->size().v);
+    else
+      return zsize_t(offsets.size() * sizeof(uint32_t) + reader->size().v);
   }
 
 }

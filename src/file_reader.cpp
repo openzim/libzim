@@ -289,8 +289,11 @@ std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_t offset, z
 }
 
 
-std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, zsize_t size, CompressionType* comp) const {
-  *comp = static_cast<CompressionType>(read(offset));
+std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, zsize_t size, CompressionType* comp, bool* extended) const {
+  uint8_t clusterInfo = read(offset);
+  *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
+  *extended = clusterInfo & 0x10;
+
   switch (*comp) {
     case zimcompDefault:
     case zimcompNone:

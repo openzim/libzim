@@ -53,6 +53,7 @@ namespace zim
         uint16_t nextMimeIdx;
         CompressionType compression;
         bool isEmpty;
+        bool isExtended;
         zsize_t clustersSize;
         zsize_t currentSize;
 

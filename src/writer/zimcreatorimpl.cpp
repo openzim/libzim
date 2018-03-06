@@ -63,6 +63,7 @@ namespace zim
     void ZimCreatorImpl::create(const std::string& fname, ArticleSource& src)
     {
       isEmpty = true;
+      isExtended = false;
 
       std::string basename = fname;
       basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
@@ -195,6 +196,8 @@ namespace zim
           clusterOffsets.push_back(offset_t(start));
           out << *cluster;
           log_debug("cluster written");
+          if (cluster->is_extended() )
+            isExtended = true;
           cluster->clear();
           myDirents->clear();
           // Update the cluster number of the dirents *not* written to disk.
@@ -219,6 +222,8 @@ namespace zim
       {
         clusterOffsets.push_back(offset_t(out.tellp()));
         out << compCluster;
+        if (compCluster.is_extended())
+          isExtended = true;
         for (DirentPtrsType::iterator dpi = uncompDirents.begin();
              dpi != uncompDirents.end(); ++dpi)
         {
@@ -233,6 +238,8 @@ namespace zim
       {
         clusterOffsets.push_back(offset_t(out.tellp()));
         out << uncompCluster;
+        if (uncompCluster.is_extended())
+          isExtended = true;
       }
       uncompCluster.clear();
       uncompDirents.clear();
@@ -353,6 +360,12 @@ namespace zim
 
       log_debug("main aid=" << mainAid << " layout aid=" << layoutAid);
 
+      if (isExtended) {
+        header.setMajorVersion(Fileheader::zimExtendedMajorVersion);
+      } else {
+        header.setMajorVersion(Fileheader::zimClassicMajorVersion);
+      }
+      header.setMinorVersion(Fileheader::zimMinorVersion);
       header.setMainPage(std::numeric_limits<article_index_type>::max());
       header.setLayoutPage(std::numeric_limits<article_index_type>::max());
 

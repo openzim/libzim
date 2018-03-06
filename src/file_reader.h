@@ -58,7 +58,10 @@ class Reader {
     }
     virtual offset_t offset() const = 0;
 
-    std::unique_ptr<const Reader> sub_clusterReader(offset_t offset, zsize_t size, CompressionType* comp) const;
+    std::unique_ptr<const Reader> sub_clusterReader(offset_t offset,
+                                                    zsize_t size,
+                                                    CompressionType* comp,
+                                                    bool* extented) const;
 
     bool can_read(offset_t offset, zsize_t size);
 
