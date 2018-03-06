@@ -519,7 +519,7 @@ namespace zim
     for(auto part = zimFile->begin();
         part != zimFile->end();
         part++) {
-      std::fstream stream(part->second->filename());
+      std::ifstream stream(part->second->filename());
       char ch;
       for(/*NOTHING*/ ; currentPos < checksumPos && stream.get(ch).good(); currentPos++) {
         md5 << ch;
