@@ -500,8 +500,9 @@ namespace zim
     char* p = hexdigest;
     for (int i = 0; i < 16; ++i)
     {
-      *p++ = hex[chksum->at(offset_t(i)) >> 4];
-      *p++ = hex[chksum->at(offset_t(i)) & 0xf];
+      uint8_t v = chksum->at(offset_t(i));
+      *p++ = hex[v >> 4];
+      *p++ = hex[v & 0xf];
     }
     log_debug("chksum=" << hexdigest);
     return hexdigest;
