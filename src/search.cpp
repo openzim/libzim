@@ -313,6 +313,7 @@ Search::iterator Search::begin() const {
     if (verbose) {
       std::cout << "Setup queryparser using language " << language << std::endl;
     }
+    queryParser->set_default_op(Xapian::Query::op::OP_AND);
     setup_queryParser(queryParser, internal->database, language, stopwords);
 
     std::string prefix = "";
