@@ -330,7 +330,13 @@ Search::iterator Search::begin() const {
         prefix = "S";
       }
     }
-    Xapian::Query query = queryParser->parse_query(this->query, flags, prefix);
+    Xapian::Query query;
+    try {
+      query = queryParser->parse_query(this->query, flags, prefix);
+    } catch (Xapian::QueryParserError& e) {
+      estimated_matches_number = 0;
+      return nullptr;
+    }
     if (verbose) {
         std::cout << "Parsed query '" << this->query << "' to " << query.get_description() << std::endl;
     }
