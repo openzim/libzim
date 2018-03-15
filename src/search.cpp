@@ -35,6 +35,8 @@
 #include <unicode/locid.h>
 #endif
 
+#define MAX_MATCHES_TO_SORT 10000
+
 namespace zim
 {
 
@@ -311,6 +313,7 @@ Search::iterator Search::begin() const {
     if (verbose) {
       std::cout << "Setup queryparser using language " << language << std::endl;
     }
+    queryParser->set_default_op(Xapian::Query::op::OP_AND);
     setup_queryParser(queryParser, internal->database, language, stopwords);
 
     std::string prefix = "";
@@ -327,7 +330,13 @@ Search::iterator Search::begin() const {
         prefix = "S";
       }
     }
-    Xapian::Query query = queryParser->parse_query(this->query, flags, prefix);
+    Xapian::Query query;
+    try {
+      query = queryParser->parse_query(this->query, flags, prefix);
+    } catch (Xapian::QueryParserError& e) {
+      estimated_matches_number = 0;
+      return nullptr;
+    }
     if (verbose) {
         std::cout << "Parsed query '" << this->query << "' to " << query.get_description() << std::endl;
     }
@@ -361,7 +370,9 @@ Search::iterator Search::begin() const {
           has_custom_distance_maker = false;
         }
       }
-      if (has_custom_distance_maker) {
+      auto temp_results = enquire.get_mset(0,0);
+      if ( has_custom_distance_maker
+        && temp_results.get_matches_estimated() <= MAX_MATCHES_TO_SORT ) {
         keyMaker = new LevenshteinDistanceMaker(this->query, value_index);
         enquire.set_sort_by_key(keyMaker, false);
       }
