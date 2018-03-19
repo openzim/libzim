@@ -191,9 +191,13 @@ namespace zim
   
   std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)
   {
-    if (url.size() < 2 || url[1] != '/')
+    size_t start = 0;
+    if (url[0] == '/') {
+      start = 1;
+    }
+    if (url.size() < (2+start) || url[1+start] != '/')
       return std::pair<bool, article_index_t>(false, article_index_t(0));
-    return findx(url[0], url.substr(2));
+    return findx(url[start], url.substr(2+start));
   }
 
   std::pair<bool, article_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
