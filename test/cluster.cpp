@@ -243,7 +243,6 @@ TEST(CluterTest, read_write_extended_cluster)
       delete[] blob3;
       return;
     }
-    cluster.setCompression(zim::zimcompLzma);
     ASSERT_EQ(cluster.is_extended(), true);
 
     delete[] blob3;
@@ -251,7 +250,7 @@ TEST(CluterTest, read_write_extended_cluster)
   }
 
   std::string str_content = stream.str();
-  int size = str_content.size();
+  zim::size_type size = str_content.size();
   char* content = new char[size];
   memcpy(content, str_content.c_str(), size);
   auto buffer = std::shared_ptr<zim::Buffer>(
@@ -261,11 +260,10 @@ TEST(CluterTest, read_write_extended_cluster)
   bool extended;
   std::shared_ptr<const zim::Reader> clusterReader
       = reader->sub_clusterReader(zim::offset_t(0), zim::zsize_t(size), &comp, &extended);
-  ASSERT_EQ(comp, zim::zimcompLzma);
   ASSERT_EQ(extended, true);
   zim::Cluster cluster2(clusterReader, comp, extended);
   ASSERT_EQ(cluster2.count().v, 4U);
-  ASSERT_EQ(cluster2.getCompression(), zim::zimcompLzma);
+  ASSERT_EQ(cluster2.getCompression(), zim::zimcompNone);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
