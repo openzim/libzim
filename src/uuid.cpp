@@ -56,19 +56,21 @@ namespace zim
     { return hex[v & 0xf]; }
   }
 
-  Uuid Uuid::generate()
+  Uuid Uuid::generate(std::string value)
   {
     Uuid ret;
-
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-
     Md5stream m;
 
-    clock_t c = clock();
+    if ( value.empty() ) {
+      struct timeval tv;
+      gettimeofday(&tv, 0);
 
-    m << c << tv.tv_sec << tv.tv_usec;
+      clock_t c = clock();
 
+      m << c << tv.tv_sec << tv.tv_usec;
+    } else {
+      m << value;
+    }
     m.getDigest(reinterpret_cast<unsigned char*>(&ret.data[0]));
 
     log_debug("generated uuid: " << ret.data);
