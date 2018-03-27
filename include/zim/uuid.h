@@ -23,6 +23,7 @@
 #include <iosfwd>
 #include <algorithm>
 #include <cstring>
+#include <string>
 
 namespace zim
 {
@@ -38,7 +39,7 @@ namespace zim
       std::copy(uuid, uuid+16, data);
     }
 
-    static Uuid generate();
+    static Uuid generate(std::string value = "");
 
     bool operator== (const Uuid& other) const
       { return std::equal(data, data+16, other.data); }
