@@ -1,3 +1,26 @@
+libzim 3.2.0
+============
+
+ * Support geo query if the xapian database has indexed localisation.
+ * Handle articles bigger than 4Go in the zim file (#110).
+ * Use AND operator between search term.
+ * Fix compilation with recent clang (#95).
+ * Add method to get article's data localisation in the zim file.
+ * Be able to get only a part of article (#77).
+ * Do not crash if we cannot open the xapian Database for some reasons.
+   (kiwix/kiwix-tools#153)
+ * Do not assumen there is always a checksum in the zim file.
+   (kiwix/kiwix-tools#150)
+ * Try to do some sanity checks when opening a zim file.
+ * Use pytest to do some tests (when cython is available).
+ * Use levenshtein distance to sort and have better suggestion results.
+ * Search result urls are now always absolute (starts with a '/').
+   (kiwix/kiwix-lib#110)
+ * Open the file readonly when checking the zim file (and so be able to check
+   read only file).
+ * Accept absolute url starting with '/' when searching for article.
+ * Fix various bugs
+
 libzim 3.1.0
 ============
 
