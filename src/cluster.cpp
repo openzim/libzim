@@ -89,6 +89,10 @@ namespace zim
   Blob Cluster::getBlob(blob_index_t n) const
   {
     if (size()) {
+      auto blobSize = getBlobSize(n);
+      if (blobSize.v > SIZE_MAX) {
+        return Blob();
+      }
       auto buffer = reader->get_buffer(offsets[blob_index_type(n)], getBlobSize(n));
       return Blob(buffer);
     } else {
@@ -101,6 +105,9 @@ namespace zim
     if (this->size()) {
       offset += offsets[blob_index_type(n)];
       size = std::min(size, getBlobSize(n));
+      if (size.v > SIZE_MAX) {
+        return Blob();
+      }
       auto buffer = reader->get_buffer(offset, size);
       return Blob(buffer);
     } else {

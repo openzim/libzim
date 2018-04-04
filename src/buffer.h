@@ -36,7 +36,10 @@ class BufferError : std::exception {};
 class Buffer : public std::enable_shared_from_this<Buffer> {
   public:
     Buffer(zsize_t size)
-      : size_(size) {};
+      : size_(size)
+    {
+      ASSERT(size_.v, <, SIZE_MAX);
+    };
     virtual ~Buffer() {};
     virtual const char* data(offset_t offset=offset_t(0)) const = 0;
     virtual char at(offset_t offset) const {

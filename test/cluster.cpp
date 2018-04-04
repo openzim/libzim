@@ -29,8 +29,10 @@
 
 #include "../src/buffer.h"
 #include "../src/cluster.h"
+#include "../src/file_compound.h"
 #include "../src/file_reader.h"
 #include "../src/writer/cluster.h"
+#include "../src/endian_tools.h"
 
 #include "../src/config.h"
 
@@ -203,6 +205,10 @@ TEST(ClusterTest, read_write_clusterLzma)
 
 TEST(CluterTest, read_write_extended_cluster)
 {
+  //zim::writer doesn't suport 32 bits architectures.
+  if (SIZE_MAX == UINT32_MAX) {
+    return;
+  }
   std::stringstream stream;
 
 
@@ -263,6 +269,84 @@ TEST(CluterTest, read_write_extended_cluster)
   b = cluster2.getBlob(zim::blob_index_t(2));
   ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
+
+TEST(CluterTest, read_extended_cluster)
+{
+  std::FILE* tmpfile = std::tmpfile();
+
+  std::string blob0("123456789012345678901234567890");
+  std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  std::string blob2("abcdefghijklmnopqrstuvwxyz");
+
+  zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
+
+  zim::offset_type offset = 5*sizeof(uint64_t);
+
+  std::putc((char)0x11, tmpfile);
+
+  char out_buf[sizeof(uint64_t)];
+
+  zim::toLittleEndian(offset, out_buf);
+  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+
+  offset += blob0.size();
+  zim::toLittleEndian(offset, out_buf);
+  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+
+  offset += blob1.size();
+  zim::toLittleEndian(offset, out_buf);
+  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+
+  offset += blob2.size();
+  zim::toLittleEndian(offset, out_buf);
+  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+
+  offset += bigger_than_4g;
+  zim::toLittleEndian(offset, out_buf);
+  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+
+  std::fwrite(blob0.c_str(), 1, blob0.size(), tmpfile);
+  std::fwrite(blob1.c_str(), 1, blob1.size(), tmpfile);
+  std::fwrite(blob2.c_str(), 1, blob2.size(), tmpfile);
+  std::fseek(tmpfile, bigger_than_4g-1, SEEK_CUR);
+  char a = '\0';
+  std::putc(a, tmpfile);
+  std::fflush(tmpfile);
+
+  auto fileCompound = std::shared_ptr<zim::FileCompound>(new zim::FileCompound(tmpfile));
+  auto reader = std::shared_ptr<zim::Reader>(new zim::FileReader(fileCompound));
+  zim::CompressionType comp;
+  bool extended;
+  std::shared_ptr<const zim::Reader> clusterReader
+      = reader->sub_clusterReader(zim::offset_t(0), reader->size(), &comp, &extended);
+  ASSERT_EQ(extended, true);
+  zim::Cluster cluster2(clusterReader, comp, extended);
+  ASSERT_EQ(cluster2.count().v, 4U);
+  ASSERT_EQ(cluster2.getCompression(), zim::zimcompNone);
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(3)).v, bigger_than_4g);
+
+
+  auto b = cluster2.getBlob(zim::blob_index_t(0));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
+  b = cluster2.getBlob(zim::blob_index_t(1));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
+  b = cluster2.getBlob(zim::blob_index_t(2));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+
+  b = cluster2.getBlob(zim::blob_index_t(3));
+  if (SIZE_MAX == UINT32_MAX) {
+    ASSERT_EQ(b.data(), nullptr);
+    ASSERT_EQ(b.size(), 0U);
+  } else {
+    ASSERT_EQ(b.size(), bigger_than_4g);
+  }
+
+  fclose(tmpfile);
+}
+
 
 }  // namespace
 

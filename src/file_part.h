@@ -21,6 +21,7 @@
 #define ZIM_FILE_PART_H_
 
 #include <string>
+#include <cstdio>
 
 #include <zim/zim.h>
 
@@ -31,6 +32,7 @@ namespace zim {
 class FilePart {
   public:
     FilePart(const std::string& filename);
+    FilePart(std::FILE* filestream);
     ~FilePart();
     const std::string& filename() const { return filename_; };
     const int fd() const { return fd_; };

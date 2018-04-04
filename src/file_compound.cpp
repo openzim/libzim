@@ -69,6 +69,14 @@ FileCompound::FileCompound(const std::string& filename):
   }
 }
 
+FileCompound::FileCompound(std::FILE* filestream):
+  _fsize(0)
+{
+  auto part = new FilePart(filestream);
+  emplace(Range(offset_t(0), offset_t(part->size().v)), part);
+  _fsize = part->size();
+}
+
 FileCompound::~FileCompound() {
   for(auto it=begin(); it!=end(); it++) {
     auto filepart = it->second;

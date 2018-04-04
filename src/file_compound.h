@@ -24,6 +24,7 @@
 #include "zim_types.h"
 #include <map>
 #include <memory>
+#include <cstdio>
 
 namespace zim {
 
@@ -46,6 +47,7 @@ struct less_range : public std::binary_function< Range, Range, bool>
 class FileCompound : public std::map<Range, FilePart*, less_range> {
   public:
     FileCompound(const std::string& filename);
+    FileCompound(std::FILE* filestream);
     ~FileCompound();
 
     zsize_t fsize() const { return _fsize; };
