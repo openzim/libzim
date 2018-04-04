@@ -147,18 +147,12 @@ TEST(ClusterTest, read_write_clusterZ)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(0)),
-                         cluster2.getBlobPtr(zim::blob_index_t(0))
-                           + cluster2.getBlobSize(zim::blob_index_t(0)).v,
-                         blob0.data()));
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(1)),
-                         cluster2.getBlobPtr(zim::blob_index_t(1))
-                           + cluster2.getBlobSize(zim::blob_index_t(1)).v,
-                         blob1.data()));
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(2)),
-                         cluster2.getBlobPtr(zim::blob_index_t(2))
-                           + cluster2.getBlobSize(zim::blob_index_t(2)).v,
-                         blob2.data()));
+  auto b = cluster2.getBlob(zim::blob_index_t(0));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
+  b = cluster2.getBlob(zim::blob_index_t(1));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
+  b = cluster2.getBlob(zim::blob_index_t(2));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
 
 #endif
@@ -199,18 +193,12 @@ TEST(ClusterTest, read_write_clusterLzma)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(0)),
-                         cluster2.getBlobPtr(zim::blob_index_t(0))
-                           + cluster2.getBlobSize(zim::blob_index_t(0)).v,
-                         blob0.data()));
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(1)),
-                         cluster2.getBlobPtr(zim::blob_index_t(1))
-                           + cluster2.getBlobSize(zim::blob_index_t(1)).v,
-                         blob1.data()));
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(2)),
-                         cluster2.getBlobPtr(zim::blob_index_t(2))
-                           + cluster2.getBlobSize(zim::blob_index_t(2)).v,
-                         blob2.data()));
+  auto b = cluster2.getBlob(zim::blob_index_t(0));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
+  b = cluster2.getBlob(zim::blob_index_t(1));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
+  b = cluster2.getBlob(zim::blob_index_t(2));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
 
 TEST(CluterTest, read_write_extended_cluster)
@@ -268,18 +256,12 @@ TEST(CluterTest, read_write_extended_cluster)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(3)).v, bigger_than_4g);
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(0)),
-                         cluster2.getBlobPtr(zim::blob_index_t(0))
-                           + cluster2.getBlobSize(zim::blob_index_t(0)).v,
-                         blob0.data()));
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(1)),
-                         cluster2.getBlobPtr(zim::blob_index_t(1))
-                           + cluster2.getBlobSize(zim::blob_index_t(1)).v,
-                         blob1.data()));
-  ASSERT_TRUE(std::equal(cluster2.getBlobPtr(zim::blob_index_t(2)),
-                         cluster2.getBlobPtr(zim::blob_index_t(2))
-                           + cluster2.getBlobSize(zim::blob_index_t(2)).v,
-                         blob2.data()));
+  auto b = cluster2.getBlob(zim::blob_index_t(0));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
+  b = cluster2.getBlob(zim::blob_index_t(1));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
+  b = cluster2.getBlob(zim::blob_index_t(2));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
 
 }  // namespace

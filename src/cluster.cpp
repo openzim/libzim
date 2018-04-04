@@ -108,12 +108,6 @@ namespace zim
     }
   }
 
-  const char* Cluster::getBlobPtr(blob_index_t n) const
-  {
-     auto d = reader->get_buffer(offsets[blob_index_type(n)], getBlobSize(n))->data();
-     return d;
-  }
-
   zsize_t Cluster::size() const
   {
     if (isExtended)
