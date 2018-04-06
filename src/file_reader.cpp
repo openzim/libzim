@@ -270,25 +270,6 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, zsize_t
   return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
 }
 
-std::unique_ptr<const Reader> FileReader::get_mmap_sub_reader(offset_t offset, zsize_t size) const {
-#if !defined(_WIN32)
-  auto found_range = source->locate(_offset+offset, size);
-  auto first_part_containing_it = found_range.first;
-  if (++first_part_containing_it == found_range.second) {
-    // The whole range will enter in one part, let's mmap all.
-    auto range = found_range.first->first;
-    auto part = found_range.first->second;
-    auto local_offset = offset + _offset - range.min;
-    ASSERT(size, <=, part->size());
-    int fd = part->fd();
-    auto buffer = std::shared_ptr<Buffer>(new MMapBuffer(fd, local_offset, size));
-    return std::unique_ptr<const Reader>(new BufferReader(buffer));
-  }
-#endif
-  return std::unique_ptr<const Reader>();
-}
-
-
 std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, zsize_t size, CompressionType* comp, bool* extended) const {
   uint8_t clusterInfo = read(offset);
   *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
@@ -299,10 +280,6 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, zsize_t
     case zimcompNone:
       {
       // No compression, just a sub_reader
-        auto reader = get_mmap_sub_reader(offset+offset_t(1), size-zsize_t(1));
-        if (reader) {
-          return reader;
-        }
         return sub_reader(offset+offset_t(1), size-zsize_t(1));
       }
       break;

@@ -19,15 +19,29 @@
 
 
 #include "zim/blob.h"
+#include "debug.h"
 #include "buffer.h"
 
 namespace zim {
+
+Blob::Blob()
+ : _data(0),
+   _size(0)
+{}
+
+Blob::Blob(const char* data, size_type size)
+ : _data(data),
+   _size(size)
+{
+  ASSERT(size, <, SIZE_MAX);
+  ASSERT(data, <, (void*)(SIZE_MAX-size));
+}
 
 Blob::Blob(std::shared_ptr<const Buffer> buffer)
  : _data(buffer->data()),
    _size(size_type(buffer->size())),
    _buffer(buffer)
-   {}
+{}
 
 
 

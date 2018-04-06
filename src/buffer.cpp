@@ -24,6 +24,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <string.h>
+#include <errno.h>
 
 #if !defined(_WIN32)
 #include <sys/mman.h>
@@ -49,6 +51,10 @@ MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
   #define MAP_FLAGS MAP_PRIVATE|MAP_POPULATE
 #endif
   _data = (char*)mmap(NULL, size.v + _offset.v, PROT_READ, MAP_FLAGS, fd, pa_offset.v);
+  if (_data == MAP_FAILED )
+  {
+    throw std::runtime_error(std::string("Cannot mmap : ") + strerror(errno));
+  }
 #undef MAP_FLAGS
 }
 

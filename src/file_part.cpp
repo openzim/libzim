@@ -38,6 +38,18 @@ FilePart::FilePart(const std::string& filename)
   }
 }
 
+FilePart::FilePart(std::FILE* filestream)
+  : filename_(""),
+    size_(0)
+{
+  fd_ = fileno(filestream);
+  struct stat sb;
+  if ( fd_ >= 0 ) {
+    fstat(fd_, &sb);
+    size_.v = sb.st_size;
+  }
+}
+
 FilePart::~FilePart() {
   close(fd_);
 }

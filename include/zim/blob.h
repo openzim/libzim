@@ -37,15 +37,8 @@ namespace zim
       std::shared_ptr<const Buffer> _buffer;
 
     public:
-      Blob()
-        : _data(0), _size(0)
-          { }
-
-      Blob(const char* data, size_type size)
-        : _data(data),
-          _size(size)
-          { }
-
+      Blob();
+      Blob(const char* data, size_type size);
       Blob(std::shared_ptr<const Buffer> buffer);
 
       operator std::string() const { return std::string(_data, _size); }
