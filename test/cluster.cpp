@@ -24,6 +24,7 @@
 #include <fstream>
 #include <memory>
 #include <sstream>
+#include <unistd.h>
 
 #include "gtest/gtest.h"
 
@@ -273,6 +274,7 @@ TEST(CluterTest, read_write_extended_cluster)
 TEST(CluterTest, read_extended_cluster)
 {
   std::FILE* tmpfile = std::tmpfile();
+  int fd = fileno(tmpfile);
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -282,36 +284,38 @@ TEST(CluterTest, read_extended_cluster)
 
   zim::offset_type offset = 5*sizeof(uint64_t);
 
-  std::putc((char)0x11, tmpfile);
+  char a = 0x11;
+  write(fd, &a, 1);
 
   char out_buf[sizeof(uint64_t)];
 
   zim::toLittleEndian(offset, out_buf);
-  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+  write(fd, out_buf, sizeof(uint64_t));
 
   offset += blob0.size();
   zim::toLittleEndian(offset, out_buf);
-  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+  write(fd, out_buf, sizeof(uint64_t));
 
   offset += blob1.size();
   zim::toLittleEndian(offset, out_buf);
-  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+  write(fd, out_buf, sizeof(uint64_t));
 
   offset += blob2.size();
   zim::toLittleEndian(offset, out_buf);
-  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+  write(fd, out_buf, sizeof(uint64_t));
 
   offset += bigger_than_4g;
   zim::toLittleEndian(offset, out_buf);
-  std::fwrite(out_buf, sizeof(char), sizeof(uint64_t), tmpfile);
+  write(fd, out_buf, sizeof(uint64_t));
 
-  std::fwrite(blob0.c_str(), 1, blob0.size(), tmpfile);
-  std::fwrite(blob1.c_str(), 1, blob1.size(), tmpfile);
-  std::fwrite(blob2.c_str(), 1, blob2.size(), tmpfile);
-  std::fseek(tmpfile, bigger_than_4g-1, SEEK_CUR);
-  char a = '\0';
-  std::putc(a, tmpfile);
-  std::fflush(tmpfile);
+  write(fd, blob0.c_str(), blob0.size());
+  write(fd, blob1.c_str(), blob1.size());
+  write(fd, blob2.c_str(), blob2.size());
+  lseek(fd , bigger_than_4g-1, SEEK_CUR);
+//  std::fseek(tmpfile, bigger_than_4g-1, SEEK_CUR);
+  a = '\0';
+  write(fd, &a, 1);
+  fflush(tmpfile);
 
   auto fileCompound = std::shared_ptr<zim::FileCompound>(new zim::FileCompound(tmpfile));
   auto reader = std::shared_ptr<zim::Reader>(new zim::FileReader(fileCompound));
