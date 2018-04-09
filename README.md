@@ -11,15 +11,15 @@ Disclaimer
 
 This document assumes you have a little knowledge about software
 compilation. If you experience difficulties with the dependencies or
-with the ZIM libary compilation itself, we recommend to have a look to
+with the ZIM library compilation itself, we recommend to have a look to
 [kiwix-build](https://github.com/kiwix/kiwix-build).
 
 Preamble
 --------
 
 Although the ZIM library can be compiled/cross-compiled on/for many
-sytems, the following documentation explains how to do it on POSIX
-ones. It is primarly though for GNU/Linux systems and has been tested
+systems, the following documentation explains how to do it on POSIX
+ones. It is primarily though for GNU/Linux systems and has been tested
 on recent releases of Ubuntu and Fedora.
 
 Dependencies
@@ -50,7 +50,7 @@ version by hand.
 If you want to install these dependencies locally, then ensure that
 meson (through pkg-config) will properly find them.
 
-Environnement
+Environment
 -------------
 
 The ZIM library builds using [Meson](http://mesonbuild.com/) version
