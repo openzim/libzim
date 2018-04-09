@@ -76,10 +76,10 @@ void Cluster::write_impl(std::ostream& out) const
   size_type a = offsets.size() * sizeof(OFFSET_TYPE);
   for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
   {
-    offset_t o = *it;
-    o += a;
+    offset_t o = (*it);
+    o.v += a;
     char out_buf[sizeof(OFFSET_TYPE)];
-    toLittleEndian(o, out_buf);
+    toLittleEndian(o.v, out_buf);
     out.write(out_buf, sizeof(OFFSET_TYPE));
   }
 
