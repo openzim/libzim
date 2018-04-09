@@ -79,7 +79,7 @@ void Cluster::write_impl(std::ostream& out) const
     offset_t o = (*it);
     o.v += a;
     char out_buf[sizeof(OFFSET_TYPE)];
-    toLittleEndian(o.v, out_buf);
+    toLittleEndian(static_cast<OFFSET_TYPE>(o.v), out_buf);
     out.write(out_buf, sizeof(OFFSET_TYPE));
   }
 
