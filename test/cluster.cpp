@@ -204,6 +204,7 @@ TEST(ClusterTest, read_write_clusterLzma)
   ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
 
+#if !defined(__APPLE__)
 TEST(CluterTest, read_write_extended_cluster)
 {
   //zim::writer doesn't suport 32 bits architectures.
@@ -270,6 +271,7 @@ TEST(CluterTest, read_write_extended_cluster)
   b = cluster2.getBlob(zim::blob_index_t(2));
   ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
+#endif
 
 TEST(CluterTest, read_extended_cluster)
 {

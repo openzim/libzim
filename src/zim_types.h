@@ -59,9 +59,6 @@ template<typename T> inline bool operator<=(const T& lhs, const T& rhs)
 template<typename T> inline bool operator>=(const T& lhs, const T& rhs)
 { return !(lhs < rhs); }
 
-//template<typename T> inline bool operator==(const T& lhs, const T& rhs)
-//{ return lhs.v == rhs.v; }
-
 template<typename T> inline bool operator!=(const T& lhs, const T& rhs)
 { return !(lhs == rhs); }
 
