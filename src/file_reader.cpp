@@ -38,7 +38,7 @@ namespace zim {
 #if !defined(_WIN32)
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
-  return pread64(fd, dest, size.v, offset.v);
+  return pread(fd, dest, size.v, offset.v);
 }
 #else
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
