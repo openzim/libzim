@@ -12,6 +12,9 @@ struct REAL_TYPEDEF{
   explicit REAL_TYPEDEF(B v=0) : v(v) {};
   explicit inline operator bool() const { return v != 0; }
   explicit inline operator B() const { return v; }
+
+  inline bool operator==(const REAL_TYPEDEF<B>& rhs)
+  { return v == rhs.v; }
 };
 
 template<typename T> inline T& operator+= (T& lhs, const T& rhs)
@@ -56,8 +59,8 @@ template<typename T> inline bool operator<=(const T& lhs, const T& rhs)
 template<typename T> inline bool operator>=(const T& lhs, const T& rhs)
 { return !(lhs < rhs); }
 
-template<typename T> inline bool operator==(const T& lhs, const T& rhs)
-{ return lhs.v == rhs.v; }
+//template<typename T> inline bool operator==(const T& lhs, const T& rhs)
+//{ return lhs.v == rhs.v; }
 
 template<typename T> inline bool operator!=(const T& lhs, const T& rhs)
 { return !(lhs == rhs); }
