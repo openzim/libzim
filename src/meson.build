@@ -58,6 +58,8 @@ libzim = library('zim',
                  include_directories : inc,
                  dependencies : deps,
                  version: meson.project_version(),
-                 install : true)
+                 install : true,
+                 build_rpath : join_paths(get_option('prefix'), get_option('libdir')),
+                 install_rpath: '$ORIGIN')
 libzim_dep = declare_dependency(link_with: libzim,
                                 include_directories: include_directory)
