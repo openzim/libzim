@@ -1,3 +1,21 @@
+libzim 3.3.0
+============
+
+ * Fix handling of big cluster (>4GiB) on 32 bits architecture. This is mainly
+ done by :
+   * Do not mmap the whole cluster by default.
+   * MMap only the memory asociated to an article.
+   * If an article is > 4GiB, the blob associated to it is invalid
+     (data==size==0).
+   * Other information are still valid (directAccessInformation, ...)
+ * Fix writing of extended cluster in writer.
+ * Compile libzim on macos.
+ * Build libzim setting RPATH.
+ * Search result urls are now what is stored in the zim file. They should not
+   start with a `/`. This is a revert of the change made in last release.
+   (See kiwix/kiwix-lib#123)
+ * Spelling corrections in README.
+
 libzim 3.2.0
 ============
 
