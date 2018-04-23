@@ -247,7 +247,10 @@ Search::iterator Search::begin() const {
         if (zimfile->is_multiPart()) {
             continue;
         }
-        zim::Article xapianArticle = zimfile->getArticle('Z', "/fulltextIndex/xapian");
+        zim::Article xapianArticle = zimfile->getArticle('X', "fulltext/xapian");
+        if (!xapianArticle.good()) {
+          xapianArticle = zimfile->getArticle('Z', "/fulltextIndex/xapian");
+        }
         if (!xapianArticle.good()) {
             continue;
         }
