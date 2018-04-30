@@ -55,8 +55,7 @@ namespace zim
     ZimCreatorImpl::ZimCreatorImpl()
       : minChunkSize(1024-64),
         nextMimeIdx(0),
-        compression(zimcompLzma),
-        currentSize(0)
+        compression(zimcompLzma)
     {
     }
 
@@ -96,10 +95,6 @@ namespace zim
     {
       INFO("collect articles");
       std::ofstream out(tmpfname.c_str());
-      currentSize = zsize_t(
-        80 /* for header */ +
-        1 /* for mime type table termination */ +
-        16 /* for md5sum */);
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
       // because we don't know which one will fill up first.  We also need
@@ -137,22 +132,11 @@ namespace zim
         }
         else
         {
-          uint16_t oldMimeIdx = nextMimeIdx;
           dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
           dirent.setCompress(article->shouldCompress());
           log_debug("is article; mimetype " << dirent.getMimeType());
-          if (oldMimeIdx != nextMimeIdx)
-          {
-            // Account for the size of the mime type entry
-            currentSize += rmimeTypes[oldMimeIdx].size() +
-              1 /* trailing null */;
-          }
         }
 
-        currentSize +=
-          dirent.getDirentSize() /* for directory entry */ +
-          sizeof(uint64_t) /* for url pointer list */ +
-          sizeof(uint32_t) /* for title pointer list */;
         dirents.push_back(dirent);
 
         // If this is a redirect, we're done: there's no blob to add.
@@ -192,8 +176,7 @@ namespace zim
           log_info("cluster with " << cluster->count() << " articles, " <<
                    cluster->size() << " bytes; current title \"" <<
                    dirent.getTitle() << '\"');
-          offset_type start = out.tellp();
-          clusterOffsets.push_back(offset_t(start));
+          clusterOffsets.push_back(offset_t(out.tellp()));
           out << *cluster;
           log_debug("cluster written");
           if (cluster->is_extended() )
@@ -207,9 +190,6 @@ namespace zim
             Dirent *di = &dirents[*dpi];
             di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
           }
-          offset_type end = out.tellp();
-          currentSize += (end - start) +
-            sizeof(offset_type) /* for cluster pointer entry */;
         }
 
         dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
@@ -588,11 +568,6 @@ namespace zim
     void ZimCreator::create(const std::string& fname, ArticleSource& src)
     {
       impl->create(fname, src);
-    }
-
-    offset_type ZimCreator::getCurrentSize() const
-    {
-      return offset_type(impl->getCurrentSize());
     }
 
   }

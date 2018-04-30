@@ -55,7 +55,6 @@ namespace zim
         bool isEmpty;
         bool isExtended;
         zsize_t clustersSize;
-        zsize_t currentSize;
 
         void createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname);
         void createTitleIndex(ArticleSource& src);
@@ -105,10 +104,6 @@ namespace zim
         void setMinChunkSize(zsize_t s)   { minChunkSize = s.v; }
 
         void create(const std::string& fname, ArticleSource& src);
-
-        /* The user can query `currentSize` after each article has been
-         * added to the ZIM file. */
-        zsize_t getCurrentSize() { return currentSize; }
     };
 
   }
