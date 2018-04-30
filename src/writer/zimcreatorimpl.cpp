@@ -59,6 +59,14 @@ namespace zim
     {
     }
 
+    ZimCreatorImpl::~ZimCreatorImpl()
+    {
+      if (compCluster)
+        delete compCluster;
+      if (uncompCluster)
+        delete uncompCluster;
+    }
+
     void ZimCreatorImpl::create(const std::string& fname, ArticleSource& src)
     {
       isEmpty = true;
@@ -91,145 +99,151 @@ namespace zim
       INFO("ready");
     }
 
+    Dirent ZimCreatorImpl::createDirentFromArticle(const Article* article)
+    {
+      Dirent dirent;
+      dirent.setAid(article->getAid());
+      dirent.setUrl(article->getNamespace(), article->getUrl());
+      dirent.setTitle(article->getTitle());
+      dirent.setParameter(article->getParameter());
+
+      log_debug("article " << dirent.getLongUrl() << " fetched");
+
+      if (article->isRedirect())
+      {
+        dirent.setRedirect(article_index_t(0));
+        dirent.setRedirectAid(article->getRedirectAid());
+        log_debug("is redirect to " << dirent.getRedirectAid());
+      }
+      else if (article->isLinktarget())
+      {
+        dirent.setLinktarget();
+      }
+      else if (article->isDeleted())
+      {
+        dirent.setDeleted();
+      }
+      else
+      {
+        dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
+        dirent.setCompress(article->shouldCompress());
+        log_debug("is article; mimetype " << dirent.getMimeType());
+      }
+      return dirent;
+    }
+
+
+    void ZimCreatorImpl::closeCluster(bool compressed)
+    {
+      Cluster *cluster;
+      DirentPtrsType *myDirents, *otherDirents;
+      if (compressed )
+      {
+        cluster = compCluster;
+        myDirents = &compDirents;
+        otherDirents = &uncompDirents;
+      } else {
+        cluster = uncompCluster;
+        myDirents = &uncompDirents;
+        otherDirents = &compDirents;
+      }
+      clusterOffsets.push_back(offset_t(tmp_out.tellp()));
+      tmp_out << *cluster;
+      log_debug("cluster written");
+      if (cluster->is_extended() )
+        isExtended = true;
+      cluster->clear();
+      myDirents->clear();
+      // Update the cluster number of the dirents *not* written to disk.
+      for (DirentPtrsType::iterator dpi = otherDirents->begin();
+           dpi != otherDirents->end(); ++dpi)
+      {
+        Dirent *di = &dirents[*dpi];
+        di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
+      }
+    }
+
+    void ZimCreatorImpl::addDirent(const Dirent& dirent, const Article* article)
+    {
+      dirents.push_back(dirent);
+
+      // If this is a redirect, we're done: there's no blob to add.
+      if (dirent.isRedirect())
+      {
+        return;
+      }
+
+      // Add blob data to compressed or uncompressed cluster.
+      Blob blob = article->getData();
+      if (blob.size() > 0)
+      {
+        isEmpty = false;
+      }
+
+      Cluster *cluster;
+      DirentPtrsType *myDirents;
+      if (dirent.isCompress())
+      {
+        cluster = compCluster;
+        myDirents = &compDirents;
+      }
+      else
+      {
+        cluster = uncompCluster;
+        myDirents = &uncompDirents;
+      }
+
+      // If cluster will be too large, write it to dis, and open a new
+      // one for the content.
+      if ( cluster->count()
+        && cluster->size().v+blob.size() >= minChunkSize * 1024
+         )
+      {
+        log_info("cluster with " << cluster->count() << " articles, " <<
+                 cluster->size() << " bytes; current title \"" <<
+                 dirent.getTitle() << '\"');
+        closeCluster(dirent.isCompress());
+      }
+
+      dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
+      cluster->addBlob(blob);
+      myDirents->push_back(dirents.size()-1);
+    }
+
     void ZimCreatorImpl::createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname)
     {
       INFO("collect articles");
-      std::ofstream out(tmpfname.c_str());
+      tmp_out = std::ofstream(tmpfname.c_str());
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
       // because we don't know which one will fill up first.  We also need
       // to track the dirents currently in each, so we can fix up the
       // cluster index if the other one ends up written first.
-      DirentPtrsType compDirents, uncompDirents;
-      Cluster compCluster, uncompCluster;
-      compCluster.setCompression(compression);
-      uncompCluster.setCompression(zimcompNone);
+      compCluster = new Cluster();
+      uncompCluster = new Cluster();
+      compCluster->setCompression(compression);
+      uncompCluster->setCompression(zimcompNone);
 
       const Article* article;
       while ((article = src.getNextArticle()) != 0)
       {
-        Dirent dirent;
-        dirent.setAid(article->getAid());
-        dirent.setUrl(article->getNamespace(), article->getUrl());
-        dirent.setTitle(article->getTitle());
-        dirent.setParameter(article->getParameter());
-
-        log_debug("article " << dirent.getLongUrl() << " fetched");
-
-        if (article->isRedirect())
-        {
-          dirent.setRedirect(article_index_t(0));
-          dirent.setRedirectAid(article->getRedirectAid());
-          log_debug("is redirect to " << dirent.getRedirectAid());
-        }
-        else if (article->isLinktarget())
-        {
-          dirent.setLinktarget();
-        }
-        else if (article->isDeleted())
-        {
-          dirent.setDeleted();
-        }
-        else
-        {
-          dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
-          dirent.setCompress(article->shouldCompress());
-          log_debug("is article; mimetype " << dirent.getMimeType());
-        }
-
-        dirents.push_back(dirent);
-
-        // If this is a redirect, we're done: there's no blob to add.
-        if (dirent.isRedirect())
-        {
-          continue;
-        }
-
-        // Add blob data to compressed or uncompressed cluster.
-        Blob blob = article->getData();
-        if (blob.size() > 0)
-        {
-          isEmpty = false;
-        }
-
-        Cluster *cluster;
-        DirentPtrsType *myDirents, *otherDirents;
-        if (dirent.isCompress())
-        {
-          cluster = &compCluster;
-          myDirents = &compDirents;
-          otherDirents = &uncompDirents;
-        }
-        else
-        {
-          cluster = &uncompCluster;
-          myDirents = &uncompDirents;
-          otherDirents = &compDirents;
-        }
-
-        // If cluster will be too large, write it to dis, and open a new
-        // one for the content.
-        if ( cluster->count()
-          && cluster->size().v+blob.size() >= minChunkSize * 1024
-           )
-        {
-          log_info("cluster with " << cluster->count() << " articles, " <<
-                   cluster->size() << " bytes; current title \"" <<
-                   dirent.getTitle() << '\"');
-          clusterOffsets.push_back(offset_t(out.tellp()));
-          out << *cluster;
-          log_debug("cluster written");
-          if (cluster->is_extended() )
-            isExtended = true;
-          cluster->clear();
-          myDirents->clear();
-          // Update the cluster number of the dirents *not* written to disk.
-          for (DirentPtrsType::iterator dpi = otherDirents->begin();
-               dpi != otherDirents->end(); ++dpi)
-          {
-            Dirent *di = &dirents[*dpi];
-            di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
-          }
-        }
-
-        dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
-        cluster->addBlob(blob);
-        myDirents->push_back(dirents.size()-1);
+        Dirent dirent = createDirentFromArticle(article);
+        addDirent(dirent, article);
       }
 
       // When we've seen all articles, write any remaining clusters.
-      if (compCluster.count())
-      {
-        clusterOffsets.push_back(offset_t(out.tellp()));
-        out << compCluster;
-        if (compCluster.is_extended())
-          isExtended = true;
-        for (DirentPtrsType::iterator dpi = uncompDirents.begin();
-             dpi != uncompDirents.end(); ++dpi)
-        {
-          Dirent *di = &dirents[*dpi];
-          di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
-        }
-      }
-      compCluster.clear();
-      compDirents.clear();
+      if (compCluster->count())
+        closeCluster(true);
 
-      if (uncompCluster.count())
-      {
-        clusterOffsets.push_back(offset_t(out.tellp()));
-        out << uncompCluster;
-        if (uncompCluster.is_extended())
-          isExtended = true;
-      }
-      uncompCluster.clear();
-      uncompDirents.clear();
+      if (uncompCluster->count())
+        closeCluster(false);
 
-      if (!out)
+      if (!tmp_out)
       {
         throw std::runtime_error("failed to write temporary cluster file");
       }
 
-      clustersSize = zsize_t(out.tellp());
+      clustersSize = zsize_t(tmp_out.tellp());
 
       // sort
       INFO("sort " << dirents.size() << " directory entries (aid)");
@@ -299,7 +313,7 @@ namespace zim
       // sort
       log_debug("sort " << dirents.size() << " directory entries (url)");
       std::sort(dirents.begin(), dirents.end(), compareUrl);
-
+      tmp_out.close();
     }
 
     namespace

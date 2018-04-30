@@ -25,11 +25,13 @@
 #include "dirent.h"
 #include <vector>
 #include <map>
+#include <fstream>
 
 namespace zim
 {
   namespace writer
   {
+    class Cluster;
     class ZimCreatorImpl
     {
       public:
@@ -55,7 +57,13 @@ namespace zim
         bool isEmpty;
         bool isExtended;
         zsize_t clustersSize;
+        DirentPtrsType compDirents, uncompDirents;
+        Cluster *compCluster, *uncompCluster;
+        std::ofstream tmp_out;
 
+        Dirent createDirentFromArticle(const Article* article);
+        void closeCluster(bool compressed);
+        void addDirent(const Dirent& dirent, const Article* article);
         void createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname);
         void createTitleIndex(ArticleSource& src);
         void fillHeader(ArticleSource& src);
@@ -99,6 +107,7 @@ namespace zim
       public:
         ZimCreatorImpl();
         ZimCreatorImpl(int& argc, char* argv[]);
+        virtual ~ZimCreatorImpl();
 
         zsize_t getMinChunkSize()    { return zsize_t(minChunkSize); }
         void setMinChunkSize(zsize_t s)   { minChunkSize = s.v; }
