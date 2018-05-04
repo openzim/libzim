@@ -66,9 +66,11 @@ namespace zim
         article_index_type nbArticles;
         article_index_type nbCompArticles;
         article_index_type nbUnCompArticles;
+        article_index_type nbFileArticles;
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
+
         Dirent createDirentFromArticle(const Article* article);
         void closeCluster(bool compressed);
         void addDirent(const Dirent& dirent, const Article* article);

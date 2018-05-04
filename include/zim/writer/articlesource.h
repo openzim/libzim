@@ -45,7 +45,9 @@ namespace zim
         virtual bool shouldCompress() const = 0;
         virtual std::string getRedirectAid() const = 0;
         virtual std::string getParameter() const;
+        virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
+        virtual std::string getFilename() const = 0;
         virtual ~Article() = default;
 
         // returns the next category id, to which the article is assigned to

@@ -40,6 +40,8 @@ class TestArticle : public zim::writer::Article
     virtual bool shouldCompress() const { return true; }
     virtual std::string getMimeType() const;
     virtual std::string getRedirectAid() const;
+    virtual zim::size_type getSize() const { return _data.size(); }
+    virtual std::string getFilename() const { return ""; }
 
     virtual zim::Blob getData() const
     { return zim::Blob(&_data[0], _data.size()); }

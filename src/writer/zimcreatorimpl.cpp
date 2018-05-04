@@ -178,8 +178,8 @@ namespace zim
       }
 
       // Add blob data to compressed or uncompressed cluster.
-      Blob blob = article->getData();
-      if (blob.size() > 0)
+      auto articleSize = article->getSize();
+      if (articleSize > 0)
       {
         isEmpty = false;
       }
@@ -200,7 +200,7 @@ namespace zim
       // If cluster will be too large, write it to dis, and open a new
       // one for the content.
       if ( cluster->count()
-        && cluster->size().v+blob.size() >= minChunkSize * 1024
+        && cluster->size().v+articleSize >= minChunkSize * 1024
          )
       {
         log_info("cluster with " << cluster->count() << " articles, " <<
@@ -210,7 +210,7 @@ namespace zim
       }
 
       dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
-      cluster->addBlob(blob);
+      cluster->addArticle(article);
       myDirents->push_back(dirents.size()-1);
     }
 
@@ -223,10 +223,8 @@ namespace zim
       // because we don't know which one will fill up first.  We also need
       // to track the dirents currently in each, so we can fix up the
       // cluster index if the other one ends up written first.
-      compCluster = new Cluster();
-      uncompCluster = new Cluster();
-      compCluster->setCompression(compression);
-      uncompCluster->setCompression(zimcompNone);
+      compCluster = new Cluster(compression);
+      uncompCluster = new Cluster(zimcompNone);
 
       const Article* article;
       while ((article = src.getNextArticle()) != 0)
@@ -238,10 +236,13 @@ namespace zim
           nbCompArticles++;
         else
           nbUnCompArticles++;
+        if (!article->getFilename().empty())
+          nbFileArticles++;
         if (verbose && nbArticles%1000 == 0){
           std::cout << "A:" << nbArticles
                     << "; CA:" << nbCompArticles
                     << "; UA:" << nbUnCompArticles
+                    << "; FA:" << nbFileArticles
                     << "; C:" << nbClusters
                     << "; CC:" << nbCompClusters
                     << "; UC:" << nbUnCompClusters
@@ -252,6 +253,7 @@ namespace zim
         std::cout << "A:" << nbArticles
                   << "; CA:" << nbCompArticles
                   << "; UA:" << nbUnCompArticles
+                  << "; FA:" << nbFileArticles
                   << "; C:" << nbClusters
                   << "; CC:" << nbCompClusters
                   << "; UC:" << nbUnCompClusters

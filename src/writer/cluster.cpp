@@ -20,8 +20,10 @@
 #include "cluster.h"
 #include "../log.h"
 #include "../endian_tools.h"
+#include "../debug.h"
 
 #include <sstream>
+#include <fstream>
 
 #if defined(ENABLE_ZLIB)
 #include "deflatestream.h"
@@ -32,70 +34,52 @@
 namespace zim {
 namespace writer {
 
-Cluster::Cluster()
-  : compression(zimcompNone),
-    isExtended(false)
+Cluster::Cluster(CompressionType compression)
+  : compression(compression),
+    isExtended(false),
+    _size(0)
 {
   offsets.push_back(offset_t(0));
 }
 
 void Cluster::clear() {
   offsets.clear();
-  _data.clear();  
+  _data.clear();
   offsets.push_back(offset_t(0));
   isExtended = false;
-}
-
-void Cluster::addBlob(const Blob& blob)
-{
-  _data.insert(_data.end(), blob.data(), blob.end());
-  offsets.push_back(offset_t(_data.size()));
-  if (blob.size() > UINT32_MAX) {
-    isExtended = true;
-  }
+  _size = zsize_t(0);
 }
 
 zsize_t Cluster::size() const
 {
   if (isExtended) {
-    return zsize_t(offsets.size() * sizeof(uint64_t) + _data.size());
+    return zsize_t(offsets.size() * sizeof(uint64_t)) + _size;
   } else {
-    return zsize_t(offsets.size() * sizeof(uint32_t) + _data.size());
+    return zsize_t(offsets.size() * sizeof(uint32_t)) + _size;
   }
-}
-
-
-void Cluster::addBlob(const char* data, zsize_t size)
-{
-  addBlob(Blob(data, size_type(size)));
 }
 
 template<typename OFFSET_TYPE>
-void Cluster::write_impl(std::ostream& out) const
+void Cluster::write_offsets(std::ostream& out) const
 {
-  size_type a = offsets.size() * sizeof(OFFSET_TYPE);
-  for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
+  size_type delta = offsets.size() * sizeof(OFFSET_TYPE);
+  for (auto offset : offsets)
   {
-    offset_t o = (*it);
-    o.v += a;
+    offset.v += delta;
     char out_buf[sizeof(OFFSET_TYPE)];
-    toLittleEndian(static_cast<OFFSET_TYPE>(o.v), out_buf);
+    toLittleEndian(static_cast<OFFSET_TYPE>(offset.v), out_buf);
     out.write(out_buf, sizeof(OFFSET_TYPE));
   }
-
-  if (_data.size() > 0)
-    out.write(&(_data[0]), _data.size());
-  else
-    log_warn("write empty cluster");
 }
 
 void Cluster::write(std::ostream& out) const
 {
   if (isExtended) {
-    write_impl<uint64_t>(out);
+    write_offsets<uint64_t>(out);
   } else {
-    write_impl<uint32_t>(out);
+    write_offsets<uint32_t>(out);
   }
+  write_data(out);
 }
 
 std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
@@ -175,8 +159,50 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
   }
 
   return out;
-} 
+}
 
+void Cluster::addArticle(const zim::writer::Article* article)
+{
+  auto filename = article->getFilename();
+  auto size = article->getSize();
+  _size += size;
+  offsets.push_back(offset_t(_size.v));
+  isExtended |= (size>UINT32_MAX);
+  if (size == 0)
+    return;
+
+  if (filename.empty()) {
+    _data.emplace_back(DataType::plain, article->getData());
+  }
+  else {
+    _data.emplace_back(DataType::file, filename);
+  }
+}
+
+void Cluster::addData(const char* data, zsize_t size)
+{
+  _size += size;
+  offsets.push_back(offset_t(_size.v));
+  isExtended |= (size.v>UINT32_MAX);
+  if (size.v == 0)
+    return;
+
+  _data.emplace_back(DataType::plain, std::string(data, size.v));
+}
+
+void Cluster::write_data(std::ostream& out) const
+{
+  for (auto& data: _data)
+  {
+    ASSERT(data.value.empty(), ==, false);
+    if (data.type == DataType::plain) {
+      out << data.value;
+    } else {
+      std::ifstream stream(data.value);
+      out << stream.rdbuf();
+    }
+  }
+}
 
 } // writer
-} // zim 
+} // zim

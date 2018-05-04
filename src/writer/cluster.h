@@ -25,24 +25,37 @@
 #include <iostream>
 #include <vector>
 
+#include <zim/writer/articlesource.h>
 #include "../zim_types.h"
 
 namespace zim {
 
 namespace writer {
 
+enum class DataType { plain, file };
+struct Data {
+  Data(zim::writer::DataType type, const std::string& value) :
+    type(type), value(value) {}
+  DataType type;
+  std::string value;
+};
 
 class Cluster {
   friend std::ostream& operator<< (std::ostream& out, const Cluster& blobImpl);
   typedef std::vector<offset_t> Offsets;
-  typedef std::vector<char> Data;
+  typedef std::vector<Data> ClusterData;
 
 
   public:
-    Cluster();
+    Cluster(CompressionType compression);
+    virtual ~Cluster() = default;
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
+
+    void addArticle(const zim::writer::Article* article);
+    void addData(const char* data, zsize_t size);
+
     blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
     zsize_t size() const;
     bool is_extended() const { return isExtended; }
@@ -51,20 +64,19 @@ class Cluster {
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
-    void addBlob(const Blob& blob);
-    void addBlob(const char* data, zsize_t size);
-
     void write(std::ostream& out) const;
 
-  private:
-    template<typename OFFSET_TYPE>
-    void write_impl(std::ostream& out) const;
-
+  protected:
+    void write_data(std::ostream& out) const;
     CompressionType compression;
     bool isExtended;
     Offsets offsets;
-    Data _data;
+    zsize_t _size;
+    ClusterData _data;
 
+  private:
+    template<typename OFFSET_TYPE>
+    void write_offsets(std::ostream& out) const;
 };
 
 std::ostream& operator<< (std::ostream& out, const Cluster& cluster);
