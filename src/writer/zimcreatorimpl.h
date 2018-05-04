@@ -61,6 +61,14 @@ namespace zim
         Cluster *compCluster, *uncompCluster;
         std::ofstream tmp_out;
 
+        // Some stats
+        bool verbose;
+        article_index_type nbArticles;
+        article_index_type nbCompArticles;
+        article_index_type nbUnCompArticles;
+        cluster_index_type nbClusters;
+        cluster_index_type nbCompClusters;
+        cluster_index_type nbUnCompClusters;
         Dirent createDirentFromArticle(const Article* article);
         void closeCluster(bool compressed);
         void addDirent(const Dirent& dirent, const Article* article);
@@ -105,7 +113,7 @@ namespace zim
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
       public:
-        ZimCreatorImpl();
+        ZimCreatorImpl(bool verbose);
         ZimCreatorImpl(int& argc, char* argv[]);
         virtual ~ZimCreatorImpl();
 

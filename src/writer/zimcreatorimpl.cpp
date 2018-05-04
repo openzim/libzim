@@ -52,10 +52,11 @@ namespace zim
 {
   namespace writer
   {
-    ZimCreatorImpl::ZimCreatorImpl()
+    ZimCreatorImpl::ZimCreatorImpl(bool verbose)
       : minChunkSize(1024-64),
         nextMimeIdx(0),
-        compression(zimcompLzma)
+        compression(zimcompLzma),
+        verbose(verbose)
     {
     }
 
@@ -137,15 +138,18 @@ namespace zim
     {
       Cluster *cluster;
       DirentPtrsType *myDirents, *otherDirents;
+      nbClusters++;
       if (compressed )
       {
         cluster = compCluster;
         myDirents = &compDirents;
         otherDirents = &uncompDirents;
+        nbCompClusters++;
       } else {
         cluster = uncompCluster;
         myDirents = &uncompDirents;
         otherDirents = &compDirents;
+        nbUnCompClusters++;
       }
       clusterOffsets.push_back(offset_t(tmp_out.tellp()));
       tmp_out << *cluster;
@@ -229,6 +233,29 @@ namespace zim
       {
         Dirent dirent = createDirentFromArticle(article);
         addDirent(dirent, article);
+        nbArticles++;
+        if (dirent.isCompress())
+          nbCompArticles++;
+        else
+          nbUnCompArticles++;
+        if (verbose && nbArticles%1000 == 0){
+          std::cout << "A:" << nbArticles
+                    << "; CA:" << nbCompArticles
+                    << "; UA:" << nbUnCompArticles
+                    << "; C:" << nbClusters
+                    << "; CC:" << nbCompClusters
+                    << "; UC:" << nbUnCompClusters
+                    << std::endl;
+        }
+      }
+      if (verbose) {
+        std::cout << "A:" << nbArticles
+                  << "; CA:" << nbCompArticles
+                  << "; UA:" << nbUnCompArticles
+                  << "; C:" << nbClusters
+                  << "; CC:" << nbCompClusters
+                  << "; UC:" << nbUnCompClusters
+                  << std::endl;
       }
 
       // When we've seen all articles, write any remaining clusters.
@@ -563,8 +590,8 @@ namespace zim
       return it->second;
     }
 
-    ZimCreator::ZimCreator():
-      impl(new ZimCreatorImpl())
+    ZimCreator::ZimCreator(bool verbose):
+      impl(new ZimCreatorImpl(verbose))
     {};
 
     ZimCreator::~ZimCreator() = default;

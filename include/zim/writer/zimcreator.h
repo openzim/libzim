@@ -35,7 +35,7 @@ namespace zim
         std::unique_ptr<ZimCreatorImpl> impl;
 
       public:
-        ZimCreator();
+        ZimCreator(bool verbose=false);
         ~ZimCreator();
 
         zim::size_type getMinChunkSize() const;
