@@ -37,6 +37,7 @@ class TestArticle : public zim::writer::Article
     virtual std::string getUrl() const;
     virtual std::string getTitle() const;
     virtual bool isRedirect() const;
+    virtual bool shouldCompress() const { return true; }
     virtual std::string getMimeType() const;
     virtual std::string getRedirectAid() const;
 

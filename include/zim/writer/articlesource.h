@@ -38,12 +38,12 @@ namespace zim
         virtual char getNamespace() const = 0;
         virtual std::string getUrl() const = 0;
         virtual std::string getTitle() const = 0;
-        virtual bool isRedirect() const;
+        virtual bool isRedirect() const = 0;
         virtual bool isLinktarget() const;
         virtual bool isDeleted() const;
         virtual std::string getMimeType() const = 0;
-        virtual bool shouldCompress() const;
-        virtual std::string getRedirectAid() const;
+        virtual bool shouldCompress() const = 0;
+        virtual std::string getRedirectAid() const = 0;
         virtual std::string getParameter() const;
         virtual Blob getData() const = 0;
         virtual ~Article() = default;

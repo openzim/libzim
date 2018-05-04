@@ -24,11 +24,6 @@ namespace zim
 {
   namespace writer
   {
-    bool Article::isRedirect() const
-    {
-      return false;
-    }
-
     bool Article::isLinktarget() const
     {
       return false;
@@ -38,22 +33,6 @@ namespace zim
     {
       return false;
     }
-
-    bool Article::shouldCompress() const
-    {
-      std::string mimeType = getMimeType();
-      return mimeType != "image/jpeg"
-          && mimeType != "image/png"
-          && mimeType != "image/tiff"
-          && mimeType != "image/gif"
-          && mimeType != "application/zip";
-    }
-
-    std::string Article::getRedirectAid() const
-    {
-      return std::string();
-    }
-
     std::string Article::getParameter() const
     {
       return std::string();
