@@ -20,9 +20,10 @@
 #ifndef ZIM_WRITER_ZIMCREATOR_IMPL_H
 #define ZIM_WRITER_ZIMCREATOR_IMPL_H
 
-#include <zim/writer/articlesource.h>
 #include <zim/fileheader.h>
-#include "dirent.h"
+#include <zim/writer/articlesource.h>
+#include "_dirent.h"
+#include "xapianIndexer.h"
 #include <vector>
 #include <map>
 #include <fstream>
@@ -61,12 +62,16 @@ namespace zim
         Cluster *compCluster, *uncompCluster;
         std::ofstream tmp_out;
 
+        bool withIndex;
+        std::string indexingLanguage;
+
         // Some stats
         bool verbose;
         article_index_type nbArticles;
         article_index_type nbCompArticles;
         article_index_type nbUnCompArticles;
         article_index_type nbFileArticles;
+        article_index_type nbIndexArticles;
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
@@ -121,6 +126,8 @@ namespace zim
 
         zsize_t getMinChunkSize()    { return zsize_t(minChunkSize); }
         void setMinChunkSize(zsize_t s)   { minChunkSize = s.v; }
+        void setIndexing(bool indexing, std::string language)
+          { withIndex = indexing; indexingLanguage = language; }
 
         void create(const std::string& fname, ArticleSource& src);
     };

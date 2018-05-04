@@ -25,9 +25,11 @@ common_sources = [
     'template.cpp',
     'uuid.cpp',
     'levenshtein.cpp',
+    'tools.cpp',
     'writer/zimcreatorimpl.cpp',
     'writer/lzmastream.cpp',
     'writer/cluster.cpp',
+    'writer/xapianIndexer.cpp',
     'writer/tee.cpp'
 ]
 
@@ -50,6 +52,7 @@ endif
 
 if xapian_dep.found()
     sources += xapian_sources
+    sources += lib_resources
     deps += [xapian_dep, icu_dep]
 endif
 

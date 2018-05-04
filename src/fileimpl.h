@@ -27,7 +27,7 @@
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include "cache.h"
-#include "dirent.h"
+#include "_dirent.h"
 #include "cluster.h"
 #include "buffer.h"
 #include "file_compound.h"

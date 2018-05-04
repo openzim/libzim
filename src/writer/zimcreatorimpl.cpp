@@ -25,6 +25,10 @@
 #include <algorithm>
 #include <fstream>
 
+#if defined(ENABLE_XAPIAN)
+  #include "xapianIndexer.h"
+#endif
+
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -56,6 +60,7 @@ namespace zim
       : minChunkSize(1024-64),
         nextMimeIdx(0),
         compression(zimcompLzma),
+        withIndex(false),
         verbose(verbose)
     {
     }
@@ -226,6 +231,14 @@ namespace zim
       compCluster = new Cluster(compression);
       uncompCluster = new Cluster(zimcompNone);
 
+#if defined(ENABLE_XAPIAN)
+      XapianIndexer* indexer;
+      if (withIndex) {
+          indexer = new XapianIndexer(indexingLanguage, true);
+          indexer->indexingPrelude(tmpfname+".idx");
+      }
+#endif
+
       const Article* article;
       while ((article = src.getNextArticle()) != 0)
       {
@@ -238,27 +251,49 @@ namespace zim
           nbUnCompArticles++;
         if (!article->getFilename().empty())
           nbFileArticles++;
+        if (article->shouldIndex())
+          nbIndexArticles++;
+
         if (verbose && nbArticles%1000 == 0){
           std::cout << "A:" << nbArticles
                     << "; CA:" << nbCompArticles
                     << "; UA:" << nbUnCompArticles
                     << "; FA:" << nbFileArticles
+                    << "; IA:" << nbIndexArticles
                     << "; C:" << nbClusters
                     << "; CC:" << nbCompClusters
                     << "; UC:" << nbUnCompClusters
                     << std::endl;
         }
+
+#if defined(ENABLE_XAPIAN)
+        if(withIndex && article->shouldIndex()) {
+          indexer->index(article);
+        }
+#endif
       }
       if (verbose) {
         std::cout << "A:" << nbArticles
                   << "; CA:" << nbCompArticles
                   << "; UA:" << nbUnCompArticles
                   << "; FA:" << nbFileArticles
+                  << "; IA:" << nbIndexArticles
                   << "; C:" << nbClusters
                   << "; CC:" << nbCompClusters
                   << "; UC:" << nbUnCompClusters
                   << std::endl;
       }
+
+#if defined(ENABLE_XAPIAN)
+      if (withIndex) {
+          indexer->indexingPostlude();
+          usleep(100);
+          auto article = indexer->getMetaArticle();
+          Dirent dirent = createDirentFromArticle(article);
+          addDirent(dirent, article);
+          delete article;
+      }
+#endif
 
       // When we've seen all articles, write any remaining clusters.
       if (compCluster->count())
@@ -271,6 +306,11 @@ namespace zim
       {
         throw std::runtime_error("failed to write temporary cluster file");
       }
+
+#if defined(ENABLE_XAPIAN)
+      if (withIndex)
+        delete indexer;
+#endif
 
       clustersSize = zsize_t(tmp_out.tellp());
 
@@ -606,6 +646,11 @@ namespace zim
     void ZimCreator::setMinChunkSize(size_type s)
     {
       impl->setMinChunkSize(zsize_t(s));
+    }
+
+    void ZimCreator::setIndexing(bool indexing, std::string language)
+    {
+      impl->setIndexing(indexing, language);
     }
 
     void ZimCreator::create(const std::string& fname, ArticleSource& src)

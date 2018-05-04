@@ -24,7 +24,7 @@
 #include "gtest/gtest.h"
 
 #include "../src/buffer.h"
-#include "../src/dirent.h"
+#include "../src/_dirent.h"
 
 namespace
 {

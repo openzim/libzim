@@ -43,6 +43,7 @@ namespace zim
         virtual bool isDeleted() const;
         virtual std::string getMimeType() const = 0;
         virtual bool shouldCompress() const = 0;
+        virtual bool shouldIndex() const = 0;
         virtual std::string getRedirectAid() const = 0;
         virtual std::string getParameter() const;
         virtual zim::size_type getSize() const = 0;

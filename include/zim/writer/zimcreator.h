@@ -40,6 +40,7 @@ namespace zim
 
         zim::size_type getMinChunkSize() const;
         void setMinChunkSize(zim::size_type s);
+        void setIndexing(bool indexing, std::string language);
 
         void create(const std::string& fname, ArticleSource& src);
 

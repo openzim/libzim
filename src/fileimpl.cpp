@@ -19,7 +19,7 @@
 
 #include "fileimpl.h"
 #include <zim/error.h>
-#include "dirent.h"
+#include "_dirent.h"
 #include "file_compound.h"
 #include "file_reader.h"
 #include <pthread.h>
