@@ -53,171 +53,41 @@ log_define("zim.writer.creator")
         std::cout << e << std::endl; \
     } while(false)
 
+namespace
+{
+  class CompareTitle
+  {
+      zim::writer::ZimCreatorData::DirentsType& dirents;
+
+    public:
+      explicit CompareTitle(zim::writer::ZimCreatorData::DirentsType& dirents_)
+        : dirents(dirents_)
+        { }
+      bool operator() (zim::article_index_t titleIdx1, zim::article_index_t titleIdx2) const
+      {
+        auto d1 = dirents[zim::article_index_type(titleIdx1)];
+        auto d2 = dirents[zim::article_index_type(titleIdx2)];
+        return d1.getNamespace() < d2.getNamespace()
+           || (d1.getNamespace() == d2.getNamespace()
+            && d1.getTitle() < d2.getTitle());
+      }
+  };
+}
+
 namespace zim
 {
   namespace writer
   {
-    ZimCreatorData::ZimCreatorData(const std::string& fname,
-                                   bool verbose,
-                                   bool withIndex,
-                                   std::string language)
-      : minChunkSize(1024-64),
-        nextMimeIdx(0),
-        compression(zimcompLzma),
-        isEmpty(true),
-        isExtended(false),
-        compCluster(nullptr),
-        uncompCluster(nullptr),
-        withIndex(withIndex),
-        indexingLanguage(language),
-        verbose(verbose)
+    ZimCreator::ZimCreator(bool verbose)
+      : verbose(verbose)
+    {}
+
+    ZimCreator::~ZimCreator() = default;
+
+    void ZimCreator::startZimCreation(const std::string& fname)
     {
-      basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
-                        ? fname.substr(0, fname.size() - 4)
-                        : fname;
-      tmpfname = basename + ".tmp";
-      tmp_out = std::ofstream(tmpfname);
-
-      // We keep both a "compressed cluster" and an "uncompressed cluster"
-      // because we don't know which one will fill up first.  We also need
-      // to track the dirents currently in each, so we can fix up the
-      // cluster index if the other one ends up written first.
-      compCluster = new Cluster(compression);
-      uncompCluster = new Cluster(zimcompNone);
-
-#if defined(ENABLE_XAPIAN)
-      if (withIndex) {
-          indexer = new XapianIndexer(indexingLanguage, true);
-          indexer->indexingPrelude(tmpfname+".idx");
-      }
-#endif
-    }
-
-    ZimCreatorData::~ZimCreatorData()
-    {
-      if (compCluster)
-        delete compCluster;
-      if (uncompCluster)
-        delete uncompCluster;
-      ::remove(tmpfname.c_str());
-#if defined(ENABLE_XAPIAN)
-      if (indexer)
-        delete indexer;
-#endif
-    }
-
-    Dirent ZimCreatorData::createDirentFromArticle(const Article* article)
-    {
-      Dirent dirent;
-      dirent.setAid(article->getAid());
-      dirent.setUrl(article->getNamespace(), article->getUrl());
-      dirent.setTitle(article->getTitle());
-      dirent.setParameter(article->getParameter());
-
-      log_debug("article " << dirent.getLongUrl() << " fetched");
-
-      if (article->isRedirect())
-      {
-        dirent.setRedirect(article_index_t(0));
-        dirent.setRedirectAid(article->getRedirectAid());
-        log_debug("is redirect to " << dirent.getRedirectAid());
-      }
-      else if (article->isLinktarget())
-      {
-        dirent.setLinktarget();
-      }
-      else if (article->isDeleted())
-      {
-        dirent.setDeleted();
-      }
-      else
-      {
-        dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
-        dirent.setCompress(article->shouldCompress());
-        log_debug("is article; mimetype " << dirent.getMimeType());
-      }
-      return dirent;
-    }
-
-
-    void ZimCreatorData::closeCluster(bool compressed)
-    {
-      Cluster *cluster;
-      DirentPtrsType *myDirents, *otherDirents;
-      nbClusters++;
-      if (compressed )
-      {
-        cluster = compCluster;
-        myDirents = &compDirents;
-        otherDirents = &uncompDirents;
-        nbCompClusters++;
-      } else {
-        cluster = uncompCluster;
-        myDirents = &uncompDirents;
-        otherDirents = &compDirents;
-        nbUnCompClusters++;
-      }
-      clusterOffsets.push_back(offset_t(tmp_out.tellp()));
-      tmp_out << *cluster;
-      log_debug("cluster written");
-      if (cluster->is_extended() )
-        isExtended = true;
-      cluster->clear();
-      myDirents->clear();
-      // Update the cluster number of the dirents *not* written to disk.
-      for (DirentPtrsType::iterator dpi = otherDirents->begin();
-           dpi != otherDirents->end(); ++dpi)
-      {
-        Dirent *di = &dirents[*dpi];
-        di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
-      }
-    }
-
-    void ZimCreatorData::addDirent(const Dirent& dirent, const Article* article)
-    {
-      dirents.push_back(dirent);
-
-      // If this is a redirect, we're done: there's no blob to add.
-      if (dirent.isRedirect())
-      {
-        return;
-      }
-
-      // Add blob data to compressed or uncompressed cluster.
-      auto articleSize = article->getSize();
-      if (articleSize > 0)
-      {
-        isEmpty = false;
-      }
-
-      Cluster *cluster;
-      DirentPtrsType *myDirents;
-      if (dirent.isCompress())
-      {
-        cluster = compCluster;
-        myDirents = &compDirents;
-      }
-      else
-      {
-        cluster = uncompCluster;
-        myDirents = &uncompDirents;
-      }
-
-      // If cluster will be too large, write it to dis, and open a new
-      // one for the content.
-      if ( cluster->count()
-        && cluster->size().v+articleSize >= minChunkSize * 1024
-         )
-      {
-        log_info("cluster with " << cluster->count() << " articles, " <<
-                 cluster->size() << " bytes; current title \"" <<
-                 dirent.getTitle() << '\"');
-        closeCluster(dirent.isCompress());
-      }
-
-      dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
-      cluster->addArticle(article);
-      myDirents->push_back(dirents.size()-1);
+      data = std::unique_ptr<ZimCreatorData>(new ZimCreatorData(fname, verbose, withIndex, indexingLanguage));
+      data->setMinChunkSize(minChunkSize);
     }
 
     void ZimCreator::addArticle(const Article& article)
@@ -319,38 +189,6 @@ namespace zim
       INFO("ready");
     }
 
-    namespace
-    {
-      class CompareTitle
-      {
-          ZimCreatorData::DirentsType& dirents;
-
-        public:
-          explicit CompareTitle(ZimCreatorData::DirentsType& dirents_)
-            : dirents(dirents_)
-            { }
-          bool operator() (article_index_t titleIdx1, article_index_t titleIdx2) const
-          {
-            Dirent d1 = dirents[article_index_type(titleIdx1)];
-            Dirent d2 = dirents[article_index_type(titleIdx2)];
-            return d1.getNamespace() < d2.getNamespace()
-               || (d1.getNamespace() == d2.getNamespace()
-                && d1.getTitle() < d2.getTitle());
-          }
-      };
-    }
-
-    void ZimCreatorData::createTitleIndex()
-    {
-      titleIdx.resize(0);
-      titleIdx.reserve(dirents.size());
-      for (auto dirent: dirents)
-        titleIdx.push_back(dirent.getIdx());
-
-      CompareTitle compareTitle(dirents);
-      std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
-    }
-
     void ZimCreator::fillHeader(Fileheader* header)
     {
       std::string mainAid = getMainPage();
@@ -403,36 +241,6 @@ namespace zim
 
       offset += data->clusterPtrSize().v + data->clustersSize.v;
       header->setChecksumPos( offset );
-    }
-
-    void ZimCreatorData::resolveMimeTypes()
-    {
-      std::vector<std::string> oldMImeList;
-      std::vector<uint16_t> mapping;
-
-      for (auto& rmimeType: rmimeTypesMap)
-      {
-        oldMImeList.push_back(rmimeType.second);
-        mimeTypesList.push_back(rmimeType.second);
-      }
-
-      mapping.resize(oldMImeList.size());
-      std::sort(mimeTypesList.begin(), mimeTypesList.end());
-
-      for (unsigned i=0; i<oldMImeList.size(); ++i)
-      {
-        for (unsigned j=0; j<mimeTypesList.size(); ++j)
-        {
-          if (oldMImeList[i] == mimeTypesList[j])
-            mapping[i] = static_cast<uint16_t>(j);
-        }
-      }
-
-      for (auto& dirent: dirents)
-      {
-        if (dirent.isArticle())
-          dirent.setMimeType(mapping[dirent.getMimeType()]);
-      }
     }
 
     void ZimCreator::write(const Fileheader& header, const std::string& fname) const
@@ -515,45 +323,159 @@ namespace zim
       zimfile.write(reinterpret_cast<const char*>(digest), 16);
     }
 
-    zsize_t ZimCreatorData::mimeListSize() const
+    ZimCreatorData::ZimCreatorData(const std::string& fname,
+                                   bool verbose,
+                                   bool withIndex,
+                                   std::string language)
+      : withIndex(withIndex),
+        indexingLanguage(language),
+        verbose(verbose)
     {
-      size_type ret = 1;
-      for (auto& rmimeType: rmimeTypesMap)
-        ret += (rmimeType.second.size() + 1);
-      return zsize_t(ret);
+      basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
+                        ? fname.substr(0, fname.size() - 4)
+                        : fname;
+      tmpfname = basename + ".tmp";
+      tmp_out = std::ofstream(tmpfname);
+
+      // We keep both a "compressed cluster" and an "uncompressed cluster"
+      // because we don't know which one will fill up first.  We also need
+      // to track the dirents currently in each, so we can fix up the
+      // cluster index if the other one ends up written first.
+      compCluster = new Cluster(compression);
+      uncompCluster = new Cluster(zimcompNone);
+
+#if defined(ENABLE_XAPIAN)
+      if (withIndex) {
+          indexer = new XapianIndexer(indexingLanguage, true);
+          indexer->indexingPrelude(tmpfname+".idx");
+      }
+#endif
     }
 
-    zsize_t ZimCreatorData::indexSize() const
+    ZimCreatorData::~ZimCreatorData()
     {
-      size_type s = 0;
-
-      for (auto& dirent: dirents)
-        s += dirent.getDirentSize();
-
-      return zsize_t(s);
+      if (compCluster)
+        delete compCluster;
+      if (uncompCluster)
+        delete uncompCluster;
+      ::remove(tmpfname.c_str());
+#if defined(ENABLE_XAPIAN)
+      if (indexer)
+        delete indexer;
+#endif
     }
 
-    uint16_t ZimCreatorData::getMimeTypeIdx(const std::string& mimeType)
+    void ZimCreatorData::addDirent(const Dirent& dirent, const Article* article)
     {
-      auto it = mimeTypesMap.find(mimeType);
-      if (it == mimeTypesMap.end())
+      dirents.push_back(dirent);
+
+      // If this is a redirect, we're done: there's no blob to add.
+      if (dirent.isRedirect())
       {
-        if (nextMimeIdx >= std::numeric_limits<uint16_t>::max())
-          throw std::runtime_error("too many distinct mime types");
-        mimeTypesMap[mimeType] = nextMimeIdx;
-        rmimeTypesMap[nextMimeIdx] = mimeType;
-        return nextMimeIdx++;
+        return;
       }
 
-      return it->second;
+      // Add blob data to compressed or uncompressed cluster.
+      auto articleSize = article->getSize();
+      if (articleSize > 0)
+      {
+        isEmpty = false;
+      }
+
+      Cluster *cluster;
+      DirentPtrsType *myDirents;
+      if (dirent.isCompress())
+      {
+        cluster = compCluster;
+        myDirents = &compDirents;
+      }
+      else
+      {
+        cluster = uncompCluster;
+        myDirents = &uncompDirents;
+      }
+
+      // If cluster will be too large, write it to dis, and open a new
+      // one for the content.
+      if ( cluster->count()
+        && cluster->size().v+articleSize >= minChunkSize * 1024
+         )
+      {
+        log_info("cluster with " << cluster->count() << " articles, " <<
+                 cluster->size() << " bytes; current title \"" <<
+                 dirent.getTitle() << '\"');
+        closeCluster(dirent.isCompress());
+      }
+
+      dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
+      cluster->addArticle(article);
+      myDirents->push_back(dirents.size()-1);
     }
 
-    const std::string& ZimCreatorData::getMimeType(uint16_t mimeTypeIdx) const
+    Dirent ZimCreatorData::createDirentFromArticle(const Article* article)
     {
-      auto it = rmimeTypesMap.find(mimeTypeIdx);
-      if (it == rmimeTypesMap.end())
-        throw std::runtime_error("mime type index not found");
-      return it->second;
+      Dirent dirent;
+      dirent.setAid(article->getAid());
+      dirent.setUrl(article->getNamespace(), article->getUrl());
+      dirent.setTitle(article->getTitle());
+      dirent.setParameter(article->getParameter());
+
+      log_debug("article " << dirent.getLongUrl() << " fetched");
+
+      if (article->isRedirect())
+      {
+        dirent.setRedirect(article_index_t(0));
+        dirent.setRedirectAid(article->getRedirectAid());
+        log_debug("is redirect to " << dirent.getRedirectAid());
+      }
+      else if (article->isLinktarget())
+      {
+        dirent.setLinktarget();
+      }
+      else if (article->isDeleted())
+      {
+        dirent.setDeleted();
+      }
+      else
+      {
+        dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
+        dirent.setCompress(article->shouldCompress());
+        log_debug("is article; mimetype " << dirent.getMimeType());
+      }
+      return dirent;
+    }
+
+    void ZimCreatorData::closeCluster(bool compressed)
+    {
+      Cluster *cluster;
+      DirentPtrsType *myDirents, *otherDirents;
+      nbClusters++;
+      if (compressed )
+      {
+        cluster = compCluster;
+        myDirents = &compDirents;
+        otherDirents = &uncompDirents;
+        nbCompClusters++;
+      } else {
+        cluster = uncompCluster;
+        myDirents = &uncompDirents;
+        otherDirents = &compDirents;
+        nbUnCompClusters++;
+      }
+      clusterOffsets.push_back(offset_t(tmp_out.tellp()));
+      tmp_out << *cluster;
+      log_debug("cluster written");
+      if (cluster->is_extended() )
+        isExtended = true;
+      cluster->clear();
+      myDirents->clear();
+      // Update the cluster number of the dirents *not* written to disk.
+      for (DirentPtrsType::iterator dpi = otherDirents->begin();
+           dpi != otherDirents->end(); ++dpi)
+      {
+        Dirent *di = &dirents[*dpi];
+        di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
+      }
     }
 
     void ZimCreatorData::removeInvalidRedirects()
@@ -630,49 +552,87 @@ namespace zim
       }
     }
 
-    ZimCreator::ZimCreator(bool verbose)
-      : verbose(verbose),
-        withIndex(false),
-        minChunkSize(1024-64)
-    {}
-
-    ZimCreator::~ZimCreator() = default;
-
-    size_type ZimCreator::getMinChunkSize() const
+    void ZimCreatorData::createTitleIndex()
     {
-      return minChunkSize;
+      titleIdx.resize(0);
+      titleIdx.reserve(dirents.size());
+      for (auto dirent: dirents)
+        titleIdx.push_back(dirent.getIdx());
+
+      CompareTitle compareTitle(dirents);
+      std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
     }
 
-    void ZimCreator::setMinChunkSize(size_type s)
+    void ZimCreatorData::resolveMimeTypes()
     {
-      minChunkSize = s;
+      std::vector<std::string> oldMImeList;
+      std::vector<uint16_t> mapping;
+
+      for (auto& rmimeType: rmimeTypesMap)
+      {
+        oldMImeList.push_back(rmimeType.second);
+        mimeTypesList.push_back(rmimeType.second);
+      }
+
+      mapping.resize(oldMImeList.size());
+      std::sort(mimeTypesList.begin(), mimeTypesList.end());
+
+      for (unsigned i=0; i<oldMImeList.size(); ++i)
+      {
+        for (unsigned j=0; j<mimeTypesList.size(); ++j)
+        {
+          if (oldMImeList[i] == mimeTypesList[j])
+            mapping[i] = static_cast<uint16_t>(j);
+        }
+      }
+
+      for (auto& dirent: dirents)
+      {
+        if (dirent.isArticle())
+          dirent.setMimeType(mapping[dirent.getMimeType()]);
+      }
     }
 
-    void ZimCreator::setIndexing(bool indexing, std::string language)
+    uint16_t ZimCreatorData::getMimeTypeIdx(const std::string& mimeType)
     {
-      withIndex = indexing;
-      indexingLanguage = language;
+      auto it = mimeTypesMap.find(mimeType);
+      if (it == mimeTypesMap.end())
+      {
+        if (nextMimeIdx >= std::numeric_limits<uint16_t>::max())
+          throw std::runtime_error("too many distinct mime types");
+        mimeTypesMap[mimeType] = nextMimeIdx;
+        rmimeTypesMap[nextMimeIdx] = mimeType;
+        return nextMimeIdx++;
+      }
+
+      return it->second;
     }
 
-    Uuid ZimCreator::getUuid()
+    const std::string& ZimCreatorData::getMimeType(uint16_t mimeTypeIdx) const
     {
-      return Uuid::generate();
+      auto it = rmimeTypesMap.find(mimeTypeIdx);
+      if (it == rmimeTypesMap.end())
+        throw std::runtime_error("mime type index not found");
+      return it->second;
     }
 
-    std::string ZimCreator::getMainPage()
+    zsize_t ZimCreatorData::mimeListSize() const
     {
-      return std::string();
+      size_type ret = 1;
+      for (auto& rmimeType: rmimeTypesMap)
+        ret += (rmimeType.second.size() + 1);
+      return zsize_t(ret);
     }
 
-    std::string ZimCreator::getLayoutPage()
+    zsize_t ZimCreatorData::indexSize() const
     {
-      return std::string();
+      size_type s = 0;
+
+      for (auto& dirent: dirents)
+        s += dirent.getDirentSize();
+
+      return zsize_t(s);
     }
 
-    void ZimCreator::startZimCreation(const std::string& fname)
-    {
-      data = std::unique_ptr<ZimCreatorData>(new ZimCreatorData(fname, verbose, withIndex, indexingLanguage));
-      data->setMinChunkSize(minChunkSize);
-    }
   }
 }

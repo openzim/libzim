@@ -32,33 +32,33 @@ namespace zim
     class ZimCreatorData;
     class ZimCreator
     {
-      private:
-        std::unique_ptr<ZimCreatorData> data;
-        void fillHeader(Fileheader* header);
-        void write(const Fileheader& header, const std::string& fname) const;
-        bool verbose;
-        bool withIndex;
-        size_t minChunkSize;
-        std::string indexingLanguage;
-
-
       public:
         ZimCreator(bool verbose = false);
         virtual ~ZimCreator();
 
-        zim::size_type getMinChunkSize() const;
-        void setMinChunkSize(zim::size_type s);
-        void setIndexing(bool indexing, std::string language);
+        zim::size_type getMinChunkSize() const { return minChunkSize; }
+        void setMinChunkSize(zim::size_type s) { minChunkSize = s; }
+        void setIndexing(bool indexing, std::string language)
+        { withIndex = indexing; indexingLanguage = language; }
 
         virtual void startZimCreation(const std::string& fname);
         virtual void addArticle(const Article& article);
         virtual void finishZimCreation();
 
-        virtual std::string getMainPage();
-        virtual std::string getLayoutPage();
-        virtual zim::Uuid getUuid();
-    };
+        virtual std::string getMainPage() { return ""; }
+        virtual std::string getLayoutPage() { return ""; }
+        virtual zim::Uuid getUuid() { return Uuid::generate(); }
 
+      private:
+        std::unique_ptr<ZimCreatorData> data;
+        bool verbose;
+        bool withIndex = false;
+        size_t minChunkSize = 1024-64;
+        std::string indexingLanguage;
+
+        void fillHeader(Fileheader* header);
+        void write(const Fileheader& header, const std::string& fname) const;
+    };
   }
 
 }

@@ -49,22 +49,42 @@ namespace zim
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
 
-        size_t minChunkSize;
+        ZimCreatorData(const std::string& fname, bool verbose,
+                       bool withIndex, std::string language);
+        virtual ~ZimCreatorData();
+
+        void addDirent(const Dirent& dirent, const Article* article);
+        Dirent createDirentFromArticle(const Article* article);
+        void closeCluster(bool compressed);
+
+        void removeInvalidRedirects();
+        void setArticleIndexes();
+        void resolveRedirectIndexes();
+        void createTitleIndex();
+        void resolveMimeTypes();
+
+        uint16_t getMimeTypeIdx(const std::string& mimeType);
+        const std::string& getMimeType(uint16_t mimeTypeIdx) const;
+
+        size_t minChunkSize = 1024-64;
 
         DirentsType dirents;
         ArticleIdxVectorType titleIdx;
         OffsetsType clusterOffsets;
+
         MimeTypesMap mimeTypesMap;
         RMimeTypesMap rmimeTypesMap;
         MimeTypesList mimeTypesList;
-        uint16_t nextMimeIdx;
-        CompressionType compression;
+        uint16_t nextMimeIdx = 0;
+
+        CompressionType compression = zimcompLzma;
         std::string basename;
-        bool isEmpty;
-        bool isExtended;
+        bool isEmpty = true;
+        bool isExtended = false;
         zsize_t clustersSize;
         DirentPtrsType compDirents, uncompDirents;
-        Cluster *compCluster, *uncompCluster;
+        Cluster *compCluster = nullptr;
+        Cluster *uncompCluster = nullptr;
         std::string tmpfname;
         std::ofstream tmp_out;
 
@@ -85,17 +105,12 @@ namespace zim
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
 
-        Dirent createDirentFromArticle(const Article* article);
-        void closeCluster(bool compressed);
-        void addDirent(const Dirent& dirent, const Article* article);
-        void createTitleIndex();
-        void removeInvalidRedirects();
-        void setArticleIndexes();
-        void resolveRedirectIndexes();
-        void resolveMimeTypes();
+        cluster_index_t clusterCount() const
+        { return cluster_index_t(clusterOffsets.size()); }
 
-        cluster_index_t clusterCount() const        { return cluster_index_t(clusterOffsets.size()); }
-        article_index_t articleCount() const        { return article_index_t(dirents.size()); }
+        article_index_t articleCount() const
+        { return article_index_t(dirents.size()); }
+
         zsize_t mimeListSize() const;
 
         zsize_t  urlPtrSize() const
@@ -108,12 +123,6 @@ namespace zim
 
         zsize_t  clusterPtrSize() const
         { return zsize_t(cluster_index_type(clusterCount()) * sizeof(offset_type)); }
-
-        uint16_t getMimeTypeIdx(const std::string& mimeType);
-        const std::string& getMimeType(uint16_t mimeTypeIdx) const;
-
-        ZimCreatorData(const std::string& fname, bool verbose, bool withIndex, std::string language);
-        virtual ~ZimCreatorData();
 
         size_t getMinChunkSize()    { return minChunkSize; }
         void setMinChunkSize(size_t s)   { minChunkSize = s; }
