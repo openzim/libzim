@@ -17,53 +17,62 @@
  *
  */
 
-#ifndef ZIM_WRITER_ZIMCREATOR_IMPL_H
-#define ZIM_WRITER_ZIMCREATOR_IMPL_H
+#ifndef ZIM_WRITER_ZIMCREATOR_DATA_H
+#define ZIM_WRITER_ZIMCREATOR_DATA_H
 
 #include <zim/fileheader.h>
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 #include "_dirent.h"
 #include "xapianIndexer.h"
 #include <vector>
 #include <map>
 #include <fstream>
+#include "config.h"
+
+#if defined(ENABLE_XAPIAN)
+  class XapianIndexer;
+#endif
 
 namespace zim
 {
   namespace writer
   {
     class Cluster;
-    class ZimCreatorImpl
+    class ZimCreatorData
     {
       public:
         typedef std::vector<Dirent> DirentsType;
         typedef std::vector<DirentsType::size_type> DirentPtrsType;
         typedef std::vector<article_index_t> ArticleIdxVectorType;
         typedef std::vector<offset_t> OffsetsType;
-        typedef std::map<std::string, uint16_t> MimeTypes;
-        typedef std::map<uint16_t, std::string> RMimeTypes;
+        typedef std::map<std::string, uint16_t> MimeTypesMap;
+        typedef std::map<uint16_t, std::string> RMimeTypesMap;
+        typedef std::vector<std::string> MimeTypesList;
 
-      private:
         size_t minChunkSize;
-
-        Fileheader header;
 
         DirentsType dirents;
         ArticleIdxVectorType titleIdx;
         OffsetsType clusterOffsets;
-        MimeTypes mimeTypes;
-        RMimeTypes rmimeTypes;
+        MimeTypesMap mimeTypesMap;
+        RMimeTypesMap rmimeTypesMap;
+        MimeTypesList mimeTypesList;
         uint16_t nextMimeIdx;
         CompressionType compression;
+        std::string basename;
         bool isEmpty;
         bool isExtended;
         zsize_t clustersSize;
         DirentPtrsType compDirents, uncompDirents;
         Cluster *compCluster, *uncompCluster;
+        std::string tmpfname;
         std::ofstream tmp_out;
 
         bool withIndex;
         std::string indexingLanguage;
+#if defined(ENABLE_XAPIAN)
+        XapianIndexer* indexer = nullptr;
+#endif
 
         // Some stats
         bool verbose;
@@ -79,61 +88,39 @@ namespace zim
         Dirent createDirentFromArticle(const Article* article);
         void closeCluster(bool compressed);
         void addDirent(const Dirent& dirent, const Article* article);
-        void createDirentsAndClusters(ArticleSource& src, const std::string& tmpfname);
-        void createTitleIndex(ArticleSource& src);
-        void fillHeader(ArticleSource& src);
-        void write(const std::string& fname, const std::string& tmpfname);
+        void createTitleIndex();
+        void removeInvalidRedirects();
+        void setArticleIndexes();
+        void resolveRedirectIndexes();
+        void resolveMimeTypes();
 
         cluster_index_t clusterCount() const        { return cluster_index_t(clusterOffsets.size()); }
         article_index_t articleCount() const        { return article_index_t(dirents.size()); }
         zsize_t mimeListSize() const;
-        offset_t mimeListPos() const
-        { return offset_t(Fileheader::size); }
 
         zsize_t  urlPtrSize() const
         { return zsize_t(article_index_type(articleCount()) * sizeof(offset_type)); }
 
-        offset_t urlPtrPos() const
-        { return mimeListPos() + mimeListSize(); }
-
         zsize_t  titleIdxSize() const
         { return zsize_t(article_index_type(articleCount()) * sizeof(article_index_type)); }
 
-        offset_t titleIdxPos() const
-        { return urlPtrPos() + urlPtrSize(); }
-
         zsize_t  indexSize() const;
-
-        offset_t indexPos() const
-        { return titleIdxPos() + titleIdxSize(); }
 
         zsize_t  clusterPtrSize() const
         { return zsize_t(cluster_index_type(clusterCount()) * sizeof(offset_type)); }
 
-        offset_t clusterPtrPos() const
-        { return indexPos() + indexSize(); }
-
-        offset_t checksumPos() const
-        { return clusterPtrPos() + clusterPtrSize() + clustersSize; }
-
         uint16_t getMimeTypeIdx(const std::string& mimeType);
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
-      public:
-        ZimCreatorImpl(bool verbose);
-        ZimCreatorImpl(int& argc, char* argv[]);
-        virtual ~ZimCreatorImpl();
+        ZimCreatorData(const std::string& fname, bool verbose, bool withIndex, std::string language);
+        virtual ~ZimCreatorData();
 
-        zsize_t getMinChunkSize()    { return zsize_t(minChunkSize); }
-        void setMinChunkSize(zsize_t s)   { minChunkSize = s.v; }
-        void setIndexing(bool indexing, std::string language)
-          { withIndex = indexing; indexingLanguage = language; }
-
-        void create(const std::string& fname, ArticleSource& src);
+        size_t getMinChunkSize()    { return minChunkSize; }
+        void setMinChunkSize(size_t s)   { minChunkSize = s; }
     };
 
   }
 
 }
 
-#endif // ZIM_WRITER_ZIMCREATOR_IMPL_H
+#endif // ZIM_WRITER_ZIMCREATOR_DATA_H

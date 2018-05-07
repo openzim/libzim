@@ -25,7 +25,7 @@
 #include <iostream>
 #include <vector>
 
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 #include "../zim_types.h"
 
 namespace zim {

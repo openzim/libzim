@@ -18,7 +18,7 @@
  */
 
 #include <zim/blob.h>
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 
 namespace zim
 {
@@ -41,26 +41,6 @@ namespace zim
     std::string Article::getNextCategory()
     {
       return std::string();
-    }
-
-    Uuid ArticleSource::getUuid()
-    {
-      return Uuid::generate();
-    }
-
-    std::string ArticleSource::getMainPage()
-    {
-      return std::string();
-    }
-
-    std::string ArticleSource::getLayoutPage()
-    {
-      return std::string();
-    }
-
-    Category* ArticleSource::getCategory(const std::string& cid)
-    {
-      return 0;
     }
 
   }

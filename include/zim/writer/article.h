@@ -69,9 +69,6 @@ namespace zim
       public:
         virtual void setFilename(const std::string& fname) { }
         virtual const Article* getNextArticle() = 0;
-        virtual Uuid getUuid();
-        virtual std::string getMainPage();
-        virtual std::string getLayoutPage();
 
         // After fetching the articles and for each article the category ids
         // using Article::getNextCategory, the writer has a list of category

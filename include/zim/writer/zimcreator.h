@@ -22,31 +22,41 @@
 
 #include <memory>
 #include <zim/zim.h>
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 
 namespace zim
 {
+  class Fileheader;
   namespace writer
   {
-    class ZimCreatorImpl;
+    class ZimCreatorData;
     class ZimCreator
     {
       private:
-        std::unique_ptr<ZimCreatorImpl> impl;
+        std::unique_ptr<ZimCreatorData> data;
+        void fillHeader(Fileheader* header);
+        void write(const Fileheader& header, const std::string& fname) const;
+        bool verbose;
+        bool withIndex;
+        size_t minChunkSize;
+        std::string indexingLanguage;
+
 
       public:
-        ZimCreator(bool verbose=false);
-        ~ZimCreator();
+        ZimCreator(bool verbose = false);
+        virtual ~ZimCreator();
 
         zim::size_type getMinChunkSize() const;
         void setMinChunkSize(zim::size_type s);
         void setIndexing(bool indexing, std::string language);
 
-        void create(const std::string& fname, ArticleSource& src);
+        virtual void startZimCreation(const std::string& fname);
+        virtual void addArticle(const Article& article);
+        virtual void finishZimCreation();
 
-        /* The user can query `currentSize` after each article has been
-         * added to the ZIM file. */
-        zim::size_type getCurrentSize() const;
+        virtual std::string getMainPage();
+        virtual std::string getLayoutPage();
+        virtual zim::Uuid getUuid();
     };
 
   }

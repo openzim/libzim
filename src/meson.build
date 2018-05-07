@@ -6,7 +6,6 @@ configure_file(output : 'config.h',
 common_sources = [
 #    'config.h',
     'article.cpp',
-    'articlesource.cpp',
     'cluster.cpp',
     'dirent.cpp',
     'envvalue.cpp',
@@ -26,8 +25,9 @@ common_sources = [
     'uuid.cpp',
     'levenshtein.cpp',
     'tools.cpp',
-    'writer/zimcreatorimpl.cpp',
+    'writer/zimcreator.cpp',
     'writer/lzmastream.cpp',
+    'writer/article.cpp',
     'writer/cluster.cpp',
     'writer/xapianIndexer.cpp',
     'writer/tee.cpp'

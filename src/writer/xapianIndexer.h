@@ -21,7 +21,7 @@
 #define LIBZIM_WRITER_XAPIANINDEXER_H
 
 #include <zim/article.h>
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 
 #include <unicode/locid.h>
 #include <xapian.h>
