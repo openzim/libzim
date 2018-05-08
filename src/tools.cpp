@@ -36,7 +36,7 @@
 #endif
 
 
-std::string removeAccents(const std::string& text)
+std::string zim::removeAccents(const std::string& text)
 {
   ucnv_setDefaultName("UTF-8");
   static UErrorCode status = U_ZERO_ERROR;
@@ -49,7 +49,7 @@ std::string removeAccents(const std::string& text)
   return unaccentedText;
 }
 
-void remove_all(const std::string& path)
+void zim::remove_all(const std::string& path)
 {
   DIR* dir;
 

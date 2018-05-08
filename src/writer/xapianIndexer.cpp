@@ -77,8 +77,8 @@ XapianIndexer::~XapianIndexer()
 {
   if (!indexPath.empty()) {
     try {
-      remove_all(indexPath + ".tmp");
-      remove_all(indexPath);
+      zim::remove_all(indexPath + ".tmp");
+      zim::remove_all(indexPath);
     } catch (...) {
       /* Do not raise */
     }
@@ -117,9 +117,9 @@ void XapianIndexer::index(const zim::writer::Article* article)
   }
 
   std::string accentedTitle = (htmlParser.title.empty() ? article->getTitle() : htmlParser.title);
-  std::string title = removeAccents(accentedTitle);
-  std::string keywords = removeAccents(htmlParser.keywords);
-  std::string content = removeAccents(htmlParser.dump);
+  std::string title = zim::removeAccents(accentedTitle);
+  std::string keywords = zim::removeAccents(htmlParser.keywords);
+  std::string content = zim::removeAccents(htmlParser.dump);
 
   currentDocument.add_value(0, title);
 

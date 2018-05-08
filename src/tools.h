@@ -18,13 +18,16 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef OPENZIM_ZIMWRITERFS_TOOLS_H
-#define OPENZIM_ZIMWRITERFS_TOOLS_H
+#ifndef OPENZIM_LIBZIM_TOOLS_H
+#define OPENZIM_LIBZIM_TOOLS_H
 
 #include <string>
 
-std::string removeAccents(const std::string& text);
+namespace zim {
 
-void remove_all(const std::string& path);
+  std::string removeAccents(const std::string& text);
 
-#endif  // OPENZIM_ZIMWRITERFS_TOOLS_H
+  void remove_all(const std::string& path);
+}
+
+#endif  // OPENZIM_LIBZIM_TOOLS_H
