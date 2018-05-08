@@ -358,6 +358,9 @@ namespace zim
         delete compCluster;
       if (uncompCluster)
         delete uncompCluster;
+      for(auto& cluster: clustersList) {
+        delete cluster;
+      }
       ::remove(tmpfname.c_str());
 #if defined(ENABLE_XAPIAN)
       if (indexer)
@@ -383,16 +386,13 @@ namespace zim
       }
 
       Cluster *cluster;
-      DirentPtrsType *myDirents;
-      if (dirent.isCompress())
+      if (article->shouldCompress())
       {
         cluster = compCluster;
-        myDirents = &compDirents;
       }
       else
       {
         cluster = uncompCluster;
-        myDirents = &uncompDirents;
       }
 
       // If cluster will be too large, write it to dis, and open a new
@@ -404,12 +404,11 @@ namespace zim
         log_info("cluster with " << cluster->count() << " articles, " <<
                  cluster->size() << " bytes; current title \"" <<
                  dirent.getTitle() << '\"');
-        closeCluster(dirent.isCompress());
+        cluster = closeCluster(article->shouldCompress());
       }
 
-      dirents.back().setCluster(cluster_index_t(clusterOffsets.size()), cluster->count());
+      dirents.back().setCluster(cluster);
       cluster->addArticle(article);
-      myDirents->push_back(dirents.size()-1);
     }
 
     Dirent ZimCreatorData::createDirentFromArticle(const Article* article)
@@ -438,44 +437,40 @@ namespace zim
       }
       else
       {
-        dirent.setArticle(getMimeTypeIdx(article->getMimeType()), cluster_index_t(0), blob_index_t(0));
-        dirent.setCompress(article->shouldCompress());
+        dirent.setMimeType(getMimeTypeIdx(article->getMimeType()));
         log_debug("is article; mimetype " << dirent.getMimeType());
       }
       return dirent;
     }
 
-    void ZimCreatorData::closeCluster(bool compressed)
+    Cluster* ZimCreatorData::closeCluster(bool compressed)
     {
       Cluster *cluster;
-      DirentPtrsType *myDirents, *otherDirents;
       nbClusters++;
       if (compressed )
       {
         cluster = compCluster;
-        myDirents = &compDirents;
-        otherDirents = &uncompDirents;
         nbCompClusters++;
       } else {
         cluster = uncompCluster;
-        myDirents = &uncompDirents;
-        otherDirents = &compDirents;
         nbUnCompClusters++;
       }
       clusterOffsets.push_back(offset_t(tmp_out.tellp()));
       tmp_out << *cluster;
+      cluster->setClusterIndex(cluster_index_t(clustersList.size()));
+      clustersList.push_back(cluster);
+      cluster->clear();
+
       log_debug("cluster written");
       if (cluster->is_extended() )
         isExtended = true;
-      cluster->clear();
-      myDirents->clear();
-      // Update the cluster number of the dirents *not* written to disk.
-      for (DirentPtrsType::iterator dpi = otherDirents->begin();
-           dpi != otherDirents->end(); ++dpi)
+      if (compressed)
       {
-        Dirent *di = &dirents[*dpi];
-        di->setCluster(cluster_index_t(clusterOffsets.size()), di->getBlobNumber());
+        cluster = compCluster = new Cluster(compression);
+      } else {
+        cluster = uncompCluster = new Cluster(zimcompNone);
       }
+      return cluster;
     }
 
     void ZimCreatorData::removeInvalidRedirects()

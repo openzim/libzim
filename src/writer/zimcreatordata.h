@@ -42,12 +42,12 @@ namespace zim
     {
       public:
         typedef std::vector<Dirent> DirentsType;
-        typedef std::vector<DirentsType::size_type> DirentPtrsType;
         typedef std::vector<article_index_t> ArticleIdxVectorType;
         typedef std::vector<offset_t> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
+        typedef std::vector<Cluster*> ClusterList;
 
         ZimCreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language);
@@ -55,7 +55,7 @@ namespace zim
 
         void addDirent(const Dirent& dirent, const Article* article);
         Dirent createDirentFromArticle(const Article* article);
-        void closeCluster(bool compressed);
+        Cluster* closeCluster(bool compressed);
 
         void removeInvalidRedirects();
         void setArticleIndexes();
@@ -77,12 +77,12 @@ namespace zim
         MimeTypesList mimeTypesList;
         uint16_t nextMimeIdx = 0;
 
+        ClusterList clustersList;
         CompressionType compression = zimcompLzma;
         std::string basename;
         bool isEmpty = true;
         bool isExtended = false;
         zsize_t clustersSize;
-        DirentPtrsType compDirents, uncompDirents;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
         std::string tmpfname;

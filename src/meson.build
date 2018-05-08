@@ -29,6 +29,7 @@ common_sources = [
     'writer/lzmastream.cpp',
     'writer/article.cpp',
     'writer/cluster.cpp',
+    'writer/dirent.cpp',
     'writer/xapianIndexer.cpp',
     'writer/tee.cpp'
 ]

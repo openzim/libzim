@@ -61,6 +61,9 @@ class Cluster {
     bool is_extended() const { return isExtended; }
     void clear();
 
+    void setClusterIndex(cluster_index_t idx) { index = idx; }
+    cluster_index_t getClusterIndex() const { return index; }
+
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
@@ -69,6 +72,7 @@ class Cluster {
   protected:
     void write_data(std::ostream& out) const;
     CompressionType compression;
+    cluster_index_t index;
     bool isExtended;
     Offsets offsets;
     zsize_t _size;

@@ -45,9 +45,6 @@ Cluster::Cluster(CompressionType compression)
 void Cluster::clear() {
   offsets.clear();
   _data.clear();
-  offsets.push_back(offset_t(0));
-  isExtended = false;
-  _size = zsize_t(0);
 }
 
 zsize_t Cluster::size() const
