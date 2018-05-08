@@ -20,6 +20,9 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+#include <iostream>
+#include <stdlib.h>
+
 #if defined (NDEBUG)
 # define ASSERT(left, operator, right) (void(0))
 #else
