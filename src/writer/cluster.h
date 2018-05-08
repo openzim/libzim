@@ -71,7 +71,7 @@ class Cluster {
 
     void write_final(std::ostream& out) const;
     void dump_tmp(const std::string& directoryPath);
-    void dump_tmp(std::ostream& out) const;
+    void dump(std::ostream& out) const;
 
   protected:
     CompressionType compression;

@@ -89,7 +89,7 @@ namespace zim
         if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
           wait = 0;
           clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
-          clusterToWrite->clear();
+          clusterToWrite->close();
           continue;
         }
         wait += 10;

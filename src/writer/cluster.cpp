@@ -52,7 +52,6 @@ Cluster::Cluster(CompressionType compression)
 void Cluster::clear() {
   offsets.clear();
   _data.clear();
-  close();
 }
 
 void Cluster::close() {
@@ -71,6 +70,9 @@ bool Cluster::isClosed() const{
 
 zsize_t Cluster::size() const
 {
+  if (isClosed()) {
+    throw std::runtime_error("oups");
+  }
   if (isExtended) {
     return zsize_t(offsets.size() * sizeof(uint64_t)) + _size;
   } else {
@@ -98,28 +100,60 @@ void Cluster::write_offsets(std::ostream& out) const
 
 void Cluster::write_final(std::ostream& out) const
 {
-  std::ifstream clustersFile(tmp_filename);
-  out << clustersFile.rdbuf();
+  if(getCompression() == zim::zimcompNone)
+  {
+    dump(out);
+  } else {
+    std::ifstream clustersFile(tmp_filename, std::ios::binary);
+    out << clustersFile.rdbuf();
+  }
+  if (!out) {
+    throw std::runtime_error("failed to write cluster");
+  }
 }
 
 void Cluster::dump_tmp(const std::string& directoryPath)
 {
-  std::ostringstream ss;
-  ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
-  tmp_filename = ss.str();
-  std::ofstream out(tmp_filename);
-  dump_tmp(out);
-  if (!out) {
-    throw std::runtime_error(
-      std::string("failed to write temporary cluster file ")
-    + tmp_filename);
+  if(getCompression() == zim::zimcompNone)
+  {
+    //No real dump, store inmemory data in file
+    size_t file_index = 0;
+    for (auto& data: _data)
+    {
+      ASSERT(data.value.empty(), ==, false);
+      if (data.type == DataType::plain) {
+        std::ostringstream ss;
+        ss << directoryPath << SEPARATOR << "file_" << index << "_" << file_index << ".tmp";
+        auto filename = ss.str();
+        {
+          std::ofstream out(filename, std::ios::binary);
+          out << data.value;
+          if (!out) {
+            throw std::runtime_error(
+              std::string("failed to write temporary cluster file ")
+            + filename);
+          }
+        }
+        data.type = DataType::file;
+        data.value = filename;
+      }
+      file_index++;
+    }
+    finalSize = zsize_t(size().v+1);
+  } else {
+    std::ostringstream ss;
+    ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
+    tmp_filename = ss.str();
+    std::ofstream out(tmp_filename, std::ios::binary);
+    dump(out);
+    if (!out) {
+      throw std::runtime_error(
+        std::string("failed to write temporary cluster file ")
+      + tmp_filename);
+    }
+    finalSize = zsize_t(out.tellp());
+    clear();
   }
-#if !defined (NDEBUG)
-  if (getCompression() == zim::zimcompNone) {
-    ASSERT((size().v+1), ==, (size_type)out.tellp());
-  }
-#endif
-  finalSize = zsize_t(out.tellp());
 }
 
 void Cluster::write(std::ostream& out) const
@@ -132,7 +166,7 @@ void Cluster::write(std::ostream& out) const
   write_data(out);
 }
 
-void Cluster::dump_tmp(std::ostream& out) const
+void Cluster::dump(std::ostream& out) const
 {
   // write clusterInfo
   char clusterInfo = 0;
@@ -246,7 +280,7 @@ void Cluster::write_data(std::ostream& out) const
     if (data.type == DataType::plain) {
       out << data.value;
     } else {
-      std::ifstream stream(data.value);
+      std::ifstream stream(data.value, std::ios::binary);
       if (!stream) {
          throw std::runtime_error(std::string("cannot open ") + data.value);
       }
