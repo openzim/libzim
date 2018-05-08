@@ -46,11 +46,27 @@ Cluster::Cluster(CompressionType compression)
     _size(0)
 {
   offsets.push_back(offset_t(0));
+  pthread_mutex_init(&m_closedMutex,NULL);
 }
 
 void Cluster::clear() {
   offsets.clear();
   _data.clear();
+  close();
+}
+
+void Cluster::close() {
+  pthread_mutex_lock(&m_closedMutex);
+  closed = true;
+  pthread_mutex_unlock(&m_closedMutex);
+}
+
+bool Cluster::isClosed() const{
+  bool v;
+  pthread_mutex_lock(&m_closedMutex);
+  v = closed;
+  pthread_mutex_unlock(&m_closedMutex);
+  return v;
 }
 
 zsize_t Cluster::size() const
@@ -60,6 +76,11 @@ zsize_t Cluster::size() const
   } else {
     return zsize_t(offsets.size() * sizeof(uint32_t)) + _size;
   }
+}
+
+zsize_t Cluster::getFinalSize() const
+{
+  return finalSize;
 }
 
 template<typename OFFSET_TYPE>
@@ -81,7 +102,7 @@ void Cluster::write_final(std::ostream& out) const
   out << clustersFile.rdbuf();
 }
 
-zsize_t Cluster::dump_tmp(const std::string& directoryPath)
+void Cluster::dump_tmp(const std::string& directoryPath)
 {
   std::ostringstream ss;
   ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
@@ -93,7 +114,12 @@ zsize_t Cluster::dump_tmp(const std::string& directoryPath)
       std::string("failed to write temporary cluster file ")
     + tmp_filename);
   }
-  return zsize_t(out.tellp());
+#if !defined (NDEBUG)
+  if (getCompression() == zim::zimcompNone) {
+    ASSERT((size().v+1), ==, (size_type)out.tellp());
+  }
+#endif
+  finalSize = zsize_t(out.tellp());
 }
 
 void Cluster::write(std::ostream& out) const

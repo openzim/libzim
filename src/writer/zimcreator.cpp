@@ -79,6 +79,24 @@ namespace zim
 {
   namespace writer
   {
+    void* ZimCreator::clusterWriter(void* arg) {
+      auto zimCreator = static_cast<zim::writer::ZimCreator*>(arg);
+      zim::writer::Cluster* clusterToWrite;
+      unsigned int wait = 0;
+
+      while(true) {
+        usleep(wait);
+        if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
+          wait = 0;
+          clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
+          clusterToWrite->clear();
+          continue;
+        }
+        wait += 10;
+      }
+      return nullptr;
+    }
+
     ZimCreator::ZimCreator(bool verbose)
       : verbose(verbose)
     {}
@@ -89,6 +107,14 @@ namespace zim
     {
       data = std::unique_ptr<ZimCreatorData>(new ZimCreatorData(fname, verbose, withIndex, indexingLanguage));
       data->setMinChunkSize(minChunkSize);
+
+      for(unsigned i=0; i<compressionThreads; i++)
+      {
+        pthread_t thread;
+        pthread_create(&thread, NULL, clusterWriter, this);
+        pthread_detach(thread);
+        data->runningWriters.push_back(thread);
+      }
     }
 
     void ZimCreator::addArticle(const Article& article)
@@ -155,6 +181,41 @@ namespace zim
 
       if (data->uncompCluster->count())
         data->closeCluster(false);
+
+      // wait all cluster writing has been done
+      unsigned int wait = 0;
+      do {
+        usleep(wait);
+        wait += 10;
+      } while(!data->clustersToWrite.isEmpty());
+
+      // Be sure that all cluster are closed
+      wait = 0;
+      bool closed = true;
+      do {
+        closed = true;
+        usleep(wait);
+        wait += 10;
+        for(auto cluster: data->clustersList) {
+          if (!cluster->isClosed()) {
+            closed = false;
+            break;
+          }
+        }
+      } while(!closed);
+
+// [FIXME] pthread_cancel is not defined in android NDK.
+// As we don't create zim on android platform, 
+// let's simply skip this code to still allow
+// compilation of libzim on android.
+#if !defined(__ANDROID__)
+      for(auto& thread: data->runningWriters)
+      {
+        pthread_cancel(thread);
+      }
+#endif
+
+      data->generateClustersOffsets();
 
       data->removeInvalidRedirects();
       data->setArticleIndexes();
@@ -301,6 +362,7 @@ namespace zim
       {
         for(auto& cluster: data->clustersList)
         {
+          ASSERT(cluster->isClosed(), ==, true);
           cluster->write_final(out);
         }
       }
@@ -452,11 +514,9 @@ namespace zim
         cluster = uncompCluster;
         nbUnCompClusters++;
       }
-      clusterOffsets.push_back(offset_t(clustersSize.v));
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
-      clustersSize += cluster->dump_tmp(tmpfname);;
-      cluster->clear();
+      clustersToWrite.pushToQueue(cluster);
 
       log_debug("cluster written");
       if (cluster->is_extended() )
@@ -468,6 +528,16 @@ namespace zim
         cluster = uncompCluster = new Cluster(zimcompNone);
       }
       return cluster;
+    }
+
+    void ZimCreatorData::generateClustersOffsets()
+    {
+      clustersSize = zsize_t(0);
+      for(auto& cluster: clustersList)
+      {
+        clusterOffsets.push_back(offset_t(clustersSize.v));
+        clustersSize += cluster->getFinalSize();
+      }
     }
 
     void ZimCreatorData::removeInvalidRedirects()

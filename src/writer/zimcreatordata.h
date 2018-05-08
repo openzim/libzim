@@ -22,6 +22,7 @@
 
 #include <zim/fileheader.h>
 #include <zim/writer/article.h>
+#include "queue.h"
 #include "_dirent.h"
 #include "xapianIndexer.h"
 #include <vector>
@@ -48,6 +49,8 @@ namespace zim
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
         typedef std::vector<Cluster*> ClusterList;
+        typedef Queue<Cluster*> ClusterQueue;
+        typedef std::vector<pthread_t> ThreadList;
 
         ZimCreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language);
@@ -57,6 +60,7 @@ namespace zim
         Dirent createDirentFromArticle(const Article* article);
         Cluster* closeCluster(bool compressed);
 
+        void generateClustersOffsets();
         void removeInvalidRedirects();
         void setArticleIndexes();
         void resolveRedirectIndexes();
@@ -78,6 +82,8 @@ namespace zim
         uint16_t nextMimeIdx = 0;
 
         ClusterList clustersList;
+        ClusterQueue clustersToWrite;
+        ThreadList runningWriters;
         CompressionType compression = zimcompLzma;
         std::string basename;
         bool isEmpty = true;

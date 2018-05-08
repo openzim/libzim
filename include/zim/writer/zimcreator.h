@@ -40,6 +40,7 @@ namespace zim
         void setMinChunkSize(zim::size_type s) { minChunkSize = s; }
         void setIndexing(bool indexing, std::string language)
         { withIndex = indexing; indexingLanguage = language; }
+        void setCompressionThreads(unsigned ct) { compressionThreads = ct; }
 
         virtual void startZimCreation(const std::string& fname);
         virtual void addArticle(const Article& article);
@@ -55,9 +56,11 @@ namespace zim
         bool withIndex = false;
         size_t minChunkSize = 1024-64;
         std::string indexingLanguage;
+        unsigned compressionThreads = 4;
 
         void fillHeader(Fileheader* header);
         void write(const Fileheader& header, const std::string& fname) const;
+        static void* clusterWriter(void* arg);
     };
   }
 

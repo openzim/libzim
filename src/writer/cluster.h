@@ -47,7 +47,7 @@ class Cluster {
 
   public:
     Cluster(CompressionType compression);
-    virtual ~Cluster() = default;
+    virtual ~Cluster() { pthread_mutex_destroy(&m_closedMutex);}
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
@@ -57,8 +57,11 @@ class Cluster {
 
     blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
     zsize_t size() const;
+    zsize_t getFinalSize() const;
     bool is_extended() const { return isExtended; }
     void clear();
+    void close();
+    bool isClosed() const;
 
     void setClusterIndex(cluster_index_t idx) { index = idx; }
     cluster_index_t getClusterIndex() const { return index; }
@@ -67,7 +70,7 @@ class Cluster {
     { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
     void write_final(std::ostream& out) const;
-    zsize_t dump_tmp(const std::string& directoryPath);
+    void dump_tmp(const std::string& directoryPath);
     void dump_tmp(std::ostream& out) const;
 
   protected:
@@ -76,8 +79,11 @@ class Cluster {
     bool isExtended;
     Offsets offsets;
     zsize_t _size;
+    zsize_t finalSize;
     ClusterData _data;
     std::string tmp_filename;
+    mutable pthread_mutex_t m_closedMutex;
+    bool closed = false;
 
   private:
     void write(std::ostream& out) const;
