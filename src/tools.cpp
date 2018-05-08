@@ -24,12 +24,14 @@
 #include <dirent.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <memory>
 
 #include <unicode/translit.h>
 #include <unicode/ucnv.h>
 
 #ifdef _WIN32
+#include <direct.h>
 #define SEPARATOR "\\"
 #else
 #define SEPARATOR "/"
@@ -70,4 +72,14 @@ void zim::remove_all(const std::string& path)
   else {
     remove(path.c_str());
   }
+}
+
+bool zim::makeDirectory(const std::string& path)
+{
+#ifdef _WIN32
+  int status = _mkdir(path.c_str());
+#else
+  int status = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
+  return status == 0;
 }

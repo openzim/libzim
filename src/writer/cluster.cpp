@@ -31,6 +31,12 @@
 
 #include "lzmastream.h"
 
+#ifdef _WIN32
+#define SEPARATOR "\\"
+#else
+#define SEPARATOR "/"
+#endif
+
 namespace zim {
 namespace writer {
 
@@ -69,6 +75,27 @@ void Cluster::write_offsets(std::ostream& out) const
   }
 }
 
+void Cluster::write_final(std::ostream& out) const
+{
+  std::ifstream clustersFile(tmp_filename);
+  out << clustersFile.rdbuf();
+}
+
+zsize_t Cluster::dump_tmp(const std::string& directoryPath)
+{
+  std::ostringstream ss;
+  ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
+  tmp_filename = ss.str();
+  std::ofstream out(tmp_filename);
+  dump_tmp(out);
+  if (!out) {
+    throw std::runtime_error(
+      std::string("failed to write temporary cluster file ")
+    + tmp_filename);
+  }
+  return zsize_t(out.tellp());
+}
+
 void Cluster::write(std::ostream& out) const
 {
   if (isExtended) {
@@ -79,22 +106,22 @@ void Cluster::write(std::ostream& out) const
   write_data(out);
 }
 
-std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
+void Cluster::dump_tmp(std::ostream& out) const
 {
-  log_trace("write cluster");
-
+  // write clusterInfo
   char clusterInfo = 0;
-  if (cluster.isExtended) {
+  if (isExtended) {
     clusterInfo = 0x10;
   }
-  clusterInfo += cluster.getCompression();
+  clusterInfo += getCompression();
   out.put(clusterInfo);
 
-  switch(cluster.getCompression())
+  // Open a comprestion stream if needed
+  switch(getCompression())
   {
     case zim::zimcompDefault:
     case zim::zimcompNone:
-      cluster.write(out);
+      write(out);
       break;
 
     case zim::zimcompZip:
@@ -103,7 +130,7 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
         log_debug("compress data (zlib)");
         zim::writer::DeflateStream os(out);
         os.exceptions(std::ios::failbit | std::ios::badbit);
-        cluster.write(os);
+        write(os);
         os.flush();
         os.end();
 #else
@@ -143,19 +170,17 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
         log_debug("compress data (lzma, " << std::hex << lzmaPreset << ")");
         zim::writer::LzmaStream os(out, lzmaPreset);
         os.exceptions(std::ios::failbit | std::ios::badbit);
-        cluster.write(os);
+        write(os);
         os.end();
         break;
       }
 
     default:
       std::ostringstream msg;
-      msg << "invalid compression flag " << cluster.getCompression();
+      msg << "invalid compression flag " << getCompression();
       log_error(msg.str());
       throw std::runtime_error(msg.str());
   }
-
-  return out;
 }
 
 void Cluster::addArticle(const zim::writer::Article* article)

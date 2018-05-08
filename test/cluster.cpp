@@ -73,7 +73,7 @@ TEST(ClusterTest, read_write_cluster)
   cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
-  stream << cluster;
+  cluster.dump_tmp(stream);
 
   std::string str_content = stream.str();
   char* content = new char[str_content.size() - 1];
@@ -98,7 +98,7 @@ TEST(ClusterTest, read_write_empty)
   cluster.addData(0, zim::zsize_t(0));
   cluster.addData(0, zim::zsize_t(0));
 
-  stream << cluster;
+  cluster.dump_tmp(stream);
 
   std::string str_content = stream.str();
   char* content = new char[str_content.size() - 1];
@@ -128,7 +128,7 @@ TEST(ClusterTest, read_write_clusterZ)
   cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
-  stream << cluster;
+  cluster.dump_tmp(stream);
 
   std::string str_content = stream.str();
   int size = str_content.size();
@@ -173,7 +173,7 @@ TEST(ClusterTest, read_write_clusterLzma)
   cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
-  stream << cluster;
+  cluster.dump_tmp(stream);
 
   std::string str_content = stream.str();
   int size = str_content.size();
@@ -240,7 +240,7 @@ TEST(CluterTest, read_write_extended_cluster)
     ASSERT_EQ(cluster.is_extended(), true);
 
     delete[] blob3;
-    stream << cluster;
+    cluster.dump_tmp(stream);
   }
 
   std::string str_content = stream.str();

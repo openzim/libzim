@@ -41,7 +41,6 @@ struct Data {
 };
 
 class Cluster {
-  friend std::ostream& operator<< (std::ostream& out, const Cluster& blobImpl);
   typedef std::vector<offset_t> Offsets;
   typedef std::vector<Data> ClusterData;
 
@@ -67,23 +66,26 @@ class Cluster {
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
-    void write(std::ostream& out) const;
+    void write_final(std::ostream& out) const;
+    zsize_t dump_tmp(const std::string& directoryPath);
+    void dump_tmp(std::ostream& out) const;
 
   protected:
-    void write_data(std::ostream& out) const;
     CompressionType compression;
     cluster_index_t index;
     bool isExtended;
     Offsets offsets;
     zsize_t _size;
     ClusterData _data;
+    std::string tmp_filename;
 
   private:
+    void write(std::ostream& out) const;
     template<typename OFFSET_TYPE>
     void write_offsets(std::ostream& out) const;
-};
+    void write_data(std::ostream& out) const;
 
-std::ostream& operator<< (std::ostream& out, const Cluster& cluster);
+};
 
 };
 

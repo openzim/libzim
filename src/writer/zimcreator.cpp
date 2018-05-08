@@ -44,6 +44,7 @@
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
+#include "../tools.h"
 
 log_define("zim.writer.creator")
 
@@ -154,15 +155,6 @@ namespace zim
 
       if (data->uncompCluster->count())
         data->closeCluster(false);
-
-      if (!data->tmp_out)
-      {
-        throw std::runtime_error("failed to write temporary cluster file");
-      }
-
-      data->clustersSize = zsize_t(data->tmp_out.tellp());
-
-      data->tmp_out.close();
 
       data->removeInvalidRedirects();
       data->setArticleIndexes();
@@ -305,11 +297,12 @@ namespace zim
       log_debug("after writing clusterOffsets - pos=" << out.tellp());
 
       // write cluster data
-
       if (!data->isEmpty)
       {
-        std::ifstream clustersFile(data->tmpfname.c_str());
-        out << clustersFile.rdbuf();
+        for(auto& cluster: data->clustersList)
+        {
+          cluster->write_final(out);
+        }
       }
       else
         log_warn("no data found");
@@ -335,7 +328,11 @@ namespace zim
                         ? fname.substr(0, fname.size() - 4)
                         : fname;
       tmpfname = basename + ".tmp";
-      tmp_out = std::ofstream(tmpfname);
+      if(!makeDirectory(tmpfname)) {
+        throw std::runtime_error(
+          std::string("failed to create temporary directory ")
+        + tmpfname);
+      }
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
       // because we don't know which one will fill up first.  We also need
@@ -361,7 +358,7 @@ namespace zim
       for(auto& cluster: clustersList) {
         delete cluster;
       }
-      ::remove(tmpfname.c_str());
+      zim::remove_all(tmpfname);
 #if defined(ENABLE_XAPIAN)
       if (indexer)
         delete indexer;
@@ -455,10 +452,10 @@ namespace zim
         cluster = uncompCluster;
         nbUnCompClusters++;
       }
-      clusterOffsets.push_back(offset_t(tmp_out.tellp()));
-      tmp_out << *cluster;
+      clusterOffsets.push_back(offset_t(clustersSize.v));
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
+      clustersSize += cluster->dump_tmp(tmpfname);;
       cluster->clear();
 
       log_debug("cluster written");

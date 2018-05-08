@@ -27,6 +27,7 @@ namespace zim {
 
   std::string removeAccents(const std::string& text);
 
+  bool makeDirectory(const std::string& path);
   void remove_all(const std::string& path);
 }
 

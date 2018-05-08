@@ -86,7 +86,6 @@ namespace zim
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
         std::string tmpfname;
-        std::ofstream tmp_out;
 
         bool withIndex;
         std::string indexingLanguage;
