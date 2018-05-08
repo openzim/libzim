@@ -199,7 +199,13 @@ void Cluster::write_data(std::ostream& out) const
       out << data.value;
     } else {
       std::ifstream stream(data.value);
+      if (!stream) {
+         throw std::runtime_error(std::string("cannot open ") + data.value);
+      }
       out << stream.rdbuf();
+      if (!out) {
+        throw std::runtime_error(std::string("failed to write file ") + data.value);
+      }
     }
   }
 }
