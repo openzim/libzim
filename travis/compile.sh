@@ -32,7 +32,12 @@ case ${PLATFORM} in
 esac
 
 cd ${TRAVIS_BUILD_DIR}
-export PKG_CONFIG_PATH=${INSTALL_DIR}/lib/x86_64-linux-gnu/pkgconfig
+if [[ "$TRAVIS_OS_NAME" == "osx" ]]
+then
+    export PKG_CONFIG_PATH=${INSTALL_DIR}/lib/pkgconfig
+else
+    export PKG_CONFIG_PATH=${INSTALL_DIR}/lib/x86_64-linux-gnu/pkgconfig
+fi
 meson . build -Dctpp2-install-prefix=${INSTALL_DIR} ${MESON_OPTION}
 cd build
 ninja
