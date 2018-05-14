@@ -18,17 +18,12 @@
  */
 
 #include <zim/blob.h>
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 
 namespace zim
 {
   namespace writer
   {
-    bool Article::isRedirect() const
-    {
-      return false;
-    }
-
     bool Article::isLinktarget() const
     {
       return false;
@@ -38,22 +33,6 @@ namespace zim
     {
       return false;
     }
-
-    bool Article::shouldCompress() const
-    {
-      std::string mimeType = getMimeType();
-      return mimeType != "image/jpeg"
-          && mimeType != "image/png"
-          && mimeType != "image/tiff"
-          && mimeType != "image/gif"
-          && mimeType != "application/zip";
-    }
-
-    std::string Article::getRedirectAid() const
-    {
-      return std::string();
-    }
-
     std::string Article::getParameter() const
     {
       return std::string();
@@ -62,26 +41,6 @@ namespace zim
     std::string Article::getNextCategory()
     {
       return std::string();
-    }
-
-    Uuid ArticleSource::getUuid()
-    {
-      return Uuid::generate();
-    }
-
-    std::string ArticleSource::getMainPage()
-    {
-      return std::string();
-    }
-
-    std::string ArticleSource::getLayoutPage()
-    {
-      return std::string();
-    }
-
-    Category* ArticleSource::getCategory(const std::string& cid)
-    {
-      return 0;
     }
 
   }

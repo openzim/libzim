@@ -6,7 +6,6 @@ configure_file(output : 'config.h',
 common_sources = [
 #    'config.h',
     'article.cpp',
-    'articlesource.cpp',
     'cluster.cpp',
     'dirent.cpp',
     'envvalue.cpp',
@@ -25,9 +24,13 @@ common_sources = [
     'template.cpp',
     'uuid.cpp',
     'levenshtein.cpp',
-    'writer/zimcreatorimpl.cpp',
+    'tools.cpp',
+    'writer/zimcreator.cpp',
     'writer/lzmastream.cpp',
+    'writer/article.cpp',
     'writer/cluster.cpp',
+    'writer/dirent.cpp',
+    'writer/xapianIndexer.cpp',
     'writer/tee.cpp'
 ]
 
@@ -50,6 +53,7 @@ endif
 
 if xapian_dep.found()
     sources += xapian_sources
+    sources += lib_resources
     deps += [xapian_dep, icu_dep]
 endif
 

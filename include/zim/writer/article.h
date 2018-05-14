@@ -38,14 +38,17 @@ namespace zim
         virtual char getNamespace() const = 0;
         virtual std::string getUrl() const = 0;
         virtual std::string getTitle() const = 0;
-        virtual bool isRedirect() const;
+        virtual bool isRedirect() const = 0;
         virtual bool isLinktarget() const;
         virtual bool isDeleted() const;
         virtual std::string getMimeType() const = 0;
-        virtual bool shouldCompress() const;
-        virtual std::string getRedirectAid() const;
+        virtual bool shouldCompress() const = 0;
+        virtual bool shouldIndex() const = 0;
+        virtual std::string getRedirectAid() const = 0;
         virtual std::string getParameter() const;
+        virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
+        virtual std::string getFilename() const = 0;
         virtual ~Article() = default;
 
         // returns the next category id, to which the article is assigned to
@@ -66,9 +69,6 @@ namespace zim
       public:
         virtual void setFilename(const std::string& fname) { }
         virtual const Article* getNextArticle() = 0;
-        virtual Uuid getUuid();
-        virtual std::string getMainPage();
-        virtual std::string getLayoutPage();
 
         // After fetching the articles and for each article the category ids
         // using Article::getNextCategory, the writer has a list of category

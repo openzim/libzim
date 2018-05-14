@@ -41,7 +41,7 @@ namespace
 {
 TEST(ClusterTest, create_cluster)
 {
-  zim::writer::Cluster cluster;
+  zim::writer::Cluster cluster(zim::zimcompNone);
 
   ASSERT_EQ(cluster.count().v, 0U);
 
@@ -49,9 +49,9 @@ TEST(ClusterTest, create_cluster)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addBlob(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addBlob(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addBlob(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
   ASSERT_EQ(cluster.count().v, 3U);
   ASSERT_EQ(cluster.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
@@ -63,17 +63,17 @@ TEST(ClusterTest, read_write_cluster)
 {
   std::stringstream stream;
 
-  zim::writer::Cluster cluster;
+  zim::writer::Cluster cluster(zim::zimcompNone);
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnop vwxyz");
 
-  cluster.addBlob(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addBlob(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addBlob(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
-  stream << cluster;
+  cluster.dump(stream);
 
   std::string str_content = stream.str();
   char* content = new char[str_content.size() - 1];
@@ -92,13 +92,13 @@ TEST(ClusterTest, read_write_empty)
 {
   std::stringstream stream;
 
-  zim::writer::Cluster cluster;
+  zim::writer::Cluster cluster(zim::zimcompNone);
 
-  cluster.addBlob(0, zim::zsize_t(0));
-  cluster.addBlob(0, zim::zsize_t(0));
-  cluster.addBlob(0, zim::zsize_t(0));
+  cluster.addData(0, zim::zsize_t(0));
+  cluster.addData(0, zim::zsize_t(0));
+  cluster.addData(0, zim::zsize_t(0));
 
-  stream << cluster;
+  cluster.dump(stream);
 
   std::string str_content = stream.str();
   char* content = new char[str_content.size() - 1];
@@ -118,18 +118,17 @@ TEST(ClusterTest, read_write_clusterZ)
 {
   std::stringstream stream;
 
-  zim::writer::Cluster cluster;
+  zim::writer::Cluster cluster(zim::zimcompZip);
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addBlob(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addBlob(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addBlob(blob2.data(), zim::zsize_t(blob2.size()));
-  cluster.setCompression(zim::zimcompZip);
+  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
-  stream << cluster;
+  cluster.dump(stream);
 
   std::string str_content = stream.str();
   int size = str_content.size();
@@ -164,18 +163,17 @@ TEST(ClusterTest, read_write_clusterLzma)
 {
   std::stringstream stream;
 
-  zim::writer::Cluster cluster;
+  zim::writer::Cluster cluster(zim::zimcompLzma);
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addBlob(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addBlob(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addBlob(blob2.data(), zim::zsize_t(blob2.size()));
-  cluster.setCompression(zim::zimcompLzma);
+  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
-  stream << cluster;
+  cluster.dump(stream);
 
   std::string str_content = stream.str();
   int size = str_content.size();
@@ -228,12 +226,12 @@ TEST(CluterTest, read_write_extended_cluster)
   }
 
   {
-    zim::writer::Cluster cluster;
-    cluster.addBlob(blob0.data(), zim::zsize_t(blob0.size()));
-    cluster.addBlob(blob1.data(), zim::zsize_t(blob1.size()));
-    cluster.addBlob(blob2.data(), zim::zsize_t(blob2.size()));
+    zim::writer::Cluster cluster(zim::zimcompNone);
+    cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+    cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+    cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
     try {
-      cluster.addBlob(blob3, zim::zsize_t(bigger_than_4g));
+      cluster.addData(blob3, zim::zsize_t(bigger_than_4g));
     } catch (std::bad_alloc& e) {
       // Not enough memory, we cannot test cluster bigger than 4Go :(
       delete[] blob3;
@@ -242,7 +240,7 @@ TEST(CluterTest, read_write_extended_cluster)
     ASSERT_EQ(cluster.is_extended(), true);
 
     delete[] blob3;
-    stream << cluster;
+    cluster.dump(stream);
   }
 
   std::string str_content = stream.str();

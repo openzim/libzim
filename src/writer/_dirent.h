@@ -20,7 +20,8 @@
 #ifndef ZIM_WRITER_DIRENT_H
 #define ZIM_WRITER_DIRENT_H
 
-#include "../dirent.h"
+#include "../_dirent.h"
+#include "cluster.h"
 
 namespace zim
 {
@@ -28,23 +29,19 @@ namespace zim
   {
     class Dirent : public zim::Dirent
     {
+        Cluster* cluster = nullptr;
         std::string aid;
         std::string redirectAid;
-        article_index_t idx;
-        bool compress;
+        article_index_t idx = article_index_t(0);
 
       public:
-        Dirent()
-          : idx(0)
-          {}
+        Dirent() {}
 
         Dirent(const std::string& aid_)
-          : aid(aid_),
-            idx(0)
+          : aid(aid_)
           {}
 
         Dirent(char ns, const std::string& url)
-          : idx(0)
           { setUrl(ns, url); }
 
         void setAid(const std::string&  aid_)      { aid = aid_; }
@@ -56,9 +53,13 @@ namespace zim
         void setIdx(article_index_t idx_)      { idx = idx_; }
         article_index_t getIdx() const         { return idx; }
 
-        void setCompress(bool sw = true)  { compress = sw; }
-        bool isCompress() const           { return compress; }
+        void setCluster(zim::writer::Cluster* _cluster)
+        { cluster = _cluster; blobNumber = _cluster->count(); }
+
+        cluster_index_t getClusterNumber() const { return cluster ? cluster->getClusterIndex() : clusterNumber; }
     };
+
+    std::ostream& operator<< (std::ostream& out, const Dirent& d);
 
     inline bool compareUrl(const Dirent& d1, const Dirent& d2)
     {

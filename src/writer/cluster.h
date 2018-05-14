@@ -25,49 +25,73 @@
 #include <iostream>
 #include <vector>
 
+#include <zim/writer/article.h>
 #include "../zim_types.h"
 
 namespace zim {
 
 namespace writer {
 
+enum class DataType { plain, file };
+struct Data {
+  Data(zim::writer::DataType type, const std::string& value) :
+    type(type), value(value) {}
+  DataType type;
+  std::string value;
+};
 
 class Cluster {
-  friend std::ostream& operator<< (std::ostream& out, const Cluster& blobImpl);
   typedef std::vector<offset_t> Offsets;
-  typedef std::vector<char> Data;
+  typedef std::vector<Data> ClusterData;
 
 
   public:
-    Cluster();
+    Cluster(CompressionType compression);
+    virtual ~Cluster() { pthread_mutex_destroy(&m_closedMutex);}
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
+
+    void addArticle(const zim::writer::Article* article);
+    void addData(const char* data, zsize_t size);
+
     blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
     zsize_t size() const;
+    zsize_t getFinalSize() const;
     bool is_extended() const { return isExtended; }
     void clear();
+    void close();
+    bool isClosed() const;
+
+    void setClusterIndex(cluster_index_t idx) { index = idx; }
+    cluster_index_t getClusterIndex() const { return index; }
 
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
-    void addBlob(const Blob& blob);
-    void addBlob(const char* data, zsize_t size);
+    void write_final(std::ostream& out) const;
+    void dump_tmp(const std::string& directoryPath);
+    void dump(std::ostream& out) const;
 
-    void write(std::ostream& out) const;
-
-  private:
-    template<typename OFFSET_TYPE>
-    void write_impl(std::ostream& out) const;
-
+  protected:
     CompressionType compression;
+    cluster_index_t index;
     bool isExtended;
     Offsets offsets;
-    Data _data;
+    zsize_t _size;
+    zsize_t finalSize;
+    ClusterData _data;
+    std::string tmp_filename;
+    mutable pthread_mutex_t m_closedMutex;
+    bool closed = false;
+
+  private:
+    void write(std::ostream& out) const;
+    template<typename OFFSET_TYPE>
+    void write_offsets(std::ostream& out) const;
+    void write_data(std::ostream& out) const;
 
 };
-
-std::ostream& operator<< (std::ostream& out, const Cluster& cluster);
 
 };
 

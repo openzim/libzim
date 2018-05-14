@@ -135,7 +135,23 @@ zim::MyHtmlParser::opening_tag(const string &tag)
 				indexing_allowed = false;
 				throw true;
 			    }
-			}
+			} 
+// [FIXME] stdof is not defined on android platform
+// Do not parse geo.position.
+#if !defined(__ANDROID__)
+                        else if (name == "geo.position") {
+			    auto sep_pos = content.find(";");
+			    if (sep_pos != string::npos) {
+				try {
+				    latitude = stof(content.substr(0, sep_pos));
+				    longitude = stof(content.substr(sep_pos+1));
+				    has_geoPosition = true;
+				} catch (...) {
+				    //invalid value in content, just pass and continue.
+				}
+			    }
+ 			}
+#endif
 			break;
 		    }
 		    // If the current charset came from a meta tag, don't

@@ -19,7 +19,7 @@
 
 #include <zim/article.h>
 #include "template.h"
-#include "dirent.h"
+#include "_dirent.h"
 #include "cluster.h"
 #include <zim/fileheader.h>
 #include "fileimpl.h"

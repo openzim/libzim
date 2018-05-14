@@ -22,32 +22,46 @@
 
 #include <memory>
 #include <zim/zim.h>
-#include <zim/writer/articlesource.h>
+#include <zim/writer/article.h>
 
 namespace zim
 {
+  class Fileheader;
   namespace writer
   {
-    class ZimCreatorImpl;
+    class ZimCreatorData;
     class ZimCreator
     {
-      private:
-        std::unique_ptr<ZimCreatorImpl> impl;
-
       public:
-        ZimCreator();
-        ~ZimCreator();
+        ZimCreator(bool verbose = false);
+        virtual ~ZimCreator();
 
-        zim::size_type getMinChunkSize() const;
-        void setMinChunkSize(zim::size_type s);
+        zim::size_type getMinChunkSize() const { return minChunkSize; }
+        void setMinChunkSize(zim::size_type s) { minChunkSize = s; }
+        void setIndexing(bool indexing, std::string language)
+        { withIndex = indexing; indexingLanguage = language; }
+        void setCompressionThreads(unsigned ct) { compressionThreads = ct; }
 
-        void create(const std::string& fname, ArticleSource& src);
+        virtual void startZimCreation(const std::string& fname);
+        virtual void addArticle(const Article& article);
+        virtual void finishZimCreation();
 
-        /* The user can query `currentSize` after each article has been
-         * added to the ZIM file. */
-        zim::size_type getCurrentSize() const;
+        virtual std::string getMainPage() { return ""; }
+        virtual std::string getLayoutPage() { return ""; }
+        virtual zim::Uuid getUuid() { return Uuid::generate(); }
+
+      private:
+        std::unique_ptr<ZimCreatorData> data;
+        bool verbose;
+        bool withIndex = false;
+        size_t minChunkSize = 1024-64;
+        std::string indexingLanguage;
+        unsigned compressionThreads = 4;
+
+        void fillHeader(Fileheader* header);
+        void write(const Fileheader& header, const std::string& fname) const;
+        static void* clusterWriter(void* arg);
     };
-
   }
 
 }

@@ -24,7 +24,8 @@
 #include "gtest/gtest.h"
 
 #include "../src/buffer.h"
-#include "../src/dirent.h"
+#include "../src/_dirent.h"
+#include "../src/writer/_dirent.h"
 
 namespace
 {
@@ -53,7 +54,7 @@ TEST(DirentTest, set_get_data_dirent)
 
 TEST(DirentTest, read_write_article_dirent)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setTitle("Foo");
   dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
@@ -92,7 +93,7 @@ TEST(DirentTest, read_write_article_dirent)
 
 TEST(DirentTest, read_write_article_dirent_unicode)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "L\xc3\xbcliang");
   dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
 
@@ -128,7 +129,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
 
 TEST(DirentTest, read_write_article_dirent_parameter)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "Foo");
   dirent.setParameter("bar");
   dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
@@ -164,7 +165,7 @@ TEST(DirentTest, read_write_article_dirent_parameter)
 
 TEST(DirentTest, read_write_redirect_dirent)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setParameter("baz");
   dirent.setRedirect(zim::article_index_t(321));
@@ -196,7 +197,7 @@ TEST(DirentTest, read_write_redirect_dirent)
 
 TEST(DirentTest, read_write_linktarget_dirent)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setLinktarget();
 
@@ -227,7 +228,7 @@ TEST(DirentTest, read_write_linktarget_dirent)
 
 TEST(DirentTest, read_write_deleted_dirent)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setDeleted();
 
@@ -256,7 +257,7 @@ TEST(DirentTest, read_write_deleted_dirent)
   ASSERT_EQ(dirent2.getTitle(), "Bar");
 }
 
-std::string direntAsString(const zim::Dirent& dirent)
+std::string direntAsString(const zim::writer::Dirent& dirent)
 {
   std::ostringstream d;
   d << dirent;
@@ -265,7 +266,7 @@ std::string direntAsString(const zim::Dirent& dirent)
 
 TEST(DirentTest, dirent_size)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   std::string s;
   dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
   dirent.setUrl('A', "Bar");
@@ -292,7 +293,7 @@ TEST(DirentTest, dirent_size)
 
 TEST(DirentTest, redirect_dirent_size)
 {
-  zim::Dirent dirent;
+  zim::writer::Dirent dirent;
   dirent.setUrl('A', "Bar");
   dirent.setParameter("baz");
   dirent.setRedirect(zim::article_index_t(321));

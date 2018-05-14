@@ -36,6 +36,8 @@ endif
 inc = include_directories('include')
 
 subdir('include')
+subdir('scripts')
+subdir('static')
 subdir('src')
 subdir('examples')
 subdir('test')

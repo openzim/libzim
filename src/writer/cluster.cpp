@@ -20,8 +20,10 @@
 #include "cluster.h"
 #include "../log.h"
 #include "../endian_tools.h"
+#include "../debug.h"
 
 #include <sstream>
+#include <fstream>
 
 #if defined(ENABLE_ZLIB)
 #include "deflatestream.h"
@@ -29,91 +31,157 @@
 
 #include "lzmastream.h"
 
+#ifdef _WIN32
+#define SEPARATOR "\\"
+#else
+#define SEPARATOR "/"
+#endif
+
 namespace zim {
 namespace writer {
 
-Cluster::Cluster()
-  : compression(zimcompNone),
-    isExtended(false)
+Cluster::Cluster(CompressionType compression)
+  : compression(compression),
+    isExtended(false),
+    _size(0)
 {
   offsets.push_back(offset_t(0));
+  pthread_mutex_init(&m_closedMutex,NULL);
 }
 
 void Cluster::clear() {
   offsets.clear();
-  _data.clear();  
-  offsets.push_back(offset_t(0));
-  isExtended = false;
+  _data.clear();
 }
 
-void Cluster::addBlob(const Blob& blob)
-{
-  _data.insert(_data.end(), blob.data(), blob.end());
-  offsets.push_back(offset_t(_data.size()));
-  if (blob.size() > UINT32_MAX) {
-    isExtended = true;
-  }
+void Cluster::close() {
+  pthread_mutex_lock(&m_closedMutex);
+  closed = true;
+  pthread_mutex_unlock(&m_closedMutex);
+}
+
+bool Cluster::isClosed() const{
+  bool v;
+  pthread_mutex_lock(&m_closedMutex);
+  v = closed;
+  pthread_mutex_unlock(&m_closedMutex);
+  return v;
 }
 
 zsize_t Cluster::size() const
 {
+  if (isClosed()) {
+    throw std::runtime_error("oups");
+  }
   if (isExtended) {
-    return zsize_t(offsets.size() * sizeof(uint64_t) + _data.size());
+    return zsize_t(offsets.size() * sizeof(uint64_t)) + _size;
   } else {
-    return zsize_t(offsets.size() * sizeof(uint32_t) + _data.size());
+    return zsize_t(offsets.size() * sizeof(uint32_t)) + _size;
   }
 }
 
-
-void Cluster::addBlob(const char* data, zsize_t size)
+zsize_t Cluster::getFinalSize() const
 {
-  addBlob(Blob(data, size_type(size)));
+  return finalSize;
 }
 
 template<typename OFFSET_TYPE>
-void Cluster::write_impl(std::ostream& out) const
+void Cluster::write_offsets(std::ostream& out) const
 {
-  size_type a = offsets.size() * sizeof(OFFSET_TYPE);
-  for (Offsets::const_iterator it = offsets.begin(); it != offsets.end(); ++it)
+  size_type delta = offsets.size() * sizeof(OFFSET_TYPE);
+  for (auto offset : offsets)
   {
-    offset_t o = (*it);
-    o.v += a;
+    offset.v += delta;
     char out_buf[sizeof(OFFSET_TYPE)];
-    toLittleEndian(static_cast<OFFSET_TYPE>(o.v), out_buf);
+    toLittleEndian(static_cast<OFFSET_TYPE>(offset.v), out_buf);
     out.write(out_buf, sizeof(OFFSET_TYPE));
   }
+}
 
-  if (_data.size() > 0)
-    out.write(&(_data[0]), _data.size());
-  else
-    log_warn("write empty cluster");
+void Cluster::write_final(std::ostream& out) const
+{
+  if(getCompression() == zim::zimcompNone)
+  {
+    dump(out);
+  } else {
+    std::ifstream clustersFile(tmp_filename, std::ios::binary);
+    out << clustersFile.rdbuf();
+  }
+  if (!out) {
+    throw std::runtime_error("failed to write cluster");
+  }
+}
+
+void Cluster::dump_tmp(const std::string& directoryPath)
+{
+  if(getCompression() == zim::zimcompNone)
+  {
+    //No real dump, store inmemory data in file
+    size_t file_index = 0;
+    for (auto& data: _data)
+    {
+      ASSERT(data.value.empty(), ==, false);
+      if (data.type == DataType::plain) {
+        std::ostringstream ss;
+        ss << directoryPath << SEPARATOR << "file_" << index << "_" << file_index << ".tmp";
+        auto filename = ss.str();
+        {
+          std::ofstream out(filename, std::ios::binary);
+          out << data.value;
+          if (!out) {
+            throw std::runtime_error(
+              std::string("failed to write temporary cluster file ")
+            + filename);
+          }
+        }
+        data.type = DataType::file;
+        data.value = filename;
+      }
+      file_index++;
+    }
+    finalSize = zsize_t(size().v+1);
+  } else {
+    std::ostringstream ss;
+    ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
+    tmp_filename = ss.str();
+    std::ofstream out(tmp_filename, std::ios::binary);
+    dump(out);
+    if (!out) {
+      throw std::runtime_error(
+        std::string("failed to write temporary cluster file ")
+      + tmp_filename);
+    }
+    finalSize = zsize_t(out.tellp());
+    clear();
+  }
 }
 
 void Cluster::write(std::ostream& out) const
 {
   if (isExtended) {
-    write_impl<uint64_t>(out);
+    write_offsets<uint64_t>(out);
   } else {
-    write_impl<uint32_t>(out);
+    write_offsets<uint32_t>(out);
   }
+  write_data(out);
 }
 
-std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
+void Cluster::dump(std::ostream& out) const
 {
-  log_trace("write cluster");
-
+  // write clusterInfo
   char clusterInfo = 0;
-  if (cluster.isExtended) {
+  if (isExtended) {
     clusterInfo = 0x10;
   }
-  clusterInfo += cluster.getCompression();
+  clusterInfo += getCompression();
   out.put(clusterInfo);
 
-  switch(cluster.getCompression())
+  // Open a comprestion stream if needed
+  switch(getCompression())
   {
     case zim::zimcompDefault:
     case zim::zimcompNone:
-      cluster.write(out);
+      write(out);
       break;
 
     case zim::zimcompZip:
@@ -122,7 +190,7 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
         log_debug("compress data (zlib)");
         zim::writer::DeflateStream os(out);
         os.exceptions(std::ios::failbit | std::ios::badbit);
-        cluster.write(os);
+        write(os);
         os.flush();
         os.end();
 #else
@@ -162,21 +230,67 @@ std::ostream& operator<< (std::ostream& out, const Cluster& cluster)
         log_debug("compress data (lzma, " << std::hex << lzmaPreset << ")");
         zim::writer::LzmaStream os(out, lzmaPreset);
         os.exceptions(std::ios::failbit | std::ios::badbit);
-        cluster.write(os);
+        write(os);
         os.end();
         break;
       }
 
     default:
       std::ostringstream msg;
-      msg << "invalid compression flag " << cluster.getCompression();
+      msg << "invalid compression flag " << getCompression();
       log_error(msg.str());
       throw std::runtime_error(msg.str());
   }
+}
 
-  return out;
-} 
+void Cluster::addArticle(const zim::writer::Article* article)
+{
+  auto filename = article->getFilename();
+  auto size = article->getSize();
+  _size += size;
+  offsets.push_back(offset_t(_size.v));
+  isExtended |= (size>UINT32_MAX);
+  if (size == 0)
+    return;
 
+  if (filename.empty()) {
+    _data.emplace_back(DataType::plain, article->getData());
+  }
+  else {
+    _data.emplace_back(DataType::file, filename);
+  }
+}
+
+void Cluster::addData(const char* data, zsize_t size)
+{
+  _size += size;
+  offsets.push_back(offset_t(_size.v));
+  isExtended |= (size.v>UINT32_MAX);
+  if (size.v == 0)
+    return;
+
+  _data.emplace_back(DataType::plain, std::string(data, size.v));
+}
+
+void Cluster::write_data(std::ostream& out) const
+{
+  for (auto& data: _data)
+  {
+    ASSERT(data.value.empty(), ==, false);
+    if (data.type == DataType::plain) {
+      out << data.value;
+    } else {
+      std::ifstream stream(data.value, std::ios::binary);
+      if (!stream) {
+         throw std::runtime_error(std::string("cannot open ") + data.value);
+      }
+      out << stream.rdbuf();
+      if (!out) {
+        throw std::runtime_error(std::string("failed to write file ") + data.value);
+      }
+    }
+  }
+}
 
 } // writer
-} // zim 
+} // zim

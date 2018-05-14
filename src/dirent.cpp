@@ -17,7 +17,7 @@
  *
  */
 
-#include "dirent.h"
+#include "_dirent.h"
 #include <zim/zim.h>
 #include "buffer.h"
 #include "endian_tools.h"
@@ -36,47 +36,6 @@ namespace zim
   const uint16_t Dirent::redirectMimeType;
   const uint16_t Dirent::linktargetMimeType;
   const uint16_t Dirent::deletedMimeType;
-
-  std::ostream& operator<< (std::ostream& out, const Dirent& dirent)
-  {
-    union
-    {
-      char d[16];
-      long a;
-    } header;
-    toLittleEndian(dirent.getMimeType(), header.d);
-    header.d[2] = static_cast<char>(dirent.getParameter().size());
-    header.d[3] = dirent.getNamespace();
-
-    log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size());
-
-    toLittleEndian(dirent.getVersion(), header.d + 4);
-
-    if (dirent.isRedirect())
-    {
-      toLittleEndian(dirent.getRedirectIndex().v, header.d + 8);
-      out.write(header.d, 12);
-    }
-    else if (dirent.isLinktarget() || dirent.isDeleted())
-    {
-      out.write(header.d, 8);
-    }
-    else
-    {
-      toLittleEndian(cluster_index_type(dirent.getClusterNumber()), header.d + 8);
-      toLittleEndian(blob_index_type(dirent.getBlobNumber()), header.d + 12);
-      out.write(header.d, 16);
-    }
-
-    out << dirent.getUrl() << '\0';
-
-    std::string t = dirent.getTitle();
-    if (t != dirent.getUrl())
-      out << t;
-    out << '\0' << dirent.getParameter();
-
-    return out;
-  }
 
   Dirent::Dirent(std::unique_ptr<Buffer> buffer)
     : Dirent()
@@ -119,7 +78,7 @@ namespace zim
 
       setArticle(mimeType, cluster_index_t(clusterNumber), blob_index_t(blobNumber));
     }
-    
+
     std::string url;
     std::string title;
     std::string parameter;
@@ -132,7 +91,7 @@ namespace zim
     }
     url = std::string(buffer->data(current), url_size);
     current += url_size + 1;
-    
+
     offset_type title_size = strlen(buffer->data(current));
     if (current.v + title_size >= buffer->size().v) {
       throw(InvalidSize());

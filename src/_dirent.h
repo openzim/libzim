@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "zim_types.h"
+#include "debug.h"
 
 namespace zim
 {
@@ -33,6 +34,7 @@ namespace zim
   class InvalidSize : public std::exception {};
   class Dirent
   {
+    protected:
       uint16_t mimeType;
 
       uint32_t version;
@@ -75,8 +77,6 @@ namespace zim
 
       cluster_index_t getClusterNumber() const      { return isRedirect() ? cluster_index_t(0) : clusterNumber; }
       blob_index_t  getBlobNumber() const         { return isRedirect() ? blob_index_t(0) : blobNumber; }
-      void setCluster(cluster_index_t clusterNumber_, blob_index_t blobNumber_)
-        { clusterNumber = clusterNumber_; blobNumber = blobNumber_; }
 
       article_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : article_index_t(0); }
 
@@ -114,8 +114,6 @@ namespace zim
       {
         redirectIndex = idx;
         mimeType = redirectMimeType;
-        clusterNumber = cluster_index_t(0);
-        blobNumber = blob_index_t(0);
       }
 
       void setMimeType(uint16_t mime)
@@ -125,28 +123,25 @@ namespace zim
 
       void setLinktarget()
       {
+        ASSERT(mimeType, ==, 0);
         mimeType = linktargetMimeType;
-        clusterNumber = cluster_index_t(0);
-        blobNumber = blob_index_t(0);
       }
 
       void setDeleted()
       {
+        ASSERT(mimeType, ==, 0);
         mimeType = deletedMimeType;
-        clusterNumber = cluster_index_t(0);
-        blobNumber = blob_index_t(0);
       }
 
       void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
+        ASSERT(mimeType, ==, 0);
         mimeType = mimeType_;
         clusterNumber = clusterNumber_;
         blobNumber = blobNumber_;
       }
 
   };
-
-  std::ostream& operator<< (std::ostream& out, const Dirent& fh);
 
 }
 
