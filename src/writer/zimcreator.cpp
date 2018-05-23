@@ -496,7 +496,12 @@ namespace zim
       }
       else
       {
-        dirent.setMimeType(getMimeTypeIdx(article->getMimeType()));
+        auto mimetype = article->getMimeType();
+        if (mimetype.empty()) {
+          std::cerr << "Warning, " << article->getUrl() << " have empty mimetype." << std::endl;
+          mimetype = "application/octet-stream";
+        }
+        dirent.setMimeType(getMimeTypeIdx(mimetype));
         log_debug("is article; mimetype " << dirent.getMimeType());
       }
       return dirent;
