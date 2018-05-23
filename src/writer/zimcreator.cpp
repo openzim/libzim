@@ -552,7 +552,7 @@ namespace zim
       while (di < dirents.size())
       {
         if (di % 10000 == 0)
-          INFO(di << "directory entries checked for invalid redirects");
+          INFO(di << " directory entries checked for invalid redirects");
 
         if (dirents[di].isRedirect())
         {
