@@ -24,6 +24,7 @@
 #include <zim/blob.h>
 #include <iostream>
 #include <vector>
+#include <pthread.h>
 
 #include <zim/writer/article.h>
 #include "../zim_types.h"
