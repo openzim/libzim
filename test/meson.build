@@ -17,7 +17,7 @@ foreach test_name : tests
                           link_with : libzim,
                           dependencies : deps + [gtest_dep],
                           build_rpath : '$ORIGIN')
-    test(test_name, test_exe)
+    test(test_name, test_exe, timeout : 60)
 endforeach
 
 if get_option('default_library') != 'static'
