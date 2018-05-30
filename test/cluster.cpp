@@ -275,6 +275,7 @@ TEST(CluterTest, read_extended_cluster)
 {
   std::FILE* tmpfile = std::tmpfile();
   int fd = fileno(tmpfile);
+  ssize_t bytes_written;
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -285,36 +286,42 @@ TEST(CluterTest, read_extended_cluster)
   zim::offset_type offset = 5*sizeof(uint64_t);
 
   char a = 0x11;
-  write(fd, &a, 1);
+  bytes_written = write(fd, &a, 1);
 
   char out_buf[sizeof(uint64_t)];
 
   zim::toLittleEndian(offset, out_buf);
-  write(fd, out_buf, sizeof(uint64_t));
+  bytes_written = write(fd, out_buf, sizeof(uint64_t));
 
   offset += blob0.size();
   zim::toLittleEndian(offset, out_buf);
-  write(fd, out_buf, sizeof(uint64_t));
+  bytes_written = write(fd, out_buf, sizeof(uint64_t));
 
   offset += blob1.size();
   zim::toLittleEndian(offset, out_buf);
-  write(fd, out_buf, sizeof(uint64_t));
+  bytes_written = write(fd, out_buf, sizeof(uint64_t));
 
   offset += blob2.size();
   zim::toLittleEndian(offset, out_buf);
-  write(fd, out_buf, sizeof(uint64_t));
+  bytes_written = write(fd, out_buf, sizeof(uint64_t));
 
   offset += bigger_than_4g;
   zim::toLittleEndian(offset, out_buf);
-  write(fd, out_buf, sizeof(uint64_t));
+  bytes_written = write(fd, out_buf, sizeof(uint64_t));
 
-  write(fd, blob0.c_str(), blob0.size());
-  write(fd, blob1.c_str(), blob1.size());
-  write(fd, blob2.c_str(), blob2.size());
+  bytes_written = write(fd, blob0.c_str(), blob0.size());
+  ASSERT_EQ(bytes_written, (ssize_t)blob0.size());
+
+  bytes_written = write(fd, blob1.c_str(), blob1.size());
+  ASSERT_EQ(bytes_written, (ssize_t)blob1.size());
+
+  bytes_written = write(fd, blob2.c_str(), blob2.size());
+  ASSERT_EQ(bytes_written, (ssize_t)blob2.size());
+
   lseek(fd , bigger_than_4g-1, SEEK_CUR);
 //  std::fseek(tmpfile, bigger_than_4g-1, SEEK_CUR);
   a = '\0';
-  write(fd, &a, 1);
+  bytes_written = write(fd, &a, 1);
   fflush(tmpfile);
 
   auto fileCompound = std::shared_ptr<zim::FileCompound>(new zim::FileCompound(tmpfile));
