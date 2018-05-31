@@ -557,7 +557,7 @@ namespace zim
       while (di < dirents.size())
       {
         if (di % 10000 == 0)
-          INFO(di << " directory entries checked for invalid redirects");
+          INFO(di << "/" << dirents.size() << " directory entries checked for invalid redirects");
 
         if (dirents[di].isRedirect())
         {
@@ -565,7 +565,7 @@ namespace zim
 
           if (!std::binary_search(dirents.begin(), dirents.end(), Dirent(dirents[di].getRedirectAid()), compareAid))
           {
-            log_debug("remove invalid redirection " << dirents[di].getTitle());
+            INFO("remove invalid redirection " << dirents[di].getUrl() << " redirecting to (missing) " << dirents[di].getUrl());
             dirents.erase(dirents.begin() + di);
             continue;
           }
