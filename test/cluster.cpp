@@ -210,6 +210,10 @@ TEST(CluterTest, read_write_extended_cluster)
     return;
   }
 
+  char* SKIP_BIG_MEMORY_TEST = std::getenv("SKIP_BIG_MEMORY_TEST");
+  if (SKIP_BIG_MEMORY_TEST != nullptr && std::string(SKIP_BIG_MEMORY_TEST) == "1") {
+    return;
+  }
 
   // MEM = 0
   std::string blob0("123456789012345678901234567890");
