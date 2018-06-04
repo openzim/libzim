@@ -209,46 +209,82 @@ TEST(CluterTest, read_write_extended_cluster)
   if (SIZE_MAX == UINT32_MAX) {
     return;
   }
-  std::stringstream stream;
 
-
-  std::string blob0("123456789012345678901234567890");
-  std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  std::string blob2("abcdefghijklmnopqrstuvwxyz");
-
-  zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
-  char* blob3 = nullptr;
-  try {
-    blob3 = new char[bigger_than_4g];
-  } catch (std::bad_alloc& e) {
-    // Not enough memory, we cannot test cluster bigger than 4Go :(
+  char* SKIP_BIG_MEMORY_TEST = std::getenv("SKIP_BIG_MEMORY_TEST");
+  if (SKIP_BIG_MEMORY_TEST != nullptr && std::string(SKIP_BIG_MEMORY_TEST) == "1") {
     return;
   }
 
+  // MEM = 0
+  std::string blob0("123456789012345678901234567890");
+  std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  std::string blob2("abcdefghijklmnopqrstuvwxyz");
+  zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
+
+  std::string str_content;
   {
-    zim::writer::Cluster cluster(zim::zimcompNone);
-    cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-    cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-    cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+    std::stringstream stream;
+
+    char* blob3 = nullptr;
     try {
-      cluster.addData(blob3, zim::zsize_t(bigger_than_4g));
+      blob3 = new char[bigger_than_4g];
+      // MEM = 4GiB
     } catch (std::bad_alloc& e) {
       // Not enough memory, we cannot test cluster bigger than 4Go :(
-      delete[] blob3;
       return;
     }
-    ASSERT_EQ(cluster.is_extended(), true);
 
-    delete[] blob3;
-    cluster.dump(stream);
+    {
+      zim::writer::Cluster cluster(zim::zimcompNone);
+      cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+      cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+      cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+      try {
+        cluster.addData(blob3, zim::zsize_t(bigger_than_4g));
+        // MEM = 8GiB
+      } catch (std::bad_alloc& e) {
+        // Not enough memory, we cannot test cluster bigger than 4Go :(
+        delete[] blob3;
+        return;
+      }
+      ASSERT_EQ(cluster.is_extended(), true);
+
+      delete[] blob3;
+      // MEM = 4GiB
+
+      // This is a nasty hack.
+      // We preallocate the stream internal buffer to handle the content of our
+      // cluster. Without this, stringstream will reallocate its internal
+      // buffer as needed. As it tries to preallocate more memory than needed,
+      // it ends to allocate 12GiB. Plus our 4GiB cluster, we end to need 16GiB
+      // of memory.
+      // By allocating a buffer bigger than what we need (but not to big),
+      // we avoid a too big allocation and limit our global need to 12GiB.
+      // We would be nice to avoid the creation of the tmp string and limit
+      // ourselves to a global allocation of 8GiB but I don't know how to do
+      // it without creating a custom streambuf :/
+      {
+        std::string tmp;
+        tmp.reserve(bigger_than_4g + 1024LL);
+        // MEM = 8GiB
+        tmp.resize(bigger_than_4g + 1024LL);
+        stream.str(tmp);
+        // MEM = 12GiB
+        stream.str("");
+      }
+      // MEM = 8GiB (tmp is deleted)
+      cluster.dump(stream);
+      // MEM = 8GiB
+    }
+    // MEM = 4GiB (cluster is deleted)
+
+    str_content = stream.str();
+    // MEM = 8GiB
   }
-
-  std::string str_content = stream.str();
-  zim::size_type size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
+  // MEM = 4 GiB (stream is deleted)
+  auto size = str_content.size();
   auto buffer = std::shared_ptr<zim::Buffer>(
-    new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+    new zim::MemoryBuffer<false>(str_content.data(), zim::zsize_t(size)));
   auto reader = std::shared_ptr<zim::Reader>(new zim::BufferReader(buffer));
   zim::CompressionType comp;
   bool extended;

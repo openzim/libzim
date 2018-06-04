@@ -37,6 +37,8 @@ enum class DataType { plain, file };
 struct Data {
   Data(zim::writer::DataType type, const std::string& value) :
     type(type), value(value) {}
+  Data(zim::writer::DataType type, const char* data, zim::size_type size) :
+    type(type), value(data, size) {}
   DataType type;
   std::string value;
 };
