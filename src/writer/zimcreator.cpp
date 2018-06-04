@@ -621,6 +621,8 @@ namespace zim
 
     void ZimCreatorData::createTitleIndex()
     {
+      // Sort works on dirents sorted by url.
+      std::sort(dirents.begin(), dirents.end(), compareUrl);
       titleIdx.resize(0);
       titleIdx.reserve(dirents.size());
       for (auto dirent: dirents)
