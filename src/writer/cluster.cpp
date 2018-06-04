@@ -269,7 +269,7 @@ void Cluster::addData(const char* data, zsize_t size)
   if (size.v == 0)
     return;
 
-  _data.emplace_back(DataType::plain, std::string(data, size.v));
+  _data.emplace_back(DataType::plain, data, size.v);
 }
 
 void Cluster::write_data(std::ostream& out) const
