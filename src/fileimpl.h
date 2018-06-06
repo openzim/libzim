@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <pthread.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include "cache.h"
