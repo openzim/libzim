@@ -237,7 +237,8 @@ namespace zim
       std::sort(data->dirents.begin(), data->dirents.end(), compareUrl);
 
       INFO("write zimfile");
-      write(header, data->basename + ".zim");
+      write(header, data->basename + ".zim.tmp");
+      zim::move(data->basename + ".zim.tmp", data->basename + ".zim");
 
       INFO("ready");
     }

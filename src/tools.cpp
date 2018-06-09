@@ -84,3 +84,10 @@ bool zim::makeDirectory(const std::string& path)
 #endif
   return status == 0;
 }
+
+void zim::move(const std::string& old_path,
+               const std::string& new_path)
+{
+  if (rename(old_path.c_str(), new_path.c_str()) != 0)
+    throw std::runtime_error("unable to move " + old_path + " to " + new_path);
+}

@@ -29,6 +29,9 @@ namespace zim {
 
   bool makeDirectory(const std::string& path);
   void remove_all(const std::string& path);
+  void move(const std::string& old_path,
+            const std::string& new_path);
+
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H
