@@ -43,9 +43,9 @@ std::string zim::removeAccents(const std::string& text)
 {
   ucnv_setDefaultName("UTF-8");
   static UErrorCode status = U_ZERO_ERROR;
-  static std::unique_ptr<Transliterator> removeAccentsTrans(Transliterator::createInstance(
+  static std::unique_ptr<icu::Transliterator> removeAccentsTrans(icu::Transliterator::createInstance(
       "Lower; NFD; [:M:] remove; NFC", UTRANS_FORWARD, status));
-  UnicodeString ustring = UnicodeString(text.c_str());
+  icu::UnicodeString ustring(text.c_str());
   removeAccentsTrans->transliterate(ustring);
   std::string unaccentedText;
   ustring.toUTF8String(unaccentedText);
