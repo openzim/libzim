@@ -1,3 +1,9 @@
+libzim 3.4.0
+============
+
+ * Use a temporary file name as long as the ZIM writting process is
+ not finished (#163)
+
 libzim 3.3.0
 ============
 
