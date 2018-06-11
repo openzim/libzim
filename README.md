@@ -64,7 +64,6 @@ Install first the few common compilation tools:
 
 These tools should be packaged if you use a cutting edge operating
 system. If not, have a look to the "Troubleshooting" section.
-file.
 
 Compilation
 -----------
