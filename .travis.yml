@@ -5,12 +5,9 @@ cache: ccache
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then eval "${MATRIX_EVAL}"; fi
 - PATH=$PATH:$HOME/bin
-- ${CXX} --version
 install: travis/install_deps.sh
 script: travis/compile.sh
 env:
-  global:
-    - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
   matrix:
     - PLATFORM="native_static"
     - PLATFORM="native_dyn"
@@ -21,13 +18,9 @@ env:
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
-      - g++-5
       - cmake
       - python3-pip
-      - cmake
       - libbz2-dev
       - ccache
       - zlib1g-dev
