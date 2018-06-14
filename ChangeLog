@@ -1,8 +1,19 @@
-libzim 3.4.0
+libzim 4.0.0
 ============
 
+ * [Writer] Remove a lot of memory copy.
+ * [Writer] Add xapian indexing directly in libzim.
+ * [Writer] Better API.
+ * [Writer] Use multi-threading to write clusters.
+ * [Writer] Ensure mimetype of articles article is not null.
+ * Extend test timeout for cluster's test.
+ * Less memory copy for cluster's test.
+ * Allow skipping test using a lot memory using env variable
+   `SKIP_BIG_MEMORY_TEST=1`
+ * Explicitly use the icu namespace to allow using of packaged icu lib.
  * Use a temporary file name as long as the ZIM writting process is
  not finished (#163)
+ * [Travis] Do no compile using gcc-5 (but the default trusty's one 4.8)
 
 libzim 3.3.0
 ============
