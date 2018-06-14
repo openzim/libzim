@@ -27,6 +27,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <sstream>
 
 inline void
 lowercase_string(string &str)
@@ -63,6 +64,13 @@ zim::MyHtmlParser::process_text(const string &text)
 	    b = text.find_first_not_of(WHITESPACE, e + 1);
 	}
     }
+}
+
+inline float _stof(std::string str){
+    std::istringstream stream(str);
+    float ret;
+    stream >> ret;
+    return ret;
 }
 
 void
@@ -136,22 +144,18 @@ zim::MyHtmlParser::opening_tag(const string &tag)
 				throw true;
 			    }
 			} 
-// [FIXME] stdof is not defined on android platform
-// Do not parse geo.position.
-#if !defined(__ANDROID__)
                         else if (name == "geo.position") {
 			    auto sep_pos = content.find(";");
 			    if (sep_pos != string::npos) {
 				try {
-				    latitude = stof(content.substr(0, sep_pos));
-				    longitude = stof(content.substr(sep_pos+1));
+				    latitude = _stof(content.substr(0, sep_pos));
+				    longitude = _stof(content.substr(sep_pos+1));
 				    has_geoPosition = true;
 				} catch (...) {
 				    //invalid value in content, just pass and continue.
 				}
 			    }
  			}
-#endif
 			break;
 		    }
 		    // If the current charset came from a meta tag, don't
