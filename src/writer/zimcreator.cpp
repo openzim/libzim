@@ -566,7 +566,7 @@ namespace zim
 
           if (!std::binary_search(dirents.begin(), dirents.end(), Dirent(dirents[di].getRedirectAid()), compareAid))
           {
-            INFO("remove invalid redirection " << dirents[di].getUrl() << " redirecting to (missing) " << dirents[di].getUrl());
+            INFO("remove invalid redirection " << dirents[di].getUrl() << " redirecting to (missing) " << dirents[di].getRedirectAid());
             dirents.erase(dirents.begin() + di);
             continue;
           }
