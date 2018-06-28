@@ -71,7 +71,7 @@ namespace zim
     }
     try {
       header.read(zimReader->get_buffer(offset_t(0), zsize_t(Fileheader::size)));
-    } catch (ZimFileFormatError e) {
+    } catch (ZimFileFormatError& e) {
       throw e;
     } catch (...) {
       throw ZimFileFormatError("error reading zim-file header.");
@@ -298,7 +298,7 @@ namespace zim
         auto direntBuffer = std::unique_ptr<Buffer>(new MemoryBuffer<false>(bufferDirentZone.data(), bufferSize));
         try {
           dirent = std::make_shared<const Dirent>(std::move(direntBuffer));
-        } catch (InvalidSize) {
+        } catch (InvalidSize&) {
           // buffer size is not enougth, try again :
           bufferSize += 256;
           continue;
@@ -493,7 +493,7 @@ namespace zim
     std::shared_ptr<const Buffer> chksum;
     try {
       chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
-    } catch (BufferError)
+    } catch (BufferError&)
     {
       log_warn("error reading checksum");
       return std::string();
