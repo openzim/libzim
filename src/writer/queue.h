@@ -24,6 +24,8 @@
 
 #include <pthread.h>
 #include <queue>
+#include <chrono>
+#include <thread>
 
 template<typename T>
 class Queue {
@@ -58,7 +60,7 @@ void Queue<T>::pushToQueue(const T &element) {
     unsigned int queueSize = 0;
 
     do {
-        usleep(wait);
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
         pthread_mutex_lock(&m_queueMutex);
         queueSize = m_realQueue.size();
         pthread_mutex_unlock(&m_queueMutex);

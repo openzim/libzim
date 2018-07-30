@@ -41,6 +41,8 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
+#include <thread>
+#include <chrono>
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
@@ -85,7 +87,7 @@ namespace zim
       unsigned int wait = 0;
 
       while(true) {
-        usleep(wait);
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
         if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
           wait = 0;
           clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
@@ -167,7 +169,7 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       if (withIndex) {
           data->indexer->indexingPostlude();
-          usleep(100);
+          std::this_thread::sleep_for(std::chrono::microseconds(100));
           auto article = data->indexer->getMetaArticle();
           Dirent dirent = data->createDirentFromArticle(article);
           data->addDirent(dirent, article);
@@ -185,7 +187,7 @@ namespace zim
       // wait all cluster writing has been done
       unsigned int wait = 0;
       do {
-        usleep(wait);
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
         wait += 10;
       } while(!data->clustersToWrite.isEmpty());
 
@@ -194,7 +196,7 @@ namespace zim
       bool closed = true;
       do {
         closed = true;
-        usleep(wait);
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
         wait += 10;
         for(auto cluster: data->clustersList) {
           if (!cluster->isClosed()) {
