@@ -20,15 +20,15 @@
 #include "buffer.h"
 
 #include <sys/stat.h>
-#include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
 
-#if !defined(_WIN32)
-#include <sys/mman.h>
+#ifndef _WIN32
+#  include <sys/mman.h>
+#  include <unistd.h>
 #endif
 
 namespace zim {

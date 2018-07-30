@@ -23,7 +23,9 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
-#include <unistd.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#endif
 #include <stdio.h>
 #include <sys/stat.h>
 #include <memory>

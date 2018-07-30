@@ -23,7 +23,6 @@
 #define MAX_QUEUE_SIZE 10
 
 #include <pthread.h>
-#include <unistd.h>
 #include <queue>
 
 template<typename T>

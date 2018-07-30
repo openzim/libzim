@@ -27,7 +27,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
+#if !defined(_WIN32)
+# include <unistd.h>
+#else
+# include <io.h>
+#endif
 #include <errno.h>
 
 #if defined(ENABLE_XAPIAN)

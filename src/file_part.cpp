@@ -22,7 +22,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <cstdlib>
-#include <unistd.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#else
+#  include <io.h>
+#endif
 
 namespace zim {
 
