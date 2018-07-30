@@ -29,6 +29,12 @@
 #include <lzma.h>
 #include <pthread.h>
 
+#if defined(_MSC_VER)
+# include <io.h>
+# include <BaseTsd.h>
+  typedef SSIZE_T ssize_t;
+#endif
+
 #if defined(ENABLE_ZLIB)
 #include <zlib.h>
 #endif
@@ -38,7 +44,19 @@ namespace zim {
 #if !defined(_WIN32)
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
-  return pread(fd, dest, size.v, offset.v);
+  ssize_t full_size_read = 0;
+  auto size_to_read = size.v;
+  auto current_offset = offset.v;
+  while (size_to_read > 0) {
+    auto size_read = pread(fd, dest, size_to_read, current_offset);
+    if (size_read == -1) {
+      return -1;
+    }
+    size_to_read -= size_read;
+    current_offset += size_read;
+    full_size_read += size_read;
+  }
+  return full_size_read;
 }
 #else
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
@@ -54,9 +72,24 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
     pthread_mutex_unlock(&fd_lock);
     return -1;
   }
-  int ret = _read(fd, dest, size.v);
+  ssize_t full_size_read = 0;
+  auto size_to_read = size.v;
+  while (size_to_read > 0) {
+    unsigned int s_to_read = 0;
+    if (size_to_read > UINT_MAX) {
+      s_to_read = UINT_MAX;
+    } else {
+      s_to_read = size_to_read;
+    }
+    auto size_read = _read(fd, dest, s_to_read);
+    if (size_read == -1) {
+      return -1;
+    }
+    size_to_read -= size_read;
+    full_size_read += size_read;
+  }
   pthread_mutex_unlock(&fd_lock);
-  return ret;
+  return full_size_read;
 }
 #endif
 
