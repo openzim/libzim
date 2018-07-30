@@ -23,21 +23,24 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
-#ifndef _WIN32
-#  include <unistd.h>
-#endif
 #include <stdio.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <memory>
+#include <errno.h>
 
 #include <unicode/translit.h>
 #include <unicode/ucnv.h>
 
 #ifdef _WIN32
-#include <direct.h>
-#define SEPARATOR "\\"
+# include <windows.h>
+# include <direct.h>
+# include <io.h>
+# include <stringapiset.h>
+# define SEPARATOR "\\"
 #else
-#define SEPARATOR "/"
+# include <unistd.h>
+# define SEPARATOR "/"
 #endif
 
 
@@ -75,6 +78,24 @@ void zim::remove_all(const std::string& path)
   else {
     remove(path.c_str());
   }
+}
+
+int zim::openFile(const std::string& filepath) {
+  int fd = -1;
+  errno = 0;
+#ifdef _WIN32
+  auto size = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED,
+                filepath.data(), filepath.size(), nullptr, 0);
+  auto wdata = new wchar_t[size+1];
+  MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED,
+    filepath.data(), filepath.size(), wdata, size);
+  wdata[size] = 0;
+  fd = _wopen(wdata, O_RDONLY|O_BINARY);
+  delete[] wdata;
+#else
+  fd = open(filepath.c_str(), O_RDONLY);
+#endif
+  return fd;
 }
 
 bool zim::makeDirectory(const std::string& path)

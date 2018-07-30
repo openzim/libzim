@@ -18,6 +18,7 @@
  */
 
 #include "file_part.h"
+#include "tools.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -35,11 +36,7 @@ FilePart::FilePart(const std::string& filename)
   : filename_(filename),
     size_(0)
 {
-#ifdef _WIN32
-  fd_ = _open(filename.c_str(), O_RDONLY|O_BINARY);
-#else
-  fd_ = open(filename.c_str(), O_RDONLY);
-#endif
+  fd_ = openFile(filename);
   struct stat sb;
   if ( fd_ >= 0 ) {
     fstat(fd_, &sb);

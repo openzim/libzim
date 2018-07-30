@@ -21,12 +21,12 @@
 #include <zim/file.h>
 #include "search_internal.h"
 #include "levenshtein.h"
+#include "tools.h"
 
 #include <sstream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #if !defined(_WIN32)
 # include <unistd.h>
 #else
@@ -262,11 +262,7 @@ Search::iterator Search::begin() const {
         if (dbOffset == 0) {
             continue;
         }
-#ifdef _WIN32
-        int databasefd = _open(zimfile->getFilename().c_str(), O_RDONLY|O_BINARY);
-#else
-        int databasefd = open(zimfile->getFilename().c_str(), O_RDONLY);
-#endif
+        int databasefd = openFile(zimfile->getFilename());
         if (databasefd == -1) {
             std::cerr << "Impossible to open " << zimfile->getFilename() << std::endl;
             std::cerr << strerror(errno) << std::endl;
