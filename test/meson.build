@@ -15,6 +15,7 @@ foreach test_name : tests
     test_exe = executable(test_name, [test_name+'.cpp'],
                           include_directories : include_directory,
                           link_with : libzim,
+                          link_args: extra_link_args,
                           dependencies : deps + [gtest_dep],
                           build_rpath : '$ORIGIN')
     test(test_name, test_exe, timeout : 60)

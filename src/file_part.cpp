@@ -22,7 +22,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <cstdlib>
-#include <unistd.h>
+#include <iostream>
+#ifndef _WIN32
+#  include <unistd.h>
+#else
+#  include <io.h>
+#endif
 
 namespace zim {
 
@@ -30,7 +35,11 @@ FilePart::FilePart(const std::string& filename)
   : filename_(filename),
     size_(0)
 {
+#ifdef _WIN32
+  fd_ = _open(filename.c_str(), O_RDONLY|O_BINARY);
+#else
   fd_ = open(filename.c_str(), O_RDONLY);
+#endif
   struct stat sb;
   if ( fd_ >= 0 ) {
     fstat(fd_, &sb);
@@ -51,7 +60,11 @@ FilePart::FilePart(std::FILE* filestream)
 }
 
 FilePart::~FilePart() {
+#ifdef _WIN32
+  _close(fd_);
+#else
   close(fd_);
+#endif
 }
 
 

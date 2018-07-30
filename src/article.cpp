@@ -97,7 +97,7 @@ namespace zim
       if (r.first) {
           Article(file, article_index_type(r.second)).getPage(out, false, maxRecurse - 1);
       } else {
-          throw std::runtime_error(std::string("impossible to find article ") + ns + "/" + url);
+          throw std::runtime_error(std::string("impossible to find article ") + std::string(1, ns) + std::string("/") + url);
       }
     }
 

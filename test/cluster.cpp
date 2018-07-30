@@ -24,7 +24,12 @@
 #include <fstream>
 #include <memory>
 #include <sstream>
-#include <unistd.h>
+#if defined(_MSC_VER)
+# include <BaseTsd.h>
+  typedef SSIZE_T ssize_t;
+#else
+# include <unistd.h>
+#endif
 
 #include "gtest/gtest.h"
 

@@ -27,7 +27,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
+#if !defined(_WIN32)
+# include <unistd.h>
+#else
+# include <io.h>
+#endif
 #include <errno.h>
 
 #if defined(ENABLE_XAPIAN)
@@ -258,7 +262,11 @@ Search::iterator Search::begin() const {
         if (dbOffset == 0) {
             continue;
         }
+#ifdef _WIN32
+        int databasefd = _open(zimfile->getFilename().c_str(), O_RDONLY|O_BINARY);
+#else
         int databasefd = open(zimfile->getFilename().c_str(), O_RDONLY);
+#endif
         if (databasefd == -1) {
             std::cerr << "Impossible to open " << zimfile->getFilename() << std::endl;
             std::cerr << strerror(errno) << std::endl;

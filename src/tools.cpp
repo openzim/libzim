@@ -23,7 +23,9 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
-#include <unistd.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#endif
 #include <stdio.h>
 #include <sys/stat.h>
 #include <memory>
@@ -60,7 +62,7 @@ void zim::remove_all(const std::string& path)
   if ((dir = opendir(path.c_str())) != NULL) {
     struct dirent* ent;
     while ((ent = readdir(dir)) != NULL) {
-      if (strcmp(ent->d_name, ".") and strcmp(ent->d_name, "..")) {
+      if (strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
         std::string childPath = path + SEPARATOR + ent->d_name;
         remove_all(childPath);
       }
