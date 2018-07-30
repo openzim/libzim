@@ -19,9 +19,17 @@ xapian_dep = dependency('xapian-core',
                         static:(get_option('default_library')=='static'))
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
-thread_dep = dependency('threads')
-
 pkg_requires = ['liblzma']
+if build_machine.system() == 'windows'
+    thread_dep = dependency('libpthreadVC2')
+    pkg_requires += ['libpthreadVC2']
+    extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin']
+    extra_cpp_args = ['-DSORTPP_PASS']
+else
+    thread_dep = dependency('threads')
+    extra_link_args = []
+    extra_cpp_args = []
+endif
 if zlib_dep.found()
     pkg_requires += ['zlib']
 endif
