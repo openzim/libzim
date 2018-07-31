@@ -24,10 +24,15 @@
 #include "buffer.h"
 #include "config.h"
 #include "envvalue.h"
+#include <errno.h>
+#include <string.h>
 #include <cstring>
 #include <fcntl.h>
 #include <lzma.h>
 #include <pthread.h>
+#include <sstream>
+#include <system_error>
+
 
 #if defined(_MSC_VER)
 # include <io.h>
@@ -47,6 +52,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
   ssize_t full_size_read = 0;
   auto size_to_read = size.v;
   auto current_offset = offset.v;
+  errno = 0;
   while (size_to_read > 0) {
     auto size_read = pread(fd, dest, size_to_read, current_offset);
     if (size_read == -1) {
@@ -63,6 +69,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
   // [TODO] We are locking all fd at the same time here.
   // We should find a way to have a lock per fd.
+  errno = 0;
   static pthread_mutex_t fd_lock = PTHREAD_MUTEX_INITIALIZER;
   if (offset.v > static_cast<uint64_t>(INT64_MAX)) {
     return -1;
@@ -83,6 +90,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
     }
     auto size_read = _read(fd, dest, s_to_read);
     if (size_read == -1) {
+      pthread_mutex_unlock(&fd_lock);
       return -1;
     }
     size_to_read -= size_read;
@@ -116,9 +124,20 @@ char FileReader::read(offset_t offset) const {
   offset_t local_offset = offset - part_pair->first.min;
   ASSERT(local_offset, <=, part_pair->first.max);
   char ret;
-  if (read_at(fd, &ret, zsize_t(1), local_offset) != 1) {
+  auto read_ret = read_at(fd, &ret, zsize_t(1), local_offset);
+  if (read_ret != 1) {
     //Error while reading.
-    throw std::ios_base::failure("Cannot read char.");
+    std::ostringstream s;
+    s << "Cannot read a char.\n";
+    s << " - File part is " <<  part_pair->second->filename() << "\n";
+    s << " - File part size is " << part_pair->second->size().v << "\n";
+    s << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
+    s << " - Reading offset at " << offset.v << "\n";
+    s << " - local offset is " << local_offset.v << "\n";
+    s << " - read return is " << read_ret << "\n";
+    s << " - error is " << strerror(errno) << "\n";
+    std::error_code ec(errno, std::generic_category());
+    throw std::system_error(ec, s.str());
   };
   return ret;
 }
@@ -139,8 +158,21 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
     ASSERT(size.v, >, 0U);
     zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-local_offset.v));
     int fd = part->fd();
-    if (read_at(fd, dest, size_to_get, local_offset) != static_cast<int64_t>(size_to_get.v)) {
-      throw std::ios_base::failure("Cannot read chars.");
+    auto read_ret = read_at(fd, dest, size_to_get, local_offset);
+    if (read_ret != static_cast<int64_t>(size_to_get.v)) {
+      std::ostringstream s;
+      s << "Cannot read chars.\n";
+      s << " - File part is " <<  part->filename() << "\n";
+      s << " - File part size is " << part->size().v << "\n";
+      s << " - File part range is " << partRange.min << "-" << partRange.max << "\n";
+      s << " - size_to_get is " << size_to_get.v << "\n";
+      s << " - total size is " << size.v << "\n";
+      s << " - Reading offset at " << offset.v << "\n";
+      s << " - local offset is " << local_offset.v << "\n";
+      s << " - read return is " << read_ret << "\n";
+      s << " - error is " << strerror(errno) << "\n";
+      std::error_code ec(errno, std::generic_category());
+      throw std::system_error(ec, s.str());
     };
     ASSERT(size_to_get, <=, size);
     dest += size_to_get.v;
