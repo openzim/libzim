@@ -508,7 +508,7 @@ namespace zim
     std::shared_ptr<const Buffer> chksum;
     try {
       chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
-    } catch (BufferError&)
+    } catch (...)
     {
       log_warn("error reading checksum");
       return std::string();
