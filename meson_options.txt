@@ -4,3 +4,9 @@ option('DIRENT_CACHE_SIZE', type : 'string', value : '512',
   description : 'set dirent cache size to number (default:512)')
 option('LZMA_MEMORY_SIZE', type : 'string', value : '128',
   description : 'set lzma uncompress memory in MB (default:128)')
+option('USE_MMAP', type: 'boolean', value: true,
+  description: 'Use mmap to avoid copy from file. (default:true, always false on windows)')
+option('USE_BUFFER_HEADER', type: 'boolean', value: true,
+  description: 'Copy (or use mmap) header index buffers. (default:true)
+Header index are used to access articles, having them in memory can improve access speed but on low memory devices it may use to many memory.
+If false, we directly read the index in the file at each article access.')

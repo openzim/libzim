@@ -47,9 +47,6 @@ namespace zim
       bufferDirentZone(256),
       bufferDirentLock(PTHREAD_MUTEX_INITIALIZER),
       filename(fname),
-      titleIndexBuffer(0),
-      urlPtrOffsetBuffer(0),
-      clusterOffsetBuffer(0),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
@@ -77,27 +74,41 @@ namespace zim
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
-    // ptrOffsetBuffer
+    // urlPtrOffsetReader
     zsize_t size(header.getArticleCount() * 8);
     if (!zimReader->can_read(offset_t(header.getUrlPtrPos()), size)) {
       throw ZimFileFormatError("Reading out of zim file.");
     }
-    urlPtrOffsetBuffer = zimReader->get_buffer(offset_t(header.getUrlPtrPos()), size);
+#ifdef ENABLE_USE_BUFFER_HEADER
+    urlPtrOffsetReader = std::unique_ptr<Reader>(new BufferReader(
+	zimReader->get_buffer(offset_t(header.getUrlPtrPos()), size)));
+#else
+    urlPtrOffsetReader = zimReader->sub_reader(offset_t(header.getUrlPtrPos()), size);
+#endif
 
     // Create titleIndexBuffer
     size = zsize_t(header.getArticleCount() * 4);
     if (!zimReader->can_read(offset_t(header.getTitleIdxPos()), size)) {
       throw ZimFileFormatError("Reading out of zim file.");
     }
-    titleIndexBuffer = zimReader->get_buffer(offset_t(header.getTitleIdxPos()), size);
+#ifdef ENABLE_USE_BUFFER_HEADER
+    titleIndexReader = std::unique_ptr<Reader>(new BufferReader(
+        zimReader->get_buffer(offset_t(header.getTitleIdxPos()), size)));
+#else
+    titleIndexReader = zimReader->sub_reader(offset_t(header.getTitleIdxPos()), size);
+#endif
 
     // clusterOffsetBuffer
     size = zsize_t(header.getClusterCount() * 8);
     if (!zimReader->can_read(offset_t(header.getClusterPtrPos()), size)) {
       throw ZimFileFormatError("Reading out of zim file.");
     }
-    clusterOffsetBuffer = zimReader->get_buffer(offset_t(header.getClusterPtrPos()), size);
-
+#ifdef ENABLE_USE_BUFFER_HEADER
+    clusterOffsetReader = std::unique_ptr<Reader>(new BufferReader(
+        zimReader->get_buffer(offset_t(header.getClusterPtrPos()), size)));
+#else
+    clusterOffsetReader = zimReader->sub_reader(offset_t(header.getClusterPtrPos()), size);
+#endif
 
     if (!getCountClusters())
       log_warn("no clusters found");
@@ -280,7 +291,7 @@ namespace zim
               << direntCache.fillfactor());
     pthread_mutex_unlock(&direntCacheLock);
 
-    offset_t indexOffset = getOffset(urlPtrOffsetBuffer.get(), idx.v);
+    offset_t indexOffset = getOffset(urlPtrOffsetReader.get(), idx.v);
     // We don't know the size of the dirent because it depends of the size of
     // the title, url and extra parameters.
     // This is a pitty but we have no choices.
@@ -328,7 +339,7 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    article_index_t ret(titleIndexBuffer->as<article_index_type>(
+    article_index_t ret(titleIndexReader->read<article_index_type>(
                             offset_t(sizeof(article_index_t)*idx.v)));
 
     return ret;
@@ -370,10 +381,15 @@ namespace zim
     return cluster;
   }
 
-  offset_t FileImpl::getOffset(const Buffer* buffer, size_t idx)
+  offset_t FileImpl::getOffset(const Reader* reader, size_t idx)
   {
-    offset_t offset(buffer->as<offset_type>(offset_t(sizeof(offset_type)*idx)));
+    offset_t offset(reader->read<offset_type>(offset_t(sizeof(offset_type)*idx)));
     return offset;
+  }
+
+  offset_t FileImpl::getClusterOffset(cluster_index_t idx)
+  {
+    return getOffset(clusterOffsetReader.get(), idx.v);
   }
 
   offset_t FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)
@@ -383,7 +399,6 @@ namespace zim
       return offset_t(0);
     return getClusterOffset(clusterIdx) + offset_t(1) + cluster->getBlobOffset(blobIdx);
   }
-
 
   article_index_t FileImpl::getNamespaceBeginOffset(char ch)
   {
@@ -493,7 +508,7 @@ namespace zim
     std::shared_ptr<const Buffer> chksum;
     try {
       chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
-    } catch (BufferError&)
+    } catch (...)
     {
       log_warn("error reading checksum");
       return std::string();

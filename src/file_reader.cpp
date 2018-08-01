@@ -47,6 +47,12 @@
 namespace zim {
 
 #if !defined(_WIN32)
+
+#ifdef __APPLE__
+# define PREAD pread
+#else
+# define PREAD pread64
+#endif
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
   ssize_t full_size_read = 0;
@@ -54,7 +60,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
   auto current_offset = offset.v;
   errno = 0;
   while (size_to_read > 0) {
-    auto size_read = pread(fd, dest, size_to_read, current_offset);
+    auto size_read = PREAD(fd, dest, size_to_read, current_offset);
     if (size_read == -1) {
       return -1;
     }
@@ -64,6 +70,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
   }
   return full_size_read;
 }
+#undef PREAD
 #else
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
@@ -185,10 +192,14 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
 
 std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
-#if !defined(_WIN32)
-  auto found_range = source->locate(_offset+offset, size);
-  auto first_part_containing_it = found_range.first;
-  if (++first_part_containing_it == found_range.second) {
+#ifdef ENABLE_USE_MMAP
+  try {
+    auto found_range = source->locate(_offset+offset, size);
+    auto first_part_containing_it = found_range.first;
+    if (++first_part_containing_it != found_range.second) {
+      throw MMapException();
+    }
+
     // The range is in only one part
     auto range = found_range.first->first;
     auto part = found_range.first->second;
@@ -197,7 +208,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     int fd = part->fd();
     auto buffer = std::shared_ptr<const Buffer>(new MMapBuffer(fd, local_offset, size));
     return buffer;
-  } else
+  } catch(MMapException& e)
 #endif
   {
     // The range is several part, or we are on Windows.

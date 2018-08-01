@@ -3,11 +3,22 @@ project('libzim', ['c', 'cpp'],
   license : 'GPL2',
   default_options : ['c_std=c11', 'cpp_std=c++11', 'werror=true'])
 
+add_project_arguments('-D_LARGEFILE64_SOURCE=1', '-D_FILE_OFFSET_BITS=64', language: 'cpp')
+
+sizeof_off_t = meson.get_compiler('cpp').sizeof('off_t')
+
 conf = configuration_data()
 conf.set('VERSION', '"@0@"'.format(meson.project_version()))
 conf.set('DIRENT_CACHE_SIZE', get_option('DIRENT_CACHE_SIZE'))
 conf.set('CLUSTER_CACHE_SIZE', get_option('CLUSTER_CACHE_SIZE'))
 conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
+conf.set10('MMAP_SUPPORT_64', sizeof_off_t==8)
+if target_machine.system() == 'windows'
+    conf.set('ENABLE_USE_MMAP', false)
+else
+    conf.set('ENABLE_USE_MMAP', get_option('USE_MMAP'))
+endif
+conf.set('ENABLE_USE_BUFFER_HEADER', get_option('USE_BUFFER_HEADER'))
 
 zlib_dep = dependency('zlib', required:false)
 conf.set('ENABLE_ZLIB', zlib_dep.found())
