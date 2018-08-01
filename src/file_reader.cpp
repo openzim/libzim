@@ -186,9 +186,13 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
 std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
-  auto found_range = source->locate(_offset+offset, size);
-  auto first_part_containing_it = found_range.first;
-  if (++first_part_containing_it == found_range.second) {
+  try {
+    auto found_range = source->locate(_offset+offset, size);
+    auto first_part_containing_it = found_range.first;
+    if (++first_part_containing_it != found_range.second) {
+      throw MMapException();
+    }
+
     // The range is in only one part
     auto range = found_range.first->first;
     auto part = found_range.first->second;
@@ -197,7 +201,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     int fd = part->fd();
     auto buffer = std::shared_ptr<const Buffer>(new MMapBuffer(fd, local_offset, size));
     return buffer;
-  } else
+  } catch(MMapException& e)
 #endif
   {
     // The range is several part, or we are on Windows.

@@ -51,7 +51,12 @@ MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
 #else
   #define MAP_FLAGS MAP_PRIVATE|MAP_POPULATE
 #endif
-  _data = (char*)mmap64(NULL, size.v + _offset.v, PROT_READ, MAP_FLAGS, fd, pa_offset.v);
+#if !MMAP_SUPPORT_64
+  if(pa_offset.v >= UINT32_MAX) {
+    throw MMapException();
+  }
+#endif
+  _data = (char*)mmap(NULL, size.v + _offset.v, PROT_READ, MAP_FLAGS, fd, pa_offset.v);
   if (_data == MAP_FAILED )
   {
     std::ostringstream s;
