@@ -52,7 +52,7 @@ MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
   #define MAP_FLAGS MAP_PRIVATE|MAP_POPULATE
 #endif
 #if !MMAP_SUPPORT_64
-  if(pa_offset.v >= UINT32_MAX) {
+  if(pa_offset.v >= INT32_MAX) {
     throw MMapException();
   }
 #endif
