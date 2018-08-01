@@ -3,6 +3,8 @@ project('libzim', ['c', 'cpp'],
   license : 'GPL2',
   default_options : ['c_std=c11', 'cpp_std=c++11', 'werror=true'])
 
+add_project_arguments('-D_LARGEFILE64_SOURCE=1', '-D_FILE_OFFSET_BITS=64', language: 'cpp')
+
 sizeof_off_t = meson.get_compiler('cpp').sizeof('off_t')
 
 conf = configuration_data()

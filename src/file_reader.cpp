@@ -47,6 +47,12 @@
 namespace zim {
 
 #if !defined(_WIN32)
+
+#ifdef __APPLE__
+# define PREAD pread
+#else
+# define PREAD pread64
+#endif
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
   ssize_t full_size_read = 0;
@@ -54,7 +60,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
   auto current_offset = offset.v;
   errno = 0;
   while (size_to_read > 0) {
-    auto size_read = pread(fd, dest, size_to_read, current_offset);
+    auto size_read = PREAD(fd, dest, size_to_read, current_offset);
     if (size_read == -1) {
       return -1;
     }
@@ -64,6 +70,7 @@ static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
   }
   return full_size_read;
 }
+#undef PREAD
 #else
 static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
 {
