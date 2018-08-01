@@ -13,6 +13,7 @@ if target_machine.system() == 'windows'
 else
     conf.set('ENABLE_USE_MMAP', get_option('USE_MMAP'))
 endif
+conf.set('ENABLE_USE_BUFFER_HEADER', get_option('USE_BUFFER_HEADER'))
 
 zlib_dep = dependency('zlib', required:false)
 conf.set('ENABLE_ZLIB', zlib_dep.found())

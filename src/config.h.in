@@ -12,3 +12,5 @@
 #mesondefine ENABLE_XAPIAN
 
 #mesondefine ENABLE_USE_MMAP
+
+#mesondefine ENABLE_USE_BUFFER_HEADER
