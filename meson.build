@@ -8,6 +8,11 @@ conf.set('VERSION', '"@0@"'.format(meson.project_version()))
 conf.set('DIRENT_CACHE_SIZE', get_option('DIRENT_CACHE_SIZE'))
 conf.set('CLUSTER_CACHE_SIZE', get_option('CLUSTER_CACHE_SIZE'))
 conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
+if target_machine.system() == 'windows'
+    conf.set('ENABLE_USE_MMAP', false)
+else
+    conf.set('ENABLE_USE_MMAP', get_option('USE_MMAP'))
+endif
 
 zlib_dep = dependency('zlib', required:false)
 conf.set('ENABLE_ZLIB', zlib_dep.found())

@@ -25,6 +25,7 @@
 #include <memory>
 #include <iostream>
 
+#include "config.h"
 #include "zim_types.h"
 #include "endian_tools.h"
 #include "debug.h"
@@ -83,7 +84,7 @@ class MemoryBuffer : public Buffer {
 };
 
 
-#if !defined(_WIN32)
+#ifdef ENABLE_USE_MMAP
 class MMapBuffer : public Buffer {
   public:
     MMapBuffer(int fd, offset_t offset, zsize_t size);

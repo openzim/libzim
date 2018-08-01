@@ -3,6 +3,8 @@ configure_file(output : 'config.h',
                configuration : conf,
                input : 'config.h.in')
 
+src_directory = include_directories('.')
+
 common_sources = [
 #    'config.h',
     'article.cpp',

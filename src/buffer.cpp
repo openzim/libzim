@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <sstream>
 
 #ifndef _WIN32
 #  include <sys/mman.h>
@@ -38,7 +39,7 @@ std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) 
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
 }
 
-#if !defined(_WIN32)
+#ifdef ENABLE_USE_MMAP
 MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
   Buffer(size),
   _offset(0)
@@ -50,10 +51,12 @@ MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
 #else
   #define MAP_FLAGS MAP_PRIVATE|MAP_POPULATE
 #endif
-  _data = (char*)mmap(NULL, size.v + _offset.v, PROT_READ, MAP_FLAGS, fd, pa_offset.v);
+  _data = (char*)mmap64(NULL, size.v + _offset.v, PROT_READ, MAP_FLAGS, fd, pa_offset.v);
   if (_data == MAP_FAILED )
   {
-    throw std::runtime_error(std::string("Cannot mmap : ") + strerror(errno));
+    std::ostringstream s;
+    s << "Cannot mmap size " << size.v << " at off " << offset.v << " : " << strerror(errno);
+    throw std::runtime_error(s.str());
   }
 #undef MAP_FLAGS
 }

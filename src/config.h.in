@@ -10,3 +10,5 @@
 #mesondefine ENABLE_ZLIB
 
 #mesondefine ENABLE_XAPIAN
+
+#mesondefine ENABLE_USE_MMAP

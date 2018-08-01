@@ -4,3 +4,5 @@ option('DIRENT_CACHE_SIZE', type : 'string', value : '512',
   description : 'set dirent cache size to number (default:512)')
 option('LZMA_MEMORY_SIZE', type : 'string', value : '128',
   description : 'set lzma uncompress memory in MB (default:128)')
+option('USE_MMAP', type: 'boolean', value: true,
+  description: 'Use mmap to avoid copy from file. (default:true, always false on windows)')

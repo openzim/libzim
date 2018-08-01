@@ -185,7 +185,7 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
 
 std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
-#if !defined(_WIN32)
+#ifdef ENABLE_USE_MMAP
   auto found_range = source->locate(_offset+offset, size);
   auto first_part_containing_it = found_range.first;
   if (++first_part_containing_it == found_range.second) {
