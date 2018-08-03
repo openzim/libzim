@@ -1,3 +1,14 @@
+libzim 4.0.1
+============
+
+ * [Writer] Fix wrong redirectyon log message
+ * Make libzim compile natively on windows using MSVC
+ * Better message when failing to read a zim file.
+ * Make libzim on windows correctly open unicode path.
+ * Add compilation option to use less memory (but more I/O).
+   Usefull on low memory devices (android)
+ * Small fixes
+
 libzim 4.0.0
 ============
 
