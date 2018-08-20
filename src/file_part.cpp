@@ -37,10 +37,14 @@ FilePart::FilePart(const std::string& filename)
     size_(0)
 {
   fd_ = openFile(filename);
-  struct stat sb;
   if ( fd_ >= 0 ) {
+#ifdef _WIN32
+    size_.v = _filelengthi64(fd_);
+#else
+    struct stat sb;
     fstat(fd_, &sb);
     size_.v = sb.st_size;
+#endif
   }
 }
 
@@ -49,10 +53,14 @@ FilePart::FilePart(std::FILE* filestream)
     size_(0)
 {
   fd_ = fileno(filestream);
-  struct stat sb;
   if ( fd_ >= 0 ) {
+#ifdef _WIN32
+    size_.v = _filelengthi64(fd_);
+#else
+    struct stat sb;
     fstat(fd_, &sb);
     size_.v = sb.st_size;
+#endif
   }
 }
 
