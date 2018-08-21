@@ -36,6 +36,12 @@ common_sources = [
     'writer/tee.cpp'
 ]
 
+if host_machine.system() == 'windows'
+    common_sources += 'fs_windows.cpp'
+else
+    common_sources += 'fs_unix.cpp'
+endif
+
 zlib_sources = [
     'writer/deflatestream.cpp'
 ]
