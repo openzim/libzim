@@ -1,3 +1,8 @@
+libzim 4.0.2
+============
+
+ * [Windows] Fix opening of zim file bigger than 4GiB
+
 libzim 4.0.1
 ============
 
