@@ -277,7 +277,6 @@ Search::iterator Search::begin() const {
                       << zimfile->getFilename() << std::endl;
             std::cerr << "dbOffest = " << dbOffset << std::endl;
             std::cerr << "error = " << e.get_msg() << std::endl;
-            close(databasefd);
             continue;
         }
 
