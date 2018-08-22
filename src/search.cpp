@@ -268,7 +268,22 @@ Search::iterator Search::begin() const {
             std::cerr << strerror(errno) << std::endl;
             continue;
         }
-        lseek(databasefd, dbOffset, SEEK_SET);
+#ifdef _WIN32
+# define LSEEK _lseeki64
+#else
+# define LSEEK lseek
+#endif
+        if (LSEEK(databasefd, dbOffset, SEEK_SET) != static_cast<int64_t>(dbOffset)) {
+            std::cerr << "Something went wrong seeking databasedb "
+                      << zimfile->getFilename() << std::endl;
+            std::cerr << "dbOffest = " << dbOffset << std::endl;
+#ifdef _WIN32
+            _close(databasefd);
+#else
+            close(databasefd);
+#endif
+            continue;
+        }
         Xapian::Database database;
         try {
             database = Xapian::Database(databasefd);
