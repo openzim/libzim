@@ -359,7 +359,13 @@ TEST(CluterTest, read_extended_cluster)
   bytes_written = write(fd, blob2.c_str(), blob2.size());
   ASSERT_EQ(bytes_written, (ssize_t)blob2.size());
 
-  lseek(fd , bigger_than_4g-1, SEEK_CUR);
+#ifdef _WIN32
+# define LSEEK _lseeki64
+#else
+# define LSEEK lseek
+#endif
+  LSEEK(fd , bigger_than_4g-1, SEEK_CUR);
+#undef LSEEK
 //  std::fseek(tmpfile, bigger_than_4g-1, SEEK_CUR);
   a = '\0';
   bytes_written = write(fd, &a, 1);
