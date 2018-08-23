@@ -15,7 +15,6 @@ common_sources = [
     'fileheader.cpp',
     'fileimpl.cpp',
     'file_compound.cpp',
-    'file_part.cpp',
     'file_reader.cpp',
     'blob.cpp',
     'buffer.cpp',

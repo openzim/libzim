@@ -26,25 +26,33 @@
 #include <zim/zim.h>
 
 #include "zim_types.h"
+#include "fs.h"
 
 namespace zim {
 
+template<typename FS=DEFAULTFS>
 class FilePart {
   public:
-    FilePart(const std::string& filename);
-    FilePart(std::FILE* filestream);
-    ~FilePart();
-    const std::string& filename() const { return filename_; };
-    const int fd() const { return fd_; };
+    FilePart(const std::string& filename) :
+        m_filename(filename),
+        m_fhandle(FS::openFile(filename)),
+        m_size(m_fhandle.getSize()) {}
+    FilePart(int fd) :
+        m_filename(""),
+        m_fhandle(fd),
+        m_size(m_fhandle.getSize()) {}
+    ~FilePart() = default;
+    const std::string& filename() const { return m_filename; };
+    const typename FS::FD& fhandle() const { return m_fhandle; };
 
-    zsize_t size() const { return size_; };
-    bool fail() const { return !size_; };
-    bool good() const { return bool(size_); };
+    zsize_t size() const { return m_size; };
+    bool fail() const { return !m_size; };
+    bool good() const { return bool(m_size); };
 
   private:
-    const std::string filename_;
-    int fd_;
-    zsize_t size_;
+    const std::string m_filename;
+    typename FS::FD m_fhandle;
+    zsize_t m_size;
 };
 
 };
