@@ -46,7 +46,7 @@
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
-#include "../tools.h"
+#include "../fs.h"
 
 log_define("zim.writer.creator")
 
@@ -240,7 +240,7 @@ namespace zim
 
       INFO("write zimfile");
       write(header, data->basename + ".zim.tmp");
-      zim::move(data->basename + ".zim.tmp", data->basename + ".zim");
+      zim::DEFAULTFS::rename(data->basename + ".zim.tmp", data->basename + ".zim");
 
       INFO("ready");
     }
@@ -393,7 +393,7 @@ namespace zim
                         ? fname.substr(0, fname.size() - 4)
                         : fname;
       tmpfname = basename + ".tmp";
-      if(!makeDirectory(tmpfname)) {
+      if(!DEFAULTFS::makeDirectory(tmpfname)) {
         throw std::runtime_error(
           std::string("failed to create temporary directory ")
         + tmpfname);
@@ -423,7 +423,10 @@ namespace zim
       for(auto& cluster: clustersList) {
         delete cluster;
       }
-      zim::remove_all(tmpfname);
+#ifndef _WIN32
+//[TODO] Implement remove for windows
+      DEFAULTFS::remove(tmpfname);
+#endif
 #if defined(ENABLE_XAPIAN)
       if (indexer)
         delete indexer;

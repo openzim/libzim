@@ -46,68 +46,6 @@
 
 namespace zim {
 
-#if !defined(_WIN32)
-
-#ifdef __APPLE__
-# define PREAD pread
-#else
-# define PREAD pread64
-#endif
-static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
-{
-  ssize_t full_size_read = 0;
-  auto size_to_read = size.v;
-  auto current_offset = offset.v;
-  errno = 0;
-  while (size_to_read > 0) {
-    auto size_read = PREAD(fd, dest, size_to_read, current_offset);
-    if (size_read == -1) {
-      return -1;
-    }
-    size_to_read -= size_read;
-    current_offset += size_read;
-    full_size_read += size_read;
-  }
-  return full_size_read;
-}
-#undef PREAD
-#else
-static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
-{
-  // [TODO] We are locking all fd at the same time here.
-  // We should find a way to have a lock per fd.
-  errno = 0;
-  static pthread_mutex_t fd_lock = PTHREAD_MUTEX_INITIALIZER;
-  if (offset.v > static_cast<uint64_t>(INT64_MAX)) {
-    return -1;
-  }
-  pthread_mutex_lock(&fd_lock);
-  if (_lseeki64(fd, offset.v, SEEK_SET) != static_cast<int64_t>(offset.v)) {
-    pthread_mutex_unlock(&fd_lock);
-    return -1;
-  }
-  ssize_t full_size_read = 0;
-  auto size_to_read = size.v;
-  while (size_to_read > 0) {
-    unsigned int s_to_read = 0;
-    if (size_to_read > UINT_MAX) {
-      s_to_read = UINT_MAX;
-    } else {
-      s_to_read = size_to_read;
-    }
-    auto size_read = _read(fd, dest, s_to_read);
-    if (size_read == -1) {
-      pthread_mutex_unlock(&fd_lock);
-      return -1;
-    }
-    size_to_read -= size_read;
-    full_size_read += size_read;
-  }
-  pthread_mutex_unlock(&fd_lock);
-  return full_size_read;
-}
-#endif
-
 FileReader::FileReader(std::shared_ptr<const FileCompound> source)
   : FileReader(source, offset_t(0), source->fsize()) {}
 
