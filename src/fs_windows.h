@@ -25,10 +25,7 @@
 #include <stdexcept>
 #include <memory>
 
-#include <windows.h>
-#include <winbase.h>
-#include <synchapi.h>
-#include <fileapi.h>
+typedef void* HANDLE;
 
 namespace zim {
 
@@ -36,33 +33,23 @@ namespace windows {
 
 using path_t = const std::string&;
 
+struct ImplFD;
+
 class FD {
   public:
     typedef HANDLE fd_t;
   private:
-    mutable CRITICAL_SECTION m_criticalSection;
-    fd_t m_handle = INVALID_HANDLE_VALUE;
+    std::unique_ptr<ImplFD> mp_impl;
 
   public:
-    FD() = default;
-    FD(fd_t handle):
-      m_handle(handle) {
-      InitializeCriticalSection(&m_criticalSection);
-    };
+    FD();
+    FD(fd_t handle);
     FD(int fd);
     FD(const FD& o) = delete;
-    FD(FD&& o) :
-      m_handle(o.m_handle) {
-      InitializeCriticalSection(&m_criticalSection);
-      o.m_handle = INVALID_HANDLE_VALUE;
-    }
-    FD& operator=(FD&& o) {
-      m_handle = o.m_handle;
-      InitializeCriticalSection(&m_criticalSection);
-      o.m_handle = INVALID_HANDLE_VALUE;
-      return *this;
-    }
-    ~FD() { close(); DeleteCriticalSection(&m_criticalSection); }
+    FD(FD&& o);
+    FD& operator=(FD&& o);
+    FD& operator=(const FD& o) = delete;
+    ~FD();
     zsize_t readAt(char* dest, zsize_t size, offset_t offset) const;
     zsize_t getSize() const;
     int     release();

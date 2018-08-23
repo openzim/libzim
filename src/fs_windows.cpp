@@ -20,53 +20,94 @@
 #include "fs_windows.h"
 #include <stdexcept>
 
+#include <windows.h>
+#include <winbase.h>
 #include <synchapi.h>
 #include <io.h>
+#include <fileapi.h>
+
+#include <iostream>
 
 namespace zim {
 
 namespace windows {
 
+struct ImplFD {
+  HANDLE m_handle = INVALID_HANDLE_VALUE;
+  CRITICAL_SECTION m_criticalSection;
+
+  ImplFD() {
+    InitializeCriticalSection(&m_criticalSection);
+  }
+  ImplFD(HANDLE handle) :
+    m_handle(handle)
+  {
+    InitializeCriticalSection(&m_criticalSection);
+  }
+
+  ~ImplFD() {
+    DeleteCriticalSection(&m_criticalSection);
+  }
+};
+
+FD::FD() :
+  mp_impl(new ImplFD()) {}
+
+FD::FD(fd_t handle) :
+  mp_impl(new ImplFD(handle)) {}
+
 FD::FD(int fd):
-  m_handle(reinterpret_cast<HANDLE>(_get_osfhandle(fd)))
+  mp_impl(new ImplFD(reinterpret_cast<HANDLE>(_get_osfhandle(fd)))) {}
+
+FD::FD(FD&& o) = default;
+FD& FD::operator=(FD&& o) = default;
+
+FD::~FD()
 {
-  InitializeCriticalSection(&m_criticalSection);
+  if (mp_impl)
+    close();
 }
 
 zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
 {
-  EnterCriticalSection(&m_criticalSection);
+  if (!mp_impl)
+    return zsize_t(-1);
+  EnterCriticalSection(&mp_impl->m_criticalSection);
   LARGE_INTEGER off;
   off.QuadPart = offset.v;
-  if (!SetFilePointerEx(m_handle, off, NULL, FILE_BEGIN)) {
+  if (!SetFilePointerEx(mp_impl->m_handle, off, NULL, FILE_BEGIN)) {
     goto err;
   }
 
   DWORD size_read;
-  if (!ReadFile(m_handle, dest, size.v, &size_read, NULL)) {
+  if (!ReadFile(mp_impl->m_handle, dest, size.v, &size_read, NULL)) {
     goto err;
   }
   if (size_read != size.v) {
     goto err;
   }
-  LeaveCriticalSection(&m_criticalSection);
+  LeaveCriticalSection(&mp_impl->m_criticalSection);
   return size;
 err:
-  LeaveCriticalSection(&m_criticalSection);
+  LeaveCriticalSection(&mp_impl->m_criticalSection);
   return zsize_t(-1);
 }
 
 bool FD::seek(offset_t offset)
 {
+  if(!mp_impl)
+    return false;
   LARGE_INTEGER off;
   off.QuadPart = offset.v;
-  return SetFilePointerEx(m_handle, off, NULL, FILE_BEGIN);
+  return SetFilePointerEx(mp_impl->m_handle, off, NULL, FILE_BEGIN);
 }
 
 zsize_t FD::getSize() const
 {
+  if(!mp_impl)
+    return zsize_t(0);
   LARGE_INTEGER size;
-  if (!GetFileSizeEx(m_handle, &size)) {
+  if (!GetFileSizeEx(mp_impl->m_handle, &size)) {
     size.QuadPart = 0;
   }
   return zsize_t(size.QuadPart);
@@ -74,17 +115,19 @@ zsize_t FD::getSize() const
 
 int FD::release()
 {
-  int ret = _open_osfhandle(reinterpret_cast<intptr_t>(m_handle), 0);
-  m_handle = INVALID_HANDLE_VALUE;
+  if(!mp_impl)
+    return -1;
+  int ret = _open_osfhandle(reinterpret_cast<intptr_t>(mp_impl->m_handle), 0);
+  mp_impl->m_handle = INVALID_HANDLE_VALUE;
   return ret;
 }
 
 bool FD::close()
 {
-  if (m_handle == INVALID_HANDLE_VALUE) {
+  if (!mp_impl || mp_impl->m_handle == INVALID_HANDLE_VALUE) {
     return false;
   }
-  return CloseHandle(m_handle);
+  return CloseHandle(mp_impl->m_handle);
 }
 
 std::unique_ptr<wchar_t[]> FS::toWideChar(path_t path)
