@@ -5,6 +5,8 @@
 
 #include <zim/zim.h>
 
+#include <ostream>
+
 template<typename B>
 struct REAL_TYPEDEF{
   typedef B base_type;
