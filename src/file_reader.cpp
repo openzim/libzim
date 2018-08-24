@@ -46,68 +46,6 @@
 
 namespace zim {
 
-#if !defined(_WIN32)
-
-#ifdef __APPLE__
-# define PREAD pread
-#else
-# define PREAD pread64
-#endif
-static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
-{
-  ssize_t full_size_read = 0;
-  auto size_to_read = size.v;
-  auto current_offset = offset.v;
-  errno = 0;
-  while (size_to_read > 0) {
-    auto size_read = PREAD(fd, dest, size_to_read, current_offset);
-    if (size_read == -1) {
-      return -1;
-    }
-    size_to_read -= size_read;
-    current_offset += size_read;
-    full_size_read += size_read;
-  }
-  return full_size_read;
-}
-#undef PREAD
-#else
-static ssize_t read_at(int fd, char* dest, zsize_t size, offset_t offset)
-{
-  // [TODO] We are locking all fd at the same time here.
-  // We should find a way to have a lock per fd.
-  errno = 0;
-  static pthread_mutex_t fd_lock = PTHREAD_MUTEX_INITIALIZER;
-  if (offset.v > static_cast<uint64_t>(INT64_MAX)) {
-    return -1;
-  }
-  pthread_mutex_lock(&fd_lock);
-  if (_lseeki64(fd, offset.v, SEEK_SET) != static_cast<int64_t>(offset.v)) {
-    pthread_mutex_unlock(&fd_lock);
-    return -1;
-  }
-  ssize_t full_size_read = 0;
-  auto size_to_read = size.v;
-  while (size_to_read > 0) {
-    unsigned int s_to_read = 0;
-    if (size_to_read > UINT_MAX) {
-      s_to_read = UINT_MAX;
-    } else {
-      s_to_read = size_to_read;
-    }
-    auto size_read = _read(fd, dest, s_to_read);
-    if (size_read == -1) {
-      pthread_mutex_unlock(&fd_lock);
-      return -1;
-    }
-    size_to_read -= size_read;
-    full_size_read += size_read;
-  }
-  pthread_mutex_unlock(&fd_lock);
-  return full_size_read;
-}
-#endif
-
 FileReader::FileReader(std::shared_ptr<const FileCompound> source)
   : FileReader(source, offset_t(0), source->fsize()) {}
 
@@ -127,12 +65,13 @@ char FileReader::read(offset_t offset) const {
   ASSERT(offset.v, <, _size.v);
   offset += _offset;
   auto part_pair = source->lower_bound(offset);
-  int fd = part_pair->second->fd();
+  auto& fhandle = part_pair->second->fhandle();
   offset_t local_offset = offset - part_pair->first.min;
   ASSERT(local_offset, <=, part_pair->first.max);
   char ret;
-  auto read_ret = read_at(fd, &ret, zsize_t(1), local_offset);
-  if (read_ret != 1) {
+  try {
+    fhandle.readAt(&ret, zsize_t(1), local_offset);
+  } catch (std::runtime_error& e) {
     //Error while reading.
     std::ostringstream s;
     s << "Cannot read a char.\n";
@@ -141,7 +80,6 @@ char FileReader::read(offset_t offset) const {
     s << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
     s << " - Reading offset at " << offset.v << "\n";
     s << " - local offset is " << local_offset.v << "\n";
-    s << " - read return is " << read_ret << "\n";
     s << " - error is " << strerror(errno) << "\n";
     std::error_code ec(errno, std::generic_category());
     throw std::system_error(ec, s.str());
@@ -159,14 +97,14 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
   offset += _offset;
   auto found_range = source->locate(offset, size);
   for(auto current = found_range.first; current!=found_range.second; current++){
-    FilePart* part = current->second;
+    auto part = current->second;
     Range partRange = current->first;
     offset_t local_offset = offset-partRange.min;
     ASSERT(size.v, >, 0U);
     zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-local_offset.v));
-    int fd = part->fd();
-    auto read_ret = read_at(fd, dest, size_to_get, local_offset);
-    if (read_ret != static_cast<int64_t>(size_to_get.v)) {
+    try {
+      part->fhandle().readAt(dest, size_to_get, local_offset);
+    } catch (std::runtime_error& e) {
       std::ostringstream s;
       s << "Cannot read chars.\n";
       s << " - File part is " <<  part->filename() << "\n";
@@ -176,7 +114,6 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
       s << " - total size is " << size.v << "\n";
       s << " - Reading offset at " << offset.v << "\n";
       s << " - local offset is " << local_offset.v << "\n";
-      s << " - read return is " << read_ret << "\n";
       s << " - error is " << strerror(errno) << "\n";
       std::error_code ec(errno, std::generic_category());
       throw std::system_error(ec, s.str());
@@ -205,7 +142,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     auto part = found_range.first->second;
     auto local_offset = offset + _offset - range.min;
     ASSERT(size, <=, part->size());
-    int fd = part->fd();
+    int fd = part->fhandle().getNativeHandle();
     auto buffer = std::shared_ptr<const Buffer>(new MMapBuffer(fd, local_offset, size));
     return buffer;
   } catch(MMapException& e)

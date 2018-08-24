@@ -19,6 +19,7 @@
 
 #include "xapianIndexer.h"
 #include "libzim-resources.h"
+#include "fs.h"
 #include "tools.h"
 #include <sstream>
 #include <fstream>
@@ -77,8 +78,11 @@ XapianIndexer::~XapianIndexer()
 {
   if (!indexPath.empty()) {
     try {
-      zim::remove_all(indexPath + ".tmp");
-      zim::remove_all(indexPath);
+#ifndef _WIN32
+//[TODO] Implement remove for windows
+      zim::DEFAULTFS::remove(indexPath + ".tmp");
+      zim::DEFAULTFS::remove(indexPath);
+#endif
     } catch (...) {
       /* Do not raise */
     }

@@ -27,20 +27,6 @@ namespace zim {
 
   std::string removeAccents(const std::string& text);
 
-  /**
-   * Open a file in BINARY and READONLY mode and return
-   * the corresponding fd.
-   *
-   * @param filepath An utf8 encoded path.
-   * @return the file descriptor of the open file.
-   * @error If the file cannot be opened, return -1 and set errno.
-   */
-  int  openFile(const std::string& filepath);
-  bool makeDirectory(const std::string& path);
-  void remove_all(const std::string& path);
-  void move(const std::string& old_path,
-            const std::string& new_path);
-
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H

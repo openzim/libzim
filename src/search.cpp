@@ -21,7 +21,7 @@
 #include <zim/file.h>
 #include "search_internal.h"
 #include "levenshtein.h"
-#include "tools.h"
+#include "fs.h"
 
 #include <sstream>
 
@@ -258,35 +258,28 @@ Search::iterator Search::begin() const {
         if (!xapianArticle.good()) {
             continue;
         }
-        zim::offset_type dbOffset = xapianArticle.getOffset();
+        auto dbOffset = xapianArticle.getOffset();
         if (dbOffset == 0) {
             continue;
         }
-        int databasefd = openFile(zimfile->getFilename());
-        if (databasefd == -1) {
+        std::cerr << "Try to open " << zimfile->getFilename() << " at offset " << dbOffset;
+        DEFAULTFS::FD databasefd;
+        try {
+            databasefd = DEFAULTFS::openFile(zimfile->getFilename());
+        } catch (...) {
             std::cerr << "Impossible to open " << zimfile->getFilename() << std::endl;
             std::cerr << strerror(errno) << std::endl;
             continue;
         }
-#ifdef _WIN32
-# define LSEEK _lseeki64
-#else
-# define LSEEK lseek
-#endif
-        if (LSEEK(databasefd, dbOffset, SEEK_SET) != static_cast<int64_t>(dbOffset)) {
+        if (!databasefd.seek(offset_t(dbOffset))) {
             std::cerr << "Something went wrong seeking databasedb "
                       << zimfile->getFilename() << std::endl;
             std::cerr << "dbOffest = " << dbOffset << std::endl;
-#ifdef _WIN32
-            _close(databasefd);
-#else
-            close(databasefd);
-#endif
             continue;
         }
         Xapian::Database database;
         try {
-            database = Xapian::Database(databasefd);
+            database = Xapian::Database(databasefd.release());
         } catch( Xapian::DatabaseError& e) {
             std::cerr << "Something went wrong opening xapian database for zimfile "
                       << zimfile->getFilename() << std::endl;

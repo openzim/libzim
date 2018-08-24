@@ -35,6 +35,7 @@
 
 #include "../src/buffer.h"
 #include "../src/cluster.h"
+#include "../src/file_part.h"
 #include "../src/file_compound.h"
 #include "../src/file_reader.h"
 #include "../src/writer/cluster.h"
@@ -371,7 +372,8 @@ TEST(CluterTest, read_extended_cluster)
   bytes_written = write(fd, &a, 1);
   fflush(tmpfile);
 
-  auto fileCompound = std::shared_ptr<zim::FileCompound>(new zim::FileCompound(tmpfile));
+  auto filePart = new zim::FilePart<>(fileno(tmpfile));
+  auto fileCompound = std::shared_ptr<zim::FileCompound>(new zim::FileCompound(filePart));
   auto reader = std::shared_ptr<zim::Reader>(new zim::FileReader(fileCompound));
   zim::CompressionType comp;
   bool extended;

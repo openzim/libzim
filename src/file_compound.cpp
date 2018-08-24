@@ -36,7 +36,7 @@ namespace zim {
 FileCompound::FileCompound(const std::string& filename):
   _fsize(0)
 {
-  auto part = new FilePart(filename);
+  auto part = new FilePart<>(filename);
   if (part->good())
   {
     emplace(Range(offset_t(0), offset_t(part->size().v)), part);
@@ -51,7 +51,7 @@ FileCompound::FileCompound(const std::string& filename):
       {
         std::string fname1 = fname0 + ch1;
 
-        auto currentPart = new FilePart(fname1);
+        auto currentPart = new FilePart<>(fname1);
         if (currentPart->fail())  {
           break;
         }
@@ -69,12 +69,11 @@ FileCompound::FileCompound(const std::string& filename):
   }
 }
 
-FileCompound::FileCompound(std::FILE* filestream):
+FileCompound::FileCompound(FilePart<>* filePart):
   _fsize(0)
 {
-  auto part = new FilePart(filestream);
-  emplace(Range(offset_t(0), offset_t(part->size().v)), part);
-  _fsize = part->size();
+  emplace(Range(offset_t(0), offset_t(filePart->size().v)), filePart);
+  _fsize = filePart->size();
 }
 
 FileCompound::~FileCompound() {

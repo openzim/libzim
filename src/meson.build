@@ -15,7 +15,6 @@ common_sources = [
     'fileheader.cpp',
     'fileimpl.cpp',
     'file_compound.cpp',
-    'file_part.cpp',
     'file_reader.cpp',
     'blob.cpp',
     'buffer.cpp',
@@ -35,6 +34,12 @@ common_sources = [
     'writer/xapianIndexer.cpp',
     'writer/tee.cpp'
 ]
+
+if host_machine.system() == 'windows'
+    common_sources += 'fs_windows.cpp'
+else
+    common_sources += 'fs_unix.cpp'
+endif
 
 zlib_sources = [
     'writer/deflatestream.cpp'
