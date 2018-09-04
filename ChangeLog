@@ -1,3 +1,9 @@
+libzim 4.0.4
+============
+
+ * Fix opening of multi-part zim.
+ * Fix convertion of path to wpath on Windows.
+
 libzim 4.0.3
 ============
 
