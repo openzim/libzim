@@ -27,6 +27,7 @@
 #include <fileapi.h>
 
 #include <iostream>
+#include <sstream>
 
 namespace zim {
 
@@ -132,15 +133,16 @@ bool FD::close()
 
 std::unique_ptr<wchar_t[]> FS::toWideChar(path_t path)
 {
-  auto size = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED,
-                path.data(), path.size(), nullptr, 0);
-  auto wdata = std::unique_ptr<wchar_t[]>(new wchar_t[size+1]);
-  auto ret = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED,
-                path.data(), path.size(), wdata.get(), size);
+  auto size = MultiByteToWideChar(CP_UTF8, 0,
+                path.c_str(), -1, nullptr, 0);
+  auto wdata = std::unique_ptr<wchar_t[]>(new wchar_t[size]);
+  auto ret = MultiByteToWideChar(CP_UTF8, 0,
+                path.c_str(), -1, wdata.get(), size);
   if (0 == ret) {
-    throw std::runtime_error("Cannot convert path to wchar");
+    std::ostringstream oss;
+    oss << "Cannot convert path to wchar : " << GetLastError();
+    throw std::runtime_error(oss.str());
   }
-  wdata.get()[size] = 0;
   return wdata;
 }
 
@@ -156,7 +158,9 @@ FD FS::openFile(path_t filepath)
              FILE_ATTRIBUTE_READONLY|FILE_FLAG_RANDOM_ACCESS,
              NULL);
   if (handle == INVALID_HANDLE_VALUE) {
-    throw std::runtime_error("");
+    std::ostringstream oss;
+    oss << "Cannot open file : " << GetLastError();
+    throw std::runtime_error(oss.str());
   }
   return FD(handle);
 }
