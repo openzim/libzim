@@ -20,7 +20,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <zim/writer/zimcreator.h>
+#include <zim/writer/creator.h>
 #include <zim/blob.h>
 
 class TestArticle : public zim::writer::Article
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
   }
   try
   {
-    zim::writer::ZimCreator c;
+    zim::writer::Creator c;
     c.startZimCreation("foo.zim");
     for (auto& article:_articles)
     {
