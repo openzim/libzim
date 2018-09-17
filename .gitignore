@@ -32,3 +32,6 @@ libzim.pc
 test-driver
 test/zimlib-test*
 test/test-suite.log
+bin
+lib
+share
