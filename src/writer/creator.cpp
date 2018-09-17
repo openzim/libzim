@@ -19,10 +19,10 @@
 
 #include "config.h"
 
-#include "zimcreatordata.h"
+#include "creatordata.h"
 #include "cluster.h"
 #include <zim/blob.h>
-#include <zim/writer/zimcreator.h>
+#include <zim/writer/creator.h>
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
@@ -59,10 +59,10 @@ namespace
 {
   class CompareTitle
   {
-      zim::writer::ZimCreatorData::DirentsType& dirents;
+      zim::writer::CreatorData::DirentsType& dirents;
 
     public:
-      explicit CompareTitle(zim::writer::ZimCreatorData::DirentsType& dirents_)
+      explicit CompareTitle(zim::writer::CreatorData::DirentsType& dirents_)
         : dirents(dirents_)
         { }
       bool operator() (zim::article_index_t titleIdx1, zim::article_index_t titleIdx2) const
@@ -80,16 +80,16 @@ namespace zim
 {
   namespace writer
   {
-    void* ZimCreator::clusterWriter(void* arg) {
-      auto zimCreator = static_cast<zim::writer::ZimCreator*>(arg);
+    void* Creator::clusterWriter(void* arg) {
+      auto creator = static_cast<zim::writer::Creator*>(arg);
       zim::writer::Cluster* clusterToWrite;
       unsigned int wait = 0;
 
       while(true) {
         microsleep(wait);
-        if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
+        if (creator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
           wait = 0;
-          clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
+          clusterToWrite->dump_tmp(creator->data->tmpfname);
           clusterToWrite->close();
           continue;
         }
@@ -98,15 +98,15 @@ namespace zim
       return nullptr;
     }
 
-    ZimCreator::ZimCreator(bool verbose)
+    Creator::Creator(bool verbose)
       : verbose(verbose)
     {}
 
-    ZimCreator::~ZimCreator() = default;
+    Creator::~Creator() = default;
 
-    void ZimCreator::startZimCreation(const std::string& fname)
+    void Creator::startZimCreation(const std::string& fname)
     {
-      data = std::unique_ptr<ZimCreatorData>(new ZimCreatorData(fname, verbose, withIndex, indexingLanguage));
+      data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage));
       data->setMinChunkSize(minChunkSize);
 
       for(unsigned i=0; i<compressionThreads; i++)
@@ -118,7 +118,7 @@ namespace zim
       }
     }
 
-    void ZimCreator::addArticle(const Article& article)
+    void Creator::addArticle(const Article& article)
     {
       Dirent dirent = data->createDirentFromArticle(&article);
       data->addDirent(dirent, &article);
@@ -151,7 +151,7 @@ namespace zim
 #endif
     }
 
-    void ZimCreator::finishZimCreation()
+    void Creator::finishZimCreation()
     {
       if (verbose) {
         std::cout << "A:" << data->nbArticles
@@ -244,7 +244,7 @@ namespace zim
       INFO("ready");
     }
 
-    void ZimCreator::fillHeader(Fileheader* header)
+    void Creator::fillHeader(Fileheader* header)
     {
       std::string mainAid = getMainPage();
       std::string layoutAid = getLayoutPage();
@@ -298,7 +298,7 @@ namespace zim
       header->setChecksumPos( offset );
     }
 
-    void ZimCreator::write(const Fileheader& header, const std::string& fname) const
+    void Creator::write(const Fileheader& header, const std::string& fname) const
     {
       std::ofstream zimfile(fname);
       Md5stream md5;
@@ -380,7 +380,7 @@ namespace zim
       zimfile.write(reinterpret_cast<const char*>(digest), 16);
     }
 
-    ZimCreatorData::ZimCreatorData(const std::string& fname,
+    CreatorData::CreatorData(const std::string& fname,
                                    bool verbose,
                                    bool withIndex,
                                    std::string language)
@@ -421,7 +421,7 @@ namespace zim
 #endif
     }
 
-    ZimCreatorData::~ZimCreatorData()
+    CreatorData::~CreatorData()
     {
       if (compCluster)
         delete compCluster;
@@ -440,7 +440,7 @@ namespace zim
 #endif
     }
 
-    void ZimCreatorData::addDirent(const Dirent& dirent, const Article* article)
+    void CreatorData::addDirent(const Dirent& dirent, const Article* article)
     {
       dirents.push_back(dirent);
 
@@ -483,7 +483,7 @@ namespace zim
       cluster->addArticle(article);
     }
 
-    Dirent ZimCreatorData::createDirentFromArticle(const Article* article)
+    Dirent CreatorData::createDirentFromArticle(const Article* article)
     {
       Dirent dirent;
       dirent.setAid(article->getAid());
@@ -520,7 +520,7 @@ namespace zim
       return dirent;
     }
 
-    Cluster* ZimCreatorData::closeCluster(bool compressed)
+    Cluster* CreatorData::closeCluster(bool compressed)
     {
       Cluster *cluster;
       nbClusters++;
@@ -548,7 +548,7 @@ namespace zim
       return cluster;
     }
 
-    void ZimCreatorData::generateClustersOffsets()
+    void CreatorData::generateClustersOffsets()
     {
       clustersSize = zsize_t(0);
       for(auto& cluster: clustersList)
@@ -558,7 +558,7 @@ namespace zim
       }
     }
 
-    void ZimCreatorData::removeInvalidRedirects()
+    void CreatorData::removeInvalidRedirects()
     {
       // sort
       INFO("sort " << dirents.size() << " directory entries (aid)");
@@ -566,7 +566,7 @@ namespace zim
 
       // remove invalid redirects
       INFO("remove invalid redirects from " << dirents.size() << " directory entries");
-      ZimCreatorData::DirentsType::size_type di = 0;
+      CreatorData::DirentsType::size_type di = 0;
       while (di < dirents.size())
       {
         if (di % 10000 == 0)
@@ -588,7 +588,7 @@ namespace zim
       }
     }
 
-    void ZimCreatorData::setArticleIndexes()
+    void CreatorData::setArticleIndexes()
     {
       // sort
       INFO("sort " << dirents.size() << " directory entries (url)");
@@ -603,7 +603,7 @@ namespace zim
       }
     }
 
-    void ZimCreatorData::resolveRedirectIndexes()
+    void CreatorData::resolveRedirectIndexes()
     {
       // sort
       log_debug("sort " << dirents.size() << " directory entries (aid)");
@@ -632,7 +632,7 @@ namespace zim
       }
     }
 
-    void ZimCreatorData::createTitleIndex()
+    void CreatorData::createTitleIndex()
     {
       // Sort works on dirents sorted by url.
       std::sort(dirents.begin(), dirents.end(), compareUrl);
@@ -645,7 +645,7 @@ namespace zim
       std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
     }
 
-    void ZimCreatorData::resolveMimeTypes()
+    void CreatorData::resolveMimeTypes()
     {
       std::vector<std::string> oldMImeList;
       std::vector<uint16_t> mapping;
@@ -675,7 +675,7 @@ namespace zim
       }
     }
 
-    uint16_t ZimCreatorData::getMimeTypeIdx(const std::string& mimeType)
+    uint16_t CreatorData::getMimeTypeIdx(const std::string& mimeType)
     {
       auto it = mimeTypesMap.find(mimeType);
       if (it == mimeTypesMap.end())
@@ -690,7 +690,7 @@ namespace zim
       return it->second;
     }
 
-    const std::string& ZimCreatorData::getMimeType(uint16_t mimeTypeIdx) const
+    const std::string& CreatorData::getMimeType(uint16_t mimeTypeIdx) const
     {
       auto it = rmimeTypesMap.find(mimeTypeIdx);
       if (it == rmimeTypesMap.end())
@@ -698,7 +698,7 @@ namespace zim
       return it->second;
     }
 
-    zsize_t ZimCreatorData::mimeListSize() const
+    zsize_t CreatorData::mimeListSize() const
     {
       size_type ret = 1;
       for (auto& rmimeType: rmimeTypesMap)
@@ -706,7 +706,7 @@ namespace zim
       return zsize_t(ret);
     }
 
-    zsize_t ZimCreatorData::indexSize() const
+    zsize_t CreatorData::indexSize() const
     {
       size_type s = 0;
 

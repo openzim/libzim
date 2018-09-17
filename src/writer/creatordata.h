@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_WRITER_ZIMCREATOR_DATA_H
-#define ZIM_WRITER_ZIMCREATOR_DATA_H
+#ifndef ZIM_WRITER_CREATOR_DATA_H
+#define ZIM_WRITER_CREATOR_DATA_H
 
 #include <zim/fileheader.h>
 #include <zim/writer/article.h>
@@ -39,7 +39,7 @@ namespace zim
   namespace writer
   {
     class Cluster;
-    class ZimCreatorData
+    class CreatorData
     {
       public:
         typedef std::vector<Dirent> DirentsType;
@@ -52,9 +52,9 @@ namespace zim
         typedef Queue<Cluster*> ClusterQueue;
         typedef std::vector<pthread_t> ThreadList;
 
-        ZimCreatorData(const std::string& fname, bool verbose,
+        CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language);
-        virtual ~ZimCreatorData();
+        virtual ~CreatorData();
 
         void addDirent(const Dirent& dirent, const Article* article);
         Dirent createDirentFromArticle(const Article* article);
@@ -137,4 +137,4 @@ namespace zim
 
 }
 
-#endif // ZIM_WRITER_ZIMCREATOR_DATA_H
+#endif // ZIM_WRITER_CREATOR_DATA_H
