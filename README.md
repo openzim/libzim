@@ -28,13 +28,11 @@ Dependencies
 The ZIM library relies on many third parts software libraries. They
 are prerequisites to the Kiwix library compilation. Following
 libraries need to be available:
-
 * [Z](https://zlib.net/) (package zlib1g-dev on Ubuntu)
 * [LZMA](https://tukaani.org/lzma/) (package lzma-dev on Ubuntu)
 * [ICU](http://site.icu-project.org/) (package libicu-dev on Ubuntu)
 * [Xapian](https://xapian.org/) - optional (package libxapian-dev on Ubuntu)
-* [Google test](https://github.com/google/googletest) - optional (No valid package on Ubuntu, if gtest is not present, libzim will use
-embedded one)
+* [Google test](https://github.com/google/googletest) - optional (package googletest on Ubuntu)
 
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
