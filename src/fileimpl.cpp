@@ -302,6 +302,11 @@ namespace zim
 
     pthread_mutex_lock(&bufferDirentLock);
     zsize_t bufferSize = zsize_t(256);
+    // On very small file, the offset + 256 is higher than the size of the file,
+    // even if the file is valid.
+    // So read only to the end of the file.
+    auto totalSize = zimReader->size();
+    if (indexOffset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-indexOffset.v);
     std::shared_ptr<const Dirent> dirent;
     while (true) {
         bufferDirentZone.reserve(size_type(bufferSize));
