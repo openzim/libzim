@@ -262,7 +262,7 @@ Search::iterator Search::begin() const {
         if (dbOffset == 0) {
             continue;
         }
-        std::cerr << "Try to open " << zimfile->getFilename() << " at offset " << dbOffset;
+        std::cerr << "Try to open " << zimfile->getFilename() << " at offset " << dbOffset << std::endl;
         DEFAULTFS::FD databasefd;
         try {
             databasefd = DEFAULTFS::openFile(zimfile->getFilename());
