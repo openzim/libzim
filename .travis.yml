@@ -20,6 +20,7 @@ addons:
   apt:
     packages:
       - cmake
+      - python3.5
       - python3-pip
       - libbz2-dev
       - ccache

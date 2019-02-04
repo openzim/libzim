@@ -22,14 +22,17 @@ else
 endif
 conf.set('ENABLE_USE_BUFFER_HEADER', get_option('USE_BUFFER_HEADER'))
 
-zlib_dep = dependency('zlib', required:false)
+static_linkage = get_option('static-linkage')
+static_linkage = static_linkage or get_option('default_library')=='static'
+
+zlib_dep = dependency('zlib', required:false, static:static_linkage)
 conf.set('ENABLE_ZLIB', zlib_dep.found())
 
-lzma_dep = dependency('liblzma')
+lzma_dep = dependency('liblzma', static:static_linkage)
 
 xapian_dep = dependency('xapian-core',
                         required:false,
-                        static:(get_option('default_library')=='static'))
+                        static:static_linkage)
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
 pkg_requires = ['liblzma']
@@ -48,10 +51,10 @@ if zlib_dep.found()
 endif
 if xapian_dep.found()
     pkg_requires += ['xapian-core']
-    icu_dep = dependency('icu-i18n')
+    icu_dep = dependency('icu-i18n', static:static_linkage)
     pkg_requires += ['icu-i18n']
 else
-    icu_dep = dependency('icu-i18n', required:false)
+    icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
 endif
 
 inc = include_directories('include')

@@ -10,3 +10,5 @@ option('USE_BUFFER_HEADER', type: 'boolean', value: true,
   description: 'Copy (or use mmap) header index buffers. (default:true)
 Header index are used to access articles, having them in memory can improve access speed but on low memory devices it may use to many memory.
 If false, we directly read the index in the file at each article access.')
+option('static-linkage', type : 'boolean', value : false,
+  description : 'Link statically with the dependencies.')
