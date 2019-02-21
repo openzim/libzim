@@ -212,7 +212,7 @@ Search& Search::add_zimfile(const File* zimfile) {
 }
 
 Search& Search::set_query(const std::string& query) {
-    this->query = query; 
+    this->query = query;
     return *this;
 }
 
@@ -262,7 +262,6 @@ Search::iterator Search::begin() const {
         if (dbOffset == 0) {
             continue;
         }
-        std::cerr << "Try to open " << zimfile->getFilename() << " at offset " << dbOffset << std::endl;
         DEFAULTFS::FD databasefd;
         try {
             databasefd = DEFAULTFS::openFile(zimfile->getFilename());
