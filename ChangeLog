@@ -1,3 +1,14 @@
+libzim 4.0.5
+============
+
+ * Store the xapian database in the right url.
+ * Do not fail when reading very small zim file (<256b).
+ * Do not print message on normal behavior.
+ * [BUILDSYSTEM] Be able to build a dynamic lib (libzim.so) but using static
+   dependencies.
+ * [CI] Use last version of meson.
+ * [CI] Use the new deps archive xz
+
 libzim 4.0.4
 ============
 
