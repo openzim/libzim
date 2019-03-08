@@ -146,7 +146,7 @@ TEST(ClusterTest, read_write_clusterZ)
   zim::CompressionType comp;
   bool extended;
   std::shared_ptr<const zim::Reader> clusterReader
-      = reader->sub_clusterReader(zim::offset_t(0), zim::zsize_t(size), &comp, &extended);
+      = reader->sub_clusterReader(zim::offset_t(0), &comp, &extended);
   ASSERT_EQ(comp, zim::zimcompZip);
   ASSERT_EQ(extended, false);
   zim::Cluster cluster2(clusterReader, comp, extended);
@@ -191,7 +191,7 @@ TEST(ClusterTest, read_write_clusterLzma)
   zim::CompressionType comp;
   bool extended;
   std::shared_ptr<const zim::Reader> clusterReader
-      = reader->sub_clusterReader(zim::offset_t(0), zim::zsize_t(size), &comp, &extended);
+      = reader->sub_clusterReader(zim::offset_t(0), &comp, &extended);
   ASSERT_EQ(comp, zim::zimcompLzma);
   ASSERT_EQ(extended, false);
   zim::Cluster cluster2(clusterReader, comp, extended);
@@ -295,7 +295,7 @@ TEST(CluterTest, read_write_extended_cluster)
   zim::CompressionType comp;
   bool extended;
   std::shared_ptr<const zim::Reader> clusterReader
-      = reader->sub_clusterReader(zim::offset_t(0), zim::zsize_t(size), &comp, &extended);
+      = reader->sub_clusterReader(zim::offset_t(0), &comp, &extended);
   ASSERT_EQ(extended, true);
   zim::Cluster cluster2(clusterReader, comp, extended);
   ASSERT_EQ(cluster2.count().v, 4U);
@@ -378,7 +378,7 @@ TEST(CluterTest, read_extended_cluster)
   zim::CompressionType comp;
   bool extended;
   std::shared_ptr<const zim::Reader> clusterReader
-      = reader->sub_clusterReader(zim::offset_t(0), reader->size(), &comp, &extended);
+      = reader->sub_clusterReader(zim::offset_t(0), &comp, &extended);
   ASSERT_EQ(extended, true);
   zim::Cluster cluster2(clusterReader, comp, extended);
   ASSERT_EQ(cluster2.count().v, 4U);

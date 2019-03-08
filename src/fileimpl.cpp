@@ -365,17 +365,10 @@ namespace zim
     }
 
     offset_t clusterOffset(getClusterOffset(idx));
-    cluster_index_t next_idx(idx.v + 1);
-    offset_t nextClusterOffset( (next_idx < getCountClusters())
-                                        ? getClusterOffset(next_idx).v
-                                        : (header.hasChecksum())
-                                            ? header.getChecksumPos()
-                                            : zimFile->fsize().v );
-    zsize_t clusterSize(nextClusterOffset.v - clusterOffset.v);
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
     bool extended;
-    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, clusterSize, &comp, &extended);
+    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
     cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp, extended));
 
     log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
