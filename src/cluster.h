@@ -23,6 +23,7 @@
 #include <zim/zim.h>
 #include "buffer.h"
 #include "zim_types.h"
+#include "file_reader.h"
 #include <iosfwd>
 #include <vector>
 #include <memory>
@@ -62,6 +63,7 @@ namespace zim
       void clear();
 
       void init_from_buffer(Buffer& buffer);
+      static zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset);
   };
 
 }

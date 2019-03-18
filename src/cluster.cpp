@@ -123,4 +123,21 @@ namespace zim
       return zsize_t(offsets.size() * sizeof(uint32_t) + reader->size().v);
   }
 
+  template<typename OFFSET_TYPE>
+  zsize_t _read_size(const Reader* reader, offset_t offset)
+  {
+    OFFSET_TYPE blob_offset = reader->read<OFFSET_TYPE>(offset);
+    auto off = offset+offset_t(blob_offset-sizeof(OFFSET_TYPE));
+    auto s = reader->read<OFFSET_TYPE>(off);
+    return zsize_t(s);
+  }
+
+  zsize_t Cluster::read_size(const Reader* reader, bool isExtended, offset_t offset)
+  {
+    if (isExtended)
+      return _read_size<uint64_t>(reader, offset);
+    else
+      return _read_size<uint32_t>(reader, offset);
+  }
+
 }
