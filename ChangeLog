@@ -1,3 +1,9 @@
+libzim 4.0.6
+============
+
+ * Support zim file created with cluster not written sequentially.
+ * Remove a meson warning.
+
 libzim 4.0.5
 ============
 
