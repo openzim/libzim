@@ -41,8 +41,7 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
-#include <thread>
-#include <chrono>
+#include <time.h>
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
@@ -84,17 +83,17 @@ namespace zim
     void* ZimCreator::clusterWriter(void* arg) {
       auto zimCreator = static_cast<zim::writer::ZimCreator*>(arg);
       zim::writer::Cluster* clusterToWrite;
-      unsigned int wait = 0;
+      struct timespec wait = {0, 0};
 
       while(true) {
-        std::this_thread::sleep_for(std::chrono::microseconds(wait));
+        nanosleep(&wait, nullptr);
         if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
-          wait = 0;
+          wait.tv_nsec = 0;
           clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
           clusterToWrite->close();
           continue;
         }
-        wait += 10;
+        wait.tv_nsec += 10000;
       }
       return nullptr;
     }
@@ -169,7 +168,8 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       if (withIndex) {
           data->indexer->indexingPostlude();
-          std::this_thread::sleep_for(std::chrono::microseconds(100));
+          struct timespec wait = {0, 100000};
+          nanosleep(&wait, nullptr);
           auto article = data->indexer->getMetaArticle();
           Dirent dirent = data->createDirentFromArticle(article);
           data->addDirent(dirent, article);
@@ -185,19 +185,19 @@ namespace zim
         data->closeCluster(false);
 
       // wait all cluster writing has been done
-      unsigned int wait = 0;
+      struct timespec wait = {0, 0};
       do {
-        std::this_thread::sleep_for(std::chrono::microseconds(wait));
-        wait += 10;
+        nanosleep(&wait, nullptr);
+        wait.tv_nsec += 10000;
       } while(!data->clustersToWrite.isEmpty());
 
       // Be sure that all cluster are closed
-      wait = 0;
+      wait.tv_nsec = 0;
       bool closed = true;
       do {
         closed = true;
-        std::this_thread::sleep_for(std::chrono::microseconds(wait));
-        wait += 10;
+        nanosleep(&wait, nullptr);
+        wait.tv_nsec += 10000;
         for(auto cluster: data->clustersList) {
           if (!cluster->isClosed()) {
             closed = false;

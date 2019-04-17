@@ -23,8 +23,7 @@
 
 #include "gtest/gtest.h"
 
-#include <thread>
-#include <chrono>
+#include <time.h>
 
 namespace
 {
@@ -91,7 +90,8 @@ TEST(UuidTest, generate)
   // same during generating uuid1 and uuid2 leading to test
   // failure. To bring the time difference between 2 sleep for a
   // second. Thanks to Pino Toscano.
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  struct timespec wait = {1, 0};
+  nanosleep(&wait, nullptr);
 
   uuid2 = zim::Uuid::generate();
   ASSERT_TRUE(uuid1 != uuid2);
