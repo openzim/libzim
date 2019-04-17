@@ -24,8 +24,7 @@
 
 #include <pthread.h>
 #include <queue>
-#include <chrono>
-#include <thread>
+#include <time.h>
 
 template<typename T>
 class Queue {
@@ -56,15 +55,15 @@ bool Queue<T>::isEmpty() {
 
 template<typename T>
 void Queue<T>::pushToQueue(const T &element) {
-    unsigned int wait = 0;
+    struct timespec wait = {0, 0};
     unsigned int queueSize = 0;
 
     do {
-        std::this_thread::sleep_for(std::chrono::microseconds(wait));
+        nanosleep(&wait, nullptr);
         pthread_mutex_lock(&m_queueMutex);
         queueSize = m_realQueue.size();
         pthread_mutex_unlock(&m_queueMutex);
-        wait += 10;
+        wait.tv_nsec += 10000;
     } while (queueSize > MAX_QUEUE_SIZE);
 
     pthread_mutex_lock(&m_queueMutex);
