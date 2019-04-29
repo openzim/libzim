@@ -387,7 +387,15 @@ namespace zim
                                    std::string language)
       : withIndex(withIndex),
         indexingLanguage(language),
-        verbose(verbose)
+        verbose(verbose),
+        nbArticles(0),
+        nbCompArticles(0),
+	nbUnCompArticles(0),
+	nbFileArticles(0),
+	nbIndexArticles(0),
+	nbClusters(0),
+	nbCompClusters(0),
+	nbUnCompClusters(0)
     {
       basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
                         ? fname.substr(0, fname.size() - 4)
