@@ -50,8 +50,8 @@ Cluster::Cluster(CompressionType compression)
 }
 
 void Cluster::clear() {
-  offsets.clear();
-  _data.clear();
+  Offsets().swap(offsets);
+  ClusterData().swap(_data);
 }
 
 void Cluster::close() {
