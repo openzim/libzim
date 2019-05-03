@@ -43,6 +43,13 @@
 # define SEPARATOR "/"
 #endif
 
+#ifdef __MINGW32__
+# include <time.h>
+#else
+# include <thread>
+# include <chrono>
+#endif
+
 
 std::string zim::removeAccents(const std::string& text)
 {
@@ -55,4 +62,16 @@ std::string zim::removeAccents(const std::string& text)
   std::string unaccentedText;
   ustring.toUTF8String(unaccentedText);
   return unaccentedText;
+}
+
+
+void zim::microsleep(int microseconds) {
+#ifdef __MINGW32__
+   struct timespec wait = {0, 0};
+   wait.tv_sec = microseconds / 1000000;
+   wait.tv_nsec = (microseconds - wait.tv_sec*10000) * 1000;
+   nanosleep(&wait, nullptr);
+#else
+   std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
+#endif
 }

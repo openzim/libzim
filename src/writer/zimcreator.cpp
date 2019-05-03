@@ -41,11 +41,11 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
-#include <time.h>
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
 #include "../fs.h"
+#include "../tools.h"
 
 log_define("zim.writer.creator")
 
@@ -83,17 +83,17 @@ namespace zim
     void* ZimCreator::clusterWriter(void* arg) {
       auto zimCreator = static_cast<zim::writer::ZimCreator*>(arg);
       zim::writer::Cluster* clusterToWrite;
-      struct timespec wait = {0, 0};
+      unsigned int wait = 0;
 
       while(true) {
-        nanosleep(&wait, nullptr);
+        microsleep(wait);
         if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
-          wait.tv_nsec = 0;
+          wait = 0;
           clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
           clusterToWrite->close();
           continue;
         }
-        wait.tv_nsec += 10000;
+        wait += 10;
       }
       return nullptr;
     }
@@ -168,8 +168,7 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       if (withIndex) {
           data->indexer->indexingPostlude();
-          struct timespec wait = {0, 100000};
-          nanosleep(&wait, nullptr);
+          microsleep(100);
           auto article = data->indexer->getMetaArticle();
           Dirent dirent = data->createDirentFromArticle(article);
           data->addDirent(dirent, article);
@@ -185,19 +184,19 @@ namespace zim
         data->closeCluster(false);
 
       // wait all cluster writing has been done
-      struct timespec wait = {0, 0};
+      unsigned int wait = 0;
       do {
-        nanosleep(&wait, nullptr);
-        wait.tv_nsec += 10000;
+        microsleep(wait);
+        wait += 10;
       } while(!data->clustersToWrite.isEmpty());
 
       // Be sure that all cluster are closed
-      wait.tv_nsec = 0;
+      wait = 0;
       bool closed = true;
       do {
         closed = true;
-        nanosleep(&wait, nullptr);
-        wait.tv_nsec += 10000;
+        microsleep(wait);
+        wait += 10;
         for(auto cluster: data->clustersList) {
           if (!cluster->isClosed()) {
             closed = false;
