@@ -21,6 +21,7 @@
 
 #include "zimcreatordata.h"
 #include "cluster.h"
+#include "debug.h"
 #include <zim/blob.h>
 #include <zim/writer/zimcreator.h>
 #include "../endian_tools.h"
@@ -69,9 +70,7 @@ namespace
       {
         auto d1 = dirents[zim::article_index_type(titleIdx1)];
         auto d2 = dirents[zim::article_index_type(titleIdx2)];
-        return d1.getNamespace() < d2.getNamespace()
-           || (d1.getNamespace() == d2.getNamespace()
-            && d1.getTitle() < d2.getTitle());
+        return compareTitle(d1, d2);
       }
   };
 }
