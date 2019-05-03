@@ -1,3 +1,22 @@
+libzim 5.0.0
+============
+
+ * Fix thread slipping for win32 crosscompilation.
+ * Fix a potential invalid access when reading dirent.
+ * Fix memory leak in the decompression algorithm.
+ * [Writer] Fix a memory leak (cluster cleanning)
+ * [Writer] Write article data in a temporary cluster file instead of a
+   temporary file per article.
+ * [Writer] Better algorithm to store the dirent while creating the zim
+   file. Better memory usage.
+ * [Writer] [API Change] Url/Ns are now handle using the same struct Url.
+ * [Writer] [API Change] No more aid and redirectAid. A redirectArticle
+   have to implement redirectUrl.
+ * [Writer] Use a memory pool to avoid multiple small memory allocations.
+ * [Writer] [API Change] Rename `ZimCreator` to `Creator`.
+ * [API Change] File's `search` and `suggestions` now return a unique_ptr
+   instead of a raw pointer.
+
 libzim 4.0.7
 ============
 
