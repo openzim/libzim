@@ -24,7 +24,7 @@
 
 #include <pthread.h>
 #include <queue>
-#include <time.h>
+#include "../tools.h"
 
 template<typename T>
 class Queue {
@@ -55,15 +55,15 @@ bool Queue<T>::isEmpty() {
 
 template<typename T>
 void Queue<T>::pushToQueue(const T &element) {
-    struct timespec wait = {0, 0};
+    unsigned int wait = 0;
     unsigned int queueSize = 0;
 
     do {
-        nanosleep(&wait, nullptr);
+        zim::microsleep(wait);
         pthread_mutex_lock(&m_queueMutex);
         queueSize = m_realQueue.size();
         pthread_mutex_unlock(&m_queueMutex);
-        wait.tv_nsec += 10000;
+        wait += 10;
     } while (queueSize > MAX_QUEUE_SIZE);
 
     pthread_mutex_lock(&m_queueMutex);

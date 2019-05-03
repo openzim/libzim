@@ -26,7 +26,7 @@
 namespace zim {
 
   std::string removeAccents(const std::string& text);
-
+  void microsleep(int microseconds);
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H
