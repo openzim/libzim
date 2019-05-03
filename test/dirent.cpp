@@ -58,7 +58,6 @@ TEST(DirentTest, read_write_article_dirent)
   dirent.setUrl('A', "Bar");
   dirent.setTitle("Foo");
   dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
-  dirent.setVersion(54346);
 
   ASSERT_TRUE(!dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), 'A');
@@ -67,7 +66,7 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent.getParameter(), "");
   ASSERT_EQ(dirent.getClusterNumber().v, 45U);
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
-  ASSERT_EQ(dirent.getVersion(), 54346U);
+  ASSERT_EQ(dirent.getVersion(), 0U);
 
   std::stringstream s;
   s << dirent;
@@ -88,7 +87,7 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent2.getParameter(), "");
   ASSERT_EQ(dirent2.getClusterNumber().v, 45U);
   ASSERT_EQ(dirent2.getBlobNumber().v, 1234U);
-  ASSERT_EQ(dirent2.getVersion(), 54346U);
+  ASSERT_EQ(dirent2.getVersion(), 0U);
 }
 
 TEST(DirentTest, read_write_article_dirent_unicode)

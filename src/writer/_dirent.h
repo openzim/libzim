@@ -33,9 +33,9 @@ namespace zim
         static const uint16_t redirectMimeType = 0xffff;
         static const uint16_t linktargetMimeType = 0xfffe;
         static const uint16_t deletedMimeType = 0xfffd;
+        static const uint32_t version = 0;
 
         uint16_t mimeType;
-        uint32_t version;
         cluster_index_t clusterNumber;
         blob_index_t blobNumber;
         article_index_t redirectIndex;
@@ -51,7 +51,6 @@ namespace zim
       public:
         Dirent()
           : mimeType(0),
-            version(0),
             clusterNumber(0),
             blobNumber(0),
             redirectIndex(0),
@@ -85,7 +84,6 @@ namespace zim
         }
 
         uint32_t getVersion() const            { return version; }
-        void setVersion(uint32_t v)            { version = v; }
 
         void setAid(const std::string&  aid_)      { aid = aid_; }
         const std::string& getAid() const          { return aid; }
