@@ -26,6 +26,20 @@
 
 namespace zim
 {
+  struct DirectInfo {
+    cluster_index_t clusterNumber;
+    blob_index_t     blobNumber;
+  };
+
+  struct RedirectInfo {
+    article_index_t redirectIndex;
+  };
+
+  union DirentInfo {
+    DirectInfo d;
+    RedirectInfo r;
+  };
+
   namespace writer
   {
     class Dirent
@@ -36,9 +50,7 @@ namespace zim
         static const uint32_t version = 0;
 
         uint16_t mimeType;
-        cluster_index_t clusterNumber;
-        blob_index_t blobNumber;
-        article_index_t redirectIndex;
+        DirentInfo info {};
         char ns;
         std::string title;
         std::string url;
@@ -51,16 +63,16 @@ namespace zim
       public:
         Dirent()
           : mimeType(0),
-            clusterNumber(0),
-            blobNumber(0),
-            redirectIndex(0),
             ns('\0'),
             title(),
             url(),
             parameter(),
             aid(),
             redirectAid()
-        {}
+        {
+          info.d.clusterNumber = cluster_index_t(0);
+          info.d.blobNumber = blob_index_t(0);
+        }
 
         Dirent(const std::string& aid_)
           : Dirent()
@@ -91,10 +103,10 @@ namespace zim
         void setRedirectAid(const std::string&  aid_)     { redirectAid = aid_; }
         const std::string& getRedirectAid() const         { return redirectAid; }
         void setRedirect(article_index_t idx) {
-          redirectIndex = idx;
+          info.r.redirectIndex = idx;
           mimeType = redirectMimeType;
         }
-        article_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : article_index_t(0); }
+        article_index_t getRedirectIndex() const      { return isRedirect() ? info.r.redirectIndex : article_index_t(0); }
 
         void setMimeType(uint16_t mime)
         {
@@ -117,11 +129,20 @@ namespace zim
         void setIdx(article_index_t idx_)      { idx = idx_; }
         article_index_t getIdx() const         { return idx; }
 
-        void setCluster(zim::writer::Cluster* _cluster)
-        { cluster = _cluster; blobNumber = _cluster->count(); }
 
-        cluster_index_t getClusterNumber() const { return cluster ? cluster->getClusterIndex() : clusterNumber; }
-        blob_index_t  getBlobNumber() const         { return isRedirect() ? blob_index_t(0) : blobNumber; }
+        void setCluster(zim::writer::Cluster* _cluster)
+        {
+          ASSERT(isArticle(), ==, true);
+          cluster = _cluster;
+          info.d.blobNumber = _cluster->count();
+        }
+
+        cluster_index_t getClusterNumber() const {
+          return cluster ? cluster->getClusterIndex() : info.d.clusterNumber;
+        }
+        blob_index_t  getBlobNumber() const {
+          return isRedirect() ? blob_index_t(0) : info.d.blobNumber;
+        }
 
         bool isRedirect() const                 { return mimeType == redirectMimeType; }
         bool isLinktarget() const               { return mimeType == linktargetMimeType; }
@@ -140,8 +161,8 @@ namespace zim
         {
           ASSERT(mimeType, ==, 0);
           mimeType = mimeType_;
-          clusterNumber = clusterNumber_;
-          blobNumber = blobNumber_;
+          info.d.clusterNumber = clusterNumber_;
+          info.d.blobNumber = blobNumber_;
         }
 
 
