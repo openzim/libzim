@@ -42,7 +42,7 @@ namespace zim
     class ZimCreatorData
     {
       public:
-        typedef std::vector<Dirent> DirentsType;
+        typedef std::vector<Dirent*> DirentsType;
         typedef std::vector<article_index_t> ArticleIdxVectorType;
         typedef std::vector<offset_t> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
@@ -56,8 +56,8 @@ namespace zim
                        bool withIndex, std::string language);
         virtual ~ZimCreatorData();
 
-        void addDirent(const Dirent& dirent, const Article* article);
-        Dirent createDirentFromArticle(const Article* article);
+        void addDirent(Dirent* dirent, const Article* article);
+        Dirent* createDirentFromArticle(const Article* article);
         Cluster* closeCluster(bool compressed);
 
         void generateClustersOffsets();

@@ -167,25 +167,25 @@ namespace zim
 
 
 
-        friend bool compareUrl(const Dirent& d1, const Dirent& d2);
-        friend inline bool compareTitle(const Dirent& d1, const Dirent& d2);
-        friend inline bool compareAid(const Dirent& d1, const Dirent& d2);
+        friend bool compareUrl(const Dirent* d1, const Dirent* d2);
+        friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
+        friend inline bool compareAid(const Dirent* d1, const Dirent* d2);
     };
 
 
-    inline bool compareUrl(const Dirent& d1, const Dirent& d2)
+    inline bool compareUrl(const Dirent* d1, const Dirent* d2)
     {
-      return d1.ns < d2.ns
-        || (d1.ns == d2.ns && d1.url < d2.url);
+      return d1->ns < d2->ns
+        || (d1->ns == d2->ns && d1->url < d2->url);
     }
-    inline bool compareTitle(const Dirent& d1, const Dirent& d2)
+    inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1.ns < d2.ns
-        || (d1.ns == d2.ns && d1.getTitle() < d2.getTitle());
+      return d1->ns < d2->ns
+        || (d1->ns == d2->ns && d1->getTitle() < d2->getTitle());
     }
-    inline bool compareAid(const Dirent& d1, const Dirent& d2)
+    inline bool compareAid(const Dirent* d1, const Dirent* d2)
     {
-      return d1.aid < d2.aid;
+      return d1->aid < d2->aid;
     }
 
     std::ostream& operator<< (std::ostream& out, const Dirent& d);
