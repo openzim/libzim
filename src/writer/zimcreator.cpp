@@ -42,6 +42,7 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
+#include <ctime>
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
@@ -55,6 +56,13 @@ log_define("zim.writer.creator")
         log_info(e); \
         std::cout << e << std::endl; \
     } while(false)
+
+#define TINFO(e) \
+    if (verbose) { \
+        double seconds = difftime(time(NULL), data->start_time); \
+        std::cout << "T:" << (int)(seconds) \
+                  << "; " << e << std::endl; \
+    }
 
 namespace
 {
@@ -122,17 +130,23 @@ namespace zim
       auto dirent = data->createDirentFromArticle(&article);
       data->addDirent(dirent, &article);
       data->nbArticles++;
-      if (article.shouldCompress())
-        data->nbCompArticles++;
-      else
-        data->nbUnCompArticles++;
-      if (!article.getFilename().empty())
-        data->nbFileArticles++;
-      if (article.shouldIndex())
-        data->nbIndexArticles++;
-
+      if (article.isRedirect()) {
+        data->nbRedirectArticles++;
+      } else {
+        if (article.shouldCompress())
+          data->nbCompArticles++;
+        else
+          data->nbUnCompArticles++;
+        if (!article.getFilename().empty())
+          data->nbFileArticles++;
+        if (article.shouldIndex())
+          data->nbIndexArticles++;
+      }
       if (verbose && data->nbArticles%1000 == 0){
-        std::cout << "A:" << data->nbArticles
+        double seconds = difftime(time(NULL),data->start_time);
+        std::cout << "T:" << (int)seconds
+                  << "; A:" << data->nbArticles
+                  << "; RA:" << data->nbRedirectArticles
                   << "; CA:" << data->nbCompArticles
                   << "; UA:" << data->nbUnCompArticles
                   << "; FA:" << data->nbFileArticles
@@ -140,6 +154,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
+                  << "; WC:" << data->clustersToWrite.size()
                   << std::endl;
       }
 
@@ -153,7 +168,10 @@ namespace zim
     void ZimCreator::finishZimCreation()
     {
       if (verbose) {
-        std::cout << "A:" << data->nbArticles
+        double seconds = difftime(time(NULL),data->start_time);
+        std::cout << "T:" << (int)seconds
+                  << "; A:" << data->nbArticles
+                  << "; RA:" << data->nbRedirectArticles
                   << "; CA:" << data->nbCompArticles
                   << "; UA:" << data->nbUnCompArticles
                   << "; FA:" << data->nbFileArticles
@@ -161,6 +179,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
+                  << "; WC:" << data->clustersToWrite.size()
                   << std::endl;
       }
 
@@ -215,32 +234,39 @@ namespace zim
       }
 #endif
 
+      TINFO("Generate cluster offsets");
       data->generateClustersOffsets();
 
       // sort
-      log_debug("sort " << dirents.size() << " directory entries (url)");
+      TINFO("sort " << dirents.size() << " directory entries (url)");
       std::sort(data->dirents.begin(), data->dirents.end(), compareUrl);
 
+      TINFO("RemoveInvalidRedirects");
       data->removeInvalidRedirects();
+      
+      TINFO("Set article indexes");
       data->setArticleIndexes();
+
+      TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
 
+      TINFO("Resolve mimetype");
       data->resolveMimeTypes();
 
-      INFO("create title index");
+      TINFO("create title index");
       data->createTitleIndex();
-      INFO(data->dirents.size() << " title index created");
-      INFO(data->clusterOffsets.size() << " clusters created");
+      TINFO(data->dirents.size() << " title index created");
+      TINFO(data->clusterOffsets.size() << " clusters created");
 
-      INFO("fill header");
+      TINFO("fill header");
       Fileheader header;
       fillHeader(&header);
 
-      INFO("write zimfile");
+      TINFO("write zimfile");
       write(header, data->basename + ".zim.tmp");
       zim::DEFAULTFS::rename(data->basename + ".zim.tmp", data->basename + ".zim");
 
-      INFO("ready");
+      TINFO("finish");
     }
 
     void ZimCreator::fillHeader(Fileheader* header)
@@ -387,13 +413,15 @@ namespace zim
         indexingLanguage(language),
         verbose(verbose),
         nbArticles(0),
+        nbRedirectArticles(0),
         nbCompArticles(0),
 	nbUnCompArticles(0),
 	nbFileArticles(0),
 	nbIndexArticles(0),
 	nbClusters(0),
 	nbCompClusters(0),
-	nbUnCompClusters(0)
+	nbUnCompClusters(0),
+        start_time(time(NULL))
     {
       basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
                         ? fname.substr(0, fname.size() - 4)
@@ -595,9 +623,8 @@ namespace zim
 
     void ZimCreatorData::resolveRedirectIndexes()
     {
-
       // translate redirect aid to index
-      INFO("translate redirect aid to index");
+      INFO("Resolve redirect");
       for (auto& di: dirents)
       {
         if (di->isRedirect())

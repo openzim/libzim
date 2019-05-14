@@ -106,6 +106,7 @@ namespace zim
         // Some stats
         bool verbose;
         article_index_type nbArticles;
+        article_index_type nbRedirectArticles;
         article_index_type nbCompArticles;
         article_index_type nbUnCompArticles;
         article_index_type nbFileArticles;
@@ -113,6 +114,7 @@ namespace zim
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
+        time_t start_time;
 
         cluster_index_t clusterCount() const
         { return cluster_index_t(clusterOffsets.size()); }
