@@ -484,7 +484,7 @@ namespace zim
 
     Dirent* ZimCreatorData::createDirentFromArticle(const Article* article)
     {
-      auto dirent(new Dirent());
+      auto dirent = pool.getDirent();
       dirent->setAid(article->getAid());
       dirent->setUrl(article->getNamespace(), article->getUrl());
       dirent->setTitle(article->getTitle());

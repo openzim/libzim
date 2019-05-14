@@ -30,6 +30,8 @@
 #include <fstream>
 #include "config.h"
 
+#include "direntPool.h"
+
 #if defined(ENABLE_XAPIAN)
   class XapianIndexer;
 #endif
@@ -71,6 +73,8 @@ namespace zim
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
         size_t minChunkSize = 1024-64;
+
+        DirentPool  pool;
 
         DirentsType dirents;
         ArticleIdxVectorType titleIdx;
