@@ -176,15 +176,15 @@ namespace zim
     return File::const_iterator(this, article_index_type(r.second), const_iterator::ArticleIterator);
   }
 
-  const Search* File::search(const std::string& query, int start, int end) const {
-      Search* search = new Search(this);
+  std::unique_ptr<Search> File::search(const std::string& query, int start, int end) const {
+      auto search = std::unique_ptr<Search>(new Search(this));
       search->set_query(query);
       search->set_range(start, end);
       return search;
   }
 
-  const Search* File::suggestions(const std::string& query, int start, int end) const {
-      Search* search = new Search(this);
+  std::unique_ptr<Search> File::suggestions(const std::string& query, int start, int end) const {
+      auto search = std::unique_ptr<Search>(new Search(this));
       search->set_query(query);
       search->set_range(start, end);
       search->set_suggestion_mode(true);
