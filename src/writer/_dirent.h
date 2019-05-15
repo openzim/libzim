@@ -53,7 +53,6 @@ namespace zim
         DirentInfo info {};
         Url url;
         std::string title;
-        std::string parameter;
         Cluster* cluster = nullptr;
         Url redirectUrl;
         article_index_t idx = article_index_t(0);
@@ -63,7 +62,6 @@ namespace zim
           : mimeType(0),
             url(),
             title(),
-            parameter(),
             redirectUrl()
         {
           info.d.clusterNumber = cluster_index_t(0);
@@ -81,10 +79,6 @@ namespace zim
         const Url& getFullUrl() const { return url; }
         void setUrl(Url url_) {
           url = url_;
-        }
-        const std::string& getParameter() const { return parameter; }
-        void setParameter(const std::string& parameter_) {
-          parameter = parameter_;
         }
 
         uint32_t getVersion() const            { return version; }
@@ -140,7 +134,7 @@ namespace zim
         uint16_t getMimeType() const            { return mimeType; }
         size_t getDirentSize() const
         {
-          size_t ret = (isRedirect() ? 12 : 16) + url.getUrl().size() + parameter.size() + 2;
+          size_t ret = (isRedirect() ? 12 : 16) + url.getUrl().size() + 2;
           if (title != url.getUrl())
             ret += title.size();
           return ret;

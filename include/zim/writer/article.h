@@ -44,7 +44,6 @@ namespace zim
         virtual bool shouldCompress() const = 0;
         virtual bool shouldIndex() const = 0;
         virtual Url getRedirectUrl() const = 0;
-        virtual std::string getParameter() const;
         virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
         virtual std::string getFilename() const = 0;

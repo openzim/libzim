@@ -487,7 +487,6 @@ namespace zim
       auto dirent = pool.getDirent();
       dirent->setUrl(article->getUrl());
       dirent->setTitle(article->getTitle());
-      dirent->setParameter(article->getParameter());
 
       log_debug("article " << dirent->getLongUrl() << " fetched");
 
