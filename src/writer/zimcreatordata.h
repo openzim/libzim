@@ -40,12 +40,25 @@ namespace zim
 {
   namespace writer
   {
+    struct UrlCompare {
+      bool operator() (const Dirent* d1, const Dirent* d2) const {
+        return compareUrl(d1, d2);
+      }
+    };
+
+    struct TitleCompare {
+      bool operator() (const Dirent* d1, const Dirent* d2) const {
+        return compareTitle(d1, d2);
+      }
+    };
+
+
     class Cluster;
     class ZimCreatorData
     {
       public:
-        typedef std::vector<Dirent*> DirentsType;
-        typedef std::vector<article_index_t> ArticleIdxVectorType;
+        typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
+        typedef std::multiset<Dirent*, TitleCompare> TitleSortedDirents;
         typedef std::vector<offset_t> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
@@ -63,7 +76,6 @@ namespace zim
         Cluster* closeCluster(bool compressed);
 
         void generateClustersOffsets();
-        void removeInvalidRedirects();
         void setArticleIndexes();
         void resolveRedirectIndexes();
         void createTitleIndex();
@@ -76,8 +88,9 @@ namespace zim
 
         DirentPool  pool;
 
-        DirentsType dirents;
-        ArticleIdxVectorType titleIdx;
+        UrlSortedDirents   dirents;
+        UrlSortedDirents   unresolvedRedirectDirents;
+        TitleSortedDirents titleIdx;
         OffsetsType clusterOffsets;
 
         MimeTypesMap mimeTypesMap;

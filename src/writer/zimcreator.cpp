@@ -64,25 +64,6 @@ log_define("zim.writer.creator")
                   << "; " << e << std::endl; \
     }
 
-namespace
-{
-  class CompareTitle
-  {
-      zim::writer::ZimCreatorData::DirentsType& dirents;
-
-    public:
-      explicit CompareTitle(zim::writer::ZimCreatorData::DirentsType& dirents_)
-        : dirents(dirents_)
-        { }
-      bool operator() (zim::article_index_t titleIdx1, zim::article_index_t titleIdx2) const
-      {
-        auto d1 = dirents[zim::article_index_type(titleIdx1)];
-        auto d2 = dirents[zim::article_index_type(titleIdx2)];
-        return compareTitle(d1, d2);
-      }
-  };
-}
-
 namespace zim
 {
   namespace writer
@@ -237,18 +218,11 @@ namespace zim
       TINFO("Generate cluster offsets");
       data->generateClustersOffsets();
 
-      // sort
-      TINFO("sort " << dirents.size() << " directory entries (url)");
-      std::sort(data->dirents.begin(), data->dirents.end(), compareUrl);
-
-      TINFO("RemoveInvalidRedirects");
-      data->removeInvalidRedirects();
-      
-      TINFO("Set article indexes");
-      data->setArticleIndexes();
-
       TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
+
+      TINFO("Set article indexes");
+      data->setArticleIndexes();
 
       TINFO("Resolve mimetype");
       data->resolveMimeTypes();
@@ -354,20 +328,20 @@ namespace zim
       log_debug("after writing direntPtr - pos=" << out.tellp());
 
       // write title index
-      for (auto titleid: data->titleIdx)
+      for (Dirent* dirent: data->titleIdx)
       {
         char tmp_buff[sizeof(article_index_type)];
-        toLittleEndian(titleid.v, tmp_buff);
+        toLittleEndian(dirent->getIdx().v, tmp_buff);
         out.write(tmp_buff, sizeof(article_index_type));
       }
 
       log_debug("after writing fileIdxList - pos=" << out.tellp());
 
       // write directory entries
-      for (auto& dirent: data->dirents)
+      for (Dirent* dirent: data->dirents)
       {
         out << *dirent;
-        log_debug("write " << dirent.getTitle() << " dirent.size()=" << dirent.getDirentSize() << " pos=" << out.tellp());
+        log_debug("write " << dirent->getTitle() << " dirent.size()=" << dirent->getDirentSize() << " pos=" << out.tellp());
       }
 
       log_debug("after writing dirents - pos=" << out.tellp());
@@ -469,11 +443,25 @@ namespace zim
 
     void ZimCreatorData::addDirent(Dirent* dirent, const Article* article)
     {
-      dirents.push_back(dirent);
+      auto ret = dirents.insert(dirent);
+      if (!ret.second) {
+        Dirent* existing = *ret.first;
+        if (existing->isRedirect() && !dirent->isRedirect()) {
+          unresolvedRedirectDirents.erase(existing);
+          dirents.erase(ret.first);
+          dirents.insert(dirent);
+        } else {
+          std::cerr << "Impossible to add " << dirent->getFullUrl() << std::endl;
+          std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
+          std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
+          return;
+        }
+      };
 
       // If this is a redirect, we're done: there's no blob to add.
       if (dirent->isRedirect())
       {
+        unresolvedRedirectDirents.insert(dirent);
         return;
       }
 
@@ -506,7 +494,7 @@ namespace zim
         cluster = closeCluster(article->shouldCompress());
       }
 
-      dirents.back()->setCluster(cluster);
+      dirent->setCluster(cluster);
       cluster->addArticle(article);
     }
 
@@ -583,33 +571,6 @@ namespace zim
       }
     }
 
-    void ZimCreatorData::removeInvalidRedirects()
-    {
-      // remove invalid redirects
-      INFO("remove invalid redirects from " << dirents.size() << " directory entries");
-      ZimCreatorData::DirentsType::size_type di = 0;
-      while (di < dirents.size())
-      {
-        if (di % 10000 == 0)
-          INFO(di << "/" << dirents.size() << " directory entries checked for invalid redirects");
-
-        if (dirents[di]->isRedirect())
-        {
-          log_debug("check " << dirents[di]->getTitle() << " redirect to " << dirents[di]->getRedirectUrl() << " (" << di << '/' << dirents.size() << ')');
-
-	  Dirent tmpDirent(dirents[di]->getRedirectUrl());
-          if (!std::binary_search(dirents.begin(), dirents.end(), &tmpDirent, compareUrl))
-          {
-            INFO("remove invalid redirection " << dirents[di]->getUrl() << " redirecting to (missing) " << dirents[di]->getRedirectUrl());
-            dirents.erase(dirents.begin() + di);
-            continue;
-          }
-        }
-
-        ++di;
-      }
-    }
-
     void ZimCreatorData::setArticleIndexes()
     {
       // set index
@@ -625,37 +586,24 @@ namespace zim
     {
       // translate redirect aid to index
       INFO("Resolve redirect");
-      for (auto& di: dirents)
+      for (auto dirent: unresolvedRedirectDirents)
       {
-        if (di->isRedirect())
-        {
-          Dirent tmpDirent(di->getRedirectUrl());
-          auto ddi = std::lower_bound(dirents.begin(), dirents.end(), &tmpDirent, compareUrl);
-          if (ddi != dirents.end() && (*ddi)->getFullUrl() == di->getRedirectUrl())
-          {
-            log_debug("redirect aid=" << (*ddi)->getFullUrl() << " redirect index=" << ddi->getIdx());
-            di->setRedirect((*ddi)->getIdx());
-          }
-          else
-          {
-            std::ostringstream msg;
-            msg << "internal error: redirect aid " << di->getRedirectUrl() << " not found";
-            log_fatal(msg.str());
-            throw std::runtime_error(msg.str());
-          }
+        Dirent tmpDirent(dirent->getRedirectUrl());
+        auto target_pos = dirents.find(&tmpDirent);
+        if(target_pos == dirents.end()) {
+          INFO("Invalid redirection " << dirent->getUrl() << " redirecting to (missing) " << dirent->getRedirectUrl());
+          dirents.erase(dirent);
+        } else  {
+          dirent->setRedirect(*target_pos);
         }
       }
     }
 
     void ZimCreatorData::createTitleIndex()
     {
-      titleIdx.resize(0);
-      titleIdx.reserve(dirents.size());
+      titleIdx.clear();
       for (auto dirent: dirents)
-        titleIdx.push_back(dirent->getIdx());
-
-      CompareTitle compareTitle(dirents);
-      std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
+        titleIdx.insert(dirent);
     }
 
     void ZimCreatorData::resolveMimeTypes()
