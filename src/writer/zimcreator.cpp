@@ -492,7 +492,7 @@ namespace zim
 
       if (article->isRedirect())
       {
-        dirent->setRedirect(article_index_t(0));
+        dirent->setRedirect(nullptr);
         dirent->setRedirectUrl(article->getRedirectUrl());
         log_debug("is redirect to " << dirent->getRedirectUrl());
       }

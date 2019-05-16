@@ -26,22 +26,22 @@
 
 namespace zim
 {
-  struct DirectInfo {
-    cluster_index_t clusterNumber;
-    blob_index_t     blobNumber;
-  };
+  namespace writer {
+    class Dirent;
+    struct DirectInfo {
+      cluster_index_t clusterNumber;
+      blob_index_t     blobNumber;
+    };
 
-  struct RedirectInfo {
-    article_index_t redirectIndex;
-  };
+    struct RedirectInfo {
+      const Dirent* redirectDirent;
+    };
 
-  union DirentInfo {
-    DirectInfo d;
-    RedirectInfo r;
-  };
+    union DirentInfo {
+      DirectInfo d;
+      RedirectInfo r;
+    };
 
-  namespace writer
-  {
     class Dirent
     {
         static const uint16_t redirectMimeType = 0xffff;
@@ -85,11 +85,11 @@ namespace zim
 
         void setRedirectUrl(Url redirectUrl_)     { redirectUrl = redirectUrl_; }
         const Url& getRedirectUrl() const         { return redirectUrl; }
-        void setRedirect(article_index_t idx) {
-          info.r.redirectIndex = idx;
+        void setRedirect(const Dirent* target) {
+          info.r.redirectDirent = target;
           mimeType = redirectMimeType;
         }
-        article_index_t getRedirectIndex() const      { return isRedirect() ? info.r.redirectIndex : article_index_t(0); }
+        article_index_t getRedirectIndex() const      { return isRedirect() ? info.r.redirectDirent->getIdx() : article_index_t(0); }
 
         void setMimeType(uint16_t mime)
         {
