@@ -35,7 +35,6 @@ namespace zim
     class Article
     {
       public:
-        virtual std::string getAid() const = 0;
         virtual Url getUrl() const = 0;
         virtual std::string getTitle() const = 0;
         virtual bool isRedirect() const = 0;
@@ -44,7 +43,7 @@ namespace zim
         virtual std::string getMimeType() const = 0;
         virtual bool shouldCompress() const = 0;
         virtual bool shouldIndex() const = 0;
-        virtual std::string getRedirectAid() const = 0;
+        virtual Url getRedirectUrl() const = 0;
         virtual std::string getParameter() const;
         virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;

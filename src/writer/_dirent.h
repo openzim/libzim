@@ -55,8 +55,7 @@ namespace zim
         std::string title;
         std::string parameter;
         Cluster* cluster = nullptr;
-        std::string aid;
-        std::string redirectAid;
+        Url redirectUrl;
         article_index_t idx = article_index_t(0);
 
       public:
@@ -65,16 +64,11 @@ namespace zim
             url(),
             title(),
             parameter(),
-            aid(),
-            redirectAid()
+            redirectUrl()
         {
           info.d.clusterNumber = cluster_index_t(0);
           info.d.blobNumber = blob_index_t(0);
         }
-
-        Dirent(const std::string& aid_)
-          : Dirent()
-          { aid = aid_; }
 
         Dirent(Url url_ )
           : Dirent()
@@ -95,11 +89,8 @@ namespace zim
 
         uint32_t getVersion() const            { return version; }
 
-        void setAid(const std::string&  aid_)      { aid = aid_; }
-        const std::string& getAid() const          { return aid; }
-
-        void setRedirectAid(const std::string&  aid_)     { redirectAid = aid_; }
-        const std::string& getRedirectAid() const         { return redirectAid; }
+        void setRedirectUrl(Url redirectUrl_)     { redirectUrl = redirectUrl_; }
+        const Url& getRedirectUrl() const         { return redirectUrl; }
         void setRedirect(article_index_t idx) {
           info.r.redirectIndex = idx;
           mimeType = redirectMimeType;
@@ -167,7 +158,6 @@ namespace zim
 
         friend bool compareUrl(const Dirent* d1, const Dirent* d2);
         friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
-        friend inline bool compareAid(const Dirent* d1, const Dirent* d2);
     };
 
 
@@ -179,10 +169,6 @@ namespace zim
     {
       return d1->url.getNs() < d2->url.getNs()
         || (d1->url.getNs() == d2->url.getNs() && d1->getTitle() < d2->getTitle());
-    }
-    inline bool compareAid(const Dirent* d1, const Dirent* d2)
-    {
-      return d1->aid < d2->aid;
     }
 
     std::ostream& operator<< (std::ostream& out, const Dirent& d);

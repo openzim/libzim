@@ -46,8 +46,8 @@ namespace zim
         virtual void addArticle(const Article& article);
         virtual void finishZimCreation();
 
-        virtual std::string getMainPage() { return ""; }
-        virtual std::string getLayoutPage() { return ""; }
+        virtual Url getMainUrl() { return Url(); }
+        virtual Url getLayoutUrl() { return Url(); }
         virtual zim::Uuid getUuid() { return Uuid::generate(); }
 
       private:

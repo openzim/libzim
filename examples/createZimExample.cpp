@@ -39,7 +39,7 @@ class TestArticle : public zim::writer::Article
     virtual bool isRedirect() const;
     virtual bool shouldCompress() const { return true; }
     virtual std::string getMimeType() const;
-    virtual std::string getRedirectAid() const;
+    virtual zim::writer::Url getRedirectUrl() const;
     virtual bool shouldIndex() const { return false; }
     virtual zim::size_type getSize() const { return _data.size(); }
     virtual std::string getFilename() const { return ""; }
@@ -81,9 +81,9 @@ std::string TestArticle::getMimeType() const
   return "text/plain";
 }
 
-std::string TestArticle::getRedirectAid() const
+zim::writer::Url TestArticle::getRedirectUrl() const
 {
-  return "";
+  return zim::writer::Url();
 }
 
 int main(int argc, char* argv[])
