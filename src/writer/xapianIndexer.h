@@ -42,8 +42,7 @@ class XapianMetaArticle : public zim::writer::Article
   virtual ~XapianMetaArticle() = default;
   virtual zim::Blob getData() const;
   virtual std::string getAid() const { return "fulltext/xapian"; }
-  virtual char getNamespace() const { return 'X';}
-  virtual std::string getUrl() const { return "fulltext/xapian"; }
+  virtual zim::writer::Url getUrl() const { return zim::writer::Url('X', "fulltext/xapian"); }
   virtual std::string getTitle() const { return "Xapian Fulltext Index"; }
   virtual std::string getMimeType() const { return "application/octet-stream+xapian"; }
   virtual bool isRedirect() const { return false; }

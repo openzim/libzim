@@ -16,6 +16,7 @@ install_headers(
 
 install_headers(
     'zim/writer/article.h',
+    'zim/writer/url.h',
     'zim/writer/zimcreator.h',
     subdir:'zim/writer'
 )

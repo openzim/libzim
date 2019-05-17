@@ -486,7 +486,7 @@ namespace zim
     {
       auto dirent = pool.getDirent();
       dirent->setAid(article->getAid());
-      dirent->setUrl(article->getNamespace(), article->getUrl());
+      dirent->setUrl(article->getUrl());
       dirent->setTitle(article->getTitle());
       dirent->setParameter(article->getParameter());
 

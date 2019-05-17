@@ -34,8 +34,7 @@ class TestArticle : public zim::writer::Article
     virtual ~TestArticle() = default;
 
     virtual std::string getAid() const;
-    virtual char getNamespace() const;
-    virtual std::string getUrl() const;
+    virtual zim::writer::Url getUrl() const;
     virtual std::string getTitle() const;
     virtual bool isRedirect() const;
     virtual bool shouldCompress() const { return true; }
@@ -62,14 +61,9 @@ std::string TestArticle::getAid() const
   return _id;
 }
 
-char TestArticle::getNamespace() const
+zim::writer::Url TestArticle::getUrl() const
 {
-  return 'A';
-}
-
-std::string TestArticle::getUrl() const
-{
-  return _id;
+  return zim::writer::Url('A', _id);
 }
 
 std::string TestArticle::getTitle() const

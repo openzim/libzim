@@ -24,6 +24,7 @@
 #include <zim/blob.h>
 #include <zim/zim.h>
 #include <zim/uuid.h>
+#include <zim/writer/url.h>
 #include <string>
 
 namespace zim
@@ -35,8 +36,7 @@ namespace zim
     {
       public:
         virtual std::string getAid() const = 0;
-        virtual char getNamespace() const = 0;
-        virtual std::string getUrl() const = 0;
+        virtual Url getUrl() const = 0;
         virtual std::string getTitle() const = 0;
         virtual bool isRedirect() const = 0;
         virtual bool isLinktarget() const;

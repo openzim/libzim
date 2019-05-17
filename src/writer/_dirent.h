@@ -51,9 +51,8 @@ namespace zim
 
         uint16_t mimeType;
         DirentInfo info {};
-        char ns;
+        Url url;
         std::string title;
-        std::string url;
         std::string parameter;
         Cluster* cluster = nullptr;
         std::string aid;
@@ -63,9 +62,8 @@ namespace zim
       public:
         Dirent()
           : mimeType(0),
-            ns('\0'),
-            title(),
             url(),
+            title(),
             parameter(),
             aid(),
             redirectAid()
@@ -78,16 +76,16 @@ namespace zim
           : Dirent()
           { aid = aid_; }
 
-        Dirent(char ns_, const std::string& url_ )
+        Dirent(Url url_ )
           : Dirent()
-          { ns = ns_; url = url_; }
+          { url = url_; }
 
-        char getNamespace() const               { return ns; }
-        const std::string& getTitle() const     { return title.empty() ? url : title; }
+        char getNamespace() const               { return url.getNs(); }
+        const std::string& getTitle() const     { return title.empty() ? url.getUrl() : title; }
         void setTitle(const std::string& title_) { title = title_; }
-        const std::string& getUrl() const       { return url; }
-        void setUrl(char ns_, const std::string& url_) {
-          ns = ns_;
+        const std::string& getUrl() const       { return url.getUrl(); }
+        const Url& getFullUrl() const { return url; }
+        void setUrl(Url url_) {
           url = url_;
         }
         const std::string& getParameter() const { return parameter; }
@@ -151,8 +149,8 @@ namespace zim
         uint16_t getMimeType() const            { return mimeType; }
         size_t getDirentSize() const
         {
-          size_t ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
-          if (title != url)
+          size_t ret = (isRedirect() ? 12 : 16) + url.getUrl().size() + parameter.size() + 2;
+          if (title != url.getUrl())
             ret += title.size();
           return ret;
         }
@@ -175,13 +173,12 @@ namespace zim
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns
-        || (d1->ns == d2->ns && d1->url < d2->url);
+      return d1->url < d2->url;
     }
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns
-        || (d1->ns == d2->ns && d1->getTitle() < d2->getTitle());
+      return d1->url.getNs() < d2->url.getNs()
+        || (d1->url.getNs() == d2->url.getNs() && d1->getTitle() < d2->getTitle());
     }
     inline bool compareAid(const Dirent* d1, const Dirent* d2)
     {
