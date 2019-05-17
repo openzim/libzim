@@ -22,6 +22,7 @@
 #include "creatordata.h"
 #include "cluster.h"
 #include "debug.h"
+#include "workers.h"
 #include <zim/blob.h>
 #include <zim/writer/creator.h>
 #include "../endian_tools.h"
@@ -68,24 +69,6 @@ namespace zim
 {
   namespace writer
   {
-    void* Creator::clusterWriter(void* arg) {
-      auto creator = static_cast<zim::writer::Creator*>(arg);
-      zim::writer::Cluster* clusterToWrite;
-      unsigned int wait = 0;
-
-      while(true) {
-        microsleep(wait);
-        if (creator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
-          wait = 0;
-          clusterToWrite->dump_tmp(creator->data->tmpfname);
-          clusterToWrite->close();
-          continue;
-        }
-        wait += 10;
-      }
-      return nullptr;
-    }
-
     Creator::Creator(bool verbose)
       : verbose(verbose)
     {}
@@ -100,7 +83,7 @@ namespace zim
       for(unsigned i=0; i<compressionThreads; i++)
       {
         pthread_t thread;
-        pthread_create(&thread, NULL, clusterWriter, this);
+        pthread_create(&thread, NULL, clusterWriter, this->data.get());
         pthread_detach(thread);
         data->runningWriters.push_back(thread);
       }

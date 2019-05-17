@@ -60,7 +60,6 @@ namespace zim
 
         void fillHeader(Fileheader* header);
         void write(const Fileheader& header, const std::string& fname) const;
-        static void* clusterWriter(void* arg);
     };
   }
 
