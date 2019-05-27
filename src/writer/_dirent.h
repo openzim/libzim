@@ -29,12 +29,16 @@ namespace zim
   namespace writer {
     class Dirent;
     struct DirectInfo {
-      cluster_index_t clusterNumber;
+      DirectInfo() :
+        clusterNumber(0),
+        blobNumber(0)
+      {};
+      cluster_index_t  clusterNumber;
       blob_index_t     blobNumber;
     };
 
     struct RedirectInfo {
-      const Dirent* redirectDirent;
+      const Dirent* redirectDirent = nullptr;
     };
 
     union DirentInfo {
