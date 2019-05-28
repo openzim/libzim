@@ -100,13 +100,8 @@ void Cluster::write_offsets(std::ostream& out) const
 
 void Cluster::write_final(std::ostream& out) const
 {
-  if(getCompression() == zim::zimcompNone)
-  {
-    dump(out);
-  } else {
-    std::ifstream clustersFile(tmp_filename, std::ios::binary);
-    out << clustersFile.rdbuf();
-  }
+  std::ifstream clustersFile(tmp_filename, std::ios::binary);
+  out << clustersFile.rdbuf();
   if (!out) {
     throw std::runtime_error("failed to write cluster");
   }
@@ -114,46 +109,18 @@ void Cluster::write_final(std::ostream& out) const
 
 void Cluster::dump_tmp(const std::string& directoryPath)
 {
-  if(getCompression() == zim::zimcompNone)
-  {
-    //No real dump, store inmemory data in file
-    size_t file_index = 0;
-    for (auto& data: _data)
-    {
-      ASSERT(data.value.empty(), ==, false);
-      if (data.type == DataType::plain) {
-        std::ostringstream ss;
-        ss << directoryPath << SEPARATOR << "file_" << index << "_" << file_index << ".tmp";
-        auto filename = ss.str();
-        {
-          std::ofstream out(filename, std::ios::binary);
-          out << data.value;
-          if (!out) {
-            throw std::runtime_error(
-              std::string("failed to write temporary cluster file ")
-            + filename);
-          }
-        }
-        data.type = DataType::file;
-        data.value = filename;
-      }
-      file_index++;
-    }
-    finalSize = zsize_t(size().v+1);
-  } else {
-    std::ostringstream ss;
-    ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
-    tmp_filename = ss.str();
-    std::ofstream out(tmp_filename, std::ios::binary);
-    dump(out);
-    if (!out) {
-      throw std::runtime_error(
-        std::string("failed to write temporary cluster file ")
-      + tmp_filename);
-    }
-    finalSize = zsize_t(out.tellp());
-    clear();
+  std::ostringstream ss;
+  ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
+  tmp_filename = ss.str();
+  std::ofstream out(tmp_filename, std::ios::binary);
+  dump(out);
+  if (!out) {
+    throw std::runtime_error(
+      std::string("failed to write temporary cluster file ")
+    + tmp_filename);
   }
+  finalSize = zsize_t(out.tellp());
+  clear();
 }
 
 void Cluster::write(std::ostream& out) const

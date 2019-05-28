@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_WRITER_ZIMCREATOR_H
-#define ZIM_WRITER_ZIMCREATOR_H
+#ifndef ZIM_WRITER_CREATOR_H
+#define ZIM_WRITER_CREATOR_H
 
 #include <memory>
 #include <zim/zim.h>
@@ -29,12 +29,12 @@ namespace zim
   class Fileheader;
   namespace writer
   {
-    class ZimCreatorData;
-    class ZimCreator
+    class CreatorData;
+    class Creator
     {
       public:
-        ZimCreator(bool verbose = false);
-        virtual ~ZimCreator();
+        Creator(bool verbose = false);
+        virtual ~Creator();
 
         zim::size_type getMinChunkSize() const { return minChunkSize; }
         void setMinChunkSize(zim::size_type s) { minChunkSize = s; }
@@ -46,12 +46,12 @@ namespace zim
         virtual void addArticle(const Article& article);
         virtual void finishZimCreation();
 
-        virtual std::string getMainPage() { return ""; }
-        virtual std::string getLayoutPage() { return ""; }
+        virtual Url getMainUrl() { return Url(); }
+        virtual Url getLayoutUrl() { return Url(); }
         virtual zim::Uuid getUuid() { return Uuid::generate(); }
 
       private:
-        std::unique_ptr<ZimCreatorData> data;
+        std::unique_ptr<CreatorData> data;
         bool verbose;
         bool withIndex = false;
         size_t minChunkSize = 1024-64;
@@ -66,4 +66,4 @@ namespace zim
 
 }
 
-#endif // ZIM_WRITER_ZIMCREATOR_H
+#endif // ZIM_WRITER_CREATOR_H

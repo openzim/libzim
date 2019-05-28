@@ -106,7 +106,8 @@ void XapianIndexer::index(const zim::writer::Article* article)
   /* Put the data in the document */
   Xapian::Document currentDocument;
   currentDocument.clear_values();
-  currentDocument.set_data(std::string(1, article->getNamespace()) + "/" + article->getUrl());
+  auto url = article->getUrl();
+  currentDocument.set_data(url.getLongUrl());
   indexer.set_document(currentDocument);
   zim::MyHtmlParser htmlParser;
 

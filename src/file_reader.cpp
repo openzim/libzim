@@ -246,17 +246,17 @@ char* uncompress(const Reader* reader, offset_t startOffset, zsize_t* dest_size)
   char* ret_data = new char[_dest_size.v];
   // The input is a buffer of CHUNCK_SIZE char max. It may be less if the last chunk
   // is at the end of the reader and the reader size is not a multiple of CHUNCK_SIZE.
-  char* raw_data = new char[CHUNCK_SIZE];
+  std::vector<char> raw_data(CHUNCK_SIZE);
 
   typename INFO::stream_t stream;
-  INFO::init_stream(&stream, raw_data);
+  INFO::init_stream(&stream, raw_data.data());
 
   zim::size_type availableSize = reader->size().v - startOffset.v;
   zim::size_type inputSize = std::min(availableSize, CHUNCK_SIZE);
-  reader->read(raw_data, startOffset, zsize_t(inputSize));
+  reader->read(raw_data.data(), startOffset, zsize_t(inputSize));
   startOffset.v += inputSize;
   availableSize -= inputSize;
-  stream.next_in = (unsigned char*)raw_data;
+  stream.next_in = (unsigned char*)raw_data.data();
   stream.avail_in = inputSize;
   stream.next_out = (unsigned char*) ret_data;
   stream.avail_out = _dest_size.v;
@@ -271,10 +271,10 @@ char* uncompress(const Reader* reader, offset_t startOffset, zsize_t* dest_size)
         // So, we must fetch a new chunk of input data.
         if (availableSize) {
           inputSize = std::min(availableSize, CHUNCK_SIZE);
-          reader->read(raw_data, startOffset, zsize_t(inputSize));
+          reader->read(raw_data.data(), startOffset, zsize_t(inputSize));
           startOffset.v += inputSize;
           availableSize -= inputSize;
-          stream.next_in = (unsigned char*) raw_data;
+          stream.next_in = (unsigned char*) raw_data.data();
           stream.avail_in = inputSize;
           continue;
         }

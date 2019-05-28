@@ -11,7 +11,8 @@ template<typename B>
 struct REAL_TYPEDEF{
   typedef B base_type;
   B v;
-  explicit REAL_TYPEDEF(B v=0) : v(v) {};
+  REAL_TYPEDEF() : v(0) {};
+  explicit REAL_TYPEDEF(B v) : v(v) {};
   explicit inline operator bool() const { return v != 0; }
   explicit inline operator B() const { return v; }
 

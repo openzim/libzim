@@ -33,10 +33,6 @@ namespace zim
     {
       return false;
     }
-    std::string Article::getParameter() const
-    {
-      return std::string();
-    }
 
     std::string Article::getNextCategory()
     {

@@ -19,10 +19,11 @@
 
 #include "config.h"
 
-#include "zimcreatordata.h"
+#include "creatordata.h"
 #include "cluster.h"
+#include "debug.h"
 #include <zim/blob.h>
-#include <zim/writer/zimcreator.h>
+#include <zim/writer/creator.h>
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
@@ -41,6 +42,7 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
+#include <ctime>
 #include "md5stream.h"
 #include "tee.h"
 #include "log.h"
@@ -55,41 +57,27 @@ log_define("zim.writer.creator")
         std::cout << e << std::endl; \
     } while(false)
 
-namespace
-{
-  class CompareTitle
-  {
-      zim::writer::ZimCreatorData::DirentsType& dirents;
-
-    public:
-      explicit CompareTitle(zim::writer::ZimCreatorData::DirentsType& dirents_)
-        : dirents(dirents_)
-        { }
-      bool operator() (zim::article_index_t titleIdx1, zim::article_index_t titleIdx2) const
-      {
-        auto d1 = dirents[zim::article_index_type(titleIdx1)];
-        auto d2 = dirents[zim::article_index_type(titleIdx2)];
-        return d1.getNamespace() < d2.getNamespace()
-           || (d1.getNamespace() == d2.getNamespace()
-            && d1.getTitle() < d2.getTitle());
-      }
-  };
-}
+#define TINFO(e) \
+    if (verbose) { \
+        double seconds = difftime(time(NULL), data->start_time); \
+        std::cout << "T:" << (int)(seconds) \
+                  << "; " << e << std::endl; \
+    }
 
 namespace zim
 {
   namespace writer
   {
-    void* ZimCreator::clusterWriter(void* arg) {
-      auto zimCreator = static_cast<zim::writer::ZimCreator*>(arg);
+    void* Creator::clusterWriter(void* arg) {
+      auto creator = static_cast<zim::writer::Creator*>(arg);
       zim::writer::Cluster* clusterToWrite;
       unsigned int wait = 0;
 
       while(true) {
         microsleep(wait);
-        if (zimCreator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
+        if (creator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
           wait = 0;
-          clusterToWrite->dump_tmp(zimCreator->data->tmpfname);
+          clusterToWrite->dump_tmp(creator->data->tmpfname);
           clusterToWrite->close();
           continue;
         }
@@ -98,15 +86,15 @@ namespace zim
       return nullptr;
     }
 
-    ZimCreator::ZimCreator(bool verbose)
+    Creator::Creator(bool verbose)
       : verbose(verbose)
     {}
 
-    ZimCreator::~ZimCreator() = default;
+    Creator::~Creator() = default;
 
-    void ZimCreator::startZimCreation(const std::string& fname)
+    void Creator::startZimCreation(const std::string& fname)
     {
-      data = std::unique_ptr<ZimCreatorData>(new ZimCreatorData(fname, verbose, withIndex, indexingLanguage));
+      data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage));
       data->setMinChunkSize(minChunkSize);
 
       for(unsigned i=0; i<compressionThreads; i++)
@@ -118,22 +106,28 @@ namespace zim
       }
     }
 
-    void ZimCreator::addArticle(const Article& article)
+    void Creator::addArticle(const Article& article)
     {
-      Dirent dirent = data->createDirentFromArticle(&article);
+      auto dirent = data->createDirentFromArticle(&article);
       data->addDirent(dirent, &article);
       data->nbArticles++;
-      if (article.shouldCompress())
-        data->nbCompArticles++;
-      else
-        data->nbUnCompArticles++;
-      if (!article.getFilename().empty())
-        data->nbFileArticles++;
-      if (article.shouldIndex())
-        data->nbIndexArticles++;
-
+      if (article.isRedirect()) {
+        data->nbRedirectArticles++;
+      } else {
+        if (article.shouldCompress())
+          data->nbCompArticles++;
+        else
+          data->nbUnCompArticles++;
+        if (!article.getFilename().empty())
+          data->nbFileArticles++;
+        if (article.shouldIndex())
+          data->nbIndexArticles++;
+      }
       if (verbose && data->nbArticles%1000 == 0){
-        std::cout << "A:" << data->nbArticles
+        double seconds = difftime(time(NULL),data->start_time);
+        std::cout << "T:" << (int)seconds
+                  << "; A:" << data->nbArticles
+                  << "; RA:" << data->nbRedirectArticles
                   << "; CA:" << data->nbCompArticles
                   << "; UA:" << data->nbUnCompArticles
                   << "; FA:" << data->nbFileArticles
@@ -141,6 +135,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
+                  << "; WC:" << data->clustersToWrite.size()
                   << std::endl;
       }
 
@@ -151,10 +146,13 @@ namespace zim
 #endif
     }
 
-    void ZimCreator::finishZimCreation()
+    void Creator::finishZimCreation()
     {
       if (verbose) {
-        std::cout << "A:" << data->nbArticles
+        double seconds = difftime(time(NULL),data->start_time);
+        std::cout << "T:" << (int)seconds
+                  << "; A:" << data->nbArticles
+                  << "; RA:" << data->nbRedirectArticles
                   << "; CA:" << data->nbCompArticles
                   << "; UA:" << data->nbUnCompArticles
                   << "; FA:" << data->nbFileArticles
@@ -162,6 +160,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
+                  << "; WC:" << data->clustersToWrite.size()
                   << std::endl;
       }
 
@@ -170,7 +169,7 @@ namespace zim
           data->indexer->indexingPostlude();
           microsleep(100);
           auto article = data->indexer->getMetaArticle();
-          Dirent dirent = data->createDirentFromArticle(article);
+          auto dirent = data->createDirentFromArticle(article);
           data->addDirent(dirent, article);
           delete article;
       }
@@ -216,40 +215,40 @@ namespace zim
       }
 #endif
 
+      TINFO("Generate cluster offsets");
       data->generateClustersOffsets();
 
-      data->removeInvalidRedirects();
-      data->setArticleIndexes();
+      TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
 
+      TINFO("Set article indexes");
+      data->setArticleIndexes();
+
+      TINFO("Resolve mimetype");
       data->resolveMimeTypes();
 
-      INFO("create title index");
+      TINFO("create title index");
       data->createTitleIndex();
-      INFO(data->dirents.size() << " title index created");
-      INFO(data->clusterOffsets.size() << " clusters created");
+      TINFO(data->dirents.size() << " title index created");
+      TINFO(data->clusterOffsets.size() << " clusters created");
 
-      INFO("fill header");
+      TINFO("fill header");
       Fileheader header;
       fillHeader(&header);
 
-      // sort
-      log_debug("sort " << dirents.size() << " directory entries (url)");
-      std::sort(data->dirents.begin(), data->dirents.end(), compareUrl);
-
-      INFO("write zimfile");
+      TINFO("write zimfile");
       write(header, data->basename + ".zim.tmp");
       zim::DEFAULTFS::rename(data->basename + ".zim.tmp", data->basename + ".zim");
 
-      INFO("ready");
+      TINFO("finish");
     }
 
-    void ZimCreator::fillHeader(Fileheader* header)
+    void Creator::fillHeader(Fileheader* header)
     {
-      std::string mainAid = getMainPage();
-      std::string layoutAid = getLayoutPage();
+      auto mainUrl = getMainUrl();
+      auto layoutUrl = getLayoutUrl();
 
-      log_debug("main aid=" << mainAid << " layout aid=" << layoutAid);
+      log_debug("main url=" << mainUrl << " layout url=" << layoutUrl);
 
       if (data->isExtended) {
         header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
@@ -260,20 +259,20 @@ namespace zim
       header->setMainPage(std::numeric_limits<article_index_type>::max());
       header->setLayoutPage(std::numeric_limits<article_index_type>::max());
 
-      if (!mainAid.empty() || !layoutAid.empty())
+      if (!mainUrl.empty() || !layoutUrl.empty())
       {
         for (auto& dirent: data->dirents)
         {
-          if (mainAid == dirent.getAid())
+          if (mainUrl == dirent->getFullUrl())
           {
-            log_debug("main idx=" << dirent.getIdx());
-            header->setMainPage(article_index_type(dirent.getIdx()));
+            log_debug("main idx=" << dirent->getIdx());
+            header->setMainPage(article_index_type(dirent->getIdx()));
           }
 
-          if (layoutAid == dirent.getAid())
+          if (layoutUrl == dirent->getFullUrl())
           {
-            log_debug("layout idx=" << dirent.getIdx());
-            header->setLayoutPage(article_index_type(dirent.getIdx()));
+            log_debug("layout idx=" << dirent->getIdx());
+            header->setLayoutPage(article_index_type(dirent->getIdx()));
           }
         }
       }
@@ -298,7 +297,7 @@ namespace zim
       header->setChecksumPos( offset );
     }
 
-    void ZimCreator::write(const Fileheader& header, const std::string& fname) const
+    void Creator::write(const Fileheader& header, const std::string& fname) const
     {
       std::ofstream zimfile(fname);
       Md5stream md5;
@@ -323,26 +322,26 @@ namespace zim
         char tmp_buff[sizeof(offset_type)];
         toLittleEndian(off.v, tmp_buff);
         out.write(tmp_buff, sizeof(offset_type));
-        off += dirent.getDirentSize();
+        off += dirent->getDirentSize();
       }
 
       log_debug("after writing direntPtr - pos=" << out.tellp());
 
       // write title index
-      for (auto titleid: data->titleIdx)
+      for (Dirent* dirent: data->titleIdx)
       {
         char tmp_buff[sizeof(article_index_type)];
-        toLittleEndian(titleid.v, tmp_buff);
+        toLittleEndian(dirent->getIdx().v, tmp_buff);
         out.write(tmp_buff, sizeof(article_index_type));
       }
 
       log_debug("after writing fileIdxList - pos=" << out.tellp());
 
       // write directory entries
-      for (auto& dirent: data->dirents)
+      for (Dirent* dirent: data->dirents)
       {
-        out << dirent;
-        log_debug("write " << dirent.getTitle() << " dirent.size()=" << dirent.getDirentSize() << " pos=" << out.tellp());
+        out << *dirent;
+        log_debug("write " << dirent->getTitle() << " dirent.size()=" << dirent->getDirentSize() << " pos=" << out.tellp());
       }
 
       log_debug("after writing dirents - pos=" << out.tellp());
@@ -380,7 +379,7 @@ namespace zim
       zimfile.write(reinterpret_cast<const char*>(digest), 16);
     }
 
-    ZimCreatorData::ZimCreatorData(const std::string& fname,
+    CreatorData::CreatorData(const std::string& fname,
                                    bool verbose,
                                    bool withIndex,
                                    std::string language)
@@ -388,13 +387,15 @@ namespace zim
         indexingLanguage(language),
         verbose(verbose),
         nbArticles(0),
+        nbRedirectArticles(0),
         nbCompArticles(0),
 	nbUnCompArticles(0),
 	nbFileArticles(0),
 	nbIndexArticles(0),
 	nbClusters(0),
 	nbCompClusters(0),
-	nbUnCompClusters(0)
+	nbUnCompClusters(0),
+        start_time(time(NULL))
     {
       basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
                         ? fname.substr(0, fname.size() - 4)
@@ -421,7 +422,7 @@ namespace zim
 #endif
     }
 
-    ZimCreatorData::~ZimCreatorData()
+    CreatorData::~CreatorData()
     {
       if (compCluster)
         delete compCluster;
@@ -440,13 +441,27 @@ namespace zim
 #endif
     }
 
-    void ZimCreatorData::addDirent(const Dirent& dirent, const Article* article)
+    void CreatorData::addDirent(Dirent* dirent, const Article* article)
     {
-      dirents.push_back(dirent);
+      auto ret = dirents.insert(dirent);
+      if (!ret.second) {
+        Dirent* existing = *ret.first;
+        if (existing->isRedirect() && !dirent->isRedirect()) {
+          unresolvedRedirectDirents.erase(existing);
+          dirents.erase(ret.first);
+          dirents.insert(dirent);
+        } else {
+          std::cerr << "Impossible to add " << dirent->getFullUrl() << std::endl;
+          std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
+          std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
+          return;
+        }
+      };
 
       // If this is a redirect, we're done: there's no blob to add.
-      if (dirent.isRedirect())
+      if (dirent->isRedirect())
       {
+        unresolvedRedirectDirents.insert(dirent);
         return;
       }
 
@@ -475,37 +490,35 @@ namespace zim
       {
         log_info("cluster with " << cluster->count() << " articles, " <<
                  cluster->size() << " bytes; current title \"" <<
-                 dirent.getTitle() << '\"');
+                 dirent->getTitle() << '\"');
         cluster = closeCluster(article->shouldCompress());
       }
 
-      dirents.back().setCluster(cluster);
+      dirent->setCluster(cluster);
       cluster->addArticle(article);
     }
 
-    Dirent ZimCreatorData::createDirentFromArticle(const Article* article)
+    Dirent* CreatorData::createDirentFromArticle(const Article* article)
     {
-      Dirent dirent;
-      dirent.setAid(article->getAid());
-      dirent.setUrl(article->getNamespace(), article->getUrl());
-      dirent.setTitle(article->getTitle());
-      dirent.setParameter(article->getParameter());
+      auto dirent = pool.getDirent();
+      dirent->setUrl(article->getUrl());
+      dirent->setTitle(article->getTitle());
 
-      log_debug("article " << dirent.getLongUrl() << " fetched");
+      log_debug("article " << dirent->getLongUrl() << " fetched");
 
       if (article->isRedirect())
       {
-        dirent.setRedirect(article_index_t(0));
-        dirent.setRedirectAid(article->getRedirectAid());
-        log_debug("is redirect to " << dirent.getRedirectAid());
+        dirent->setRedirect(nullptr);
+        dirent->setRedirectUrl(article->getRedirectUrl());
+        log_debug("is redirect to " << dirent->getRedirectUrl());
       }
       else if (article->isLinktarget())
       {
-        dirent.setLinktarget();
+        dirent->setLinktarget();
       }
       else if (article->isDeleted())
       {
-        dirent.setDeleted();
+        dirent->setDeleted();
       }
       else
       {
@@ -514,13 +527,13 @@ namespace zim
           std::cerr << "Warning, " << article->getUrl() << " have empty mimetype." << std::endl;
           mimetype = "application/octet-stream";
         }
-        dirent.setMimeType(getMimeTypeIdx(mimetype));
-        log_debug("is article; mimetype " << dirent.getMimeType());
+        dirent->setMimeType(getMimeTypeIdx(mimetype));
+        log_debug("is article; mimetype " << dirent->getMimeType());
       }
       return dirent;
     }
 
-    Cluster* ZimCreatorData::closeCluster(bool compressed)
+    Cluster* CreatorData::closeCluster(bool compressed)
     {
       Cluster *cluster;
       nbClusters++;
@@ -548,7 +561,7 @@ namespace zim
       return cluster;
     }
 
-    void ZimCreatorData::generateClustersOffsets()
+    void CreatorData::generateClustersOffsets()
     {
       clustersSize = zsize_t(0);
       for(auto& cluster: clustersList)
@@ -558,94 +571,42 @@ namespace zim
       }
     }
 
-    void ZimCreatorData::removeInvalidRedirects()
+    void CreatorData::setArticleIndexes()
     {
-      // sort
-      INFO("sort " << dirents.size() << " directory entries (aid)");
-      std::sort(dirents.begin(), dirents.end(), compareAid);
-
-      // remove invalid redirects
-      INFO("remove invalid redirects from " << dirents.size() << " directory entries");
-      ZimCreatorData::DirentsType::size_type di = 0;
-      while (di < dirents.size())
-      {
-        if (di % 10000 == 0)
-          INFO(di << "/" << dirents.size() << " directory entries checked for invalid redirects");
-
-        if (dirents[di].isRedirect())
-        {
-          log_debug("check " << dirents[di].getTitle() << " redirect to " << dirents[di].getRedirectAid() << " (" << di << '/' << dirents.size() << ')');
-
-          if (!std::binary_search(dirents.begin(), dirents.end(), Dirent(dirents[di].getRedirectAid()), compareAid))
-          {
-            INFO("remove invalid redirection " << dirents[di].getUrl() << " redirecting to (missing) " << dirents[di].getRedirectAid());
-            dirents.erase(dirents.begin() + di);
-            continue;
-          }
-        }
-
-        ++di;
-      }
-    }
-
-    void ZimCreatorData::setArticleIndexes()
-    {
-      // sort
-      INFO("sort " << dirents.size() << " directory entries (url)");
-      std::sort(dirents.begin(), dirents.end(), compareUrl);
-
       // set index
       INFO("set index");
       article_index_t idx(0);
       for (auto& dirent: dirents) {
-        dirent.setIdx(idx);
+        dirent->setIdx(idx);
         idx += 1;
       }
     }
 
-    void ZimCreatorData::resolveRedirectIndexes()
+    void CreatorData::resolveRedirectIndexes()
     {
-      // sort
-      log_debug("sort " << dirents.size() << " directory entries (aid)");
-      std::sort(dirents.begin(), dirents.end(), compareAid);
-
       // translate redirect aid to index
-      INFO("translate redirect aid to index");
-      for (auto& di: dirents)
+      INFO("Resolve redirect");
+      for (auto dirent: unresolvedRedirectDirents)
       {
-        if (di.isRedirect())
-        {
-          auto ddi = std::lower_bound(dirents.begin(), dirents.end(), di.getRedirectAid(), compareAid);
-          if (ddi != dirents.end() && ddi->getAid() == di.getRedirectAid())
-          {
-            log_debug("redirect aid=" << ddi->getAid() << " redirect index=" << ddi->getIdx());
-            di.setRedirect(ddi->getIdx());
-          }
-          else
-          {
-            std::ostringstream msg;
-            msg << "internal error: redirect aid " << di.getRedirectAid() << " not found";
-            log_fatal(msg.str());
-            throw std::runtime_error(msg.str());
-          }
+        Dirent tmpDirent(dirent->getRedirectUrl());
+        auto target_pos = dirents.find(&tmpDirent);
+        if(target_pos == dirents.end()) {
+          INFO("Invalid redirection " << dirent->getUrl() << " redirecting to (missing) " << dirent->getRedirectUrl());
+          dirents.erase(dirent);
+        } else  {
+          dirent->setRedirect(*target_pos);
         }
       }
     }
 
-    void ZimCreatorData::createTitleIndex()
+    void CreatorData::createTitleIndex()
     {
-      // Sort works on dirents sorted by url.
-      std::sort(dirents.begin(), dirents.end(), compareUrl);
-      titleIdx.resize(0);
-      titleIdx.reserve(dirents.size());
+      titleIdx.clear();
       for (auto dirent: dirents)
-        titleIdx.push_back(dirent.getIdx());
-
-      CompareTitle compareTitle(dirents);
-      std::sort(titleIdx.begin(), titleIdx.end(), compareTitle);
+        titleIdx.insert(dirent);
     }
 
-    void ZimCreatorData::resolveMimeTypes()
+    void CreatorData::resolveMimeTypes()
     {
       std::vector<std::string> oldMImeList;
       std::vector<uint16_t> mapping;
@@ -670,12 +631,12 @@ namespace zim
 
       for (auto& dirent: dirents)
       {
-        if (dirent.isArticle())
-          dirent.setMimeType(mapping[dirent.getMimeType()]);
+        if (dirent->isArticle())
+          dirent->setMimeType(mapping[dirent->getMimeType()]);
       }
     }
 
-    uint16_t ZimCreatorData::getMimeTypeIdx(const std::string& mimeType)
+    uint16_t CreatorData::getMimeTypeIdx(const std::string& mimeType)
     {
       auto it = mimeTypesMap.find(mimeType);
       if (it == mimeTypesMap.end())
@@ -690,7 +651,7 @@ namespace zim
       return it->second;
     }
 
-    const std::string& ZimCreatorData::getMimeType(uint16_t mimeTypeIdx) const
+    const std::string& CreatorData::getMimeType(uint16_t mimeTypeIdx) const
     {
       auto it = rmimeTypesMap.find(mimeTypeIdx);
       if (it == rmimeTypesMap.end())
@@ -698,7 +659,7 @@ namespace zim
       return it->second;
     }
 
-    zsize_t ZimCreatorData::mimeListSize() const
+    zsize_t CreatorData::mimeListSize() const
     {
       size_type ret = 1;
       for (auto& rmimeType: rmimeTypesMap)
@@ -706,12 +667,12 @@ namespace zim
       return zsize_t(ret);
     }
 
-    zsize_t ZimCreatorData::indexSize() const
+    zsize_t CreatorData::indexSize() const
     {
       size_type s = 0;
 
       for (auto& dirent: dirents)
-        s += dirent.getDirentSize();
+        s += dirent->getDirentSize();
 
       return zsize_t(s);
     }

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_WRITER_ZIMCREATOR_DATA_H
-#define ZIM_WRITER_ZIMCREATOR_DATA_H
+#ifndef ZIM_WRITER_CREATOR_DATA_H
+#define ZIM_WRITER_CREATOR_DATA_H
 
 #include <zim/fileheader.h>
 #include <zim/writer/article.h>
@@ -30,6 +30,8 @@
 #include <fstream>
 #include "config.h"
 
+#include "direntPool.h"
+
 #if defined(ENABLE_XAPIAN)
   class XapianIndexer;
 #endif
@@ -38,12 +40,25 @@ namespace zim
 {
   namespace writer
   {
+    struct UrlCompare {
+      bool operator() (const Dirent* d1, const Dirent* d2) const {
+        return compareUrl(d1, d2);
+      }
+    };
+
+    struct TitleCompare {
+      bool operator() (const Dirent* d1, const Dirent* d2) const {
+        return compareTitle(d1, d2);
+      }
+    };
+
+
     class Cluster;
-    class ZimCreatorData
+    class CreatorData
     {
       public:
-        typedef std::vector<Dirent> DirentsType;
-        typedef std::vector<article_index_t> ArticleIdxVectorType;
+        typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
+        typedef std::multiset<Dirent*, TitleCompare> TitleSortedDirents;
         typedef std::vector<offset_t> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
@@ -52,16 +67,15 @@ namespace zim
         typedef Queue<Cluster*> ClusterQueue;
         typedef std::vector<pthread_t> ThreadList;
 
-        ZimCreatorData(const std::string& fname, bool verbose,
+        CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language);
-        virtual ~ZimCreatorData();
+        virtual ~CreatorData();
 
-        void addDirent(const Dirent& dirent, const Article* article);
-        Dirent createDirentFromArticle(const Article* article);
+        void addDirent(Dirent* dirent, const Article* article);
+        Dirent* createDirentFromArticle(const Article* article);
         Cluster* closeCluster(bool compressed);
 
         void generateClustersOffsets();
-        void removeInvalidRedirects();
         void setArticleIndexes();
         void resolveRedirectIndexes();
         void createTitleIndex();
@@ -72,8 +86,11 @@ namespace zim
 
         size_t minChunkSize = 1024-64;
 
-        DirentsType dirents;
-        ArticleIdxVectorType titleIdx;
+        DirentPool  pool;
+
+        UrlSortedDirents   dirents;
+        UrlSortedDirents   unresolvedRedirectDirents;
+        TitleSortedDirents titleIdx;
         OffsetsType clusterOffsets;
 
         MimeTypesMap mimeTypesMap;
@@ -102,6 +119,7 @@ namespace zim
         // Some stats
         bool verbose;
         article_index_type nbArticles;
+        article_index_type nbRedirectArticles;
         article_index_type nbCompArticles;
         article_index_type nbUnCompArticles;
         article_index_type nbFileArticles;
@@ -109,6 +127,7 @@ namespace zim
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
+        time_t start_time;
 
         cluster_index_t clusterCount() const
         { return cluster_index_t(clusterOffsets.size()); }
@@ -137,4 +156,4 @@ namespace zim
 
 }
 
-#endif // ZIM_WRITER_ZIMCREATOR_DATA_H
+#endif // ZIM_WRITER_CREATOR_DATA_H

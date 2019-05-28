@@ -32,6 +32,7 @@ class Queue {
         Queue() {pthread_mutex_init(&m_queueMutex,NULL);};
         virtual ~Queue() {pthread_mutex_destroy(&m_queueMutex);};
         virtual bool isEmpty();
+        virtual size_t size();
         virtual void pushToQueue(const T& element);
         virtual bool popFromQueue(T &filename);
 
@@ -49,6 +50,14 @@ template<typename T>
 bool Queue<T>::isEmpty() {
     pthread_mutex_lock(&m_queueMutex);
     bool retVal = m_realQueue.empty();
+    pthread_mutex_unlock(&m_queueMutex);
+    return retVal;
+}
+
+template<typename T>
+size_t Queue<T>::size() {
+    pthread_mutex_lock(&m_queueMutex);
+    size_t retVal = m_realQueue.size();
     pthread_mutex_unlock(&m_queueMutex);
     return retVal;
 }

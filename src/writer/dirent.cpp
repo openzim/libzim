@@ -35,7 +35,7 @@ std::ostream& zim::writer::operator<< (std::ostream& out, const zim::writer::Dir
     long a;
   } header;
   zim::toLittleEndian(dirent.getMimeType(), header.d);
-  header.d[2] = static_cast<char>(dirent.getParameter().size());
+  header.d[2] = 0; // parameter size
   header.d[3] = dirent.getNamespace();
 
   log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size());
@@ -63,7 +63,7 @@ std::ostream& zim::writer::operator<< (std::ostream& out, const zim::writer::Dir
   std::string t = dirent.getTitle();
   if (t != dirent.getUrl())
     out << t;
-  out << '\0' << dirent.getParameter();
+  out << '\0';
 
   return out;
 }

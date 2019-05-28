@@ -85,14 +85,20 @@ namespace zim
 
     log_debug("read url, title and parameters");
 
-    offset_type url_size = strlen(buffer->data(current));
+    offset_type url_size = strnlen(
+      buffer->data(current),
+      buffer->size().v - current.v - extraLen
+    );
     if (current.v + url_size >= buffer->size().v) {
       throw(InvalidSize());
     }
     url = std::string(buffer->data(current), url_size);
     current += url_size + 1;
 
-    offset_type title_size = strlen(buffer->data(current));
+    offset_type title_size = strnlen(
+      buffer->data(current),
+      buffer->size().v - current.v - extraLen
+    );
     if (current.v + title_size >= buffer->size().v) {
       throw(InvalidSize());
     }
