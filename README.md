@@ -4,15 +4,15 @@ ZIM library
 The ZIM library is the reference implementation for the ZIM file
 format. It's a solution to read and write ZIM files on many systems
 and architectures. More information about the ZIM format and the
-openZIM project at http://www.openzim.org/
+openZIM project at https://www.openzim.org/.
 
 Disclaimer
 ----------
 
 This document assumes you have a little knowledge about software
 compilation. If you experience difficulties with the dependencies or
-with the ZIM library compilation itself, we recommend to have a look to
-[kiwix-build](https://github.com/kiwix/kiwix-build).
+with the ZIM library compilation itself, we recommend to have a look
+to [kiwix-build](https://github.com/kiwix/kiwix-build).
 
 Preamble
 --------
@@ -29,16 +29,11 @@ The ZIM library relies on many third parts software libraries. They
 are prerequisites to the Kiwix library compilation. Following
 libraries need to be available:
 
-* Z ................................................. http://zlib.net/
-(package zlib1g-dev on Ubuntu)
-* LZMA ...................................... http://tukaani.org/lzma/
-(package lzma-dev on Ubuntu)
-* ICU ................................... http://site.icu-project.org/
-(package libicu-dev on Ubuntu)
-* Xapian (optional) .............................. https://xapian.org/
-(package libxapian-dev on Ubuntu)
-* Google test (optional) ........ https://github.com/google/googletest
-(No valid package on Ubuntu, if gtest is not present, libzim will use
+* [Z](https://zlib.net/) (package zlib1g-dev on Ubuntu)
+* [LZMA](https://tukaani.org/lzma/) (package lzma-dev on Ubuntu)
+* [ICU](http://site.icu-project.org/) (package libicu-dev on Ubuntu)
+* [Xapian](https://xapian.org/) - optional (package libxapian-dev on Ubuntu)
+* [Google test](https://github.com/google/googletest) - optional (No valid package on Ubuntu, if gtest is not present, libzim will use
 embedded one)
 
 These dependencies may or may not be packaged by your operating
@@ -53,8 +48,8 @@ meson (through pkg-config) will properly find them.
 Environment
 -------------
 
-The ZIM library builds using [Meson](http://mesonbuild.com/) version
-0.39 or higher. Meson relies itself on Ninja, pkg-config and few other
+The ZIM library builds using [Meson](https://mesonbuild.com/) version
+0.43 or higher. Meson relies itself on Ninja, pkg-config and few other
 compilation tools.
 
 Install first the few common compilation tools:
