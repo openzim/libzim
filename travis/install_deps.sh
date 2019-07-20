@@ -22,8 +22,18 @@ else
 
   wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip
   unzip ninja-linux.zip ninja
+
+  wget https://github.com/google/googletest/archive/release-1.8.1.tar.gz
+  tar -xvf release-1.8.1.tar.gz
+  cd googletest-release-1.8.1
+  mkdir build
+  cd build
+  cmake ..
+  make
+  sudo make install
 fi
 
+cd $HOME
 mkdir -p $HOME/bin
 cp ninja $HOME/bin
 
