@@ -1,3 +1,8 @@
+libzim 5.0.1
+============
+
+* Removed google-test source code
+
 libzim 5.0.0
 ============
 
@@ -44,7 +49,6 @@ libzim 4.0.4
 
  * Fix opening of multi-part zim.
  * Fix convertion of path to wpath on Windows.
- * Removed subprojects directory and updated README instructions
 
 libzim 4.0.3
 ============
