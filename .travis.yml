@@ -1,5 +1,5 @@
 language: cpp
-dist: trusty
+dist: bionic
 sudo: required
 cache: ccache
 before_install:
@@ -31,6 +31,7 @@ addons:
       - gcc-mingw-w64-i686
       - gcc-mingw-w64-base
       - mingw-w64-tools
+      - googletest
 
 matrix:
   include:
