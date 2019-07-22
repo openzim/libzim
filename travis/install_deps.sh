@@ -17,8 +17,8 @@ then
   unzip ninja-mac.zip ninja
 else
   wget https://bootstrap.pypa.io/get-pip.py
-  python3.5 get-pip.py --user
-  python3.5 -m pip install --user meson==0.49.2
+  python3.6 get-pip.py --user
+  python3.6 -m pip install --user meson==0.49.2
 
   wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip
   unzip ninja-linux.zip ninja
