@@ -26,6 +26,10 @@
 #include <limits>
 #include <iosfwd>
 
+#ifdef max
+#undef max
+#endif
+
 namespace zim
 {
   class Cluster;
