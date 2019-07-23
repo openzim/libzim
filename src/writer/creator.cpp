@@ -236,7 +236,7 @@ namespace zim
       Fileheader header;
       fillHeader(&header);
 
-      TINFO("write zimfile");
+      TINFO("write zimfile :");
       write(header, data->basename + ".zim.tmp");
       zim::DEFAULTFS::rename(data->basename + ".zim.tmp", data->basename + ".zim");
 
@@ -303,11 +303,12 @@ namespace zim
       Md5stream md5;
       Tee out(zimfile, md5);
 
+      TINFO(" write header");
       out << header;
 
       log_debug("after writing header - pos=" << zimfile.tellp());
 
-      // write mime type list
+      TINFO(" write mimetype list");
       for(auto& mimeType: data->mimeTypesList)
       {
         out << mimeType << '\0';
@@ -315,7 +316,7 @@ namespace zim
 
       out << '\0';
 
-      // write url ptr list
+      TINFO(" write url prt list");
       offset_t off(header.getTitleIdxPos() + data->titleIdxSize().v);
       for (auto& dirent: data->dirents)
       {
@@ -327,7 +328,7 @@ namespace zim
 
       log_debug("after writing direntPtr - pos=" << out.tellp());
 
-      // write title index
+      TINFO(" write title index");
       for (Dirent* dirent: data->titleIdx)
       {
         char tmp_buff[sizeof(article_index_type)];
@@ -337,7 +338,7 @@ namespace zim
 
       log_debug("after writing fileIdxList - pos=" << out.tellp());
 
-      // write directory entries
+      TINFO(" write directory entries");
       for (Dirent* dirent: data->dirents)
       {
         out << *dirent;
@@ -346,7 +347,7 @@ namespace zim
 
       log_debug("after writing dirents - pos=" << out.tellp());
 
-      // write cluster offset list
+      TINFO(" write cluster offset list");
       off += data->clusterPtrSize();
       for (auto clusterOffset : data->clusterOffsets)
       {
@@ -358,7 +359,7 @@ namespace zim
 
       log_debug("after writing clusterOffsets - pos=" << out.tellp());
 
-      // write cluster data
+      TINFO(" write cluster data");
       if (!data->isEmpty)
       {
         for(auto& cluster: data->clustersList)
@@ -374,6 +375,8 @@ namespace zim
         throw std::runtime_error("failed to write zimfile");
 
       log_debug("after writing clusterData - pos=" << out.tellp());
+
+      TINFO(" write checksum");
       unsigned char digest[16];
       md5.getDigest(digest);
       zimfile.write(reinterpret_cast<const char*>(digest), 16);
