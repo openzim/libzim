@@ -28,8 +28,6 @@
 #include "blob.h"
 #include "fileheader.h"
 
-class ZimDumper;
-
 namespace zim
 {
   class Search;
@@ -38,7 +36,6 @@ namespace zim
 
   class File
   {
-    friend class ::ZimDumper;
     std::shared_ptr<FileImpl> impl;
 
     public:
