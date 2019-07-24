@@ -362,10 +362,14 @@ namespace zim
       TINFO(" write cluster data");
       if (!data->isEmpty)
       {
+        int nb_written_clusters = 0;
         for(auto& cluster: data->clustersList)
         {
           ASSERT(cluster->isClosed(), ==, true);
           cluster->write_final(out);
+          if (((++nb_written_clusters) % 1000) == 0) {
+            TINFO(nb_written_clusters << "/" << data->clustersList.size());
+          }
         }
       }
       else
