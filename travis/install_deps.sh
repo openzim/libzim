@@ -10,6 +10,7 @@ cd $HOME
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]
 then
   brew update
+  brew install gcovr
 #  brew upgrade python3
   pip3 install meson==0.49.2 pytest
 
