@@ -458,7 +458,7 @@ namespace zim
           dirents.erase(ret.first);
           dirents.insert(dirent);
         } else {
-          std::cerr << "Impossible to add " << dirent->getFullUrl() << std::endl;
+          std::cerr << "Impossible to add " << dirent->getFullUrl().getLongUrl() << std::endl;
           std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
           return;
@@ -531,7 +531,7 @@ namespace zim
       {
         auto mimetype = article->getMimeType();
         if (mimetype.empty()) {
-          std::cerr << "Warning, " << article->getUrl() << " have empty mimetype." << std::endl;
+          std::cerr << "Warning, " << article->getUrl().getLongUrl() << " have empty mimetype." << std::endl;
           mimetype = "application/octet-stream";
         }
         dirent->setMimeType(getMimeTypeIdx(mimetype));
@@ -598,7 +598,7 @@ namespace zim
         Dirent tmpDirent(dirent->getRedirectUrl());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
-          INFO("Invalid redirection " << dirent->getUrl() << " redirecting to (missing) " << dirent->getRedirectUrl());
+          INFO("Invalid redirection " << dirent->getFullUrl().getLongUrl() << " redirecting to (missing) " << dirent->getRedirectUrl().getLongUrl());
           dirents.erase(dirent);
         } else  {
           dirent->setRedirect(*target_pos);
