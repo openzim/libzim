@@ -72,7 +72,7 @@ namespace zim
           info.d.blobNumber = blob_index_t(0);
         }
 
-        Dirent(Url url_ )
+        explicit Dirent(Url url_ )
           : Dirent()
           { url = url_; }
 
