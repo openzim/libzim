@@ -1,3 +1,11 @@
+libzim 5.0.1
+============
+
+ * Update README.
+ * [Writer] Add debug information (print progress of the clusters writing).
+ * [Writer] Correctly print the url to the user.
+ * [CI] Add code coverage.
+
 libzim 5.0.0
 ============
 
