@@ -4,10 +4,12 @@ ZIM library
 The ZIM library is the reference implementation for the ZIM file
 format. It's a solution to read and write ZIM files on many systems
 and architectures. More information about the ZIM format and the
-openZIM project at https://www.openzim.org/.
+openZIM project at https://openzim.org/.
 
 [![Build Status](https://travis-ci.org/openzim/libzim.svg?branch=master)](https://travis-ci.org/openzim/libzim)
 [![codecov](https://codecov.io/gh/openzim/libzim/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
+[![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 Disclaimer
 ----------
