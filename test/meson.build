@@ -8,8 +8,14 @@ tests = [
     'template'
 ]
 
+if zlib_dep.found()
+#    zimlibtest_sources += ['zlibstream.cpp']
+endif
+if lzma_dep.found()
+#    zimlibtest_sources += ['lzmastream.cpp']
+endif
 
-gtest_dep = dependency('gtest', fallback: ['gtest', 'gtest_dep'])
+gtest_dep = gtest_sp.get_variable('gtest_dep')
 
 foreach test_name : tests
     test_exe = executable(test_name, [test_name+'.cpp'],
