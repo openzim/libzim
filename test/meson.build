@@ -15,8 +15,6 @@ if lzma_dep.found()
 #    zimlibtest_sources += ['lzmastream.cpp']
 endif
 
-gtest_dep = gtest_sp.get_variable('gtest_dep')
-
 foreach test_name : tests
     test_exe = executable(test_name, [test_name+'.cpp'],
                           include_directories : [include_directory, src_directory],
