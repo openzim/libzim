@@ -57,6 +57,8 @@ else
     icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
 endif
 
+gtest_dep = dependency('gtest', main:true, fallback:['gtest', 'gtest_dep'])
+
 inc = include_directories('include')
 
 subdir('include')
