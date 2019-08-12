@@ -34,11 +34,11 @@ The ZIM library relies on many third parts software libraries. They
 are prerequisites to the Kiwix library compilation. Following
 libraries need to be available:
 
-* [Z](https://zlib.net/) (package zlib1g-dev on Ubuntu)
-* [LZMA](https://tukaani.org/lzma/) (package lzma-dev on Ubuntu)
-* [ICU](http://site.icu-project.org/) (package libicu-dev on Ubuntu)
-* [Xapian](https://xapian.org/) - optional (package libxapian-dev on Ubuntu)
-* [Google Test](https://github.com/google/googletest) - optional (package googletest on Ubuntu)
+* [Z](https://zlib.net/) (package `zlib1g-dev` on Ubuntu)
+* [LZMA](https://tukaani.org/lzma/) (package `lzma-dev` on Ubuntu)
+* [ICU](http://site.icu-project.org/) (package `libicu-dev` on Ubuntu)
+* [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
+* [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
 
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
@@ -47,13 +47,13 @@ In the worse case, you will have to download and compile a more recent
 version by hand.
 
 If you want to install these dependencies locally, then ensure that
-meson (through pkg-config) will properly find them.
+meson (through `pkg-config`) will properly find them.
 
 Environment
 -------------
 
 The ZIM library builds using [Meson](https://mesonbuild.com/) version
-0.43 or higher. Meson relies itself on Ninja, pkg-config and few other
+0.43 or higher. Meson relies itself on Ninja, Pkg-config and few other
 compilation tools.
 
 Install first the few common compilation tools:
@@ -74,7 +74,7 @@ ninja -C build
 ```
 
 By default, it will compile dynamic linked libraries. All binary files
-will be created in the "build" directory created automatically by
+will be created in the `build` directory created automatically by
 Meson. If you want statically linked libraries, you can add
 `--default-library=static` option to the Meson command.
 
@@ -85,12 +85,11 @@ Installation
 
 If you want to install the libzim and the headers you just have
 compiled on your system, here we go:
-
 ```
 ninja -C build install
 ```
 
-You might need to run the command as root (or using 'sudo'), depending
+You might need to run the command as root (or using `sudo`), depending
 where you want to install the libraries. After the installation
 succeeded, you may need to run ldconfig (as root).
 
@@ -104,7 +103,7 @@ ninja -C build uninstall
 ```
 
 Like for the installation, you might need to run the command as root
-(or using 'sudo').
+(or using `sudo`).
 
 Troubleshooting
 ---------------
@@ -137,4 +136,4 @@ repository.
 License
 -------
 
-GPLv2 or later, see COPYING for more details.
+[GPLv2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) or later, see [COPYING](COPYING) for more details.
