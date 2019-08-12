@@ -38,8 +38,7 @@ libraries need to be available:
 * [LZMA](https://tukaani.org/lzma/) (package lzma-dev on Ubuntu)
 * [ICU](http://site.icu-project.org/) (package libicu-dev on Ubuntu)
 * [Xapian](https://xapian.org/) - optional (package libxapian-dev on Ubuntu)
-* [Google test](https://github.com/google/googletest) - optional (No valid package on Ubuntu, if gtest is not present, libzim will use
-embedded one)
+* [Google Test](https://github.com/google/googletest) - optional (package googletest on Ubuntu)
 
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
