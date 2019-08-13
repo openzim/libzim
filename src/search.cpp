@@ -235,6 +235,8 @@ Search& Search::set_suggestion_mode(const bool suggestion_mode) {
     return *this;
 }
 
+#define WITH_LEV 1
+
 Search::iterator Search::begin() const {
 #if defined(ENABLE_XAPIAN)
     if ( this->search_started ) {
@@ -356,7 +358,9 @@ Search::iterator Search::begin() const {
     delete queryParser;
     
     Xapian::Enquire enquire(internal->database);
-    Xapian::KeyMaker* keyMaker(nullptr);
+#if WITH_LEV
+    std::unique_ptr<Xapian::KeyMaker> keyMaker(nullptr);
+#endif
 
     if (geo_query && valuesmap.find("geo.position") != valuesmap.end()) {
         Xapian::GreatCircleMetric metric;
@@ -371,6 +375,7 @@ Search::iterator Search::begin() const {
 
     enquire.set_query(query);
 
+#if WITH_LEV
     if (suggestion_mode) {
       size_t value_index = 0;
       bool has_custom_distance_maker = true;
@@ -386,15 +391,15 @@ Search::iterator Search::begin() const {
       auto temp_results = enquire.get_mset(0,0);
       if ( has_custom_distance_maker
         && temp_results.get_matches_estimated() <= MAX_MATCHES_TO_SORT ) {
-        keyMaker = new LevenshteinDistanceMaker(this->query, value_index);
-        enquire.set_sort_by_key(keyMaker, false);
+        keyMaker.reset(new LevenshteinDistanceMaker(this->query, value_index));
+        enquire.set_sort_by_key(keyMaker.get(), false);
       }
     }
+#endif
     
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
     search_started = true;
     estimated_matches_number = internal->results.get_matches_estimated();
-    delete keyMaker;
     return new search_iterator::InternalData(this, internal->results.begin());
 #else
     estimated_matches_number = 0;
