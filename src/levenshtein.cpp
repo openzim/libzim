@@ -18,12 +18,10 @@ int levenshtein_distance(const std::string &s1, const std::string &s2)
     auto last_diagonal = x - column_start;
     for (auto y = column_start; y <= s1len; y++) {
       auto old_diagonal = column[y];
-      auto possibilities = {
-        column[y] + 1,
-        column[y - 1] + 1,
-        last_diagonal + (s1[y - 1] == s2[x - 1]? 0 : 1)
-      };
-      column[y] = std::min(possibilities);
+      auto v1 = column[y] + 1;
+      auto v2 = column[y - 1] + 1;
+      auto v3 = last_diagonal + (s1[y - 1] == s2[x - 1]? 0 : 1);
+      column[y] = v1<v2 ? (v1<v3 ? v1 : v3) : ( v2<v3 ? v2 : v3);
       last_diagonal = old_diagonal;
     }
   }
