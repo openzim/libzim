@@ -1,3 +1,12 @@
+libzim 5.0.2
+============
+
+ * Improve README.
+ * Remove gtest as embeded subproject.
+ * Better lzma compression.
+ * Better performance of the leveinstein algorithm (better suggestions
+   performance)
+
 libzim 5.0.1
 ============
 
