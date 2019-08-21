@@ -21,6 +21,7 @@
 #include "../log.h"
 #include "../endian_tools.h"
 #include "../debug.h"
+#include "../fs.h"
 
 #include <sstream>
 #include <fstream>
@@ -100,11 +101,14 @@ void Cluster::write_offsets(std::ostream& out) const
 
 void Cluster::write_final(std::ostream& out) const
 {
-  std::ifstream clustersFile(tmp_filename, std::ios::binary);
-  out << clustersFile.rdbuf();
-  if (!out) {
-    throw std::runtime_error("failed to write cluster");
+  {
+    std::ifstream clustersFile(tmp_filename, std::ios::binary);
+    out << clustersFile.rdbuf();
+    if (!out) {
+      throw std::runtime_error("failed to write cluster");
+    }
   }
+  DEFAULTFS::removeFile(tmp_filename);
 }
 
 void Cluster::dump_tmp(const std::string& directoryPath)
