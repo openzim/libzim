@@ -549,7 +549,7 @@ namespace zim
       }
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
-      taskList.pushToQueue(new Task(cluster));
+      taskList.pushToQueue(new ClusterTask(cluster));
 
       log_debug("cluster written");
       if (cluster->is_extended() )

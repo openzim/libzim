@@ -28,15 +28,25 @@ class CreatorData;
 
 class Task {
   public:
-    Task(Cluster* cluster) :
+    Task() = default;
+    virtual ~Task() = default;
+
+    virtual void run(CreatorData* data) = 0;
+};
+
+class ClusterTask : public Task {
+  public:
+    ClusterTask(Cluster* cluster) :
       cluster(cluster)
     {};
+    virtual ~ClusterTask() = default;
 
-    void run(CreatorData* data);
+    virtual void run(CreatorData* data);
 
   private:
     Cluster* cluster;
 };
+
 void* taskRunner(void* data);
 
 }

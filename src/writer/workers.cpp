@@ -51,7 +51,7 @@ namespace zim
 {
   namespace writer
   {
-    void Task::run(CreatorData* data) {
+    void ClusterTask::run(CreatorData* data) {
       cluster->dump_tmp(data->tmpfname);
       cluster->close();
     };
