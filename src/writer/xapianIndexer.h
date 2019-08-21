@@ -30,19 +30,41 @@
 
 class XapianIndexer;
 
+enum class IndexingMode {
+  TITLE,
+  FULL
+};
+
 class XapianMetaArticle : public zim::writer::Article
 {
  private:
   XapianIndexer* indexer;
+  IndexingMode mode;
   mutable std::string data;
 
  public:
-  XapianMetaArticle(XapianIndexer* indexer) : indexer(indexer)
+  XapianMetaArticle(XapianIndexer* indexer, IndexingMode mode) : indexer(indexer), mode(mode)
   {}
   virtual ~XapianMetaArticle() = default;
   virtual zim::Blob getData() const;
-  virtual zim::writer::Url getUrl() const { return zim::writer::Url('X', "fulltext/xapian"); }
-  virtual std::string getTitle() const { return "Xapian Fulltext Index"; }
+  virtual zim::writer::Url getUrl() const {
+    switch (mode) {
+      case IndexingMode::FULL:
+        return zim::writer::Url('X', "fulltext/xapian");
+      case IndexingMode::TITLE:
+        return zim::writer::Url('X', "title/xapian");
+    }
+    return zim::writer::Url();
+  }
+  virtual std::string getTitle() const {
+    switch (mode) {
+      case IndexingMode::FULL:
+        return "Xapian Fulltext Index";
+      case IndexingMode::TITLE:
+        return "Xapian Title Index";
+    }
+    return "";
+  }
   virtual std::string getMimeType() const { return "application/octet-stream+xapian"; }
   virtual bool isRedirect() const { return false; }
   virtual bool shouldIndex() const { return false; }
@@ -55,7 +77,7 @@ class XapianMetaArticle : public zim::writer::Article
 class XapianIndexer
 {
  public:
-  XapianIndexer(const std::string& language, bool verbose);
+  XapianIndexer(const std::string& language, IndexingMode mode, bool verbose);
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
   void indexingPrelude(const string indexPath);
@@ -65,11 +87,13 @@ class XapianIndexer
   XapianMetaArticle* getMetaArticle();
 
  protected:
-  unsigned int keywordsBoostFactor;
+  unsigned int keywordsBoostFactor = 3;
   inline unsigned int getTitleBoostFactor(const unsigned int contentLength)
   {
     return contentLength / 500 + 1;
   }
+  void indexTitle(const zim::writer::Article* article);
+  void indexFull(const zim::writer::Article* article);
 
   Xapian::WritableDatabase writableDatabase;
   Xapian::Stem stemmer;
@@ -78,6 +102,7 @@ class XapianIndexer
   std::string indexPath;
   std::string language;
   std::string stopwords;
+  IndexingMode indexingMode;
 };
 
 #endif  // LIBZIM_WRITER_XAPIANINDEXER_H

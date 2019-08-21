@@ -202,7 +202,6 @@ Search& Search::operator=(Search&& it) = default;
 Search::~Search() = default;
 
 void Search::set_verbose(bool verbose) {
-    std::cout << "set verbose" << std::endl;
     this->verbose = verbose;
 }
 
@@ -245,6 +244,7 @@ Search::iterator Search::begin() const {
 
     std::vector<const File*>::const_iterator it;
     bool first = true;
+    bool hasNewSuggestionFormat = false;
     std::string language;
     std::string stopwords;
     for(it=zimfiles.begin(); it!=zimfiles.end(); it++)
@@ -253,7 +253,16 @@ Search::iterator Search::begin() const {
         if (zimfile->is_multiPart()) {
             continue;
         }
-        zim::Article xapianArticle = zimfile->getArticle('X', "fulltext/xapian");
+        zim::Article xapianArticle;
+        if (suggestion_mode) {
+          xapianArticle = zimfile->getArticle('X', "title/xapian");
+          if (xapianArticle.good()) {
+            hasNewSuggestionFormat = true;
+          }
+        }
+        if (!xapianArticle.good()) {
+          xapianArticle = zimfile->getArticle('X', "fulltext/xapian");
+        }
         if (!xapianArticle.good()) {
           xapianArticle = zimfile->getArticle('Z', "/fulltextIndex/xapian");
         }
@@ -323,7 +332,7 @@ Search::iterator Search::begin() const {
         estimated_matches_number = 0;
         return nullptr;
     }
-    
+
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
     if (verbose) {
       std::cout << "Setup queryparser using language " << language << std::endl;
@@ -338,7 +347,8 @@ Search::iterator Search::begin() const {
         std::cout << "Mark query as 'partial'" << std::endl;
       }
       flags |= Xapian::QueryParser::FLAG_PARTIAL;
-      if (this->prefixes.find("S") != std::string::npos ) {
+      if ( !hasNewSuggestionFormat
+        && this->prefixes.find("S") != std::string::npos ) {
         if (verbose) {
           std::cout << "Searching in title namespace" << std::endl;
         }
@@ -356,7 +366,7 @@ Search::iterator Search::begin() const {
         std::cout << "Parsed query '" << this->query << "' to " << query.get_description() << std::endl;
     }
     delete queryParser;
-    
+
     Xapian::Enquire enquire(internal->database);
 #if WITH_LEV
     std::unique_ptr<Xapian::KeyMaker> keyMaker(nullptr);
@@ -376,7 +386,7 @@ Search::iterator Search::begin() const {
     enquire.set_query(query);
 
 #if WITH_LEV
-    if (suggestion_mode) {
+    if (suggestion_mode && !hasNewSuggestionFormat) {
       size_t value_index = 0;
       bool has_custom_distance_maker = true;
       if ( !valuesmap.empty() ) {
@@ -396,7 +406,11 @@ Search::iterator Search::begin() const {
       }
     }
 #endif
-    
+
+    if (suggestion_mode && valuesmap.find("title") != valuesmap.end()) {
+      enquire.set_collapse_key(valuesmap["title"]);
+    }
+
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
     search_started = true;
     estimated_matches_number = internal->results.get_matches_estimated();

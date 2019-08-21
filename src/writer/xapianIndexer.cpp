@@ -43,8 +43,9 @@ unsigned int countWords(const string& text)
 }
 
 /* Constructor */
-XapianIndexer::XapianIndexer(const std::string& language, const bool verbose)
-    : language(language)
+XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingMode, const bool verbose)
+    : language(language),
+      indexingMode(indexingMode)
 {
   /* Build ICU Local object to retrieve ISO-639 language code (from
      ISO-639-3) */
@@ -54,7 +55,14 @@ XapianIndexer::XapianIndexer(const std::string& language, const bool verbose)
   try {
     this->stemmer = Xapian::Stem(languageLocale.getLanguage());
     this->indexer.set_stemmer(this->stemmer);
-    this->indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
+    switch(indexingMode) {
+      case IndexingMode::TITLE:
+        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_SOME);
+        break;
+      case IndexingMode::FULL:
+        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
+        break;
+    };
   } catch (...) {
     std::cout << "No steemming for language '" << languageLocale.getLanguage()
               << "'" << std::endl;
@@ -92,41 +100,61 @@ XapianIndexer::~XapianIndexer()
 void XapianIndexer::indexingPrelude(const string indexPath_)
 {
   indexPath = indexPath_;
-  this->writableDatabase = Xapian::WritableDatabase(
-      indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);
-  this->writableDatabase.set_metadata("valuesmap", "title:0;wordcount:1;geo.position:2");
-  this->writableDatabase.set_metadata("language", language);
-  this->writableDatabase.set_metadata("stopwords", stopwords);
-  this->writableDatabase.set_metadata("prefixes", "S");
-  this->writableDatabase.begin_transaction(true);
+  writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);
+  switch (indexingMode) {
+    case IndexingMode::TITLE:
+      writableDatabase.set_metadata("valuesmap", "title:0");
+      writableDatabase.set_metadata("kind", "title");
+      break;
+    case IndexingMode::FULL:
+      writableDatabase.set_metadata("valuesmap", "title:0;wordcount:1;geo.position:2");
+      writableDatabase.set_metadata("kind", "fulltext");
+      break;
+  }
+  writableDatabase.set_metadata("language", language);
+  writableDatabase.set_metadata("stopwords", stopwords);
+  writableDatabase.begin_transaction(true);
 }
 
 void XapianIndexer::index(const zim::writer::Article* article)
 {
-  /* Put the data in the document */
-  Xapian::Document currentDocument;
-  currentDocument.clear_values();
-  auto url = article->getUrl();
-  currentDocument.set_data(url.getLongUrl());
-  indexer.set_document(currentDocument);
-  zim::MyHtmlParser htmlParser;
+  switch (indexingMode) {
+    case IndexingMode::TITLE:
+      indexTitle(article);
+      break;
+    case IndexingMode::FULL:
+      indexFull(article);
+      break;
+  }
+}
 
+
+void XapianIndexer::indexFull(const zim::writer::Article* article)
+{
+  /* Put the data in the document */
+  zim::MyHtmlParser htmlParser;
   try {
     htmlParser.parse_html(article->getData(), "UTF-8", true);
-  } catch (...) {
-  }
-
+  } catch (...) {}
   if (htmlParser.dump.find("NOINDEX") != string::npos)
   {
     return;
   }
 
-  std::string accentedTitle = (htmlParser.title.empty() ? article->getTitle() : htmlParser.title);
+  Xapian::Document currentDocument;
+  currentDocument.clear_values();
+
+  auto url = article->getUrl();
+  currentDocument.set_data(url.getLongUrl());
+
+  indexer.set_document(currentDocument);
+
+  auto accentedTitle = article->getTitle();
   std::string title = zim::removeAccents(accentedTitle);
   std::string keywords = zim::removeAccents(htmlParser.keywords);
   std::string content = zim::removeAccents(htmlParser.dump);
 
-  currentDocument.add_value(0, title);
+  currentDocument.add_value(0, accentedTitle);
 
   std::stringstream countWordStringStream;
   countWordStringStream << countWords(htmlParser.dump);
@@ -140,23 +168,43 @@ void XapianIndexer::index(const zim::writer::Article* article)
 
   /* Index the title */
   if (!title.empty()) {
-    this->indexer.index_text_without_positions(
-        title, this->getTitleBoostFactor(content.size()));
-    this->indexer.index_text(title, 1, "S");
+    indexer.index_text_without_positions(
+      title, getTitleBoostFactor(content.size()));
   }
 
   /* Index the keywords */
   if (!keywords.empty()) {
-    this->indexer.index_text_without_positions(keywords, keywordsBoostFactor);
+    indexer.index_text_without_positions(keywords, keywordsBoostFactor);
   }
 
   /* Index the content */
   if (!content.empty()) {
-    this->indexer.index_text_without_positions(content);
+    indexer.index_text_without_positions(content);
   }
 
   /* add to the database */
-  this->writableDatabase.add_document(currentDocument);
+  writableDatabase.add_document(currentDocument);
+}
+
+void XapianIndexer::indexTitle(const zim::writer::Article* article)
+{
+ /* Put the data in the document */
+  Xapian::Document currentDocument;
+  currentDocument.clear_values();
+  currentDocument.set_data(article->getUrl().getLongUrl());
+  indexer.set_document(currentDocument);
+
+  std::string accentedTitle = article->getTitle();
+  std::string title = zim::removeAccents(accentedTitle);
+
+  currentDocument.add_value(0, accentedTitle);
+
+  if (!title.empty()) {
+    indexer.index_text(title, 1);
+  }
+
+  /* add to the database */
+  writableDatabase.add_document(currentDocument);
 }
 
 void XapianIndexer::flush()
@@ -176,7 +224,7 @@ void XapianIndexer::indexingPostlude()
 
 XapianMetaArticle* XapianIndexer::getMetaArticle()
 {
-  return new XapianMetaArticle(this);
+  return new XapianMetaArticle(this, indexingMode);
 }
 
 zim::size_type XapianMetaArticle::getSize() const

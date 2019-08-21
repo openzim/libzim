@@ -113,6 +113,7 @@ namespace zim
         bool withIndex;
         std::string indexingLanguage;
 #if defined(ENABLE_XAPIAN)
+        XapianIndexer titleIndexer;
         XapianIndexer* indexer = nullptr;
 #endif
 

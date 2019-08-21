@@ -140,6 +140,7 @@ namespace zim
       }
 
 #if defined(ENABLE_XAPIAN)
+      data->titleIndexer.index(&article);
       if(withIndex && article.shouldIndex()) {
         data->indexer->index(&article);
       }
@@ -165,13 +166,20 @@ namespace zim
       }
 
 #if defined(ENABLE_XAPIAN)
+      {
+        data->titleIndexer.indexingPostlude();
+        auto article = data->titleIndexer.getMetaArticle();
+        auto dirent = data->createDirentFromArticle(article);
+        data->addDirent(dirent, article);
+        delete article;
+      }
       if (withIndex) {
-          data->indexer->indexingPostlude();
-          microsleep(100);
-          auto article = data->indexer->getMetaArticle();
-          auto dirent = data->createDirentFromArticle(article);
-          data->addDirent(dirent, article);
-          delete article;
+        data->indexer->indexingPostlude();
+        microsleep(100);
+        auto article = data->indexer->getMetaArticle();
+        auto dirent = data->createDirentFromArticle(article);
+        data->addDirent(dirent, article);
+        delete article;
       }
 #endif
 
@@ -392,6 +400,9 @@ namespace zim
                                    std::string language)
       : withIndex(withIndex),
         indexingLanguage(language),
+#if defined(ENABLE_XAPIAN)
+        titleIndexer(language, IndexingMode::TITLE, true),
+#endif
         verbose(verbose),
         nbArticles(0),
         nbRedirectArticles(0),
@@ -422,8 +433,9 @@ namespace zim
       uncompCluster = new Cluster(zimcompNone);
 
 #if defined(ENABLE_XAPIAN)
+      titleIndexer.indexingPrelude(tmpfname+"_title.idx");
       if (withIndex) {
-          indexer = new XapianIndexer(indexingLanguage, true);
+          indexer = new XapianIndexer(indexingLanguage, IndexingMode::FULL, true);
           indexer->indexingPrelude(tmpfname+".idx");
       }
 #endif
