@@ -83,7 +83,7 @@ namespace zim
       for(unsigned i=0; i<compressionThreads; i++)
       {
         pthread_t thread;
-        pthread_create(&thread, NULL, clusterWriter, this->data.get());
+        pthread_create(&thread, NULL, taskRunner, this->data.get());
         pthread_detach(thread);
         data->runningWriters.push_back(thread);
       }
@@ -118,7 +118,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->clustersToWrite.size()
+                  << "; WC:" << data->taskList.size()
                   << std::endl;
       }
 
@@ -144,7 +144,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->clustersToWrite.size()
+                  << "; WC:" << data->taskList.size()
                   << std::endl;
       }
 
@@ -178,7 +178,7 @@ namespace zim
       do {
         microsleep(wait);
         wait += 10;
-      } while(!data->clustersToWrite.isEmpty());
+      } while(!data->taskList.isEmpty());
 
       // Be sure that all cluster are closed
       wait = 0;
@@ -549,7 +549,7 @@ namespace zim
       }
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
-      clustersToWrite.pushToQueue(cluster);
+      taskList.pushToQueue(new Task(cluster));
 
       log_debug("cluster written");
       if (cluster->is_extended() )

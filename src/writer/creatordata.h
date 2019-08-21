@@ -24,6 +24,7 @@
 #include <zim/writer/article.h>
 #include "queue.h"
 #include "_dirent.h"
+#include "workers.h"
 #include "xapianIndexer.h"
 #include <vector>
 #include <map>
@@ -64,7 +65,7 @@ namespace zim
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
         typedef std::vector<Cluster*> ClusterList;
-        typedef Queue<Cluster*> ClusterQueue;
+        typedef Queue<Task*> TaskList;
         typedef std::vector<pthread_t> ThreadList;
 
         CreatorData(const std::string& fname, bool verbose,
@@ -99,7 +100,7 @@ namespace zim
         uint16_t nextMimeIdx = 0;
 
         ClusterList clustersList;
-        ClusterQueue clustersToWrite;
+        TaskList taskList;
         ThreadList runningWriters;
         CompressionType compression = zimcompLzma;
         std::string basename;

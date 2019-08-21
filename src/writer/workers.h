@@ -22,7 +22,23 @@
 
 namespace zim {
 namespace writer {
-void* clusterWriter(void* arg);
+
+class Cluster;
+class CreatorData;
+
+class Task {
+  public:
+    Task(Cluster* cluster) :
+      cluster(cluster)
+    {};
+
+    void run(CreatorData* data);
+
+  private:
+    Cluster* cluster;
+};
+void* taskRunner(void* data);
+
 }
 }
 

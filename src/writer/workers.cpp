@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "zimcreatordata.h"
+#include "creatordata.h"
 #include "cluster.h"
 #include "debug.h"
 #include <zim/blob.h>
@@ -51,20 +51,24 @@ namespace zim
 {
   namespace writer
   {
-    void* clusterWriter(void* arg) {
-      auto zimCreatorData = static_cast<zim::writer::ZimCreatorData*>(arg);
-      zim::writer::Cluster* clusterToWrite;
+    void Task::run(CreatorData* data) {
+      cluster->dump_tmp(data->tmpfname);
+      cluster->close();
+    };
+
+    void* taskRunner(void* arg) {
+      auto creatorData = static_cast<zim::writer::CreatorData*>(arg);
+      Task* task;
       unsigned int wait = 0;
 
       while(true) {
         microsleep(wait);
-        if (zimCreatorData->clustersToWrite.popFromQueue(clusterToWrite)) {
-          wait = 0;
-          clusterToWrite->dump_tmp(zimCreatorData->tmpfname);
-          clusterToWrite->close();
-          continue;
-        }
         wait += 10;
+        if (creatorData->taskList.popFromQueue(task)) {
+          task->run(creatorData);
+          delete task;
+          wait = 0;
+        }
       }
       return nullptr;
     }
