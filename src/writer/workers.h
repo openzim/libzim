@@ -20,6 +20,8 @@
 #ifndef OPENZIM_LIBZIM_WORKER_H
 #define OPENZIM_LIBZIM_WORKER_H
 
+#include <atomic>
+
 namespace zim {
 namespace writer {
 
@@ -38,10 +40,16 @@ class ClusterTask : public Task {
   public:
     ClusterTask(Cluster* cluster) :
       cluster(cluster)
-    {};
-    virtual ~ClusterTask() = default;
+    {
+      ++waiting_task;
+    };
+    virtual ~ClusterTask()
+    {
+      --waiting_task;
+    }
 
     virtual void run(CreatorData* data);
+    static std::atomic<unsigned long> waiting_task;
 
   private:
     Cluster* cluster;

@@ -178,7 +178,7 @@ namespace zim
       do {
         microsleep(wait);
         wait += 10;
-      } while(!data->taskList.isEmpty());
+      } while(ClusterTask::waiting_task.load() > 0);
 
       // Be sure that all cluster are closed
       wait = 0;
