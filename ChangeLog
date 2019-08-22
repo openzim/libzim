@@ -1,3 +1,11 @@
+libzim 5.1.0
+============
+
+ * Improve indexation of the title.
+ * Better pertinence of suggestions (only for new zim files)
+ * Improvement of the speed of Leveinstein distance for suggestions (for old
+   zims)
+
 libzim 5.0.2
 ============
 
