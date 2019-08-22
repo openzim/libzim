@@ -55,6 +55,29 @@ class ClusterTask : public Task {
     Cluster* cluster;
 };
 
+class IndexTask : public Task {
+  public:
+    IndexTask(const std::string& url, const std::string& title, const std::string& content) :
+      url(url),
+      title(title),
+      content(content)
+    {
+      ++waiting_task;
+    }
+    virtual ~IndexTask()
+    {
+      --waiting_task;
+    }
+
+    virtual void run(CreatorData* data);
+    static std::atomic<unsigned long> waiting_task;
+
+  private:
+    std::string url;
+    std::string title;
+    std::string content;
+};
+
 void* taskRunner(void* data);
 
 }

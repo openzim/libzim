@@ -47,15 +47,104 @@
 #include "../fs.h"
 #include "../tools.h"
 
+static pthread_mutex_t s_dbaccessLock = PTHREAD_MUTEX_INITIALIZER;
 std::atomic<unsigned long> zim::writer::ClusterTask::waiting_task(0);
+std::atomic<unsigned long> zim::writer::IndexTask::waiting_task(0);
+
 namespace zim
 {
   namespace writer
   {
+
+    inline unsigned int countWords(const string& text)
+    {
+      unsigned int numWords = 1;
+      unsigned int length = text.size();
+
+      for (unsigned int i = 0; i < length;) {
+        while (i < length && text[i] != ' ') {
+          i++;
+        }
+        numWords++;
+        i++;
+      }
+      return numWords;
+    }
+
+    const unsigned int keywordsBoostFactor = 3;
+    inline unsigned int getTitleBoostFactor(const unsigned int contentLength)
+    {
+      return contentLength / 500 + 1;
+    }
+
+
     void ClusterTask::run(CreatorData* data) {
       cluster->dump_tmp(data->tmpfname);
       cluster->close();
     };
+
+    void IndexTask::run(CreatorData* data) {
+      Xapian::Stem stemmer;
+      Xapian::TermGenerator indexer;
+      try {
+        stemmer = Xapian::Stem(data->indexer->stemmer_language);
+        indexer.set_stemmer(stemmer);
+        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
+      } catch (...) {
+        // No stemming for language.
+      }
+      indexer.set_stopper(&data->indexer->stopper);
+      indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
+
+      zim::MyHtmlParser htmlParser;
+      try {
+        htmlParser.parse_html(content, "UTF-8", true);
+      } catch (...) {}
+      if (htmlParser.dump.find("NOINDEX") != string::npos)
+      {
+        return;
+      }
+
+      Xapian::Document document;
+      document.set_data(url);
+      indexer.set_document(document);
+
+      auto normalizedTitle = zim::removeAccents(title);
+      auto keywords = zim::removeAccents(htmlParser.keywords);
+      auto content = zim::removeAccents(htmlParser.dump);
+
+      document.add_value(0, title);
+
+      std::stringstream countWordStringStream;
+      countWordStringStream << countWords(htmlParser.dump);
+      document.add_value(1, countWordStringStream.str());
+
+      if (htmlParser.has_geoPosition) {
+        auto geoPosition = Xapian::LatLongCoord(
+        htmlParser.latitude, htmlParser.longitude).serialise();
+        document.add_value(2, geoPosition);
+      }
+
+      /* Index the title */
+      if (!normalizedTitle.empty()) {
+        indexer.index_text_without_positions(
+          normalizedTitle, getTitleBoostFactor(content.size()));
+      }
+
+      /* Index the keywords */
+      if (!keywords.empty()) {
+        indexer.index_text_without_positions(keywords, keywordsBoostFactor);
+      }
+
+      /* Index the content */
+      if (!content.empty()) {
+        indexer.index_text_without_positions(content);
+      }
+
+      pthread_mutex_lock(&s_dbaccessLock);
+      data->indexer->writableDatabase.add_document(document);
+      pthread_mutex_unlock(&s_dbaccessLock);
+    }
 
     void* taskRunner(void* arg) {
       auto creatorData = static_cast<zim::writer::CreatorData*>(arg);

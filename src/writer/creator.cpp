@@ -125,7 +125,10 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       data->titleIndexer.index(&article);
       if(withIndex && article.shouldIndex()) {
-        data->indexer->index(&article);
+        data->taskList.pushToQueue(
+          new IndexTask(article.getUrl().getLongUrl(),
+                        article.getTitle(),
+                        article.getData()));
       }
 #endif
     }
@@ -157,6 +160,12 @@ namespace zim
         delete article;
       }
       if (withIndex) {
+        unsigned int wait = 0;
+        do {
+          microsleep(wait);
+          wait += 10;
+        } while(IndexTask::waiting_task.load() > 0);
+
         data->indexer->indexingPostlude();
         microsleep(100);
         auto article = data->indexer->getMetaArticle();

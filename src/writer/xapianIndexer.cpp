@@ -25,23 +25,6 @@
 #include <fstream>
 #include <stdexcept>
 
-/* Count word */
-unsigned int countWords(const string& text)
-{
-  unsigned int numWords = 1;
-  unsigned int length = text.size();
-
-  for (unsigned int i = 0; i < length;) {
-    while (i < length && text[i] != ' ') {
-      i++;
-    }
-    numWords++;
-    i++;
-  }
-
-  return numWords;
-}
-
 /* Constructor */
 XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingMode, const bool verbose)
     : language(language),
@@ -50,23 +33,7 @@ XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingM
   /* Build ICU Local object to retrieve ISO-639 language code (from
      ISO-639-3) */
   icu::Locale languageLocale(language.c_str());
-
-  /* Configuring language base steemming */
-  try {
-    this->stemmer = Xapian::Stem(languageLocale.getLanguage());
-    this->indexer.set_stemmer(this->stemmer);
-    switch(indexingMode) {
-      case IndexingMode::TITLE:
-        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_SOME);
-        break;
-      case IndexingMode::FULL:
-        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
-        break;
-    };
-  } catch (...) {
-    std::cout << "No steemming for language '" << languageLocale.getLanguage()
-              << "'" << std::endl;
-  }
+  stemmer_language = languageLocale.getLanguage();
 
   /* Read the stopwords */
   std::string stopWord;
@@ -77,9 +44,6 @@ XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingM
   while (std::getline(file, stopWord, '\n')) {
     this->stopper.add(stopWord);
   }
-
-  this->indexer.set_stopper(&(this->stopper));
-  this->indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
 }
 
 XapianIndexer::~XapianIndexer()
@@ -131,64 +95,19 @@ void XapianIndexer::index(const zim::writer::Article* article)
 
 void XapianIndexer::indexFull(const zim::writer::Article* article)
 {
-  /* Put the data in the document */
-  zim::MyHtmlParser htmlParser;
-  try {
-    htmlParser.parse_html(article->getData(), "UTF-8", true);
-  } catch (...) {}
-  if (htmlParser.dump.find("NOINDEX") != string::npos)
-  {
-    return;
-  }
-
-  Xapian::Document currentDocument;
-  currentDocument.clear_values();
-
-  auto url = article->getUrl();
-  currentDocument.set_data(url.getLongUrl());
-
-  indexer.set_document(currentDocument);
-
-  auto accentedTitle = article->getTitle();
-  std::string title = zim::removeAccents(accentedTitle);
-  std::string keywords = zim::removeAccents(htmlParser.keywords);
-  std::string content = zim::removeAccents(htmlParser.dump);
-
-  currentDocument.add_value(0, accentedTitle);
-
-  std::stringstream countWordStringStream;
-  countWordStringStream << countWords(htmlParser.dump);
-  currentDocument.add_value(1, countWordStringStream.str());
-
-  if (htmlParser.has_geoPosition) {
-    auto geoPosition = Xapian::LatLongCoord(
-        htmlParser.latitude, htmlParser.longitude).serialise();
-    currentDocument.add_value(2, geoPosition);
-  }
-
-  /* Index the title */
-  if (!title.empty()) {
-    indexer.index_text_without_positions(
-      title, getTitleBoostFactor(content.size()));
-  }
-
-  /* Index the keywords */
-  if (!keywords.empty()) {
-    indexer.index_text_without_positions(keywords, keywordsBoostFactor);
-  }
-
-  /* Index the content */
-  if (!content.empty()) {
-    indexer.index_text_without_positions(content);
-  }
-
-  /* add to the database */
-  writableDatabase.add_document(currentDocument);
 }
 
 void XapianIndexer::indexTitle(const zim::writer::Article* article)
 {
- /* Put the data in the document */
+  Xapian::Stem stemmer;
+  Xapian::TermGenerator indexer;
+  try {
+    stemmer = Xapian::Stem(stemmer_language);
+    indexer.set_stemmer(stemmer);
+    indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_SOME);
+  } catch (...) {}
+  indexer.set_stopper(&stopper);
+  indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
   Xapian::Document currentDocument;
   currentDocument.clear_values();
   currentDocument.set_data(article->getUrl().getLongUrl());
