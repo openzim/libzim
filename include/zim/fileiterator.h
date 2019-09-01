@@ -98,9 +98,7 @@ namespace zim
         operator*();
         return &article;
       }
-
   };
-
 }
 
 #endif // ZIM_FILEITERATOR_H

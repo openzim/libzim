@@ -228,7 +228,6 @@ namespace zim
     }
     auto local_offset = full_offset - range.min;
     return std::make_pair(part->filename(), offset_type(local_offset));
-
   }
 
   std::string Article::getPage(bool layout, unsigned maxRecurse)

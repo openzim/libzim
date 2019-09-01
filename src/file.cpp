@@ -278,7 +278,6 @@ namespace zim
           state = state_0;
           break;
       }
-
     }
 
     switch (state)

@@ -39,6 +39,7 @@ using path_t = const std::string&;
 class FD {
   public:
     using fd_t = int;
+
   private:
     fd_t m_fd = -1;
 

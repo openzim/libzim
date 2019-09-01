@@ -42,7 +42,7 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
 
     void inflatorIstreamTest()
     {
-      // test 
+      // test
       std::stringstream deflatetarget;
       zim::writer::DeflateStream deflator(deflatetarget);
       deflator << testtext << std::flush;
@@ -68,7 +68,7 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
 
     void inflatorOstreamTest()
     {
-      // test 
+      // test
       std::stringstream deflatetarget;
       zim::writer::DeflateStream deflator(deflatetarget);
       deflator << testtext << std::flush;
@@ -91,7 +91,6 @@ class ZlibstreamTest : public cxxtools::unit::TestSuite
 
       CXXTOOLS_UNIT_ASSERT_EQUALS(testtext, inflatetarget.str());
     }
-
 };
 
 cxxtools::unit::RegisterTest<ZlibstreamTest> register_ZlibstreamTest;

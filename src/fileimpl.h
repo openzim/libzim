@@ -70,7 +70,6 @@ namespace zim
       MimeTypes mimeTypes;
 
     public:
-
       explicit FileImpl(const std::string& fname);
 
       time_t getMTime() const;
