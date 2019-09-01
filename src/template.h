@@ -76,9 +76,7 @@ namespace zim
       }
 
       void flush();
-
   };
-
 }
 
 #endif // ZIM_TEMPLATE_H

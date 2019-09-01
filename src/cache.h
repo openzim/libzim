@@ -193,7 +193,6 @@ namespace zim
             --numWinners;
           }
         }
-
       }
 
       /// removes a element from the cache and returns true, if found

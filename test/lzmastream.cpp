@@ -42,7 +42,7 @@ class LzmastreamTest : public cxxtools::unit::TestSuite
 
     void lzmaIstreamTest()
     {
-      // test 
+      // test
       std::stringstream lzmatarget;
       zim::writer::LzmaStream compressor(lzmatarget);
       compressor << testtext << std::flush;
@@ -68,7 +68,7 @@ class LzmastreamTest : public cxxtools::unit::TestSuite
 
     void lzmaOstreamTest()
     {
-      // test 
+      // test
       std::stringstream lzmatarget;
       zim::writer::LzmaStream compressor(lzmatarget);
       compressor << testtext << std::flush;
@@ -91,7 +91,6 @@ class LzmastreamTest : public cxxtools::unit::TestSuite
 
       CXXTOOLS_UNIT_ASSERT_EQUALS(testtext, unlzmatarget.str());
     }
-
 };
 
 cxxtools::unit::RegisterTest<LzmastreamTest> register_LzmastreamTest;

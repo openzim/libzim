@@ -140,9 +140,7 @@ namespace zim
         clusterNumber = clusterNumber_;
         blobNumber = blobNumber_;
       }
-
   };
-
 }
 
 #endif // ZIM_DIRENT_H

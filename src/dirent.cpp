@@ -113,7 +113,6 @@ namespace zim
     setUrl(ns, url);
     setTitle(title);
     setParameter(parameter);
-
   }
 
   std::string Dirent::getLongUrl() const
