@@ -57,10 +57,8 @@ class ClusterTask : public Task {
 
 class IndexTask : public Task {
   public:
-    IndexTask(const std::string& url, const std::string& title, const std::string& content) :
-      url(url),
-      title(title),
-      content(content)
+    IndexTask(std::shared_ptr<Article> article) :
+      p_article(article)
     {
       ++waiting_task;
     }
@@ -73,9 +71,7 @@ class IndexTask : public Task {
     static std::atomic<unsigned long> waiting_task;
 
   private:
-    std::string url;
-    std::string title;
-    std::string content;
+    std::shared_ptr<Article> p_article;
 };
 
 void* taskRunner(void* data);

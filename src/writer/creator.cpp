@@ -89,21 +89,21 @@ namespace zim
       }
     }
 
-    void Creator::addArticle(const Article& article)
+    void Creator::addArticle(std::shared_ptr<Article> article)
     {
-      auto dirent = data->createDirentFromArticle(&article);
-      data->addDirent(dirent, &article);
+      auto dirent = data->createDirentFromArticle(article.get());
+      data->addDirent(dirent, article.get());
       data->nbArticles++;
-      if (article.isRedirect()) {
+      if (article->isRedirect()) {
         data->nbRedirectArticles++;
       } else {
-        if (article.shouldCompress())
+        if (article->shouldCompress())
           data->nbCompArticles++;
         else
           data->nbUnCompArticles++;
-        if (!article.getFilename().empty())
+        if (!article->getFilename().empty())
           data->nbFileArticles++;
-        if (article.shouldIndex())
+        if (article->shouldIndex())
           data->nbIndexArticles++;
       }
       if (verbose && data->nbArticles%1000 == 0){
@@ -123,12 +123,9 @@ namespace zim
       }
 
 #if defined(ENABLE_XAPIAN)
-      data->titleIndexer.index(&article);
-      if(withIndex && article.shouldIndex()) {
-        data->taskList.pushToQueue(
-          new IndexTask(article.getUrl().getLongUrl(),
-                        article.getTitle(),
-                        article.getData()));
+      data->titleIndexer.index(article.get());
+      if(withIndex && article->shouldIndex()) {
+        data->taskList.pushToQueue(new IndexTask(article));
       }
 #endif
     }

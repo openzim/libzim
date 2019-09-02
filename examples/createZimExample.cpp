@@ -88,21 +88,15 @@ zim::writer::Url TestArticle::getRedirectUrl() const
 
 int main(int argc, char* argv[])
 {
-  std::vector<TestArticle> _articles;
   unsigned max = 16;
-  _articles.resize(max);
-  for (unsigned n = 0; n < max; ++n)
-  {
-    std::ostringstream id;
-    id << (n + 1);
-    _articles[n] = TestArticle(id.str());
-  }
-  try
-  {
+  try {
     zim::writer::Creator c;
     c.startZimCreation("foo.zim");
-    for (auto& article:_articles)
+    for (unsigned n = 0; n < max; ++n)
     {
+      std::ostringstream id;
+      id << (n + 1);
+      auto article = std::make_shared<TestArticle>(id.str());
       c.addArticle(article);
     }
     c.finishZimCreation();
