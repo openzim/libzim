@@ -123,9 +123,11 @@ namespace zim
       }
 
 #if defined(ENABLE_XAPIAN)
-      data->titleIndexer.index(article.get());
-      if(withIndex && article->shouldIndex()) {
-        data->taskList.pushToQueue(new IndexTask(article));
+      if (article->shouldIndex()) {
+        data->titleIndexer.index(article.get());
+        if(withIndex && !article->isRedirect()) {
+          data->taskList.pushToQueue(new IndexTask(article));
+        }
       }
 #endif
     }
