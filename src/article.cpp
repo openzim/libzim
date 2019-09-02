@@ -27,6 +27,7 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include <limits>
 #include "log.h"
 
 log_define("zim.article")
@@ -178,6 +179,15 @@ namespace zim
     }
     return file->getCluster(dirent->getClusterNumber());
   }
+  cluster_index_type Article::getClusterNumber() const {
+    auto dirent= getDirent();
+    if ( dirent->isRedirect()
+      || dirent->isLinktarget()
+      || dirent->isDeleted() ) {
+      return std::numeric_limits<cluster_index_type>::max();
+    }
+    return dirent->getClusterNumber().v;
+}
 
   Blob Article::getData(offset_type offset) const
   {

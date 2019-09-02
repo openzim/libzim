@@ -28,6 +28,12 @@
 #include <zim/blob.h>
 #include "xapian/myhtmlparse.h"
 
+
+namespace zim {
+  namespace writer {
+    class IndexTask;
+  }
+}
 class XapianIndexer;
 
 enum class IndexingMode {
@@ -87,22 +93,18 @@ class XapianIndexer
   XapianMetaArticle* getMetaArticle();
 
  protected:
-  unsigned int keywordsBoostFactor = 3;
-  inline unsigned int getTitleBoostFactor(const unsigned int contentLength)
-  {
-    return contentLength / 500 + 1;
-  }
   void indexTitle(const zim::writer::Article* article);
   void indexFull(const zim::writer::Article* article);
 
   Xapian::WritableDatabase writableDatabase;
-  Xapian::Stem stemmer;
+  std::string stemmer_language;
   Xapian::SimpleStopper stopper;
-  Xapian::TermGenerator indexer;
   std::string indexPath;
   std::string language;
   std::string stopwords;
   IndexingMode indexingMode;
+
+ friend class zim::writer::IndexTask;
 };
 
 #endif  // LIBZIM_WRITER_XAPIANINDEXER_H

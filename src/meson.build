@@ -31,6 +31,7 @@ common_sources = [
     'writer/article.cpp',
     'writer/cluster.cpp',
     'writer/dirent.cpp',
+    'writer/workers.cpp',
     'writer/xapianIndexer.cpp',
     'writer/tee.cpp'
 ]

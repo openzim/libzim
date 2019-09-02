@@ -43,7 +43,7 @@ namespace zim
         void setCompressionThreads(unsigned ct) { compressionThreads = ct; }
 
         virtual void startZimCreation(const std::string& fname);
-        virtual void addArticle(const Article& article);
+        virtual void addArticle(std::shared_ptr<Article> article);
         virtual void finishZimCreation();
 
         virtual Url getMainUrl() { return Url(); }
@@ -60,7 +60,6 @@ namespace zim
 
         void fillHeader(Fileheader* header);
         void write(const Fileheader& header, const std::string& fname) const;
-        static void* clusterWriter(void* arg);
     };
   }
 

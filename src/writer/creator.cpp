@@ -22,6 +22,7 @@
 #include "creatordata.h"
 #include "cluster.h"
 #include "debug.h"
+#include "workers.h"
 #include <zim/blob.h>
 #include <zim/writer/creator.h>
 #include "../endian_tools.h"
@@ -68,24 +69,6 @@ namespace zim
 {
   namespace writer
   {
-    void* Creator::clusterWriter(void* arg) {
-      auto creator = static_cast<zim::writer::Creator*>(arg);
-      zim::writer::Cluster* clusterToWrite;
-      unsigned int wait = 0;
-
-      while(true) {
-        microsleep(wait);
-        if (creator->data->clustersToWrite.popFromQueue(clusterToWrite)) {
-          wait = 0;
-          clusterToWrite->dump_tmp(creator->data->tmpfname);
-          clusterToWrite->close();
-          continue;
-        }
-        wait += 10;
-      }
-      return nullptr;
-    }
-
     Creator::Creator(bool verbose)
       : verbose(verbose)
     {}
@@ -100,27 +83,27 @@ namespace zim
       for(unsigned i=0; i<compressionThreads; i++)
       {
         pthread_t thread;
-        pthread_create(&thread, NULL, clusterWriter, this);
+        pthread_create(&thread, NULL, taskRunner, this->data.get());
         pthread_detach(thread);
         data->runningWriters.push_back(thread);
       }
     }
 
-    void Creator::addArticle(const Article& article)
+    void Creator::addArticle(std::shared_ptr<Article> article)
     {
-      auto dirent = data->createDirentFromArticle(&article);
-      data->addDirent(dirent, &article);
+      auto dirent = data->createDirentFromArticle(article.get());
+      data->addDirent(dirent, article.get());
       data->nbArticles++;
-      if (article.isRedirect()) {
+      if (article->isRedirect()) {
         data->nbRedirectArticles++;
       } else {
-        if (article.shouldCompress())
+        if (article->shouldCompress())
           data->nbCompArticles++;
         else
           data->nbUnCompArticles++;
-        if (!article.getFilename().empty())
+        if (!article->getFilename().empty())
           data->nbFileArticles++;
-        if (article.shouldIndex())
+        if (article->shouldIndex())
           data->nbIndexArticles++;
       }
       if (verbose && data->nbArticles%1000 == 0){
@@ -135,14 +118,14 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->clustersToWrite.size()
+                  << "; WC:" << data->taskList.size()
                   << std::endl;
       }
 
 #if defined(ENABLE_XAPIAN)
-      data->titleIndexer.index(&article);
-      if(withIndex && article.shouldIndex()) {
-        data->indexer->index(&article);
+      data->titleIndexer.index(article.get());
+      if(withIndex && article->shouldIndex()) {
+        data->taskList.pushToQueue(new IndexTask(article));
       }
 #endif
     }
@@ -161,7 +144,7 @@ namespace zim
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->clustersToWrite.size()
+                  << "; WC:" << data->taskList.size()
                   << std::endl;
       }
 
@@ -174,6 +157,12 @@ namespace zim
         delete article;
       }
       if (withIndex) {
+        unsigned int wait = 0;
+        do {
+          microsleep(wait);
+          wait += 10;
+        } while(IndexTask::waiting_task.load() > 0);
+
         data->indexer->indexingPostlude();
         microsleep(100);
         auto article = data->indexer->getMetaArticle();
@@ -195,7 +184,7 @@ namespace zim
       do {
         microsleep(wait);
         wait += 10;
-      } while(!data->clustersToWrite.isEmpty());
+      } while(ClusterTask::waiting_task.load() > 0);
 
       // Be sure that all cluster are closed
       wait = 0;
@@ -566,7 +555,7 @@ namespace zim
       }
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
-      clustersToWrite.pushToQueue(cluster);
+      taskList.pushToQueue(new ClusterTask(cluster));
 
       log_debug("cluster written");
       if (cluster->is_extended() )
