@@ -1,3 +1,10 @@
+libzim 6.0.0
+============
+
+ * [Writer] Index the articles in differents threads. This is a huge speed
+   improvement as the main thread in not blocked by indexing.
+ * Index the title only if `shouldIndex` return true.
+
 libzim 5.1.0
 ============
 
