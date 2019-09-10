@@ -1,3 +1,9 @@
+libzim 6.0.1
+============
+
+ * Fix crash when trying to open an empty file.
+ * Ensure that pytest tests are run on the CI.
+
 libzim 6.0.0
 ============
 
