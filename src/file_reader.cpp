@@ -59,7 +59,7 @@ FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_t offs
     _offset(offset),
     _size(size)
 {
-  ASSERT(offset.v, <, source->fsize().v);
+  ASSERT(offset.v, <=, source->fsize().v);
   ASSERT(offset.v+size.v, <=, source->fsize().v);
 }
 
