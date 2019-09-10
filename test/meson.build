@@ -27,6 +27,6 @@ if gtest_dep.found()
     endforeach
 endif
 
-if get_option('default_library') != 'static'
+if get_option('default_library') != 'static' and not meson.is_cross_build()
     subdir('pytest')
 endif
