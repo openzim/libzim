@@ -9,9 +9,6 @@ ARCHIVE_NAME=deps_${TRAVIS_OS_NAME}_${PLATFORM}_${REPO_NAME}.tar.xz
 cd $HOME
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]
 then
-  brew update
-  brew install gcovr
-#  brew upgrade python3
   pip3 install meson==0.49.2 pytest
 
   wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-mac.zip
