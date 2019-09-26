@@ -82,7 +82,9 @@ void
 setup_queryParser(Xapian::QueryParser* queryparser,
                   Xapian::Database& database,
                   const std::string& language,
-                  const std::string& stopwords) {
+                  const std::string& stopwords,
+                  bool newSuggestionFormat) {
+    queryparser->set_default_op(Xapian::Query::op::OP_AND);
     queryparser->set_database(database);
     if ( ! language.empty() )
     {
@@ -94,7 +96,8 @@ setup_queryParser(Xapian::QueryParser* queryparser,
         try {
             Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
             queryparser->set_stemmer(stemmer);
-            queryparser->set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
+            queryparser->set_stemming_strategy(
+              newSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
         } catch (...) {
             std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
         }
@@ -337,8 +340,7 @@ Search::iterator Search::begin() const {
     if (verbose) {
       std::cout << "Setup queryparser using language " << language << std::endl;
     }
-    queryParser->set_default_op(Xapian::Query::op::OP_AND);
-    setup_queryParser(queryParser, internal->database, language, stopwords);
+    setup_queryParser(queryParser, internal->database, language, stopwords, hasNewSuggestionFormat);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
