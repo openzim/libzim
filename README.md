@@ -6,7 +6,7 @@ format. It's a solution to read and write ZIM files on many systems
 and architectures. More information about the ZIM format and the
 openZIM project at https://openzim.org/.
 
-[![Build Status](https://travis-ci.org/openzim/libzim.svg?branch=master)](https://travis-ci.org/openzim/libzim)
+[![Build Status](https://travis-ci.com/openzim/libzim.svg?branch=master)](https://travis-ci.com/openzim/libzim)
 [![codecov](https://codecov.io/gh/openzim/libzim/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
@@ -68,7 +68,7 @@ Compilation
 -----------
 
 Once all dependencies are installed, you can compile ZIM library with:
-```
+```bash
 meson . build
 ninja -C build
 ```
@@ -85,7 +85,7 @@ Installation
 
 If you want to install the libzim and the headers you just have
 compiled on your system, here we go:
-```
+```bash
 ninja -C build install
 ```
 
@@ -97,8 +97,7 @@ Uninstallation
 ------------
 
 If you want to uninstall the libzim:
-
-```
+```bash
 ninja -C build uninstall
 ```
 
@@ -109,7 +108,7 @@ Troubleshooting
 ---------------
 
 If you need to install Meson "manually":
-```
+```bash
 virtualenv -p python3 ./ # Create virtualenv
 source bin/activate      # Activate the virtualenv
 pip3 install meson       # Install Meson
@@ -117,7 +116,7 @@ hash -r                  # Refresh bash paths
 ```
 
 If you need to install Ninja "manually":
-```
+```bash
 git clone git://github.com/ninja-build/ninja.git
 cd ninja
 git checkout release
