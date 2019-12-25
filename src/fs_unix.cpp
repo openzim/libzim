@@ -34,7 +34,7 @@ namespace unix {
 
 zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 # define PREAD pread
 #else
 # define PREAD pread64
