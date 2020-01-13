@@ -2,6 +2,8 @@
 
 set -e
 
+echo "HOME=$HOME"
+
 BUILD_DIR=${HOME}/BUILD_${PLATFORM}
 INSTALL_DIR=${BUILD_DIR}/INSTALL
 
@@ -31,8 +33,7 @@ case ${PLATFORM} in
 
 esac
 
-cd ${TRAVIS_BUILD_DIR}
-if [[ "$TRAVIS_OS_NAME" == "osx" ]]
+if [[ "$OS_NAME" == "macos" ]]
 then
     export PKG_CONFIG_PATH=${INSTALL_DIR}/lib/pkgconfig
 else
@@ -52,7 +53,7 @@ then
     echo $LD_LIBRARY_PATH
     meson test --verbose
     ninja coverage
-    cd ..
-    echo "*** Publish code coverage"
-    bash <(curl -s https://codecov.io/bash)
+#    cd ..
+#    echo "*** Publish code coverage"
+#    bash <(curl -s https://codecov.io/bash)
 fi
