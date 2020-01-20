@@ -116,9 +116,3 @@ TEST(UuidTest, output)
   ASSERT_EQ(s, "550e8400-e29b-41d4-a716-446655440000");
 }
 };
-
-int main(int argc, char** argv)
-{
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
