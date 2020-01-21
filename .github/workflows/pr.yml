@@ -1,0 +1,143 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  Macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Setup python 3.5
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.5'
+      - name: Install packages
+        uses: mstksg/get-package@v1
+        with:
+          brew: gcovr pkg-config ninja
+      - name: Install python modules
+        run: pip3 install meson==0.49.2 pytest
+      - name: Install deps
+        shell: bash
+        run: |
+          ARCHIVE_NAME=deps2_osx_native_dyn_libzim.tar.xz
+          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
+      - name: Compile
+        shell: bash
+        run: |
+          export PKG_CONFIG_PATH=$HOME/BUILD_native_dyn/INSTALL/lib/pkgconfig
+          meson . build --default-library=shared
+          cd build
+          ninja
+      - name: Test
+        shell: bash
+        run: |
+          export LD_LIBRARY_PATH=$HOME/BUILD_native_dyn/INSTALL/lib:$HOME/BUILD_native_dyn/INSTALL/lib64
+          cd build
+          meson test --verbose
+        env:
+          SKIP_BIG_MEMORY_TEST: 1
+      - name: Publish coverage
+        shell: bash
+        run: |
+          cd build
+          bash <(curl -s https://codecov.io/bash)
+
+
+  Linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - native_static
+          - native_dyn
+          - android_arm
+          - android_arm64
+          - win32_static
+          - win32_dyn
+        include:
+          - target: native_static
+            image_variant: xenial
+            lib_postfix: '/x86_64-linux-gnu'
+          - target: native_dyn
+            image_variant: xenial
+            lib_postfix: '/x86_64-linux-gnu'
+          - target: android_arm
+            image_variant: xenial
+            lib_postfix: '/x86_64-linux-gnu'
+          - target: android_arm64
+            image_variant: xenial
+            lib_postfix: '/x86_64-linux-gnu'
+          - target: win32_static
+            image_variant: f31
+            lib_postfix: '64'
+          - target: win32_dyn
+            image_variant: f31
+            lib_postfix: '64'
+    env:
+      HOME: /home/runner
+    runs-on: ubuntu-latest
+    container:
+      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-26"
+    steps:
+    - name: Checkout code
+      shell: python
+      run: |
+        import json
+        from subprocess import check_call
+        from os import environ
+        with open(environ['GITHUB_EVENT_PATH'], 'r') as f:
+            event_data = json.load(f)
+        branch_ref = event_data['pull_request']['head']['ref']
+        command = [
+          'git', 'clone',
+          'https://github.com/${{github.repository}}',
+          '--depth=1',
+          '--branch', branch_ref
+        ]
+        check_call(command, cwd=environ['HOME'])
+    - name: Install deps
+      shell: bash
+      run: |
+        ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
+        wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C /home/runner
+    - name: Compile
+      shell: bash
+      run: |
+        meson --version
+        if [[ "${{matrix.target}}" =~ .*_dyn ]]; then
+          MESON_OPTION="--default-library=shared"
+        else
+          MESON_OPTION="--default-library=static"
+        fi
+        if [[ "${{matrix.target}}" =~ native_.* ]]; then
+          MESON_OPTION="$MESON_OPTION -Db_coverage=true"
+        else
+          MESON_OPTION="$MESON_OPTION --cross-file $HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
+        fi
+        if [[ "${{matrix.target}}" =~ android_.* ]]; then
+          MESON_OPTION="$MESON_OPTION -Dandroid=true"
+        fi
+        cd $HOME/libzim
+        meson . build ${MESON_OPTION}
+        cd build
+        ninja
+      env:
+        PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
+    - name: Test
+      if: startsWith(matrix.target, 'native_')
+      shell: bash
+      run: |
+        cd $HOME/libzim/build
+        meson test --verbose
+        ninja coverage
+      env:
+        LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
+        SKIP_BIG_MEMORY_TEST: 1
+    - name: Publish coverage
+      if: startsWith(matrix.target, 'native_')
+      shell: bash
+      run: |
+        cd $HOME/libzim/build
+        bash <(curl -s https://codecov.io/bash)
