@@ -82,10 +82,21 @@ jobs:
       image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-26"
     steps:
     - name: Checkout code
-      shell: bash
+      shell: python
       run: |
-        cd $HOME
-        git clone https://github.com/${{github.repository}} --depth=1  --branch ${GITHUB_REF##*/}
+        import json
+        from subprocess import check_call
+        from os import environ
+        with open(environ['GITHUB_EVENT_PATH'], 'r') as f:
+            event_data = json.load(f)
+        branch_ref = event_data['pull_request']['head']['ref']
+        command = [
+          'git', 'clone',
+          'https://github.com/${{github.repository}}',
+          '--depth=1',
+          '--branch', branch_ref
+        ]
+        check_call(command, cwd=environ['HOME'])
     - name: Install deps
       shell: bash
       run: |
