@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           export PKG_CONFIG_PATH=$HOME/BUILD_native_dyn/INSTALL/lib/pkgconfig
-          meson . build --default-library=shared
+          meson . build --default-library=shared -Db_coverage=true
           cd build
           ninja
       - name: Test
@@ -36,14 +36,17 @@ jobs:
           export LD_LIBRARY_PATH=$HOME/BUILD_native_dyn/INSTALL/lib:$HOME/BUILD_native_dyn/INSTALL/lib64
           cd build
           meson test --verbose
+          ninja coverage
         env:
           SKIP_BIG_MEMORY_TEST: 1
       - name: Publish coverage
         shell: bash
         run: |
-          cd build
-          bash <(curl -s https://codecov.io/bash)
-
+          curl https://codecov.io/bash -o codecov.sh
+          bash codecov.sh -n osx_native_dyn -Z
+          rm codecov.sh
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   Linux:
     strategy:
@@ -136,8 +139,12 @@ jobs:
         LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
         SKIP_BIG_MEMORY_TEST: 1
     - name: Publish coverage
-      if: startsWith(matrix.target, 'native_')
       shell: bash
       run: |
-        cd $HOME/libzim/build
-        bash <(curl -s https://codecov.io/bash)
+        cd $HOME/libzim
+        curl https://codecov.io/bash -o codecov.sh
+        bash codecov.sh -n "${OS_NAME}_${{matrix.target}}" -Z
+        rm codecov.sh
+      if: startsWith(matrix.target, 'native_')
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
