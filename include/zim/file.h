@@ -78,6 +78,8 @@ namespace zim
       const_iterator find(char ns, const std::string& url) const;
       const_iterator find(const std::string& url) const;
 
+      article_index_type getArticleByClusterOrder(article_index_type idx) const;
+
       std::unique_ptr<Search> search(const std::string& query, int start, int end) const;
       std::unique_ptr<Search> suggestions(const std::string& query, int start, int end) const;
 

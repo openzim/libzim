@@ -121,6 +121,19 @@ namespace zim
         log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
+
+      auto nb_articles = getCountArticles().v;
+      articleListByCluster.reserve(nb_articles);
+
+      for(zim::article_index_type i = 0; i < nb_articles; i++)
+      {
+          articleListByCluster.push_back(std::make_pair(i, getDirent(article_index_t(i))->getClusterNumber().v));
+      }
+
+      std::sort(articleListByCluster.begin(), articleListByCluster.end(), [](pair_type i, pair_type j)
+      {
+        return i.second < j.second;
+      });
     }
 
     if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
@@ -150,6 +163,12 @@ namespace zim
 
       current += (len + 1);
     }
+  }
+
+
+  article_index_type FileImpl::getArticleByClusterOrder(article_index_type idx) const
+  {
+      return articleListByCluster[idx].first;
   }
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
@@ -298,7 +317,7 @@ namespace zim
     // We cannot take a buffer of the size of the file, it would be really inefficient.
     // Let's do try, catch and retry while chosing a smart value for the buffer size.
     // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
-    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
+    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
     pthread_mutex_lock(&bufferDirentLock);
     zsize_t bufferSize = zsize_t(256);

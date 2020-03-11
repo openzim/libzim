@@ -67,6 +67,10 @@ namespace zim
     return article_index_type(impl->getCountArticles());
   }
 
+  article_index_type File::getArticleByClusterOrder(article_index_type idx) const
+  {
+      return impl->getArticleByClusterOrder(idx);
+  }
 
   Article File::getArticle(article_index_type idx) const
   {

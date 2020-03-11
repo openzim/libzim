@@ -88,8 +88,11 @@ namespace zim
       const Article& operator*() const
       {
         if (!article.good())
-          article = mode == UrlIterator ? file->getArticle(idx)
+        {
+          auto orderedidx = file->getArticleByClusterOrder(idx);
+          article = mode == UrlIterator ? file->getArticle(orderedidx)
                                         : file->getArticleByTitle(idx);
+        }
         return article;
       }
 
