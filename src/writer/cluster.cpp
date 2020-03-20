@@ -142,7 +142,57 @@ void Cluster::write(writer_t writer) const
   write_data(writer);
 }
 
-void Cluster::dump(int tmp_fd) const
+void Cluster::compress()
+{
+  auto comp = getCompression();
+  switch(comp) {
+    case zim::zimcompBzip2:
+#if !defined(ENABLE_ZLIB)
+    case zim::zimcompZip:
+#endif
+      {
+        throw std::runtime_error("Compression method not enabled in this library");
+        break;
+      }
+
+    case zim::zimcompLzma:
+#if defined(ENABLE_ZLIB)
+    case zim::zimcompZip:
+#endif
+      {
+        if (comp == zim::zimcompLzma) {
+          _compress<LZMA_INFO>();
+          break;
+        };
+#if defined(ENABLE_ZLIB)
+        _compress<ZIP_INFO>();
+        break;
+#endif
+      }
+    default:
+      throw std::runtime_error("We cannot compress an uncompressed cluster");
+  };
+}
+
+template<typename COMP_TYPE>
+void Cluster::_compress()
+{
+  Compressor<COMP_TYPE> runner;
+  bool first = true;
+  auto writer = [&](const Blob& data) -> void {
+    if (first) {
+      runner.init((char*)data.data());
+      first = false;
+    }
+    runner.feed(data.data(), data.size());
+  };
+  write(writer);
+  zsize_t size;
+  auto comp = runner.get_data(&size);
+  compressed_data = Blob(comp, size.v);
+}
+
+void Cluster::dump(int tmp_fd)
 {
   // write clusterInfo
   char clusterInfo = 0;
@@ -177,51 +227,13 @@ void Cluster::dump(int tmp_fd) const
     }
 
     case zim::zimcompZip:
-      {
-#if defined(ENABLE_ZLIB)
-        log_debug("compress data (zlib)");
-        Compressor<ZIP_INFO> runner;
-        bool first = true;
-        auto writer = [&](const Blob& data) -> void {
-          if (first) {
-            runner.init((char*)data.data());
-            first = false;
-          }
-          runner.feed(data.data(), data.size());
-        };
-        write(writer);
-        zsize_t size(0);
-        auto data = runner.get_data(&size);
-        ::write(tmp_fd, data, size.v);
-        delete [] data;
-#else
-        throw std::runtime_error("zlib not enabled in this library");
-#endif
-        break;
-      }
-
     case zim::zimcompBzip2:
-      {
-        throw std::runtime_error("bzip2 not enabled in this library");
-        break;
-      }
-
     case zim::zimcompLzma:
       {
-        Compressor<LZMA_INFO> runner;
-        bool first = true;
-        auto writer = [&](const Blob& data) -> void {
-          if (first) {
-            runner.init((char*)data.data());
-            first = false;
-          }
-          runner.feed(data.data(), data.size());
-        };
-        write(writer);
-        zsize_t size(0);
-        auto data = runner.get_data(&size);
-        ::write(tmp_fd, data, size.v);
-        delete [] data;
+        log_debug("compress data");
+        compress();
+        ::write(tmp_fd, compressed_data.data(), compressed_data.size());
+        delete [] compressed_data.data();
         break;
       }
 

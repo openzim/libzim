@@ -77,7 +77,7 @@ class Cluster {
 
     void write_final(int out_fd) const;
     void dump_tmp(const std::string& directoryPath);
-    void dump(int tmp_fd) const;
+    void dump(int tmp_fd);
 
   protected:
     CompressionType compression;
@@ -87,6 +87,7 @@ class Cluster {
     zsize_t _size;
     zsize_t finalSize;
     ClusterData _data;
+    Blob compressed_data;
     std::string tmp_filename;
     mutable pthread_mutex_t m_closedMutex;
     bool closed = false;
@@ -96,6 +97,9 @@ class Cluster {
     template<typename OFFSET_TYPE>
     void write_offsets(writer_t writer) const;
     void write_data(writer_t writer) const;
+    void compress();
+    template<typename COMP_INFO>
+    void _compress();
 };
 
 };
