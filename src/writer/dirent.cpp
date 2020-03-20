@@ -24,46 +24,48 @@
 #include "log.h"
 #include <algorithm>
 #include <cstring>
+#include <unistd.h>
 
 log_define("zim.dirent")
 
-std::ostream& zim::writer::operator<< (std::ostream& out, const zim::writer::Dirent& dirent)
+void zim::writer::Dirent::write(int out_fd) const
 {
   union
   {
     char d[16];
     long a;
   } header;
-  zim::toLittleEndian(dirent.getMimeType(), header.d);
+  zim::toLittleEndian(getMimeType(), header.d);
   header.d[2] = 0; // parameter size
-  header.d[3] = dirent.getNamespace();
+  header.d[3] = getNamespace();
 
   log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size());
 
-  zim::toLittleEndian(dirent.getVersion(), header.d + 4);
+  zim::toLittleEndian(getVersion(), header.d + 4);
 
-  if (dirent.isRedirect())
+  if (isRedirect())
   {
-    zim::toLittleEndian(dirent.getRedirectIndex().v, header.d + 8);
-    out.write(header.d, 12);
+    zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
+    ::write(out_fd, header.d, 12);
   }
-  else if (dirent.isLinktarget() || dirent.isDeleted())
+  else if (isLinktarget() || isDeleted())
   {
-    out.write(header.d, 8);
+    ::write(out_fd, header.d, 8);
   }
   else
   {
-    zim::toLittleEndian(zim::cluster_index_type(dirent.getClusterNumber()), header.d + 8);
-    zim::toLittleEndian(zim::blob_index_type(dirent.getBlobNumber()), header.d + 12);
-    out.write(header.d, 16);
+    zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);
+    zim::toLittleEndian(zim::blob_index_type(getBlobNumber()), header.d + 12);
+    ::write(out_fd, header.d, 16);
   }
 
-  out << dirent.getUrl() << '\0';
+  auto& url = getUrl();
+  ::write(out_fd, url.c_str(), url.size()+1);
 
-  std::string t = dirent.getTitle();
-  if (t != dirent.getUrl())
-    out << t;
-  out << '\0';
+  std::string t = getTitle();
+  if (t != getUrl())
+    ::write(out_fd, t.c_str(), t.size());
+  char c = 0;
+  ::write(out_fd, &c, 1);
 
-  return out;
 }

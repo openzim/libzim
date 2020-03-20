@@ -72,7 +72,7 @@ class Cluster {
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
 
-    void write_final(std::ostream& out) const;
+    void write_final(int out_fd) const;
     void dump_tmp(const std::string& directoryPath);
     void dump(std::ostream& out) const;
 

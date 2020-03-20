@@ -29,6 +29,35 @@
 
 namespace
 {
+
+std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
+{
+  char tmpl[] = "/tmp/test_dirent_XXXXXX";
+  auto tmp_fd = mkstemp(tmpl);
+  dirent.write(tmp_fd);
+  auto size = lseek(tmp_fd, 0, SEEK_END);
+
+  char* content = new char[size];
+  lseek(tmp_fd, 0, SEEK_SET);
+  read(tmp_fd, content, size);
+  close(tmp_fd);
+  unlink(tmpl);
+  return std::unique_ptr<zim::Buffer>(
+      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+}
+
+size_t writenDirentSize(const zim::writer::Dirent& dirent)
+{
+  char tmpl[] = "/tmp/test_dirent_XXXXXX";
+  auto tmp_fd = mkstemp(tmpl);
+  dirent.write(tmp_fd);
+  auto size = lseek(tmp_fd, 0, SEEK_END);
+  close(tmp_fd);
+  unlink(tmpl);
+  return size;
+}
+
+
 TEST(DirentTest, set_get_data_dirent)
 {
   zim::Dirent dirent;
@@ -67,18 +96,8 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
   ASSERT_EQ(dirent.getVersion(), 0U);
 
-  std::stringstream s;
-  s << dirent;
-
-  std::string str_content = s.str();
-  int size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
-  auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  auto buffer = write_to_buffer(dirent);
   zim::Dirent dirent2(std::move(buffer));
-
-  ASSERT_TRUE(!s.fail());
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -102,18 +121,8 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   ASSERT_EQ(dirent.getClusterNumber().v, 45U);
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
 
-  std::stringstream s;
-  s << dirent;
-
-  std::string str_content = s.str();
-  int size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
-  auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  auto buffer = write_to_buffer(dirent);
   zim::Dirent dirent2(std::move(buffer));
-
-  ASSERT_TRUE(!s.fail());
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -137,15 +146,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent.getUrl(), "Bar");
   ASSERT_EQ(dirent.getRedirectIndex().v, 321U);
 
-  std::stringstream s;
-  s << dirent;
-
-  std::string str_content = s.str();
-  int size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
-  auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  auto buffer = write_to_buffer(dirent);
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(dirent2.isRedirect());
@@ -167,15 +168,7 @@ TEST(DirentTest, read_write_linktarget_dirent)
   ASSERT_EQ(dirent.getNamespace(), 'A');
   ASSERT_EQ(dirent.getUrl(), "Bar");
 
-  std::stringstream s;
-  s << dirent;
-
-  std::string str_content = s.str();
-  int size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
-  auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  auto buffer = write_to_buffer(dirent);
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!dirent2.isRedirect());
@@ -198,15 +191,7 @@ TEST(DirentTest, read_write_deleted_dirent)
   ASSERT_EQ(dirent.getNamespace(), 'A');
   ASSERT_EQ(dirent.getUrl(), "Bar");
 
-  std::stringstream s;
-  s << dirent;
-
-  std::string str_content = s.str();
-  int size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
-  auto buffer = std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  auto buffer = write_to_buffer(dirent);
   zim::Dirent dirent2(std::move(buffer));
 
   ASSERT_TRUE(!dirent2.isRedirect());
@@ -217,13 +202,6 @@ TEST(DirentTest, read_write_deleted_dirent)
   ASSERT_EQ(dirent2.getTitle(), "Bar");
 }
 
-std::string direntAsString(const zim::writer::Dirent& dirent)
-{
-  std::ostringstream d;
-  d << dirent;
-  return d.str();
-}
-
 TEST(DirentTest, dirent_size)
 {
   zim::writer::Dirent dirent;
@@ -232,18 +210,15 @@ TEST(DirentTest, dirent_size)
   dirent.setUrl(zim::writer::Url('A', "Bar"));
 
   // case url set, title empty, extralen empty
-  s = direntAsString(dirent);
-  ASSERT_EQ(dirent.getDirentSize(), s.size());
+  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
 
   // case url set, title set, extralen empty
   dirent.setTitle("Foo");
-  s = direntAsString(dirent);
-  ASSERT_EQ(dirent.getDirentSize(), s.size());
+  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
 
   // case url set, title empty
   dirent.setTitle(std::string());
-  s = direntAsString(dirent);
-  ASSERT_EQ(dirent.getDirentSize(), s.size());
+  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
 }
 
 TEST(DirentTest, redirect_dirent_size)
@@ -254,10 +229,7 @@ TEST(DirentTest, redirect_dirent_size)
   dirent.setUrl(zim::writer::Url('A', "Bar"));
   dirent.setRedirect(&targetDirent);
 
-  std::ostringstream d;
-  d << dirent;
-
-  ASSERT_EQ(dirent.getDirentSize(), d.str().size());
+  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
 }
 
 }  // namespace

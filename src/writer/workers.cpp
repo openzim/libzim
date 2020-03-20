@@ -42,7 +42,6 @@
 #include <stdexcept>
 #include <sstream>
 #include "md5stream.h"
-#include "tee.h"
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"

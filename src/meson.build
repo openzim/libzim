@@ -33,8 +33,7 @@ common_sources = [
     'writer/cluster.cpp',
     'writer/dirent.cpp',
     'writer/workers.cpp',
-    'writer/xapianIndexer.cpp',
-    'writer/tee.cpp'
+    'writer/xapianIndexer.cpp'
 ]
 
 if host_machine.system() == 'windows'

@@ -59,7 +59,7 @@ namespace zim
         unsigned compressionThreads = 4;
 
         void fillHeader(Fileheader* header);
-        void write(const Fileheader& header, const std::string& fname) const;
+        void write(const Fileheader& header, int out_fd) const;
     };
   }
 

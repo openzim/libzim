@@ -28,6 +28,7 @@
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
+#include "../md5.h"
 
 #if defined(ENABLE_XAPIAN)
   #include "xapianIndexer.h"
@@ -39,13 +40,14 @@
 #include <unistd.h>
 #endif
 
+#include <sys/stat.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <limits>
 #include <stdexcept>
 #include <sstream>
 #include <ctime>
 #include "md5stream.h"
-#include "tee.h"
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"
@@ -236,8 +238,11 @@ namespace zim
       fillHeader(&header);
 
       TINFO("write zimfile :");
-      write(header, data->basename + ".zim.tmp");
-      zim::DEFAULTFS::rename(data->basename + ".zim.tmp", data->basename + ".zim");
+      auto zim_name = data->basename + ".zim";
+      mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+      int out_fd = open(zim_name.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
+      write(header, out_fd);
+      ::close(out_fd);
 
       TINFO("finish");
     }
@@ -296,24 +301,20 @@ namespace zim
       header->setChecksumPos( offset );
     }
 
-    void Creator::write(const Fileheader& header, const std::string& fname) const
+    void Creator::write(const Fileheader& header, int out_fd) const
     {
-      std::ofstream zimfile(fname);
-      Md5stream md5;
-      Tee out(zimfile, md5);
-
       TINFO(" write header");
-      out << header;
+      header.write(out_fd);
 
       log_debug("after writing header - pos=" << zimfile.tellp());
 
       TINFO(" write mimetype list");
       for(auto& mimeType: data->mimeTypesList)
       {
-        out << mimeType << '\0';
+        ::write(out_fd, mimeType.c_str(), mimeType.size()+1);
       }
 
-      out << '\0';
+      ::write(out_fd, "", 1);
 
       TINFO(" write url prt list");
       offset_t off(header.getTitleIdxPos() + data->titleIdxSize().v);
@@ -321,7 +322,7 @@ namespace zim
       {
         char tmp_buff[sizeof(offset_type)];
         toLittleEndian(off.v, tmp_buff);
-        out.write(tmp_buff, sizeof(offset_type));
+        ::write(out_fd, tmp_buff, sizeof(offset_type));
         off += dirent->getDirentSize();
       }
 
@@ -332,7 +333,7 @@ namespace zim
       {
         char tmp_buff[sizeof(article_index_type)];
         toLittleEndian(dirent->getIdx().v, tmp_buff);
-        out.write(tmp_buff, sizeof(article_index_type));
+        ::write(out_fd, tmp_buff, sizeof(article_index_type));
       }
 
       log_debug("after writing fileIdxList - pos=" << out.tellp());
@@ -340,7 +341,7 @@ namespace zim
       TINFO(" write directory entries");
       for (Dirent* dirent: data->dirents)
       {
-        out << *dirent;
+        dirent->write(out_fd);
         log_debug("write " << dirent->getTitle() << " dirent.size()=" << dirent->getDirentSize() << " pos=" << out.tellp());
       }
 
@@ -353,7 +354,7 @@ namespace zim
         offset_t o(off + clusterOffset);
         char tmp_buff[sizeof(offset_type)];
         toLittleEndian(o.v, tmp_buff);
-        out.write(tmp_buff, sizeof(offset_type));
+        ::write(out_fd, tmp_buff, sizeof(offset_type));
       }
 
       log_debug("after writing clusterOffsets - pos=" << out.tellp());
@@ -365,7 +366,7 @@ namespace zim
         for(auto& cluster: data->clustersList)
         {
           ASSERT(cluster->isClosed(), ==, true);
-          cluster->write_final(out);
+          cluster->write_final(out_fd);
           if (((++nb_written_clusters) % 1000) == 0) {
             TINFO(nb_written_clusters << "/" << data->clustersList.size());
           }
@@ -374,15 +375,27 @@ namespace zim
       else
         log_warn("no data found");
 
-      if (!out)
-        throw std::runtime_error("failed to write zimfile");
-
       log_debug("after writing clusterData - pos=" << out.tellp());
 
       TINFO(" write checksum");
+      struct zim_MD5_CTX md5ctx;
+      unsigned char batch_read[1024+1];
+      lseek(out_fd, 0, SEEK_SET);
+      zim_MD5Init(&md5ctx);
+      while (true) {
+         ssize_t r = read(out_fd, batch_read, 1024);
+         if (r == -1) {
+           perror("Cannot read");
+           throw std::runtime_error("oups");
+         }
+         if (r == 0)
+           break;
+         batch_read[r] = 0;
+         zim_MD5Update(&md5ctx, batch_read, r);
+      }
       unsigned char digest[16];
-      md5.getDigest(digest);
-      zimfile.write(reinterpret_cast<const char*>(digest), 16);
+      zim_MD5Final(digest, &md5ctx);
+      ::write(out_fd, reinterpret_cast<const char*>(digest), 16);
     }
 
     CreatorData::CreatorData(const std::string& fname,

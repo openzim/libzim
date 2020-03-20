@@ -152,7 +152,7 @@ namespace zim
           info.d.blobNumber = blobNumber_;
         }
 
-
+        void write(int out_fd) const;
 
         friend bool compareUrl(const Dirent* d1, const Dirent* d2);
         friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
@@ -168,9 +168,6 @@ namespace zim
       return d1->url.getNs() < d2->url.getNs()
         || (d1->url.getNs() == d2->url.getNs() && d1->getTitle() < d2->getTitle());
     }
-
-    std::ostream& operator<< (std::ostream& out, const Dirent& d);
-
   }
 }
 

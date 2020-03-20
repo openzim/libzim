@@ -99,14 +99,22 @@ void Cluster::write_offsets(std::ostream& out) const
   }
 }
 
-void Cluster::write_final(std::ostream& out) const
+void Cluster::write_final(int out_fd) const
 {
   {
-    std::ifstream clustersFile(tmp_filename, std::ios::binary);
-    out << clustersFile.rdbuf();
-    if (!out) {
-      throw std::runtime_error("failed to write cluster");
+    int fd = open(tmp_filename.c_str(), O_RDONLY);
+    if (fd == -1) {
+      throw std::runtime_error(std::string("cannot open ") + tmp_filename);
     }
+    char* buffer = new char[1024*1024];
+    while (true) {
+      auto r = read(fd, (char*)buffer, 1024*1024);
+      if (! r)
+        break;
+      ::write(out_fd, buffer, r);
+    }
+    delete[] buffer;
+    ::close(fd);
   }
   DEFAULTFS::removeFile(tmp_filename);
 }
