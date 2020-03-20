@@ -25,6 +25,7 @@
 #include <iostream>
 #include <vector>
 #include <pthread.h>
+#include <functional>
 
 #include <zim/writer/article.h>
 #include "../zim_types.h"
@@ -42,6 +43,8 @@ struct Data {
   DataType type;
   std::string value;
 };
+
+using writer_t = std::function<void(const Blob& data)>;
 
 class Cluster {
   typedef std::vector<offset_t> Offsets;
@@ -74,7 +77,7 @@ class Cluster {
 
     void write_final(int out_fd) const;
     void dump_tmp(const std::string& directoryPath);
-    void dump(std::ostream& out) const;
+    void dump(int tmp_fd) const;
 
   protected:
     CompressionType compression;
@@ -89,11 +92,10 @@ class Cluster {
     bool closed = false;
 
   private:
-    void write(std::ostream& out) const;
+    void write(writer_t writer) const;
     template<typename OFFSET_TYPE>
-    void write_offsets(std::ostream& out) const;
-    void write_data(std::ostream& out) const;
-
+    void write_offsets(writer_t writer) const;
+    void write_data(writer_t writer) const;
 };
 
 };

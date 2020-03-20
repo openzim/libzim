@@ -42,7 +42,11 @@ struct LZMA_INFO {
   typedef lzma_stream stream_t;
   static const std::string name;
   static void init_stream_decoder(stream_t* stream, char* raw_data);
+  static void init_stream_encoder(stream_t* stream, char* raw_data);
+  static CompStatus stream_run_encode(stream_t* stream, CompStep step);
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
+  static CompStatus stream_run(stream_t* stream, CompStep step);
+  static void stream_end_encode(stream_t* stream);
   static void stream_end_decode(stream_t* stream);
 };
 
@@ -52,7 +56,10 @@ struct ZIP_INFO {
   typedef z_stream stream_t;
   static const std::string name;
   static void init_stream_decoder(stream_t* stream, char* raw_data);
+  static void init_stream_encoder(stream_t* stream, char* raw_data);
+  static CompStatus stream_run_encode(stream_t* stream, CompStep step);
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
+  static void stream_end_encode(stream_t* stream);
   static void stream_end_decode(stream_t* stream);
 };
 #endif
@@ -174,6 +181,62 @@ char* uncompress(const zim::Reader* reader, zim::offset_t startOffset, zim::zsiz
   DEB("Finish")
   return runner.get_data(dest_size);
 }
+
+template<typename INFO>
+class Compressor
+{
+  public:
+    Compressor(size_t initial_size=1024*1024) :
+      ret_data(new char[initial_size]),
+      ret_size(initial_size)
+    {}
+
+    ~Compressor() = default;
+
+    void init(char* data) {
+      INFO::init_stream_encoder(&stream, data);
+      stream.next_out = (uint8_t*)ret_data;
+      stream.avail_out = ret_size;
+    }
+
+    RunnerStatus feed(const char* data, size_t size, CompStep step=CompStep::STEP) {
+      stream.next_in = (unsigned char*)data;
+      stream.avail_in = size;
+      auto errcode = CompStatus::OTHER;
+      while (1) {
+        errcode = INFO::stream_run_encode(&stream, step);
+        if (errcode == CompStatus::BUF_ERROR) {
+          if (stream.avail_out == 0 && stream.avail_in != 0) {
+            //Not enought output size
+            ret_size *= 2;
+            char * new_ret_data = new char[ret_size];
+            memcpy(new_ret_data, ret_data, stream.total_out);
+            stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+            stream.avail_out = ret_size - stream.total_out;
+            delete [] ret_data;
+            ret_data = new_ret_data;
+            continue;
+          }
+        }
+        if (errcode == CompStatus::STREAM_END || errcode == CompStatus::OK)
+          break;
+        return RunnerStatus::ERROR;
+      };
+      return RunnerStatus::NEED_MORE;
+    }
+
+    char* get_data(zim::zsize_t* size) {
+      feed(nullptr, 0, CompStep::FINISH);
+      INFO::stream_end_encode(&stream);
+      size->v = stream.total_out;
+      return ret_data;
+    }
+
+  private:
+    char* ret_data;
+    size_t ret_size;
+    typename INFO::stream_t stream;
+};
 
 } // namespace zim
 

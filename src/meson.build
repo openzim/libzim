@@ -28,7 +28,6 @@ common_sources = [
     'tools.cpp',
     'compression.cpp',
     'writer/creator.cpp',
-    'writer/lzmastream.cpp',
     'writer/article.cpp',
     'writer/cluster.cpp',
     'writer/dirent.cpp',
@@ -42,10 +41,6 @@ else
     common_sources += 'fs_unix.cpp'
 endif
 
-zlib_sources = [
-    'writer/deflatestream.cpp'
-]
-
 xapian_sources = [
     'xapian/htmlparse.cc',
     'xapian/myhtmlparse.cc'
@@ -55,7 +50,6 @@ sources = common_sources
 deps = [thread_dep, lzma_dep]
 
 if zlib_dep.found()
-    sources += zlib_sources
     deps += [zlib_dep]
 endif
 

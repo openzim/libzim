@@ -21,16 +21,11 @@
 #include "../log.h"
 #include "../endian_tools.h"
 #include "../debug.h"
+#include "../compression.h"
 #include "../fs.h"
 
 #include <sstream>
 #include <fstream>
-
-#if defined(ENABLE_ZLIB)
-#include "deflatestream.h"
-#endif
-
-#include "lzmastream.h"
 
 #ifdef _WIN32
 #define SEPARATOR "\\"
@@ -87,15 +82,15 @@ zsize_t Cluster::getFinalSize() const
 }
 
 template<typename OFFSET_TYPE>
-void Cluster::write_offsets(std::ostream& out) const
+void Cluster::write_offsets(writer_t writer) const
 {
   size_type delta = offsets.size() * sizeof(OFFSET_TYPE);
+  char out_buf[sizeof(OFFSET_TYPE)];
   for (auto offset : offsets)
   {
     offset.v += delta;
-    char out_buf[sizeof(OFFSET_TYPE)];
     toLittleEndian(static_cast<OFFSET_TYPE>(offset.v), out_buf);
-    out.write(out_buf, sizeof(OFFSET_TYPE));
+    writer(Blob(out_buf, sizeof(OFFSET_TYPE)));
   }
 }
 
@@ -124,28 +119,30 @@ void Cluster::dump_tmp(const std::string& directoryPath)
   std::ostringstream ss;
   ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
   tmp_filename = ss.str();
-  std::ofstream out(tmp_filename, std::ios::binary);
-  dump(out);
-  if (!out) {
+  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  int tmp_fd = open(tmp_filename.c_str(), O_WRONLY|O_CREAT|O_TRUNC, mode);
+  if (tmp_fd == -1) {
     throw std::runtime_error(
-      std::string("failed to write temporary cluster file ")
+      std::string("failed to create temporary cluster file ")
     + tmp_filename);
   }
-  finalSize = zsize_t(out.tellp());
+  dump(tmp_fd);
+  finalSize = zsize_t(lseek(tmp_fd, 0, SEEK_END));
+  ::close(tmp_fd);
   clear();
 }
 
-void Cluster::write(std::ostream& out) const
+void Cluster::write(writer_t writer) const
 {
   if (isExtended) {
-    write_offsets<uint64_t>(out);
+    write_offsets<uint64_t>(writer);
   } else {
-    write_offsets<uint32_t>(out);
+    write_offsets<uint32_t>(writer);
   }
-  write_data(out);
+  write_data(writer);
 }
 
-void Cluster::dump(std::ostream& out) const
+void Cluster::dump(int tmp_fd) const
 {
   // write clusterInfo
   char clusterInfo = 0;
@@ -153,25 +150,50 @@ void Cluster::dump(std::ostream& out) const
     clusterInfo = 0x10;
   }
   clusterInfo += getCompression();
-  out.put(clusterInfo);
+  ::write(tmp_fd, &clusterInfo, 1);
 
   // Open a comprestion stream if needed
   switch(getCompression())
   {
     case zim::zimcompDefault:
     case zim::zimcompNone:
-      write(out);
+    {
+      auto writer = [=](const Blob& data) -> void {
+        // Ideally we would simply have to do :
+        // ::write(tmp_fd, data.c_str(), data.size());
+        // However, the data can be pretty big (> 4Gb), especially with test,
+        // And ::write fails to write data > 4Gb. So we have to chunck the write.
+        size_type to_write = data.size();
+        const char* src = data.data();
+        while (to_write) {
+         size_type chunk_size = to_write > 4096 ? 4096 : to_write;
+         auto ret = ::write(tmp_fd, src, chunk_size);
+         src += ret;
+         to_write -= ret;
+        }
+      };
+      write(writer);
       break;
+    }
 
     case zim::zimcompZip:
       {
 #if defined(ENABLE_ZLIB)
         log_debug("compress data (zlib)");
-        zim::writer::DeflateStream os(out);
-        os.exceptions(std::ios::failbit | std::ios::badbit);
-        write(os);
-        os.flush();
-        os.end();
+        Compressor<ZIP_INFO> runner;
+        bool first = true;
+        auto writer = [&](const Blob& data) -> void {
+          if (first) {
+            runner.init((char*)data.data());
+            first = false;
+          }
+          runner.feed(data.data(), data.size());
+        };
+        write(writer);
+        zsize_t size(0);
+        auto data = runner.get_data(&size);
+        ::write(tmp_fd, data, size.v);
+        delete [] data;
 #else
         throw std::runtime_error("zlib not enabled in this library");
 #endif
@@ -186,11 +208,20 @@ void Cluster::dump(std::ostream& out) const
 
     case zim::zimcompLzma:
       {
-        uint32_t lzmaPreset = 9 | LZMA_PRESET_EXTREME;
-        zim::writer::LzmaStream os(out, lzmaPreset);
-        os.exceptions(std::ios::failbit | std::ios::badbit);
-        write(os);
-        os.end();
+        Compressor<LZMA_INFO> runner;
+        bool first = true;
+        auto writer = [&](const Blob& data) -> void {
+          if (first) {
+            runner.init((char*)data.data());
+            first = false;
+          }
+          runner.feed(data.data(), data.size());
+        };
+        write(writer);
+        zsize_t size(0);
+        auto data = runner.get_data(&size);
+        ::write(tmp_fd, data, size.v);
+        delete [] data;
         break;
       }
 
@@ -231,22 +262,27 @@ void Cluster::addData(const char* data, zsize_t size)
   _data.emplace_back(DataType::plain, data, size.v);
 }
 
-void Cluster::write_data(std::ostream& out) const
+void Cluster::write_data(writer_t writer) const
 {
   for (auto& data: _data)
   {
     ASSERT(data.value.empty(), ==, false);
     if (data.type == DataType::plain) {
-      out << data.value;
+      writer(Blob(data.value.c_str(), data.value.size()));
     } else {
-      std::ifstream stream(data.value, std::ios::binary);
-      if (!stream) {
-         throw std::runtime_error(std::string("cannot open ") + data.value);
+      int fd = open(data.value.c_str(), O_RDONLY);
+      if (fd == -1) {
+        throw std::runtime_error(std::string("cannot open ") + data.value);
       }
-      out << stream.rdbuf();
-      if (!out) {
-        throw std::runtime_error(std::string("failed to write file ") + data.value);
+      char* buffer = new char[1024*1024];
+      while (true) {
+        auto r = read(fd, buffer, 1024*1024);
+        if (!r)
+          break;
+        writer(Blob(buffer, r));
       }
+      delete [] buffer;
+      ::close(fd);
     }
   }
 }

@@ -16,7 +16,24 @@ void LZMA_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
   }
 }
 
-CompStatus LZMA_INFO::stream_run_decode(stream_t* stream, CompStep step)
+void LZMA_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
+{
+  *stream = LZMA_STREAM_INIT;
+  auto errcode = lzma_easy_encoder(stream, 9 | LZMA_PRESET_EXTREME, LZMA_CHECK_CRC32);
+  if (errcode != LZMA_OK) {
+    throw std::runtime_error("Cannot initialize lzma_easy_encoder");
+  }
+}
+
+CompStatus LZMA_INFO::stream_run_encode(stream_t* stream, CompStep step) {
+  return stream_run(stream, step);
+}
+
+CompStatus LZMA_INFO::stream_run_decode(stream_t* stream, CompStep step) {
+  return stream_run(stream, step);
+}
+
+CompStatus LZMA_INFO::stream_run(stream_t* stream, CompStep step)
 {
   auto errcode = lzma_code(stream, step==CompStep::STEP?LZMA_RUN:LZMA_FINISH);
   if (errcode == LZMA_BUF_ERROR)
@@ -33,6 +50,12 @@ void LZMA_INFO::stream_end_decode(stream_t* stream)
   lzma_end(stream);
 }
 
+void LZMA_INFO::stream_end_encode(stream_t* stream)
+{
+  lzma_end(stream);
+}
+
+
 #if defined(ENABLE_ZLIB)
 const std::string ZIP_INFO::name = "zlib";
 void ZIP_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
@@ -41,6 +64,15 @@ void ZIP_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
   stream->next_in = (unsigned char*) raw_data;
   stream->avail_in = 1024;
   auto errcode = ::inflateInit(stream);
+  if (errcode != Z_OK) {
+    throw std::runtime_error("Impossible to allocated needed memory to uncompress zlib stream");
+  }
+}
+
+void ZIP_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
+{
+  memset(stream, 0, sizeof(z_stream));
+  auto errcode = ::deflateInit(stream, Z_DEFAULT_COMPRESSION);
   if (errcode != Z_OK) {
     throw std::runtime_error("Impossible to allocated needed memory to uncompress zlib stream");
   }
@@ -57,9 +89,24 @@ CompStatus ZIP_INFO::stream_run_decode(stream_t* stream, CompStep step) {
   return CompStatus::OTHER;
 }
 
+CompStatus ZIP_INFO::stream_run_encode(stream_t* stream, CompStep step) {
+  auto errcode = ::deflate(stream, step==CompStep::STEP?Z_SYNC_FLUSH:Z_FINISH);
+  if (errcode == Z_BUF_ERROR)
+    return CompStatus::BUF_ERROR;
+  if (errcode == Z_STREAM_END)
+    return CompStatus::STREAM_END;
+  if (errcode == Z_OK)
+    return CompStatus::OK;
+  return CompStatus::OTHER;
+}
+
 void ZIP_INFO::stream_end_decode(stream_t* stream) {
   auto ret = ::inflateEnd(stream);
   ASSERT(ret, ==, Z_OK);
 }
 
+void ZIP_INFO::stream_end_encode(stream_t* stream) {
+  auto ret = ::deflateEnd(stream);
+  ASSERT(ret, ==, Z_OK);
+}
 #endif // ENABLE_ZLIB
