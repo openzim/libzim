@@ -153,8 +153,11 @@ namespace zim
 
       while(true) {
         microsleep(wait);
-        wait += 10;
+        wait += 100;
         if (creatorData->taskList.popFromQueue(task)) {
+          if (task == nullptr) {
+            return nullptr;
+          }
           task->run(creatorData);
           delete task;
           wait = 0;

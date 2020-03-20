@@ -87,7 +87,6 @@ namespace zim
         pthread_t thread;
         pthread_create(&thread, NULL, taskRunner, this->data.get());
         pthread_detach(thread);
-        data->runningWriters.push_back(thread);
       }
     }
 
@@ -205,16 +204,10 @@ namespace zim
         }
       } while(!closed);
 
-// [FIXME] pthread_cancel is not defined in android NDK.
-// As we don't create zim on android platform, 
-// let's simply skip this code to still allow
-// compilation of libzim on android.
-#if !defined(__ANDROID__)
-      for(auto& thread: data->runningWriters)
-      {
-        pthread_cancel(thread);
+      // Quit all compressiont Threads
+      for (auto i=0U; i< compressionThreads; i++) {
+        data->taskList.pushToQueue(nullptr);
       }
-#endif
 
       TINFO("Generate cluster offsets");
       data->generateClustersOffsets();

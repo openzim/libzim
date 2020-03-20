@@ -34,7 +34,7 @@ class Queue {
         virtual bool isEmpty();
         virtual size_t size();
         virtual void pushToQueue(const T& element);
-        virtual bool popFromQueue(T &filename);
+        virtual bool popFromQueue(T &element);
 
     protected:
         std::queue<T>   m_realQueue;
