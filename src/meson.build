@@ -26,6 +26,7 @@ common_sources = [
     'uuid.cpp',
     'levenshtein.cpp',
     'tools.cpp',
+    'compression.cpp',
     'writer/creator.cpp',
     'writer/lzmastream.cpp',
     'writer/article.cpp',
