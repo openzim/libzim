@@ -60,6 +60,7 @@ namespace zim
         Cluster* cluster = nullptr;
         Url redirectUrl;
         article_index_t idx = article_index_t(0);
+        offset_t offset;
 
       public:
         Dirent()
@@ -143,6 +144,9 @@ namespace zim
             ret += title.size();
           return ret;
         }
+
+        offset_t getOffset() const { return offset; }
+        void setOffset(offset_t o) { offset = o; }
 
         void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
         {

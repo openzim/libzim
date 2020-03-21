@@ -76,11 +76,6 @@ zsize_t Cluster::size() const
   }
 }
 
-zsize_t Cluster::getFinalSize() const
-{
-  return finalSize;
-}
-
 template<typename OFFSET_TYPE>
 void Cluster::write_offsets(writer_t writer) const
 {
@@ -127,7 +122,6 @@ void Cluster::dump_tmp(const std::string& directoryPath)
     + tmp_filename);
   }
   dump(tmp_fd);
-  finalSize = zsize_t(lseek(tmp_fd, 0, SEEK_END));
   ::close(tmp_fd);
   clear();
 }

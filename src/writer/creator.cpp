@@ -209,9 +209,6 @@ namespace zim
         data->taskList.pushToQueue(nullptr);
       }
 
-      TINFO("Generate cluster offsets");
-      data->generateClustersOffsets();
-
       TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
 
@@ -224,28 +221,22 @@ namespace zim
       TINFO("create title index");
       data->createTitleIndex();
       TINFO(data->dirents.size() << " title index created");
-      TINFO(data->clusterOffsets.size() << " clusters created");
-
-      TINFO("fill header");
-      Fileheader header;
-      fillHeader(&header);
+      TINFO(data->clustersList.size() << " clusters created");
 
       TINFO("write zimfile :");
       auto zim_name = data->basename + ".zim";
       mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
       int out_fd = open(zim_name.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
-      write(header, out_fd);
+      write(out_fd);
       ::close(out_fd);
 
       TINFO("finish");
     }
 
-    void Creator::fillHeader(Fileheader* header)
+    void Creator::fillHeader(Fileheader* header) const
     {
       auto mainUrl = getMainUrl();
       auto layoutUrl = getLayoutUrl();
-
-      log_debug("main url=" << mainUrl << " layout url=" << layoutUrl);
 
       if (data->isExtended) {
         header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
@@ -262,13 +253,11 @@ namespace zim
         {
           if (mainUrl == dirent->getFullUrl())
           {
-            log_debug("main idx=" << dirent->getIdx());
             header->setMainPage(article_index_type(dirent->getIdx()));
           }
 
           if (layoutUrl == dirent->getFullUrl())
           {
-            log_debug("layout idx=" << dirent->getIdx());
             header->setLayoutPage(article_index_type(dirent->getIdx()));
           }
         }
@@ -277,30 +266,17 @@ namespace zim
       header->setUuid( getUuid() );
       header->setArticleCount( data->dirents.size() );
 
-      offset_type offset(Fileheader::size);
-      header->setMimeListPos( offset );
+      header->setMimeListPos( Fileheader::size );
 
-      offset += data->mimeListSize().v;
-      header->setUrlPtrPos( offset );
-
-      offset += data->urlPtrSize().v;
-      header->setTitleIdxPos( offset );
-      header->setClusterCount( data->clusterOffsets.size() );
-
-      offset += data->titleIdxSize().v + data->indexSize().v;
-      header->setClusterPtrPos( offset );
-
-      offset += data->clusterPtrSize().v + data->clustersSize.v;
-      header->setChecksumPos( offset );
+      header->setClusterCount( data->clustersList.size() );
     }
 
-    void Creator::write(const Fileheader& header, int out_fd) const
+    void Creator::write(int out_fd) const
     {
-      TINFO(" write header");
-      header.write(out_fd);
+      Fileheader header;
+      fillHeader(&header);
 
-      log_debug("after writing header - pos=" << zimfile.tellp());
-
+      lseek(out_fd, header.getMimeListPos(), SEEK_SET);
       TINFO(" write mimetype list");
       for(auto& mimeType: data->mimeTypesList)
       {
@@ -309,49 +285,6 @@ namespace zim
 
       ::write(out_fd, "", 1);
 
-      TINFO(" write url prt list");
-      offset_t off(header.getTitleIdxPos() + data->titleIdxSize().v);
-      for (auto& dirent: data->dirents)
-      {
-        char tmp_buff[sizeof(offset_type)];
-        toLittleEndian(off.v, tmp_buff);
-        ::write(out_fd, tmp_buff, sizeof(offset_type));
-        off += dirent->getDirentSize();
-      }
-
-      log_debug("after writing direntPtr - pos=" << out.tellp());
-
-      TINFO(" write title index");
-      for (Dirent* dirent: data->titleIdx)
-      {
-        char tmp_buff[sizeof(article_index_type)];
-        toLittleEndian(dirent->getIdx().v, tmp_buff);
-        ::write(out_fd, tmp_buff, sizeof(article_index_type));
-      }
-
-      log_debug("after writing fileIdxList - pos=" << out.tellp());
-
-      TINFO(" write directory entries");
-      for (Dirent* dirent: data->dirents)
-      {
-        dirent->write(out_fd);
-        log_debug("write " << dirent->getTitle() << " dirent.size()=" << dirent->getDirentSize() << " pos=" << out.tellp());
-      }
-
-      log_debug("after writing dirents - pos=" << out.tellp());
-
-      TINFO(" write cluster offset list");
-      off += data->clusterPtrSize();
-      for (auto clusterOffset : data->clusterOffsets)
-      {
-        offset_t o(off + clusterOffset);
-        char tmp_buff[sizeof(offset_type)];
-        toLittleEndian(o.v, tmp_buff);
-        ::write(out_fd, tmp_buff, sizeof(offset_type));
-      }
-
-      log_debug("after writing clusterOffsets - pos=" << out.tellp());
-
       TINFO(" write cluster data");
       if (!data->isEmpty)
       {
@@ -359,6 +292,7 @@ namespace zim
         for(auto& cluster: data->clustersList)
         {
           ASSERT(cluster->isClosed(), ==, true);
+          cluster->setOffset(offset_t(lseek(out_fd, 0, SEEK_CUR)));
           cluster->write_final(out_fd);
           if (((++nb_written_clusters) % 1000) == 0) {
             TINFO(nb_written_clusters << "/" << data->clustersList.size());
@@ -368,7 +302,45 @@ namespace zim
       else
         log_warn("no data found");
 
-      log_debug("after writing clusterData - pos=" << out.tellp());
+      TINFO(" write directory entries");
+      for (Dirent* dirent: data->dirents)
+      {
+        dirent->setOffset(offset_t(lseek(out_fd, 0, SEEK_CUR)));
+        dirent->write(out_fd);
+      }
+
+      TINFO(" write url prt list");
+      header.setUrlPtrPos(lseek(out_fd, 0, SEEK_CUR));
+      for (auto& dirent: data->dirents)
+      {
+        char tmp_buff[sizeof(offset_type)];
+        toLittleEndian(dirent->getOffset(), tmp_buff);
+        ::write(out_fd, tmp_buff, sizeof(offset_type));
+      }
+
+      TINFO(" write title index");
+      header.setTitleIdxPos(lseek(out_fd, 0, SEEK_CUR));
+      for (Dirent* dirent: data->titleIdx)
+      {
+        char tmp_buff[sizeof(article_index_type)];
+        toLittleEndian(dirent->getIdx().v, tmp_buff);
+        ::write(out_fd, tmp_buff, sizeof(article_index_type));
+      }
+
+      TINFO(" write cluster offset list");
+      header.setClusterPtrPos(lseek(out_fd, 0, SEEK_CUR));
+      for (auto cluster : data->clustersList)
+      {
+        char tmp_buff[sizeof(offset_type)];
+        toLittleEndian(cluster->getOffset(), tmp_buff);
+        ::write(out_fd, tmp_buff, sizeof(offset_type));
+      }
+
+      header.setChecksumPos(lseek(out_fd, 0, SEEK_CUR));
+
+      TINFO(" write header");
+      lseek(out_fd, 0, SEEK_SET);
+      header.write(out_fd);
 
       TINFO(" write checksum");
       struct zim_MD5_CTX md5ctx;
@@ -520,13 +492,10 @@ namespace zim
       dirent->setUrl(article->getUrl());
       dirent->setTitle(article->getTitle());
 
-      log_debug("article " << dirent->getLongUrl() << " fetched");
-
       if (article->isRedirect())
       {
         dirent->setRedirect(nullptr);
         dirent->setRedirectUrl(article->getRedirectUrl());
-        log_debug("is redirect to " << dirent->getRedirectUrl());
       }
       else if (article->isLinktarget())
       {
@@ -544,7 +513,6 @@ namespace zim
           mimetype = "application/octet-stream";
         }
         dirent->setMimeType(getMimeTypeIdx(mimetype));
-        log_debug("is article; mimetype " << dirent->getMimeType());
       }
       return dirent;
     }
@@ -565,7 +533,6 @@ namespace zim
       clustersList.push_back(cluster);
       taskList.pushToQueue(new ClusterTask(cluster));
 
-      log_debug("cluster written");
       if (cluster->is_extended() )
         isExtended = true;
       if (compressed)
@@ -575,16 +542,6 @@ namespace zim
         cluster = uncompCluster = new Cluster(zimcompNone);
       }
       return cluster;
-    }
-
-    void CreatorData::generateClustersOffsets()
-    {
-      clustersSize = zsize_t(0);
-      for(auto& cluster: clustersList)
-      {
-        clusterOffsets.push_back(offset_t(clustersSize.v));
-        clustersSize += cluster->getFinalSize();
-      }
     }
 
     void CreatorData::setArticleIndexes()
@@ -674,24 +631,5 @@ namespace zim
         throw std::runtime_error("mime type index not found");
       return it->second;
     }
-
-    zsize_t CreatorData::mimeListSize() const
-    {
-      size_type ret = 1;
-      for (auto& rmimeType: rmimeTypesMap)
-        ret += (rmimeType.second.size() + 1);
-      return zsize_t(ret);
-    }
-
-    zsize_t CreatorData::indexSize() const
-    {
-      size_type s = 0;
-
-      for (auto& dirent: dirents)
-        s += dirent->getDirentSize();
-
-      return zsize_t(s);
-    }
-
   }
 }

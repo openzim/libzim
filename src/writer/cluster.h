@@ -63,7 +63,8 @@ class Cluster {
 
     blob_index_t count() const  { return blob_index_t(blobOffsets.size() - 1); }
     zsize_t size() const;
-    zsize_t getFinalSize() const;
+    offset_t getOffset() const { return offset; }
+    void setOffset(offset_t o) { offset = o; }
     bool is_extended() const { return isExtended; }
     void clear();
     void close();
@@ -84,8 +85,8 @@ class Cluster {
     cluster_index_t index;
     bool isExtended;
     Offsets blobOffsets;
+    offset_t offset;
     zsize_t _size;
-    zsize_t finalSize;
     ClusterData _data;
     Blob compressed_data;
     std::string tmp_filename;
