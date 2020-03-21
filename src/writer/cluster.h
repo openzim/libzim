@@ -61,7 +61,7 @@ class Cluster {
     void addArticle(const zim::writer::Article* article);
     void addData(const char* data, zsize_t size);
 
-    blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
+    blob_index_t count() const  { return blob_index_t(blobOffsets.size() - 1); }
     zsize_t size() const;
     zsize_t getFinalSize() const;
     bool is_extended() const { return isExtended; }
@@ -73,7 +73,7 @@ class Cluster {
     cluster_index_t getClusterIndex() const { return index; }
 
     zsize_t getBlobSize(blob_index_t n) const
-    { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
+    { return zsize_t(blobOffsets[blob_index_type(n)+1].v - blobOffsets[blob_index_type(n)].v); }
 
     void write_final(int out_fd) const;
     void dump_tmp(const std::string& directoryPath);
@@ -83,7 +83,7 @@ class Cluster {
     CompressionType compression;
     cluster_index_t index;
     bool isExtended;
-    Offsets offsets;
+    Offsets blobOffsets;
     zsize_t _size;
     zsize_t finalSize;
     ClusterData _data;

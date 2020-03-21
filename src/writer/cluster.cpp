@@ -41,12 +41,12 @@ Cluster::Cluster(CompressionType compression)
     isExtended(false),
     _size(0)
 {
-  offsets.push_back(offset_t(0));
+  blobOffsets.push_back(offset_t(0));
   pthread_mutex_init(&m_closedMutex,NULL);
 }
 
 void Cluster::clear() {
-  Offsets().swap(offsets);
+  Offsets().swap(blobOffsets);
   ClusterData().swap(_data);
 }
 
@@ -70,9 +70,9 @@ zsize_t Cluster::size() const
     throw std::runtime_error("oups");
   }
   if (isExtended) {
-    return zsize_t(offsets.size() * sizeof(uint64_t)) + _size;
+    return zsize_t(blobOffsets.size() * sizeof(uint64_t)) + _size;
   } else {
-    return zsize_t(offsets.size() * sizeof(uint32_t)) + _size;
+    return zsize_t(blobOffsets.size() * sizeof(uint32_t)) + _size;
   }
 }
 
@@ -84,9 +84,9 @@ zsize_t Cluster::getFinalSize() const
 template<typename OFFSET_TYPE>
 void Cluster::write_offsets(writer_t writer) const
 {
-  size_type delta = offsets.size() * sizeof(OFFSET_TYPE);
+  size_type delta = blobOffsets.size() * sizeof(OFFSET_TYPE);
   char out_buf[sizeof(OFFSET_TYPE)];
-  for (auto offset : offsets)
+  for (auto offset : blobOffsets)
   {
     offset.v += delta;
     toLittleEndian(static_cast<OFFSET_TYPE>(offset.v), out_buf);
@@ -250,7 +250,7 @@ void Cluster::addArticle(const zim::writer::Article* article)
   auto filename = article->getFilename();
   auto size = article->getSize();
   _size += size;
-  offsets.push_back(offset_t(_size.v));
+  blobOffsets.push_back(offset_t(_size.v));
   isExtended |= (size>UINT32_MAX);
   if (size == 0)
     return;
@@ -266,7 +266,7 @@ void Cluster::addArticle(const zim::writer::Article* article)
 void Cluster::addData(const char* data, zsize_t size)
 {
   _size += size;
-  offsets.push_back(offset_t(_size.v));
+  blobOffsets.push_back(offset_t(_size.v));
   isExtended |= (size.v>UINT32_MAX);
   if (size.v == 0)
     return;
