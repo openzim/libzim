@@ -47,7 +47,6 @@
 #include <stdexcept>
 #include <sstream>
 #include <ctime>
-#include "md5stream.h"
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"

@@ -19,7 +19,6 @@ common_sources = [
     'blob.cpp',
     'buffer.cpp',
     'md5.c',
-    'md5stream.cpp',
     'search.cpp',
     'search_iterator.cpp',
     'template.cpp',
