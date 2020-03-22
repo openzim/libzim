@@ -50,7 +50,8 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
 {
   char tmpl[] = "/tmp/test_cluster_XXXXXX";
   auto tmp_fd = mkstemp(tmpl);
-  cluster.dump(tmp_fd);
+  cluster.close();
+  cluster.write(tmp_fd);
   fsync(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 

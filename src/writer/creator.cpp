@@ -66,6 +66,8 @@ log_define("zim.writer.creator")
                   << "; " << e << std::endl; \
     }
 
+#define CLUSTER_BASE_OFFSET 1024
+
 namespace zim
 {
   namespace writer
@@ -87,6 +89,8 @@ namespace zim
         pthread_create(&thread, NULL, taskRunner, this->data.get());
         pthread_detach(thread);
       }
+
+      pthread_create(&data->writerThread, NULL, clusterWriter, this->data.get());
     }
 
     void Creator::addArticle(std::shared_ptr<Article> article)
@@ -181,32 +185,24 @@ namespace zim
       if (data->uncompCluster->count())
         data->closeCluster(false);
 
-      // wait all cluster writing has been done
+      // wait all cluster compression has been done
       unsigned int wait = 0;
       do {
         microsleep(wait);
         wait += 10;
       } while(ClusterTask::waiting_task.load() > 0);
 
-      // Be sure that all cluster are closed
-      wait = 0;
-      bool closed = true;
-      do {
-        closed = true;
-        microsleep(wait);
-        wait += 10;
-        for(auto cluster: data->clustersList) {
-          if (!cluster->isClosed()) {
-            closed = false;
-            break;
-          }
-        }
-      } while(!closed);
-
       // Quit all compressiont Threads
       for (auto i=0U; i< compressionThreads; i++) {
         data->taskList.pushToQueue(nullptr);
       }
+
+      // Be sure that all cluster are closed
+      // Wait for writerThread to finish.
+      data->clusterToWrite.pushToQueue(nullptr);
+
+      TINFO("Join writr");
+      pthread_join(data->writerThread, nullptr);
 
       TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
@@ -223,11 +219,8 @@ namespace zim
       TINFO(data->clustersList.size() << " clusters created");
 
       TINFO("write zimfile :");
-      auto zim_name = data->basename + ".zim";
-      mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-      int out_fd = open(zim_name.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
-      write(out_fd);
-      ::close(out_fd);
+      write();
+      ::close(data->out_fd);
 
       TINFO("finish");
     }
@@ -270,10 +263,12 @@ namespace zim
       header->setClusterCount( data->clustersList.size() );
     }
 
-    void Creator::write(int out_fd) const
+    void Creator::write() const
     {
       Fileheader header;
       fillHeader(&header);
+
+      int out_fd = data->out_fd;
 
       lseek(out_fd, header.getMimeListPos(), SEEK_SET);
       TINFO(" write mimetype list");
@@ -284,24 +279,10 @@ namespace zim
 
       ::write(out_fd, "", 1);
 
-      TINFO(" write cluster data");
-      if (!data->isEmpty)
-      {
-        int nb_written_clusters = 0;
-        for(auto& cluster: data->clustersList)
-        {
-          ASSERT(cluster->isClosed(), ==, true);
-          cluster->setOffset(offset_t(lseek(out_fd, 0, SEEK_CUR)));
-          cluster->write_final(out_fd);
-          if (((++nb_written_clusters) % 1000) == 0) {
-            TINFO(nb_written_clusters << "/" << data->clustersList.size());
-          }
-        }
-      }
-      else
-        log_warn("no data found");
+      ASSERT(lseek(out_fd, 0, SEEK_CUR), <, CLUSTER_BASE_OFFSET);
 
       TINFO(" write directory entries");
+      lseek(out_fd, 0, SEEK_END);
       for (Dirent* dirent: data->dirents)
       {
         dirent->setOffset(offset_t(lseek(out_fd, 0, SEEK_CUR)));
@@ -386,11 +367,19 @@ namespace zim
       basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
                         ? fname.substr(0, fname.size() - 4)
                         : fname;
-      tmpfname = basename + ".tmp";
-      if(!DEFAULTFS::makeDirectory(tmpfname)) {
-        throw std::runtime_error(
-          std::string("failed to create temporary directory ")
-        + tmpfname);
+      auto zim_name = basename + ".zim";
+      mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+      out_fd = open(zim_name.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
+      if (out_fd == -1){
+        perror(nullptr);
+        std::ostringstream ss;
+        ss << "Cannot create file " << zim_name;
+        throw std::runtime_error(ss.str());
+      }
+      if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
+        close(out_fd);
+        perror(nullptr);
+        throw std::runtime_error("Impossible to seek in file");
       }
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
@@ -418,10 +407,6 @@ namespace zim
       for(auto& cluster: clustersList) {
         delete cluster;
       }
-#ifndef _WIN32
-//[TODO] Implement remove for windows
-      DEFAULTFS::remove(tmpfname);
-#endif
 #if defined(ENABLE_XAPIAN)
       if (indexer)
         delete indexer;
@@ -531,6 +516,7 @@ namespace zim
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
       taskList.pushToQueue(new ClusterTask(cluster));
+      clusterToWrite.pushToQueue(cluster);
 
       if (cluster->is_extended() )
         isExtended = true;

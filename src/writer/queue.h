@@ -34,6 +34,7 @@ class Queue {
         virtual bool isEmpty();
         virtual size_t size();
         virtual void pushToQueue(const T& element);
+        virtual bool getHead(T &element);
         virtual bool popFromQueue(T &element);
 
     protected:
@@ -78,6 +79,18 @@ void Queue<T>::pushToQueue(const T &element) {
     pthread_mutex_lock(&m_queueMutex);
     m_realQueue.push(element);
     pthread_mutex_unlock(&m_queueMutex);
+}
+
+template<typename T>
+bool Queue<T>::getHead(T &element) {
+  pthread_mutex_lock(&m_queueMutex);
+  if (m_realQueue.empty()) {
+    pthread_mutex_unlock(&m_queueMutex);
+    return false;
+  }
+  element = m_realQueue.front();
+  pthread_mutex_unlock(&m_queueMutex);
+  return true;
 }
 
 template<typename T>

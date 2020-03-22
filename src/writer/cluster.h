@@ -76,9 +76,7 @@ class Cluster {
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(blobOffsets[blob_index_type(n)+1].v - blobOffsets[blob_index_type(n)].v); }
 
-    void write_final(int out_fd) const;
-    void dump_tmp(const std::string& directoryPath);
-    void dump(int tmp_fd);
+    void write(int out_fd) const;
 
   protected:
     CompressionType compression;
@@ -94,7 +92,7 @@ class Cluster {
     bool closed = false;
 
   private:
-    void write(writer_t writer) const;
+    void write_content(writer_t writer) const;
     template<typename OFFSET_TYPE>
     void write_offsets(writer_t writer) const;
     void write_data(writer_t writer) const;

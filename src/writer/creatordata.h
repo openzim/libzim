@@ -64,6 +64,7 @@ namespace zim
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
         typedef std::vector<Cluster*> ClusterList;
+        typedef Queue<Cluster*> ClusterQueue;
         typedef Queue<Task*> TaskQueue;
 
         CreatorData(const std::string& fname, bool verbose,
@@ -96,7 +97,9 @@ namespace zim
         uint16_t nextMimeIdx = 0;
 
         ClusterList clustersList;
+        ClusterQueue clusterToWrite;
         TaskQueue taskList;
+        pthread_t  writerThread;
         CompressionType compression = zimcompLzma;
         std::string basename;
         bool isEmpty = true;
@@ -105,6 +108,7 @@ namespace zim
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
         std::string tmpfname;
+        int out_fd;
 
         bool withIndex;
         std::string indexingLanguage;

@@ -75,6 +75,7 @@ class IndexTask : public Task {
 };
 
 void* taskRunner(void* data);
+void* clusterWriter(void* data);
 
 }
 }

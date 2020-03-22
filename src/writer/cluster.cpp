@@ -22,16 +22,12 @@
 #include "../endian_tools.h"
 #include "../debug.h"
 #include "../compression.h"
-#include "../fs.h"
 
 #include <sstream>
 #include <fstream>
 
-#ifdef _WIN32
-#define SEPARATOR "\\"
-#else
-#define SEPARATOR "/"
-#endif
+#include <fcntl.h>
+#include <stdexcept>
 
 namespace zim {
 namespace writer {
@@ -51,6 +47,12 @@ void Cluster::clear() {
 }
 
 void Cluster::close() {
+  if (getCompression() != zim::zimcompDefault
+    && getCompression() != zim::zimcompNone) {
+
+    // We must compress the content in a buffer.
+    compress();
+  }
   pthread_mutex_lock(&m_closedMutex);
   closed = true;
   pthread_mutex_unlock(&m_closedMutex);
@@ -89,44 +91,7 @@ void Cluster::write_offsets(writer_t writer) const
   }
 }
 
-void Cluster::write_final(int out_fd) const
-{
-  {
-    int fd = open(tmp_filename.c_str(), O_RDONLY);
-    if (fd == -1) {
-      throw std::runtime_error(std::string("cannot open ") + tmp_filename);
-    }
-    char* buffer = new char[1024*1024];
-    while (true) {
-      auto r = read(fd, (char*)buffer, 1024*1024);
-      if (! r)
-        break;
-      ::write(out_fd, buffer, r);
-    }
-    delete[] buffer;
-    ::close(fd);
-  }
-  DEFAULTFS::removeFile(tmp_filename);
-}
-
-void Cluster::dump_tmp(const std::string& directoryPath)
-{
-  std::ostringstream ss;
-  ss << directoryPath << SEPARATOR << "cluster_" << index << ".clt";
-  tmp_filename = ss.str();
-  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-  int tmp_fd = open(tmp_filename.c_str(), O_WRONLY|O_CREAT|O_TRUNC, mode);
-  if (tmp_fd == -1) {
-    throw std::runtime_error(
-      std::string("failed to create temporary cluster file ")
-    + tmp_filename);
-  }
-  dump(tmp_fd);
-  ::close(tmp_fd);
-  clear();
-}
-
-void Cluster::write(writer_t writer) const
+void Cluster::write_content(writer_t writer) const
 {
   if (isExtended) {
     write_offsets<uint64_t>(writer);
@@ -180,13 +145,13 @@ void Cluster::_compress()
     }
     runner.feed(data.data(), data.size());
   };
-  write(writer);
+  write_content(writer);
   zsize_t size;
   auto comp = runner.get_data(&size);
   compressed_data = Blob(comp, size.v);
 }
 
-void Cluster::dump(int tmp_fd)
+void Cluster::write(int out_fd) const
 {
   // write clusterInfo
   char clusterInfo = 0;
@@ -194,7 +159,7 @@ void Cluster::dump(int tmp_fd)
     clusterInfo = 0x10;
   }
   clusterInfo += getCompression();
-  ::write(tmp_fd, &clusterInfo, 1);
+  ::write(out_fd, &clusterInfo, 1);
 
   // Open a comprestion stream if needed
   switch(getCompression())
@@ -211,12 +176,12 @@ void Cluster::dump(int tmp_fd)
         const char* src = data.data();
         while (to_write) {
          size_type chunk_size = to_write > 4096 ? 4096 : to_write;
-         auto ret = ::write(tmp_fd, src, chunk_size);
+         auto ret = ::write(out_fd, src, chunk_size);
          src += ret;
          to_write -= ret;
         }
       };
-      write(writer);
+      write_content(writer);
       break;
     }
 
@@ -225,8 +190,7 @@ void Cluster::dump(int tmp_fd)
     case zim::zimcompLzma:
       {
         log_debug("compress data");
-        compress();
-        ::write(tmp_fd, compressed_data.data(), compressed_data.size());
+        ::write(out_fd, compressed_data.data(), compressed_data.size());
         delete [] compressed_data.data();
         break;
       }
