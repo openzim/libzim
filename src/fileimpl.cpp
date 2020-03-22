@@ -127,13 +127,10 @@ namespace zim
 
       for(zim::article_index_type i = 0; i < nb_articles; i++)
       {
-          articleListByCluster.push_back(std::make_pair(i, getDirent(article_index_t(i))->getClusterNumber().v));
+          articleListByCluster.push_back(std::make_pair(getDirent(article_index_t(i))->getClusterNumber().v, i));
       }
 
-      std::sort(articleListByCluster.begin(), articleListByCluster.end(), [](pair_type i, pair_type j)
-      {
-        return i.second < j.second;
-      });
+      std::sort(articleListByCluster.begin(), articleListByCluster.end());
     }
 
     if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
@@ -168,7 +165,9 @@ namespace zim
 
   article_index_type FileImpl::getArticleByClusterOrder(article_index_type idx) const
   {
-      return articleListByCluster[idx].first;
+      if (idx >= articleListByCluster.size())
+          throw ZimFileFormatError("article index out of range");
+      return articleListByCluster[idx].second;
   }
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)

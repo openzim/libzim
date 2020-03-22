@@ -30,7 +30,8 @@ namespace zim
     public:
       enum Mode {
         UrlIterator,
-        ArticleIterator
+        ArticleIterator,
+        ClusterIterator
       };
 
     private:
@@ -42,7 +43,7 @@ namespace zim
       bool is_end() const  { return file == 0 || idx >= file->getCountArticles(); }
 
     public:
-      explicit const_iterator(const File* file_ = 0, article_index_type idx_ = 0, Mode mode_ = UrlIterator)
+      explicit const_iterator(const File* file_ = 0, article_index_type idx_ = 0, Mode mode_ = ClusterIterator)
         : file(file_),
           idx(idx_),
           mode(mode_)
@@ -89,9 +90,19 @@ namespace zim
       {
         if (!article.good())
         {
-          auto orderedidx = file->getArticleByClusterOrder(idx);
-          article = mode == UrlIterator ? file->getArticle(orderedidx)
-                                        : file->getArticleByTitle(idx);
+          switch(mode)
+          {
+            case UrlIterator:
+             article = file->getArticle(idx);
+             break;
+            case ArticleIterator:
+              article = file->getArticleByTitle(idx);
+              break;
+            case ClusterIterator:
+              auto orderedidx = file->getArticleByClusterOrder(idx);
+              article = file->getArticle(orderedidx);
+              break;
+          }
         }
         return article;
       }

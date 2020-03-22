@@ -1,11 +1,15 @@
 
+configure_file(input : 'pytest/data/wikibooks_be_all_nopic_2017-02.zim',
+               output : 'wikibooks_be_all_nopic_2017-02.zim',
+               copy: true )
 
 tests = [
     'cluster',
     'dirent',
     'header',
     'uuid',
-    'template'
+    'template',
+    'iterator'
 ]
 
 if zlib_dep.found()

@@ -35,7 +35,6 @@
 #include "file_compound.h"
 #include "zim_types.h"
 
-
 namespace zim
 {
   class FileImpl
@@ -57,7 +56,6 @@ namespace zim
       pthread_mutex_t direntCacheLock;
 
       Cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
-
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;
@@ -71,7 +69,7 @@ namespace zim
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      using pair_type = std::pair<article_index_type, cluster_index_type>;
+      using pair_type = std::pair<cluster_index_type, article_index_type>;
       std::vector<pair_type> articleListByCluster;
 
     public:
