@@ -123,25 +123,36 @@ void Cluster::compress()
 #if !defined(ENABLE_ZLIB)
     case zim::zimcompZip:
 #endif
+#if !defined(ENABLE_ZSTD)
+    case zim::zimcompZstd:
+#endif
       {
         throw std::runtime_error("Compression method not enabled in this library");
         break;
       }
 
     case zim::zimcompLzma:
+      {
+        _compress<LZMA_INFO>();
+        break;
+      }
+
 #if defined(ENABLE_ZLIB)
     case zim::zimcompZip:
-#endif
       {
-        if (comp == zim::zimcompLzma) {
-          _compress<LZMA_INFO>();
-          break;
-        };
-#if defined(ENABLE_ZLIB)
         _compress<ZIP_INFO>();
         break;
-#endif
       }
+#endif
+
+#if defined(ENABLE_ZSTD)
+    case zim::zimcompZstd:
+      {
+        _compress<ZSTD_INFO>();
+        break;
+      }
+#endif
+
     default:
       throw std::runtime_error("We cannot compress an uncompressed cluster");
   };
@@ -202,6 +213,7 @@ void Cluster::write(int out_fd) const
     case zim::zimcompZip:
     case zim::zimcompBzip2:
     case zim::zimcompLzma:
+    case zim::zimcompZstd:
       {
         log_debug("compress data");
         _write(out_fd, compressed_data.data(), compressed_data.size());

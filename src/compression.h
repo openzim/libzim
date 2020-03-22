@@ -64,6 +64,14 @@ struct ZIP_INFO {
 };
 #endif
 
+#if defined(ENABLE_ZSTD)
+struct ZSTD_INFO : LZMA_INFO
+{
+  static const std::string name;
+};
+#endif
+
+
 namespace zim {
 
 template<typename INFO>

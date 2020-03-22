@@ -175,8 +175,15 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, Compres
       throw std::runtime_error("zlib not enabled in this library");
 #endif
       break;
+    case zimcompZstd:
+#if defined(ENABLE_ZSTD)
+      uncompressed_data = uncompress<ZSTD_INFO>(this, offset, &uncompressed_size);
+#else
+      throw std::runtime_error("zstd not enabled in this library");
+#endif
+      break;
     default:
-      throw std::logic_error("compressions should not be something else than zimcompLzma or zimComZip.");
+      throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
   }
   return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data.release(), uncompressed_size));
 }
@@ -197,6 +204,7 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, Compres
       break;
     case zimcompLzma:
     case zimcompZip:
+    case zimcompZstd:
       {
         auto buffer = get_clusterBuffer(offset+offset_t(1), *comp);
         return std::unique_ptr<Reader>(new BufferReader(buffer));
