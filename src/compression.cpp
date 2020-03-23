@@ -113,4 +113,52 @@ void ZIP_INFO::stream_end_encode(stream_t* stream) {
 
 #if defined(ENABLE_ZSTD)
 const std::string ZSTD_INFO::name = "zstd";
+void ZSTD_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
+{
+  *stream = LZMA_STREAM_INIT;
+  unsigned memsize = zim::envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
+  auto errcode = lzma_stream_decoder(stream, memsize, 0);
+  if (errcode != LZMA_OK) {
+    throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
+  }
+}
+
+void ZSTD_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
+{
+  *stream = LZMA_STREAM_INIT;
+  auto errcode = lzma_easy_encoder(stream, 9 | LZMA_PRESET_EXTREME, LZMA_CHECK_CRC32);
+  if (errcode != LZMA_OK) {
+    throw std::runtime_error("Cannot initialize lzma_easy_encoder");
+  }
+}
+
+CompStatus ZSTD_INFO::stream_run_encode(stream_t* stream, CompStep step) {
+  return stream_run(stream, step);
+}
+
+CompStatus ZSTD_INFO::stream_run_decode(stream_t* stream, CompStep step) {
+  return stream_run(stream, step);
+}
+
+CompStatus ZSTD_INFO::stream_run(stream_t* stream, CompStep step)
+{
+  auto errcode = lzma_code(stream, step==CompStep::STEP?LZMA_RUN:LZMA_FINISH);
+  if (errcode == LZMA_BUF_ERROR)
+    return CompStatus::BUF_ERROR;
+  if (errcode == LZMA_STREAM_END)
+    return CompStatus::STREAM_END;
+  if (errcode == LZMA_OK)
+    return CompStatus::OK;
+  return CompStatus::OTHER;
+}
+
+void ZSTD_INFO::stream_end_decode(stream_t* stream)
+{
+  lzma_end(stream);
+}
+
+void ZSTD_INFO::stream_end_encode(stream_t* stream)
+{
+  lzma_end(stream);
+}
 #endif

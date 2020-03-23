@@ -65,10 +65,18 @@ struct ZIP_INFO {
 #endif
 
 #if defined(ENABLE_ZSTD)
-struct ZSTD_INFO : LZMA_INFO
-{
+struct ZSTD_INFO {
+  typedef lzma_stream stream_t;
   static const std::string name;
+  static void init_stream_decoder(stream_t* stream, char* raw_data);
+  static void init_stream_encoder(stream_t* stream, char* raw_data);
+  static CompStatus stream_run_encode(stream_t* stream, CompStep step);
+  static CompStatus stream_run_decode(stream_t* stream, CompStep step);
+  static CompStatus stream_run(stream_t* stream, CompStep step);
+  static void stream_end_encode(stream_t* stream);
+  static void stream_end_decode(stream_t* stream);
 };
+
 #endif
 
 
