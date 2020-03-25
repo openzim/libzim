@@ -273,8 +273,8 @@ namespace zim
   std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx) const
   {
       if (idx >= articleListByCluster.size())
-          return std::pair<bool, article_index_t>(false, 0);
-      return std::pair<bool, article_index_t>(true, articleListByCluster[idx].second);
+          return std::pair<bool, article_index_t>(false, article_index_t(0));
+      return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
   }
 
   std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
