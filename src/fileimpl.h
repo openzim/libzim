@@ -89,11 +89,10 @@ namespace zim
       article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
 
 
-      article_index_type getArticleByClusterOrder(article_index_type idx) const;
-
       std::pair<bool, article_index_t> findx(char ns, const std::string& url);
       std::pair<bool, article_index_t> findx(const std::string& url);
       std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
+      std::pair<bool, article_index_t> findxByClusterOrder(article_index_type idx) const;
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }

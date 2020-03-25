@@ -163,13 +163,6 @@ namespace zim
   }
 
 
-  article_index_type FileImpl::getArticleByClusterOrder(article_index_type idx) const
-  {
-      if (idx >= articleListByCluster.size())
-          throw std::out_of_range("article index out of range");
-      return articleListByCluster[idx].second;
-  }
-
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
     log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
@@ -275,6 +268,13 @@ namespace zim
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
     return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
+  }
+
+  std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx) const
+  {
+      if (idx >= articleListByCluster.size())
+          return std::pair<bool, article_index_t>(false, 0);
+      return std::pair<bool, article_index_t>(true, articleListByCluster[idx].second);
   }
 
   std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
