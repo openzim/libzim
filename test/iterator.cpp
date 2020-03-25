@@ -45,7 +45,7 @@ TEST(ClusterIteratorTest, getArticleByClusterOrder)
 
     for (int i = 0; i < nbArticles; i++)
     {
-        EXPECT_EQ(file.getArticleByClusterOrder(i), expected[i]);
+        EXPECT_EQ(file.getArticleByClusterOrder(i).getIndex(), expected[i]);
     }
 }
 

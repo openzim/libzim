@@ -1,5 +1,5 @@
 
-configure_file(input : 'pytest/data/wikibooks_be_all_nopic_2017-02.zim',
+configure_file(input : 'data/wikibooks_be_all_nopic_2017-02.zim',
                output : 'wikibooks_be_all_nopic_2017-02.zim',
                copy: true )
 
