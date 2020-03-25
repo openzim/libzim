@@ -99,8 +99,7 @@ namespace zim
               article = file->getArticleByTitle(idx);
               break;
             case ClusterIterator:
-              auto orderedidx = file->getArticleByClusterOrder(idx);
-              article = file->getArticle(orderedidx);
+              article = file->getArticleByClusterOrder(idx);
               break;
           }
         }

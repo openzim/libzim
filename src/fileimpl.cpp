@@ -166,7 +166,7 @@ namespace zim
   article_index_type FileImpl::getArticleByClusterOrder(article_index_type idx) const
   {
       if (idx >= articleListByCluster.size())
-          throw ZimFileFormatError("article index out of range");
+          throw std::out_of_range("article index out of range");
       return articleListByCluster[idx].second;
   }
 
