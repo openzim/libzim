@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
+#include <mutex>
 #include "cache.h"
 #include "_dirent.h"
 #include "cluster.h"
@@ -71,6 +72,7 @@ namespace zim
 
       using pair_type = std::pair<cluster_index_type, article_index_type>;
       std::vector<pair_type> articleListByCluster;
+      std::once_flag orderOnceFlag;
 
     public:
       explicit FileImpl(const std::string& fname);

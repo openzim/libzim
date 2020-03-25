@@ -122,15 +122,18 @@ namespace zim
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
 
-      auto nb_articles = getCountArticles().v;
-      articleListByCluster.reserve(nb_articles);
-
-      for(zim::article_index_type i = 0; i < nb_articles; i++)
+      std::call_once ( orderOnceFlag, [this]
       {
-          articleListByCluster.push_back(std::make_pair(getDirent(article_index_t(i))->getClusterNumber().v, i));
-      }
+          auto nb_articles = getCountArticles().v;
+          articleListByCluster.reserve(nb_articles);
 
-      std::sort(articleListByCluster.begin(), articleListByCluster.end());
+          for(zim::article_index_type i = 0; i < nb_articles; i++)
+          {
+              articleListByCluster.push_back(std::make_pair(getDirent(article_index_t(i))->getClusterNumber().v, i));
+          }
+
+          std::sort(articleListByCluster.begin(), articleListByCluster.end());
+      });
     }
 
     if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
