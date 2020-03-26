@@ -4,6 +4,15 @@ on: [pull_request]
 
 jobs:
   Macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - native_dyn
+          - iOS_arm64
+          - iOS_i386
+          - iOS_x86_64
+          - iOS_armv7
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -11,42 +20,40 @@ jobs:
       - name: Setup python 3.5
         uses: actions/setup-python@v1
         with:
-          python-version: '3.5'
+          python-version: '3.6'
       - name: Install packages
         uses: mstksg/get-package@v1
         with:
           brew: gcovr pkg-config ninja
       - name: Install python modules
-        run: pip3 install meson==0.49.2 pytest
+        run: pip3 install meson==0.52.1 pytest
       - name: Install deps
         shell: bash
         run: |
-          ARCHIVE_NAME=deps2_osx_native_dyn_libzim.tar.xz
+          ARCHIVE_NAME=deps2_osx_${{matrix.target}}_libzim.tar.xz
           wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
       - name: Compile
         shell: bash
         run: |
-          export PKG_CONFIG_PATH=$HOME/BUILD_native_dyn/INSTALL/lib/pkgconfig
-          meson . build --default-library=shared -Db_coverage=true
+          MESON_OPTION="--default-library=shared"
+          MESON_CROSSFILE="$HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
+          if [[ ! "${{matrix.target}}" =~ native_.* ]]; then
+            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE"
+            cat $MESON_CROSSFILE
+          fi
+          export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig
+          meson . build ${MESON_OPTION}
           cd build
           ninja
       - name: Test
+        if: startsWith(matrix.target, 'native_')
         shell: bash
         run: |
-          export LD_LIBRARY_PATH=$HOME/BUILD_native_dyn/INSTALL/lib:$HOME/BUILD_native_dyn/INSTALL/lib64
+          export LD_LIBRARY_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib:$HOME/BUILD_${{matrix.target}}/INSTALL/lib64
           cd build
           meson test --verbose
-          ninja coverage
         env:
           SKIP_BIG_MEMORY_TEST: 1
-      - name: Publish coverage
-        shell: bash
-        run: |
-          curl https://codecov.io/bash -o codecov.sh
-          bash codecov.sh -n osx_native_dyn -Z
-          rm codecov.sh
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   Linux:
     strategy:
@@ -108,7 +115,6 @@ jobs:
     - name: Compile
       shell: bash
       run: |
-        meson --version
         if [[ "${{matrix.target}}" =~ .*_dyn ]]; then
           MESON_OPTION="--default-library=shared"
         else
