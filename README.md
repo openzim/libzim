@@ -6,7 +6,7 @@ format. It's a solution to read and write ZIM files on many systems
 and architectures. More information about the ZIM format and the
 openZIM project at https://openzim.org/.
 
-[![Build Status](https://travis-ci.com/openzim/libzim.svg?branch=master)](https://travis-ci.com/openzim/libzim)
+[![Build Status](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amaster)](https://github.com/openzim/libzim/actions?query=branch%3Amaster)
 [![codecov](https://codecov.io/gh/openzim/libzim/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
