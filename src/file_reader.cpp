@@ -163,7 +163,7 @@ bool Reader::can_read(offset_t offset, zsize_t size)
 std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, CompressionType comp) const
 {
   zsize_t uncompressed_size(0);
-  char* uncompressed_data = nullptr;
+  std::unique_ptr<char[]> uncompressed_data;
   switch (comp) {
     case zimcompLzma:
       uncompressed_data = uncompress<LZMA_INFO>(this, offset, &uncompressed_size);
@@ -178,7 +178,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, Compres
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma or zimComZip.");
   }
-  return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
+  return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data.release(), uncompressed_size));
 }
 
 std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, CompressionType* comp, bool* extended) const {

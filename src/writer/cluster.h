@@ -53,7 +53,7 @@ class Cluster {
 
   public:
     Cluster(CompressionType compression);
-    virtual ~Cluster() { pthread_mutex_destroy(&m_closedMutex);}
+    virtual ~Cluster();
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
@@ -86,7 +86,7 @@ class Cluster {
     offset_t offset;
     zsize_t _size;
     ClusterData _data;
-    Blob compressed_data;
+    mutable Blob compressed_data;
     std::string tmp_filename;
     mutable pthread_mutex_t m_closedMutex;
     bool closed = false;

@@ -78,7 +78,7 @@ class Uncompressor
 
     void init(char* data) {
       INFO::init_stream_decoder(&stream, data);
-      stream.next_out = (uint8_t*)ret_data;
+      stream.next_out = (uint8_t*)ret_data.get();
       stream.avail_out = data_size;
     }
 
@@ -99,13 +99,12 @@ class Uncompressor
             //Not enought output size
             DEB("need memory " << data_size << " " << stream.avail_out << " " << stream.total_out)
             data_size *= 2;
-            char * new_ret_data = new char[data_size];
-            memcpy(new_ret_data, ret_data, stream.total_out);
-            stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+            std::unique_ptr<char[]> new_ret_data(new char[data_size]);
+            memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
+            stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
             stream.avail_out = data_size - stream.total_out;
             DEB(data_size << " " << stream.avail_out << " " << stream.avail_in)
-            delete [] ret_data;
-            ret_data = new_ret_data;
+            ret_data = std::move(new_ret_data);
             continue;
           }
         }
@@ -125,14 +124,14 @@ class Uncompressor
       return errcode==CompStatus::STREAM_END?RunnerStatus::OK:RunnerStatus::NEED_MORE;
     }
 
-    char* get_data(zim::zsize_t* size) {
+    std::unique_ptr<char[]> get_data(zim::zsize_t* size) {
       size->v = stream.total_out;
       INFO::stream_end_decode(&stream);
-      return ret_data;
+      return std::move(ret_data);
     }
 
   private:
-    char* ret_data;
+    std::unique_ptr<char[]> ret_data;
     size_type data_size;
     typename INFO::stream_t stream;
 };
@@ -147,7 +146,7 @@ class Uncompressor
  * @return A pointer to the uncompressed data. This must be deleted (delete[])
 */
 template<typename INFO>
-char* uncompress(const zim::Reader* reader, zim::offset_t startOffset, zim::zsize_t* dest_size) {
+std::unique_ptr<char[]> uncompress(const zim::Reader* reader, zim::offset_t startOffset, zim::zsize_t* dest_size) {
   // Use a compressor to compress the data.
   // As we don't know the result size, neither the compressed size,
   // we have to do chunk by chunk until decompressor is happy.
@@ -195,7 +194,7 @@ class Compressor
 
     void init(char* data) {
       INFO::init_stream_encoder(&stream, data);
-      stream.next_out = (uint8_t*)ret_data;
+      stream.next_out = (uint8_t*)ret_data.get();
       stream.avail_out = ret_size;
     }
 
@@ -209,12 +208,11 @@ class Compressor
           if (stream.avail_out == 0 && stream.avail_in != 0) {
             //Not enought output size
             ret_size *= 2;
-            char * new_ret_data = new char[ret_size];
-            memcpy(new_ret_data, ret_data, stream.total_out);
-            stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
+            std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
+            memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
+            stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
             stream.avail_out = ret_size - stream.total_out;
-            delete [] ret_data;
-            ret_data = new_ret_data;
+            ret_data = std::move(new_ret_data);
             continue;
           }
         }
@@ -225,15 +223,15 @@ class Compressor
       return RunnerStatus::NEED_MORE;
     }
 
-    char* get_data(zim::zsize_t* size) {
+    std::unique_ptr<char[]> get_data(zim::zsize_t* size) {
       feed(nullptr, 0, CompStep::FINISH);
       INFO::stream_end_encode(&stream);
       size->v = stream.total_out;
-      return ret_data;
+      return std::move(ret_data);
     }
 
   private:
-    char* ret_data;
+    std::unique_ptr<char[]> ret_data;
     size_t ret_size;
     typename INFO::stream_t stream;
 };

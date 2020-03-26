@@ -41,6 +41,13 @@ Cluster::Cluster(CompressionType compression)
   pthread_mutex_init(&m_closedMutex,NULL);
 }
 
+Cluster::~Cluster() {
+  pthread_mutex_destroy(&m_closedMutex);
+  if (compressed_data.data()) {
+    delete[] compressed_data.data();
+  }
+}
+
 void Cluster::clear() {
   Offsets().swap(blobOffsets);
   ClusterData().swap(_data);
@@ -148,7 +155,7 @@ void Cluster::_compress()
   write_content(writer);
   zsize_t size;
   auto comp = runner.get_data(&size);
-  compressed_data = Blob(comp, size.v);
+  compressed_data = Blob(comp.release(), size.v);
 }
 
 void Cluster::write(int out_fd) const
@@ -192,6 +199,7 @@ void Cluster::write(int out_fd) const
         log_debug("compress data");
         ::write(out_fd, compressed_data.data(), compressed_data.size());
         delete [] compressed_data.data();
+        compressed_data = Blob();
         break;
       }
 
