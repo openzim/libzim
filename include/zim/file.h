@@ -54,6 +54,7 @@ namespace zim
       Article getArticleByUrl(const std::string& url) const;
       Article getArticleByTitle(article_index_type idx) const;
       Article getArticleByTitle(char ns, const std::string& title) const;
+      Article getArticleByClusterOrder(article_index_type idx) const;
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_type idx) const;
       cluster_index_type getCountClusters() const;
@@ -77,6 +78,7 @@ namespace zim
       const_iterator findByTitle(char ns, const std::string& title) const;
       const_iterator find(char ns, const std::string& url) const;
       const_iterator find(const std::string& url) const;
+
 
       std::unique_ptr<Search> search(const std::string& query, int start, int end) const;
       std::unique_ptr<Search> suggestions(const std::string& query, int start, int end) const;

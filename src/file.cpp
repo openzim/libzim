@@ -67,7 +67,6 @@ namespace zim
     return article_index_type(impl->getCountArticles());
   }
 
-
   Article File::getArticle(article_index_type idx) const
   {
     if (idx >= article_index_type(impl->getCountArticles()))
@@ -101,6 +100,16 @@ namespace zim
     return r.first
             ? Article(impl, article_index_type(impl->getIndexByTitle(r.second)))
             : Article();
+  }
+
+  Article File::getArticleByClusterOrder(article_index_type idx) const
+  {
+      auto res = impl->findxByClusterOrder(idx);
+
+      if (res.first)
+        return Article(impl, res.second.v);
+      else
+        return Article();
   }
 
   std::shared_ptr<const Cluster> File::getCluster(cluster_index_type idx) const

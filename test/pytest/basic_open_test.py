@@ -6,7 +6,7 @@ from pathlib import Path
 from itertools import product
 import hashlib
 
-DATADIR = Path(__file__).resolve().parent/'data'
+DATADIR = Path(__file__).resolve().parent.parent/'data'
 
 @pytest.fixture(params=product(
     (b'ZIM\x04', b''),

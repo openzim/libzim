@@ -152,6 +152,7 @@ namespace zim
     }
   }
 
+
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
     log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
@@ -259,6 +260,25 @@ namespace zim
     return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
   }
 
+  std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx)
+  {
+      std::call_once(orderOnceFlag, [this]
+      {
+          auto nb_articles = this->getCountArticles().v;
+          articleListByCluster.reserve(nb_articles);
+
+          for(zim::article_index_type i = 0; i < nb_articles; i++)
+          {
+              articleListByCluster.push_back(std::make_pair(this->getDirent(article_index_t(i))->getClusterNumber().v, i));
+          }
+          std::sort(articleListByCluster.begin(), articleListByCluster.end());
+      });
+
+      if (idx >= articleListByCluster.size())
+          return std::pair<bool, article_index_t>(false, article_index_t(0));
+      return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
+  }
+
   std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
   FileImpl::getFileParts(offset_t offset, zsize_t size)
   {
@@ -298,7 +318,7 @@ namespace zim
     // We cannot take a buffer of the size of the file, it would be really inefficient.
     // Let's do try, catch and retry while chosing a smart value for the buffer size.
     // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
-    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
+    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
     pthread_mutex_lock(&bufferDirentLock);
     zsize_t bufferSize = zsize_t(256);
