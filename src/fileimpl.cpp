@@ -121,19 +121,6 @@ namespace zim
         log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
-
-      std::call_once ( orderOnceFlag, [this]
-      {
-          auto nb_articles = getCountArticles().v;
-          articleListByCluster.reserve(nb_articles);
-
-          for(zim::article_index_type i = 0; i < nb_articles; i++)
-          {
-              articleListByCluster.push_back(std::make_pair(getDirent(article_index_t(i))->getClusterNumber().v, i));
-          }
-
-          std::sort(articleListByCluster.begin(), articleListByCluster.end());
-      });
     }
 
     if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
@@ -275,6 +262,17 @@ namespace zim
 
   std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx) const
   {
+      std::call_once ( orderOnceFlag, [this]
+      {
+          auto nb_articles = getCountArticles().v;
+          articleListByCluster.reserve(nb_articles);
+
+          for(zim::article_index_type i = 0; i < nb_articles; i++)
+          {
+              articleListByCluster.push_back(std::make_pair(getDirent(article_index_t(i))->getClusterNumber().v, i));
+          }
+          std::sort(articleListByCluster.begin(), articleListByCluster.end());
+      });
       if (idx >= articleListByCluster.size())
           return std::pair<bool, article_index_t>(false, article_index_t(0));
       return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
