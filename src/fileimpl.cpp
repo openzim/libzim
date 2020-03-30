@@ -260,19 +260,20 @@ namespace zim
     return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
   }
 
-  std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx) const
+  std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx)
   {
-      std::call_once ( orderOnceFlag, [this]
+      std::call_once(orderOnceFlag, [this]
       {
-          auto nb_articles = getCountArticles().v;
+          auto nb_articles = this->getCountArticles().v;
           articleListByCluster.reserve(nb_articles);
 
           for(zim::article_index_type i = 0; i < nb_articles; i++)
           {
-              articleListByCluster.push_back(std::make_pair(getDirent(article_index_t(i))->getClusterNumber().v, i));
+              articleListByCluster.push_back(std::make_pair(this->getDirent(article_index_t(i))->getClusterNumber().v, i));
           }
           std::sort(articleListByCluster.begin(), articleListByCluster.end());
       });
+
       if (idx >= articleListByCluster.size())
           return std::pair<bool, article_index_t>(false, article_index_t(0));
       return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
