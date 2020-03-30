@@ -60,13 +60,12 @@ namespace zim
       public:
         typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
         typedef std::multiset<Dirent*, TitleCompare> TitleSortedDirents;
-        typedef std::vector<offset_t> OffsetsType;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
         typedef std::vector<Cluster*> ClusterList;
-        typedef Queue<Task*> TaskList;
-        typedef std::vector<pthread_t> ThreadList;
+        typedef Queue<Cluster*> ClusterQueue;
+        typedef Queue<Task*> TaskQueue;
 
         CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language);
@@ -76,7 +75,6 @@ namespace zim
         Dirent* createDirentFromArticle(const Article* article);
         Cluster* closeCluster(bool compressed);
 
-        void generateClustersOffsets();
         void setArticleIndexes();
         void resolveRedirectIndexes();
         void createTitleIndex();
@@ -92,7 +90,6 @@ namespace zim
         UrlSortedDirents   dirents;
         UrlSortedDirents   unresolvedRedirectDirents;
         TitleSortedDirents titleIdx;
-        OffsetsType clusterOffsets;
 
         MimeTypesMap mimeTypesMap;
         RMimeTypesMap rmimeTypesMap;
@@ -100,8 +97,9 @@ namespace zim
         uint16_t nextMimeIdx = 0;
 
         ClusterList clustersList;
-        TaskList taskList;
-        ThreadList runningWriters;
+        ClusterQueue clusterToWrite;
+        TaskQueue taskList;
+        pthread_t  writerThread;
         CompressionType compression = zimcompLzma;
         std::string basename;
         bool isEmpty = true;
@@ -110,6 +108,7 @@ namespace zim
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
         std::string tmpfname;
+        int out_fd;
 
         bool withIndex;
         std::string indexingLanguage;
@@ -132,23 +131,10 @@ namespace zim
         time_t start_time;
 
         cluster_index_t clusterCount() const
-        { return cluster_index_t(clusterOffsets.size()); }
+        { return cluster_index_t(clustersList.size()); }
 
         article_index_t articleCount() const
         { return article_index_t(dirents.size()); }
-
-        zsize_t mimeListSize() const;
-
-        zsize_t  urlPtrSize() const
-        { return zsize_t(article_index_type(articleCount()) * sizeof(offset_type)); }
-
-        zsize_t  titleIdxSize() const
-        { return zsize_t(article_index_type(articleCount()) * sizeof(article_index_type)); }
-
-        zsize_t  indexSize() const;
-
-        zsize_t  clusterPtrSize() const
-        { return zsize_t(cluster_index_type(clusterCount()) * sizeof(offset_type)); }
 
         size_t getMinChunkSize()    { return minChunkSize; }
         void setMinChunkSize(size_t s)   { minChunkSize = s; }

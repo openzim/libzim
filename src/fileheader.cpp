@@ -24,6 +24,7 @@
 #include "log.h"
 #include "endian_tools.h"
 #include "buffer.h"
+#include "unistd.h"
 
 log_define("zim.file.header")
 
@@ -35,26 +36,24 @@ namespace zim
   const uint16_t Fileheader::zimMinorVersion = 0;
   const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
 
-  std::ostream& operator<< (std::ostream& out, const Fileheader& fh)
+  void Fileheader::write(int out_fd) const
   {
     char header[Fileheader::size];
     toLittleEndian(Fileheader::zimMagic, header);
-    toLittleEndian(fh.getMajorVersion(), header + 4);
-    toLittleEndian(fh.getMinorVersion(), header + 6);
-    std::copy(fh.getUuid().data, fh.getUuid().data + sizeof(Uuid), header + 8);
-    toLittleEndian(fh.getArticleCount(), header + 24);
-    toLittleEndian(fh.getClusterCount(), header + 28);
-    toLittleEndian(fh.getUrlPtrPos(), header + 32);
-    toLittleEndian(fh.getTitleIdxPos(), header + 40);
-    toLittleEndian(fh.getClusterPtrPos(), header + 48);
-    toLittleEndian(fh.getMimeListPos(), header + 56);
-    toLittleEndian(fh.getMainPage(), header + 64);
-    toLittleEndian(fh.getLayoutPage(), header + 68);
-    toLittleEndian(fh.getChecksumPos(), header + 72);
+    toLittleEndian(getMajorVersion(), header + 4);
+    toLittleEndian(getMinorVersion(), header + 6);
+    std::copy(getUuid().data, getUuid().data + sizeof(Uuid), header + 8);
+    toLittleEndian(getArticleCount(), header + 24);
+    toLittleEndian(getClusterCount(), header + 28);
+    toLittleEndian(getUrlPtrPos(), header + 32);
+    toLittleEndian(getTitleIdxPos(), header + 40);
+    toLittleEndian(getClusterPtrPos(), header + 48);
+    toLittleEndian(getMimeListPos(), header + 56);
+    toLittleEndian(getMainPage(), header + 64);
+    toLittleEndian(getLayoutPage(), header + 68);
+    toLittleEndian(getChecksumPos(), header + 72);
 
-    out.write(header, Fileheader::size);
-
-    return out;
+    ::write(out_fd, header, Fileheader::size);
   }
 
   void Fileheader::read(std::shared_ptr<const Buffer> buffer)

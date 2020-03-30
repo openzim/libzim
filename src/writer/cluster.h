@@ -25,6 +25,7 @@
 #include <iostream>
 #include <vector>
 #include <pthread.h>
+#include <functional>
 
 #include <zim/writer/article.h>
 #include "../zim_types.h"
@@ -43,6 +44,8 @@ struct Data {
   std::string value;
 };
 
+using writer_t = std::function<void(const Blob& data)>;
+
 class Cluster {
   typedef std::vector<offset_t> Offsets;
   typedef std::vector<Data> ClusterData;
@@ -50,7 +53,7 @@ class Cluster {
 
   public:
     Cluster(CompressionType compression);
-    virtual ~Cluster() { pthread_mutex_destroy(&m_closedMutex);}
+    virtual ~Cluster();
 
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
@@ -58,9 +61,10 @@ class Cluster {
     void addArticle(const zim::writer::Article* article);
     void addData(const char* data, zsize_t size);
 
-    blob_index_t count() const  { return blob_index_t(offsets.size() - 1); }
+    blob_index_t count() const  { return blob_index_t(blobOffsets.size() - 1); }
     zsize_t size() const;
-    zsize_t getFinalSize() const;
+    offset_t getOffset() const { return offset; }
+    void setOffset(offset_t o) { offset = o; }
     bool is_extended() const { return isExtended; }
     void clear();
     void close();
@@ -70,30 +74,31 @@ class Cluster {
     cluster_index_t getClusterIndex() const { return index; }
 
     zsize_t getBlobSize(blob_index_t n) const
-    { return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v); }
+    { return zsize_t(blobOffsets[blob_index_type(n)+1].v - blobOffsets[blob_index_type(n)].v); }
 
-    void write_final(std::ostream& out) const;
-    void dump_tmp(const std::string& directoryPath);
-    void dump(std::ostream& out) const;
+    void write(int out_fd) const;
 
   protected:
     CompressionType compression;
     cluster_index_t index;
     bool isExtended;
-    Offsets offsets;
+    Offsets blobOffsets;
+    offset_t offset;
     zsize_t _size;
-    zsize_t finalSize;
     ClusterData _data;
+    mutable Blob compressed_data;
     std::string tmp_filename;
     mutable pthread_mutex_t m_closedMutex;
     bool closed = false;
 
   private:
-    void write(std::ostream& out) const;
+    void write_content(writer_t writer) const;
     template<typename OFFSET_TYPE>
-    void write_offsets(std::ostream& out) const;
-    void write_data(std::ostream& out) const;
-
+    void write_offsets(writer_t writer) const;
+    void write_data(writer_t writer) const;
+    void compress();
+    template<typename COMP_INFO>
+    void _compress();
 };
 
 };

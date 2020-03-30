@@ -32,7 +32,7 @@
 #include "config.h"
 #include "log.h"
 #include "envvalue.h"
-#include "md5stream.h"
+#include "md5.h"
 
 log_define("zim.file.impl")
 
@@ -530,7 +530,8 @@ namespace zim
     if (!header.hasChecksum())
       return false;
 
-    Md5stream md5;
+    struct zim_MD5_CTX md5ctx;
+    zim_MD5Init(&md5ctx);
 
     offset_type checksumPos = header.getChecksumPos();
     offset_type currentPos = 0;
@@ -540,7 +541,7 @@ namespace zim
       std::ifstream stream(part->second->filename());
       char ch;
       for(/*NOTHING*/ ; currentPos < checksumPos && stream.get(ch).good(); currentPos++) {
-        md5 << ch;
+        zim_MD5Update(&md5ctx, reinterpret_cast<const uint8_t*>(&ch), 1);
       }
       if (stream.bad()) {
         perror("error while reading file");
@@ -558,7 +559,7 @@ namespace zim
     unsigned char chksumCalc[16];
     auto chksumFile = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
 
-    md5.getDigest(chksumCalc);
+    zim_MD5Final(chksumCalc, &md5ctx);
     if (std::memcmp(chksumFile->data(), chksumCalc, 16) != 0)
     {
       return false;

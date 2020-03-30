@@ -46,9 +46,9 @@ namespace zim
         virtual void addArticle(std::shared_ptr<Article> article);
         virtual void finishZimCreation();
 
-        virtual Url getMainUrl() { return Url(); }
-        virtual Url getLayoutUrl() { return Url(); }
-        virtual zim::Uuid getUuid() { return Uuid::generate(); }
+        virtual Url getMainUrl() const { return Url(); }
+        virtual Url getLayoutUrl() const { return Url(); }
+        virtual zim::Uuid getUuid() const { return Uuid::generate(); }
 
       private:
         std::unique_ptr<CreatorData> data;
@@ -58,8 +58,8 @@ namespace zim
         std::string indexingLanguage;
         unsigned compressionThreads = 4;
 
-        void fillHeader(Fileheader* header);
-        void write(const Fileheader& header, const std::string& fname) const;
+        void fillHeader(Fileheader* header) const;
+        void write() const;
     };
   }
 

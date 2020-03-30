@@ -22,7 +22,7 @@
 #include <time.h>
 #include <zim/zim.h> // necessary to have the new types
 #include "log.h"
-#include "md5stream.h"
+#include "md5.h"
 
 #ifdef _WIN32
 
@@ -59,7 +59,8 @@ namespace zim
   Uuid Uuid::generate(std::string value)
   {
     Uuid ret;
-    Md5stream m;
+    struct zim_MD5_CTX md5ctx;
+    zim_MD5Init(&md5ctx);
 
     if ( value.empty() ) {
       struct timeval tv;
@@ -67,11 +68,12 @@ namespace zim
 
       clock_t c = clock();
 
-      m << c << tv.tv_sec << tv.tv_usec;
+      zim_MD5Update(&md5ctx, reinterpret_cast<const uint8_t*>(&c), sizeof(clock_t));
+      zim_MD5Update(&md5ctx, reinterpret_cast<const uint8_t*>(&tv), sizeof(struct timeval));
     } else {
-      m << value;
+      zim_MD5Update(&md5ctx, reinterpret_cast<const uint8_t*>(value.data()), value.size());
     }
-    m.getDigest(reinterpret_cast<unsigned char*>(&ret.data[0]));
+    zim_MD5Final(reinterpret_cast<uint8_t*>(&ret.data[0]), &md5ctx);
 
     log_debug("generated uuid: " << ret.data);
 

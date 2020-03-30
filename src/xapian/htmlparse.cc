@@ -34,6 +34,7 @@
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 using namespace std;
 
@@ -46,6 +47,7 @@ lowercase_string(string &str)
 }
 
 map<string, unsigned int> zim::HtmlParser::named_ents;
+static pthread_mutex_t sInitLock = PTHREAD_MUTEX_INITIALIZER;
 
 inline static bool
 p_notdigit(char c)
@@ -105,6 +107,7 @@ zim::HtmlParser::HtmlParser()
 #include "namedentities.h"
 	{ NULL, 0 }
     };
+    pthread_mutex_lock(&sInitLock);
     if (named_ents.empty()) {
 	const struct ent *i = ents;
 	while (i->n) {
@@ -112,6 +115,7 @@ zim::HtmlParser::HtmlParser()
 	    ++i;
 	}
     }
+    pthread_mutex_unlock(&sInitLock);
 }
 
 void

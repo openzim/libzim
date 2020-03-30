@@ -26,6 +26,22 @@
 
 namespace
 {
+
+std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
+{
+  char tmpl[] = "/tmp/test_header_XXXXXX";
+  auto tmp_fd = mkstemp(tmpl);
+  header.write(tmp_fd);
+  auto size = lseek(tmp_fd, 0, SEEK_END);
+
+  char* content = new char[size];
+  lseek(tmp_fd, 0, SEEK_SET);
+  read(tmp_fd, content, size);
+  close(tmp_fd);
+  unlink(tmpl);
+  return std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+}
+
 TEST(HeaderTest, read_write_header)
 {
   zim::Fileheader header;
@@ -49,15 +65,7 @@ TEST(HeaderTest, read_write_header)
   ASSERT_EQ(header.getLayoutPage(), 13U);
   ASSERT_EQ(header.getMimeListPos(), 72U);
 
-  std::stringstream s;
-  s << header;
-
-  std::string str_content = s.str();
-  int size = str_content.size();
-  char* content = new char[size];
-  memcpy(content, str_content.c_str(), size);
-  auto buffer = std::shared_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  auto buffer = write_to_buffer(header);
   zim::Fileheader header2;
   header2.read(buffer);
 

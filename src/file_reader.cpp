@@ -23,13 +23,11 @@
 #include "file_compound.h"
 #include "cluster.h"
 #include "buffer.h"
-#include "config.h"
-#include "envvalue.h"
+#include "compression.h"
 #include <errno.h>
 #include <string.h>
 #include <cstring>
 #include <fcntl.h>
-#include <lzma.h>
 #include <pthread.h>
 #include <sstream>
 #include <system_error>
@@ -40,10 +38,6 @@
 # include <io.h>
 # include <BaseTsd.h>
   typedef SSIZE_T ssize_t;
-#endif
-
-#if defined(ENABLE_ZLIB)
-#include <zlib.h>
 #endif
 
 namespace zim {
@@ -165,145 +159,11 @@ bool Reader::can_read(offset_t offset, zsize_t size)
     return (offset.v <= this->size().v && (offset.v+size.v) <= this->size().v);
 }
 
-enum UNCOMP_ERROR {
-  OK,
-  STREAM_END,
-  BUF_ERROR,
-  OTHER
-};
-
-struct LZMA_INFO {
-  typedef lzma_stream stream_t;
-  static const std::string name;
-
-  static void init_stream(stream_t* stream, char* raw_data) {
-    *stream = LZMA_STREAM_INIT;
-    unsigned memsize = envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
-    auto errcode = lzma_stream_decoder(stream, memsize, 0);
-    if (errcode != LZMA_OK) {
-      throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
-    }
-  }
-
-  static UNCOMP_ERROR stream_run(stream_t* stream) {
-    auto errcode = lzma_code(stream, LZMA_RUN);
-    if (errcode == LZMA_BUF_ERROR)
-      return BUF_ERROR;
-    if (errcode == LZMA_STREAM_END)
-      return STREAM_END;
-    if (errcode == LZMA_OK)
-      return OK;
-    return OTHER;
-  }
-
-  static void stream_end(stream_t* stream) {
-    lzma_end(stream);
-  }
-};
-const std::string LZMA_INFO::name = "lzma";
-
-#if defined(ENABLE_ZLIB)
-struct ZIP_INFO {
-  typedef z_stream stream_t;
-  static const std::string name;
-
-  static void init_stream(stream_t* stream, char* raw_data) {
-    memset(stream, 0, sizeof(stream_t));
-    stream->next_in = (unsigned char*) raw_data;
-    stream->avail_in = 1024;
-    auto errcode = ::inflateInit(stream);
-    if (errcode != Z_OK) {
-      throw std::runtime_error("Impossible to allocated needed memory to uncompress zlib stream");
-    }
-  }
-
-  static UNCOMP_ERROR stream_run(stream_t* stream) {
-    auto errcode = ::inflate(stream, Z_SYNC_FLUSH);
-    if (errcode == Z_BUF_ERROR)
-      return BUF_ERROR;
-    if (errcode == Z_STREAM_END)
-      return STREAM_END;
-    if (errcode == Z_OK)
-      return OK;
-    return OTHER;
-  }
-
-  static void stream_end(stream_t* stream) {
-    ::inflateEnd(stream);
-  }
-};
-const std::string ZIP_INFO::name = "zlib";
-#endif
-
-
-#define CHUNCK_SIZE ((zim::size_type)1024)
-template<typename INFO>
-char* uncompress(const Reader* reader, offset_t startOffset, zsize_t* dest_size) {
-  // We don't know the result size, neither the compressed size.
-  // So we have to do chunk by chunk until decompressor is happy.
-  // Let's assume it will be something like the minChunkSize used at creation
-  zsize_t _dest_size = zsize_t(1024*1024);
-  char* ret_data = new char[_dest_size.v];
-  // The input is a buffer of CHUNCK_SIZE char max. It may be less if the last chunk
-  // is at the end of the reader and the reader size is not a multiple of CHUNCK_SIZE.
-  std::vector<char> raw_data(CHUNCK_SIZE);
-
-  typename INFO::stream_t stream;
-  INFO::init_stream(&stream, raw_data.data());
-
-  zim::size_type availableSize = reader->size().v - startOffset.v;
-  zim::size_type inputSize = std::min(availableSize, CHUNCK_SIZE);
-  reader->read(raw_data.data(), startOffset, zsize_t(inputSize));
-  startOffset.v += inputSize;
-  availableSize -= inputSize;
-  stream.next_in = (unsigned char*)raw_data.data();
-  stream.avail_in = inputSize;
-  stream.next_out = (unsigned char*) ret_data;
-  stream.avail_out = _dest_size.v;
-  auto errcode = OTHER;
-  do {
-    errcode = INFO::stream_run(&stream);
-    if (errcode == BUF_ERROR) {
-      if (stream.avail_in == 0 && stream.avail_out != 0)  {
-        // End of input stream.
-        // compressor hasn't recognize the end of the input stream but there is
-        // no more input.
-        // So, we must fetch a new chunk of input data.
-        if (availableSize) {
-          inputSize = std::min(availableSize, CHUNCK_SIZE);
-          reader->read(raw_data.data(), startOffset, zsize_t(inputSize));
-          startOffset.v += inputSize;
-          availableSize -= inputSize;
-          stream.next_in = (unsigned char*) raw_data.data();
-          stream.avail_in = inputSize;
-          continue;
-        }
-      } else {
-        //Not enought output size
-        _dest_size.v *= 2;
-        char * new_ret_data = new char[_dest_size.v];
-        memcpy(new_ret_data, ret_data, stream.total_out);
-        stream.next_out = (unsigned char*)(new_ret_data + stream.total_out);
-        stream.avail_out = _dest_size.v - stream.total_out;
-        delete [] ret_data;
-        ret_data = new_ret_data;
-        continue;
-      }
-    }
-    if (errcode != STREAM_END && errcode != OK) {
-      throw ZimFileFormatError(std::string("Invalid ") + INFO::name
-                               + std::string(" stream for cluster."));
-    }
-  } while (errcode != STREAM_END);
-  dest_size->v = stream.total_out;
-  INFO::stream_end(&stream);
-  return ret_data;
-}
 
 std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, CompressionType comp) const
 {
   zsize_t uncompressed_size(0);
-  char* uncompressed_data = nullptr;
+  std::unique_ptr<char[]> uncompressed_data;
   switch (comp) {
     case zimcompLzma:
       uncompressed_data = uncompress<LZMA_INFO>(this, offset, &uncompressed_size);
@@ -318,7 +178,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, Compres
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma or zimComZip.");
   }
-  return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data, uncompressed_size));
+  return std::shared_ptr<const Buffer>(new MemoryBuffer<true>(uncompressed_data.release(), uncompressed_size));
 }
 
 std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, CompressionType* comp, bool* extended) const {

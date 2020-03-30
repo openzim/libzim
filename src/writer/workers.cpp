@@ -41,8 +41,6 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
-#include "md5stream.h"
-#include "tee.h"
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"
@@ -79,7 +77,6 @@ namespace zim
 
 
     void ClusterTask::run(CreatorData* data) {
-      cluster->dump_tmp(data->tmpfname);
       cluster->close();
     };
 
@@ -154,10 +151,37 @@ namespace zim
 
       while(true) {
         microsleep(wait);
-        wait += 10;
+        wait += 100;
         if (creatorData->taskList.popFromQueue(task)) {
+          if (task == nullptr) {
+            return nullptr;
+          }
           task->run(creatorData);
           delete task;
+          wait = 0;
+        }
+      }
+      return nullptr;
+    }
+
+    void* clusterWriter(void* arg) {
+      auto creatorData = static_cast<zim::writer::CreatorData*>(arg);
+      Cluster* cluster;
+      unsigned int wait = 0;
+      while(true) {
+        microsleep(wait);
+        wait += 100;
+        if(creatorData->clusterToWrite.getHead(cluster)) {
+          if (cluster == nullptr) {
+            // All cluster writen, we can quit
+            return nullptr;
+          }
+          if (not cluster->isClosed()) {
+            continue;
+          }
+          creatorData->clusterToWrite.popFromQueue(cluster);
+          cluster->setOffset(offset_t(lseek(creatorData->out_fd, 0, SEEK_CUR)));
+          cluster->write(creatorData->out_fd);
           wait = 0;
         }
       }

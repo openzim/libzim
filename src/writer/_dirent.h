@@ -60,6 +60,7 @@ namespace zim
         Cluster* cluster = nullptr;
         Url redirectUrl;
         article_index_t idx = article_index_t(0);
+        offset_t offset;
 
       public:
         Dirent()
@@ -144,6 +145,9 @@ namespace zim
           return ret;
         }
 
+        offset_t getOffset() const { return offset; }
+        void setOffset(offset_t o) { offset = o; }
+
         void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
         {
           ASSERT(mimeType, ==, 0);
@@ -152,7 +156,7 @@ namespace zim
           info.d.blobNumber = blobNumber_;
         }
 
-
+        void write(int out_fd) const;
 
         friend bool compareUrl(const Dirent* d1, const Dirent* d2);
         friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
@@ -168,9 +172,6 @@ namespace zim
       return d1->url.getNs() < d2->url.getNs()
         || (d1->url.getNs() == d2->url.getNs() && d1->getTitle() < d2->getTitle());
     }
-
-    std::ostream& operator<< (std::ostream& out, const Dirent& d);
-
   }
 }
 
