@@ -24,13 +24,30 @@
 #include "gtest/gtest.h"
 #include "../src/buffer.h"
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+#endif
+
 namespace
 {
 
 std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
 {
+#ifdef _WIN32
+  wchar_t cbase[MAX_PATH];
+  wchar_t ctmp[MAX_PATH];
+  GetTempPathW(MAX_PATH-14, cbase);
+  // This create a file for us, ensure it is unique.
+  // So we need to delete it and create the directory using the same name.
+  GetTempFileNameW(cbase, L"test_header", 0, ctmp);
+  auto tmp_fd = _open(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
+#else
   char tmpl[] = "/tmp/test_header_XXXXXX";
   auto tmp_fd = mkstemp(tmpl);
+#endif
   header.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
