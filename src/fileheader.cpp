@@ -24,7 +24,11 @@
 #include "log.h"
 #include "endian_tools.h"
 #include "buffer.h"
-#include "unistd.h"
+#ifdef _WIN32
+# include "io.h"
+#else
+# include "unistd.h"
+#endif
 
 log_define("zim.file.header")
 

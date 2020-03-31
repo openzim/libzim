@@ -19,7 +19,6 @@
 
 #include <zim/zim.h>
 #include <zim/file.h>
-#include <unistd.h>
 
 #include "gtest/gtest.h"
 
