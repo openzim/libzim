@@ -48,6 +48,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
+#include <fileapi.h>
 #endif
 
 namespace
