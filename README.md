@@ -127,6 +127,12 @@ cp ninja ../bin
 cd ..
 ```
 
+If the automated tests fail or timeout, you need to be aware that this
+test suite needs up to 16GB of memory. You can skip this specific tests with:
+```bash
+SKIP_BIG_MEMORY_TEST=1 ninja test
+```
+
 If the compilation still fails, you might need to get a more recent
 version of a dependency than the one packaged by your Linux
 distribution. Try then with a source tarball distributed by the
