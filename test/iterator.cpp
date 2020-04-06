@@ -38,7 +38,7 @@ TEST(ClusterIteratorTest, getArticleByClusterOrder)
 
     zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
 
-    int nbArticles = file.getCountArticles();
+    auto nbArticles = file.getCountArticles();
 
     ASSERT_EQ(nbArticles, expected.size());
 
