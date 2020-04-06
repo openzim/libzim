@@ -20,20 +20,22 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
-
-#include "gtest/gtest.h"
-
-#include "../src/buffer.h"
-#include "../src/_dirent.h"
-#include "../src/writer/_dirent.h"
+#include <memory>
 
 #ifdef _WIN32
+#include <windows.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
 #include <fileapi.h>
 #endif
+
+#include "gtest/gtest.h"
+
+#include "../src/buffer.h"
+#include "../src/_dirent.h"
+#include "../src/writer/_dirent.h"
 
 namespace
 {
@@ -44,10 +46,8 @@ std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
   wchar_t cbase[MAX_PATH];
   wchar_t ctmp[MAX_PATH];
   GetTempPathW(MAX_PATH-14, cbase);
-  // This create a file for us, ensure it is unique.
-  // So we need to delete it and create the directory using the same name.
   GetTempFileNameW(cbase, L"test_dirent", 0, ctmp);
-  auto tmp_fd = _open(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
+  auto tmp_fd = _wopen(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
 #else
   char tmpl[] = "/tmp/test_dirent_XXXXXX";
   auto tmp_fd = mkstemp(tmpl);
@@ -59,22 +59,33 @@ std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
   lseek(tmp_fd, 0, SEEK_SET);
   read(tmp_fd, content, size);
   close(tmp_fd);
+#ifndef _WIN32
   unlink(tmpl);
+#endif
   return std::unique_ptr<zim::Buffer>(
       new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
 }
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
 {
+#ifdef _WIN32
+  wchar_t cbase[MAX_PATH];
+  wchar_t ctmp[MAX_PATH];
+  GetTempPathW(MAX_PATH-14, cbase);
+  GetTempFileNameW(cbase, L"test_dirent", 0, ctmp);
+  auto tmp_fd = _wopen(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
+#else
   char tmpl[] = "/tmp/test_dirent_XXXXXX";
   auto tmp_fd = mkstemp(tmpl);
+#endif
   dirent.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
   close(tmp_fd);
+#ifndef _WIN32
   unlink(tmpl);
+#endif
   return size;
 }
-
 
 TEST(DirentTest, set_get_data_dirent)
 {

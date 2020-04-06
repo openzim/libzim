@@ -17,7 +17,6 @@
  *
  */
 
-#include <zim/zim.h>
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -31,7 +30,20 @@
 # include <unistd.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+#include <fileapi.h>
+#undef min
+#undef max
+#endif
+
 #include "gtest/gtest.h"
+
+#include <zim/zim.h>
 
 #include "../src/buffer.h"
 #include "../src/cluster.h"
@@ -40,16 +52,7 @@
 #include "../src/file_reader.h"
 #include "../src/writer/cluster.h"
 #include "../src/endian_tools.h"
-
 #include "../src/config.h"
-
-#ifdef _WIN32
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <io.h>
-#include <fileapi.h>
-#endif
 
 namespace
 {
@@ -63,7 +66,7 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   // This create a file for us, ensure it is unique.
   // So we need to delete it and create the directory using the same name.
   GetTempFileNameW(cbase, L"test_cluster", 0, ctmp);
-  auto tmp_fd = _open(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
+  auto tmp_fd = _wopen(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
 #else
   char tmpl[] = "/tmp/test_cluster_XXXXXX";
   auto tmp_fd = mkstemp(tmpl);
@@ -76,7 +79,9 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   lseek(tmp_fd, 0, SEEK_SET);
   read(tmp_fd, content, size);
   close(tmp_fd);
+#ifndef _WIN32
   unlink(tmpl);
+#endif
   return std::shared_ptr<zim::Buffer>(
       new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
 }
