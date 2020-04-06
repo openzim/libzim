@@ -29,6 +29,13 @@
 #include <fcntl.h>
 #include <stdexcept>
 
+#ifdef _WIN32
+# include <io.h>
+#else
+# include <unistd.h>
+# define _write(fd, addr, size) ::write((fd), (addr), (size))
+#endif
+
 namespace zim {
 namespace writer {
 
@@ -166,7 +173,7 @@ void Cluster::write(int out_fd) const
     clusterInfo = 0x10;
   }
   clusterInfo += getCompression();
-  ::write(out_fd, &clusterInfo, 1);
+  _write(out_fd, &clusterInfo, 1);
 
   // Open a comprestion stream if needed
   switch(getCompression())
@@ -183,7 +190,7 @@ void Cluster::write(int out_fd) const
         const char* src = data.data();
         while (to_write) {
          size_type chunk_size = to_write > 4096 ? 4096 : to_write;
-         auto ret = ::write(out_fd, src, chunk_size);
+         auto ret = _write(out_fd, src, chunk_size);
          src += ret;
          to_write -= ret;
         }
@@ -197,7 +204,7 @@ void Cluster::write(int out_fd) const
     case zim::zimcompLzma:
       {
         log_debug("compress data");
-        ::write(out_fd, compressed_data.data(), compressed_data.size());
+        _write(out_fd, compressed_data.data(), compressed_data.size());
         delete [] compressed_data.data();
         compressed_data = Blob();
         break;

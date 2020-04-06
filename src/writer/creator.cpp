@@ -35,9 +35,10 @@
 #endif
 
 #ifdef _WIN32
-#include <io.h>
+# include <io.h>
 #else
-#include <unistd.h>
+# include <unistd.h>
+# define _write(fd, addr, size) ::write((fd), (addr), (size))
 #endif
 
 #include <sys/stat.h>
@@ -274,10 +275,10 @@ namespace zim
       TINFO(" write mimetype list");
       for(auto& mimeType: data->mimeTypesList)
       {
-        ::write(out_fd, mimeType.c_str(), mimeType.size()+1);
+        _write(out_fd, mimeType.c_str(), mimeType.size()+1);
       }
 
-      ::write(out_fd, "", 1);
+      _write(out_fd, "", 1);
 
       ASSERT(lseek(out_fd, 0, SEEK_CUR), <, CLUSTER_BASE_OFFSET);
 
@@ -295,7 +296,7 @@ namespace zim
       {
         char tmp_buff[sizeof(offset_type)];
         toLittleEndian(dirent->getOffset(), tmp_buff);
-        ::write(out_fd, tmp_buff, sizeof(offset_type));
+        _write(out_fd, tmp_buff, sizeof(offset_type));
       }
 
       TINFO(" write title index");
@@ -304,7 +305,7 @@ namespace zim
       {
         char tmp_buff[sizeof(article_index_type)];
         toLittleEndian(dirent->getIdx().v, tmp_buff);
-        ::write(out_fd, tmp_buff, sizeof(article_index_type));
+        _write(out_fd, tmp_buff, sizeof(article_index_type));
       }
 
       TINFO(" write cluster offset list");
@@ -313,7 +314,7 @@ namespace zim
       {
         char tmp_buff[sizeof(offset_type)];
         toLittleEndian(cluster->getOffset(), tmp_buff);
-        ::write(out_fd, tmp_buff, sizeof(offset_type));
+        _write(out_fd, tmp_buff, sizeof(offset_type));
       }
 
       header.setChecksumPos(lseek(out_fd, 0, SEEK_CUR));
@@ -340,7 +341,7 @@ namespace zim
       }
       unsigned char digest[16];
       zim_MD5Final(digest, &md5ctx);
-      ::write(out_fd, reinterpret_cast<const char*>(digest), 16);
+      _write(out_fd, reinterpret_cast<const char*>(digest), 16);
     }
 
     CreatorData::CreatorData(const std::string& fname,
