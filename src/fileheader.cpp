@@ -28,6 +28,7 @@
 # include "io.h"
 #else
 # include "unistd.h"
+# define _write(fd, addr, size) ::write((fd), (addr), (size))
 #endif
 
 log_define("zim.file.header")
@@ -57,7 +58,7 @@ namespace zim
     toLittleEndian(getLayoutPage(), header + 68);
     toLittleEndian(getChecksumPos(), header + 72);
 
-    ::write(out_fd, header, Fileheader::size);
+    _write(out_fd, header, Fileheader::size);
   }
 
   void Fileheader::read(std::shared_ptr<const Buffer> buffer)

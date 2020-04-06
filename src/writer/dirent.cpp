@@ -28,6 +28,7 @@
 # include <io.h>
 #else
 # include <unistd.h>
+# define _write(fd, addr, size) ::write((fd), (addr), (size))
 #endif
 
 log_define("zim.dirent")
@@ -50,26 +51,26 @@ void zim::writer::Dirent::write(int out_fd) const
   if (isRedirect())
   {
     zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
-    ::write(out_fd, header.d, 12);
+    _write(out_fd, header.d, 12);
   }
   else if (isLinktarget() || isDeleted())
   {
-    ::write(out_fd, header.d, 8);
+    _write(out_fd, header.d, 8);
   }
   else
   {
     zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);
     zim::toLittleEndian(zim::blob_index_type(getBlobNumber()), header.d + 12);
-    ::write(out_fd, header.d, 16);
+    _write(out_fd, header.d, 16);
   }
 
   auto& url = getUrl();
-  ::write(out_fd, url.c_str(), url.size()+1);
+  _write(out_fd, url.c_str(), url.size()+1);
 
   std::string t = getTitle();
   if (t != getUrl())
-    ::write(out_fd, t.c_str(), t.size());
+    _write(out_fd, t.c_str(), t.size());
   char c = 0;
-  ::write(out_fd, &c, 1);
+  _write(out_fd, &c, 1);
 
 }
