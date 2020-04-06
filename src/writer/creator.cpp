@@ -329,7 +329,7 @@ namespace zim
       lseek(out_fd, 0, SEEK_SET);
       zim_MD5Init(&md5ctx);
       while (true) {
-         ssize_t r = read(out_fd, batch_read, 1024);
+         auto r = read(out_fd, batch_read, 1024);
          if (r == -1) {
            perror("Cannot read");
            throw std::runtime_error("oups");
@@ -369,7 +369,11 @@ namespace zim
                         ? fname.substr(0, fname.size() - 4)
                         : fname;
       auto zim_name = basename + ".zim";
+#ifdef _WIN32
+int mode =  _S_IREAD | _S_IWRITE;
+#else
       mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+#endif
       out_fd = open(zim_name.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
       if (out_fd == -1){
         perror(nullptr);
