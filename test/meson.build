@@ -12,13 +12,6 @@ tests = [
     'iterator'
 ]
 
-if zlib_dep.found()
-#    zimlibtest_sources += ['zlibstream.cpp']
-endif
-if lzma_dep.found()
-#    zimlibtest_sources += ['lzmastream.cpp']
-endif
-
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
         test_exe = executable(test_name, [test_name+'.cpp'],
