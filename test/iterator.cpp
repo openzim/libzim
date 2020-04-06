@@ -42,7 +42,7 @@ TEST(ClusterIteratorTest, getArticleByClusterOrder)
 
     ASSERT_EQ(nbArticles, expected.size());
 
-    for (auto i = 0; i < nbArticles; i++)
+    for (auto i = 0u; i < nbArticles; i++)
     {
         EXPECT_EQ(file.getArticleByClusterOrder(i).getIndex(), expected[i]);
     }
