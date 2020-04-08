@@ -23,6 +23,7 @@
 #include <fstream>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #if defined(_MSC_VER)
 # include <BaseTsd.h>
   typedef SSIZE_T ssize_t;
@@ -77,7 +78,8 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
 
   char* content = new char[size];
   lseek(tmp_fd, 0, SEEK_SET);
-  read(tmp_fd, content, size);
+  if (read(tmp_fd, content, size) == -1)
+    throw std::runtime_error("Cannot read");
   close(tmp_fd);
 #ifndef _WIN32
   unlink(tmpl);

@@ -21,6 +21,7 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
+#include <stdexcept>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -57,7 +58,9 @@ std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
 
   char* content = new char[size];
   lseek(tmp_fd, 0, SEEK_SET);
-  read(tmp_fd, content, size);
+  if (read(tmp_fd, content, size) == -1)
+    throw std::runtime_error("Cannot read");
+
   close(tmp_fd);
 #ifndef _WIN32
   unlink(tmpl);
