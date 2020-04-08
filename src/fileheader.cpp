@@ -28,7 +28,8 @@
 # include "io.h"
 #else
 # include "unistd.h"
-# define _write(fd, addr, size) ::write((fd), (addr), (size))
+# define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
+{throw std::runtime_error("Error writing");}
 #endif
 
 log_define("zim.file.header")

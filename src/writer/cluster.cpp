@@ -184,7 +184,9 @@ void Cluster::write(int out_fd) const
     clusterInfo = 0x10;
   }
   clusterInfo += getCompression();
-  _write(out_fd, &clusterInfo, 1);
+  if (_write(out_fd, &clusterInfo, 1) == -1) {
+    throw std::runtime_error("Error writng");
+  }
 
   // Open a comprestion stream if needed
   switch(getCompression())
@@ -216,7 +218,9 @@ void Cluster::write(int out_fd) const
     case zim::zimcompZstd:
       {
         log_debug("compress data");
-        _write(out_fd, compressed_data.data(), compressed_data.size());
+        if (_write(out_fd, compressed_data.data(), compressed_data.size()) == -1) {
+          throw std::runtime_error("Error writing");
+        }
         delete [] compressed_data.data();
         compressed_data = Blob();
         break;
