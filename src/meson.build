@@ -52,6 +52,10 @@ if zlib_dep.found()
     deps += [zlib_dep]
 endif
 
+if zstd_dep.found()
+    deps += [zstd_dep]
+endif
+
 if xapian_dep.found()
     sources += xapian_sources
     sources += lib_resources

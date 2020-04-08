@@ -215,6 +215,41 @@ TEST(ClusterTest, read_write_clusterLzma)
   ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
 
+#if defined(ENABLE_ZSTD)
+TEST(ClusterTest, read_write_clusterZstd)
+{
+  zim::writer::Cluster cluster(zim::zimcompZstd);
+
+  std::string blob0("123456789012345678901234567890");
+  std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  std::string blob2("abcdefghijklmnopqrstuvwxyz");
+
+  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
+  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
+  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+
+  auto buffer = write_to_buffer(cluster);
+  zim::CompressionType comp;
+  bool extended;
+  auto reader = std::shared_ptr<const zim::Reader>(zim::BufferReader(buffer).sub_clusterReader(zim::offset_t(0), &comp, &extended));
+  ASSERT_EQ(comp, zim::zimcompZstd);
+  ASSERT_EQ(extended, false);
+  zim::Cluster cluster2(reader, comp, extended);
+  ASSERT_EQ(cluster2.count().v, 3U);
+  ASSERT_EQ(cluster2.getCompression(), zim::zimcompZstd);
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
+  auto b = cluster2.getBlob(zim::blob_index_t(0));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
+  b = cluster2.getBlob(zim::blob_index_t(1));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
+  b = cluster2.getBlob(zim::blob_index_t(2));
+  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+}
+
+#endif
+
 #if !defined(__APPLE__)
 TEST(CluterTest, read_write_extended_cluster)
 {

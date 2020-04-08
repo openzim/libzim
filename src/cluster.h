@@ -50,7 +50,7 @@ namespace zim
     public:
       Cluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
       CompressionType getCompression() const   { return compression; }
-      bool isCompressed() const                { return compression == zimcompZip || compression == zimcompBzip2 || compression == zimcompLzma; }
+      bool isCompressed() const                { return compression != zimcompDefault && compression != zimcompNone; }
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
       zsize_t size() const;

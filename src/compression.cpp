@@ -110,3 +110,113 @@ void ZIP_INFO::stream_end_encode(stream_t* stream) {
   ASSERT(ret, ==, Z_OK);
 }
 #endif // ENABLE_ZLIB
+
+#if defined(ENABLE_ZSTD)
+const std::string ZSTD_INFO::name = "zstd";
+
+ZSTD_INFO::stream_t::stream_t()
+: next_in(nullptr),
+  avail_in(0),
+  next_out(nullptr),
+  avail_out(0),
+  total_out(0),
+  encoder_stream(nullptr),
+  decoder_stream(nullptr)
+{}
+
+ZSTD_INFO::stream_t::~stream_t()
+{
+  if ( encoder_stream )
+    ::ZSTD_freeCStream(encoder_stream);
+
+  if ( decoder_stream )
+    ::ZSTD_freeDStream(decoder_stream);
+}
+
+void ZSTD_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
+{
+  stream->decoder_stream = ::ZSTD_createDStream();
+  auto ret = ::ZSTD_initDStream(stream->decoder_stream);
+  if (::ZSTD_isError(ret)) {
+    throw std::runtime_error("Failed to initialize Zstd decompression");
+  }
+}
+
+void ZSTD_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
+{
+  stream->encoder_stream = ::ZSTD_createCStream();
+  auto ret = ::ZSTD_initCStream(stream->encoder_stream, ::ZSTD_maxCLevel());
+  if (::ZSTD_isError(ret)) {
+    throw std::runtime_error("Failed to initialize Zstd compression");
+  }
+}
+
+CompStatus ZSTD_INFO::stream_run_encode(stream_t* stream, CompStep step) {
+  ::ZSTD_inBuffer inBuf;
+  inBuf.src = stream->next_in;
+  inBuf.size = stream->avail_in;
+  inBuf.pos = 0;
+
+  ::ZSTD_outBuffer outBuf;
+  outBuf.dst = stream->next_out;
+  outBuf.size = stream->avail_out;
+  outBuf.pos = 0;
+
+  auto ret = step == CompStep::STEP
+           ? ::ZSTD_compressStream(stream->encoder_stream, &outBuf, &inBuf)
+           : ::ZSTD_endStream(stream->encoder_stream, &outBuf);
+  stream->next_in += inBuf.pos;
+  stream->avail_in -= inBuf.pos;
+  stream->next_out += outBuf.pos;
+  stream->avail_out -= outBuf.pos;
+  stream->total_out += outBuf.pos;
+
+  if (::ZSTD_isError(ret))
+    return CompStatus::OTHER;
+
+  if ( step == CompStep::STEP ) {
+    if ( stream->avail_in != 0)
+      ASSERT(stream->avail_out, ==, 0u);
+      return CompStatus::BUF_ERROR;
+  } else if ( ret > 0 ) {
+      return CompStatus::BUF_ERROR;
+  }
+
+  return CompStatus::OK;
+}
+
+CompStatus ZSTD_INFO::stream_run_decode(stream_t* stream, CompStep /*step*/) {
+  ::ZSTD_inBuffer inBuf;
+  inBuf.src = stream->next_in;
+  inBuf.size = stream->avail_in;
+  inBuf.pos = 0;
+
+  ::ZSTD_outBuffer outBuf;
+  outBuf.dst = stream->next_out;
+  outBuf.size = stream->avail_out;
+  outBuf.pos = 0;
+
+  auto ret = ::ZSTD_decompressStream(stream->decoder_stream, &outBuf, &inBuf);
+  stream->next_in += inBuf.pos;
+  stream->avail_in -= inBuf.pos;
+  stream->next_out += outBuf.pos;
+  stream->avail_out -= outBuf.pos;
+  stream->total_out += outBuf.pos;
+
+  if (::ZSTD_isError(ret))
+    return CompStatus::OTHER;
+
+  if (ret == 0)
+    return CompStatus::STREAM_END;
+
+  return CompStatus::BUF_ERROR;
+}
+
+void ZSTD_INFO::stream_end_decode(stream_t* stream)
+{
+}
+
+void ZSTD_INFO::stream_end_encode(stream_t* stream)
+{
+}
+#endif

@@ -35,7 +35,7 @@ namespace zim
 
   // The size of something (article, zim, cluster, blob, ...)
   typedef uint64_t size_type;
-  
+
   // An offset.
   typedef uint64_t offset_type;
 
@@ -45,7 +45,8 @@ namespace zim
     zimcompNone,
     zimcompZip,
     zimcompBzip2, // Not supported anymore in the libzim
-    zimcompLzma
+    zimcompLzma,
+    zimcompZstd
   };
 
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";

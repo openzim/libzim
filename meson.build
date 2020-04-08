@@ -30,6 +30,9 @@ conf.set('ENABLE_ZLIB', zlib_dep.found())
 
 lzma_dep = dependency('liblzma', static:static_linkage)
 
+zstd_dep = dependency('libzstd', required:false, static:static_linkage)
+conf.set('ENABLE_ZSTD', zstd_dep.found())
+
 xapian_dep = dependency('xapian-core',
                         required:false,
                         static:static_linkage)
@@ -48,6 +51,9 @@ else
 endif
 if zlib_dep.found()
     pkg_requires += ['zlib']
+endif
+if zstd_dep.found()
+    pkg_requires += ['libzstd']
 endif
 if xapian_dep.found()
     pkg_requires += ['xapian-core']

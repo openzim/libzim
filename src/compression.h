@@ -14,6 +14,10 @@
 #include <zlib.h>
 #endif
 
+#if defined(ENABLE_ZSTD)
+#include <zstd.h>
+#endif
+
 
 #include "zim_types.h"
 
@@ -63,6 +67,38 @@ struct ZIP_INFO {
   static void stream_end_decode(stream_t* stream);
 };
 #endif
+
+#if defined(ENABLE_ZSTD)
+struct ZSTD_INFO {
+  struct stream_t
+  {
+    const unsigned char* next_in;
+    size_t avail_in;
+    unsigned char* next_out;
+    size_t avail_out;
+    size_t total_out;
+
+    ::ZSTD_CStream* encoder_stream;
+    ::ZSTD_DStream* decoder_stream;
+
+    stream_t();
+    ~stream_t();
+  private:
+    stream_t(const stream_t& t) = delete;
+    void operator=(const stream_t& t) = delete;
+  };
+
+  static const std::string name;
+  static void init_stream_decoder(stream_t* stream, char* raw_data);
+  static void init_stream_encoder(stream_t* stream, char* raw_data);
+  static CompStatus stream_run_encode(stream_t* stream, CompStep step);
+  static CompStatus stream_run_decode(stream_t* stream, CompStep step);
+  static void stream_end_encode(stream_t* stream);
+  static void stream_end_decode(stream_t* stream);
+};
+
+#endif
+
 
 namespace zim {
 

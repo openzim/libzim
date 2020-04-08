@@ -38,6 +38,7 @@ libraries need to be available:
 * [Z](https://zlib.net/) (package `zlib1g-dev` on Ubuntu)
 * [LZMA](https://tukaani.org/lzma/) (package `lzma-dev` on Ubuntu)
 * [ICU](http://site.icu-project.org/) (package `libicu-dev` on Ubuntu)
+* [Zstd](https://facebook.github.io/zstd/) (package `libzstd-dev` on Ubuntu)
 * [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
 * [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
 
