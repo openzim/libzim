@@ -1,8 +1,19 @@
-libzim 6.0.3
+libzim 6.1.0
 ============
 
  * Compile now on OpenBSD
- 
+ * [Test] Use the main function provided by gtest.
+ * [CI] Move the CI compilation to github actions.
+ * Add stopwords for 54 new languages.
+ * [Writer] Improve the way we are writing cluster at zim creation time.
+   - Clusters are directly written in the zim file instead of using temporary
+     files.
+   - mimetypes are limited to 944 bytes.
+ * Add a new type of iterator to iterate over articles in a performant way
+   reducing decompression of clusters. This is now the new default iterator.
+ * Add support for zim files compressed with zstd compression algorithm.
+   This is not possible to use zstd to create zim file for now.
+
 libzim 6.0.2
 ============
 
