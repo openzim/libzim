@@ -159,24 +159,27 @@ namespace zim
   }
 
   File::const_iterator File::begin() const
-  { return const_iterator(this, 0); }
+  { return const_iterator(this, 0, const_iterator::ClusterIterator); }
 
   File::const_iterator File::beginByTitle() const
   { return const_iterator(this, 0, const_iterator::ArticleIterator); }
 
+  File::const_iterator File::beginByUrl() const
+  { return const_iterator(this, 0, const_iterator::UrlIterator); }
+
   File::const_iterator File::end() const
-  { return const_iterator(this, getCountArticles()); }
+  { return const_iterator(this, getCountArticles(), const_iterator::UrlIterator); }
 
   File::const_iterator File::find(char ns, const std::string& url) const
   {
     std::pair<bool, article_index_t> r = impl->findx(ns, url);
-    return File::const_iterator(this, article_index_type(r.second));
+    return File::const_iterator(this, article_index_type(r.second), const_iterator::UrlIterator);
   }
 
   File::const_iterator File::find(const std::string& url) const
   {
     std::pair<bool, article_index_t> r = impl->findx(url);
-    return File::const_iterator(this, article_index_type(r.second));
+    return File::const_iterator(this, article_index_type(r.second), const_iterator::UrlIterator);
   }
 
   File::const_iterator File::findByTitle(char ns, const std::string& title) const

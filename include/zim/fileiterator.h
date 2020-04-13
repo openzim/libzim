@@ -43,7 +43,7 @@ namespace zim
       bool is_end() const  { return file == 0 || idx >= file->getCountArticles(); }
 
     public:
-      explicit const_iterator(const File* file_ = 0, article_index_type idx_ = 0, Mode mode_ = ClusterIterator)
+      explicit const_iterator(const File* file_, article_index_type idx_, Mode mode_)
         : file(file_),
           idx(idx_),
           mode(mode_)
