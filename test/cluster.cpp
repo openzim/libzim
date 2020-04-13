@@ -253,7 +253,7 @@ TEST(ClusterTest, read_write_clusterZstd)
 #endif
 
 #if !defined(__APPLE__)
-TEST(CluterTest, read_write_extended_cluster)
+TEST(ClusterTest, read_write_extended_cluster)
 {
   //zim::writer doesn't suport 32 bits architectures.
   if (SIZE_MAX == UINT32_MAX) {
@@ -325,7 +325,7 @@ TEST(CluterTest, read_write_extended_cluster)
 }
 #endif
 
-TEST(CluterTest, read_extended_cluster)
+TEST(ClusterTest, read_extended_cluster)
 {
   std::FILE* tmpfile = std::tmpfile();
   int fd = fileno(tmpfile);
