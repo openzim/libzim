@@ -74,6 +74,7 @@ namespace zim
 
       const_iterator begin() const;
       const_iterator beginByTitle() const;
+      const_iterator beginByUrl() const;
       const_iterator end() const;
       const_iterator findByTitle(char ns, const std::string& title) const;
       const_iterator find(char ns, const std::string& url) const;
