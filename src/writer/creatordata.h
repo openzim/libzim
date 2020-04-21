@@ -66,6 +66,7 @@ namespace zim
         typedef std::vector<Cluster*> ClusterList;
         typedef Queue<Cluster*> ClusterQueue;
         typedef Queue<Task*> TaskQueue;
+        typedef std::vector<pthread_t> ThreadList;
 
         CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language);
@@ -99,6 +100,7 @@ namespace zim
         ClusterList clustersList;
         ClusterQueue clusterToWrite;
         TaskQueue taskList;
+        ThreadList runningWriters;
         pthread_t  writerThread;
         CompressionType compression = zimcompLzma;
         std::string basename;

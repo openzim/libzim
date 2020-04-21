@@ -89,7 +89,7 @@ namespace zim
       {
         pthread_t thread;
         pthread_create(&thread, NULL, taskRunner, this->data.get());
-        pthread_detach(thread);
+        data->runningWriters.push_back(thread);
       }
 
       pthread_create(&data->writerThread, NULL, clusterWriter, this->data.get());
@@ -197,6 +197,10 @@ namespace zim
       // Quit all compressiont Threads
       for (auto i=0U; i< compressionThreads; i++) {
         data->taskList.pushToQueue(nullptr);
+      }
+
+      for(auto& thread: data->runningWriters) {
+        pthread_join(thread, nullptr);
       }
 
       // Be sure that all cluster are closed
