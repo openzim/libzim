@@ -36,10 +36,11 @@ are prerequisites to the Kiwix library compilation. Following
 libraries need to be available:
 
 * [Z](https://zlib.net/) (package `zlib1g-dev` on Ubuntu)
-* [LZMA](https://tukaani.org/lzma/) (package `lzma-dev` on Ubuntu)
+* [LZMA](https://tukaani.org/lzma/) (package `liblzma-dev` on Ubuntu)
 * [ICU](http://site.icu-project.org/) (package `libicu-dev` on Ubuntu)
 * [Zstd](https://facebook.github.io/zstd/) (package `libzstd-dev` on Ubuntu)
 * [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
+* [UUID](http://e2fsprogs.sourceforge.net/) (package `uuid-dev` on Ubuntu)
 * [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
 
 These dependencies may or may not be packaged by your operating
