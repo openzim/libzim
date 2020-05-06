@@ -211,5 +211,4 @@ TEST(FindTests, ByURLDefaultNS)
     // ASSERT_EQ(article2->getIndex(), 0);
 }
 
-
 } // namespace
