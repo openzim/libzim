@@ -120,7 +120,6 @@ TEST(IteratorTests, beginByUrl)
         EXPECT_EQ(it->getIndex(), expected[i]);
         it++; i++;
     }
-    std::cout << "\n";
 }
 
 // Not found cases
@@ -174,12 +173,10 @@ TEST(FindTests, ByTitle)
 {
     zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.findByTitle('U', "unkownTitle");
-    auto article2 = file.findByTitle('A', "unkownTitle");
-    ASSERT_EQ(article1->getIndex(), 0);
-
-    // TODO: findx returns a >0 index even when it doesnt find a article
-    // ASSERT_EQ(article2->getIndex(), 0);
+    auto article1 = file.findByTitle('-', "j/body.js");
+    auto article2 = file.findByTitle('A', "index.html");
+    ASSERT_EQ(article1.getIndex(), 1);
+    ASSERT_EQ(article2->getIndex(), 7);
 }
 
 // By URL
@@ -187,12 +184,10 @@ TEST(FindTests, ByURL)
 {
     zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.find('U', "unkwonUrl");
-    auto article2 = file.find('A', "unkwonUrl");
-    ASSERT_EQ(article1->getIndex(), 0);
-
-    // TODO: findx returns a >0 index even when it doesnt find a article
-    // ASSERT_EQ(article2->getIndex(), 0);
+    auto article1 = file.find('-', "j/body.js");
+    auto article2 = file.find('I', "m/115a35549794e50dcd03e60ef1a1ae24.png");
+    ASSERT_EQ(article1->getIndex(), 1);
+    ASSERT_EQ(article2->getIndex(), 76);
 }
 
 // By URL (no ns)
@@ -200,14 +195,12 @@ TEST(FindTests, ByURLDefaultNS)
 {
     zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article0 = file.find("unkwonUrl");
-    auto article1 = file.find("U/unkwonUrl");
-    auto article2 = file.find("A/unkwonUrl");
-    ASSERT_EQ(article0->getIndex(), 0);
-    ASSERT_EQ(article1->getIndex(), 0);
-
-    // TODO: findx returns a >0 index even when it doesnt find a article
-    // ASSERT_EQ(article2->getIndex(), 0);
+    auto article0 = file.find("A/Main_Page.html");
+    auto article1 = file.find("I/s/ajax-loader.gif");
+    auto article2 = file.find("-/j/head.js");
+    ASSERT_EQ(article0->getIndex(), 5);
+    ASSERT_EQ(article1->getIndex(), 80);
+    ASSERT_EQ(article2->getIndex(), 2);
 }
 
 } // namespace
