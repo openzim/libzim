@@ -128,7 +128,6 @@ TEST(IteratorTests, beginByUrl)
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-
     zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article1 = file.findByTitle('U', "unkownTitle");
