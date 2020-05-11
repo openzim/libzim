@@ -1,3 +1,9 @@
+libzim 6.1.2
+============
+
+ * [CI] Fix codecov configuration
+ * [Writer] Fix threads synchronization at end of writing process.
+
 libzim 6.1.1
 ============
 
