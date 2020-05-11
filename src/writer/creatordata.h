@@ -109,7 +109,6 @@ namespace zim
         zsize_t clustersSize;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
-        std::string tmpfname;
         int out_fd;
 
         bool withIndex;

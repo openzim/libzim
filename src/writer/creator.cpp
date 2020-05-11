@@ -405,10 +405,10 @@ int mode =  _S_IREAD | _S_IWRITE;
       uncompCluster = new Cluster(zimcompNone);
 
 #if defined(ENABLE_XAPIAN)
-      titleIndexer.indexingPrelude(tmpfname+"_title.idx");
+      titleIndexer.indexingPrelude(basename+"_title.idx");
       if (withIndex) {
           indexer = new XapianIndexer(indexingLanguage, IndexingMode::FULL, true);
-          indexer->indexingPrelude(tmpfname+".idx");
+          indexer->indexingPrelude(basename+".idx");
       }
 #endif
     }
