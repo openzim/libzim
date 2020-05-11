@@ -85,11 +85,11 @@ namespace zim
       data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage));
       data->setMinChunkSize(minChunkSize);
 
-      for(unsigned i=0; i<compressionThreads; i++)
+      for(unsigned i=0; i<nbWorkerThreads; i++)
       {
         pthread_t thread;
         pthread_create(&thread, NULL, taskRunner, this->data.get());
-        data->runningWriters.push_back(thread);
+        data->workerThreads.push_back(thread);
       }
 
       pthread_create(&data->writerThread, NULL, clusterWriter, this->data.get());
@@ -187,6 +187,7 @@ namespace zim
       if (data->uncompCluster->count())
         data->closeCluster(false);
 
+      TINFO("Waiting for workers");
       // wait all cluster compression has been done
       unsigned int wait = 0;
       do {
@@ -194,20 +195,16 @@ namespace zim
         wait += 10;
       } while(ClusterTask::waiting_task.load() > 0);
 
-      // Quit all compressiont Threads
-      for (auto i=0U; i< compressionThreads; i++) {
+      // Quit all workerThreads
+      for (auto i=0U; i< nbWorkerThreads; i++) {
         data->taskList.pushToQueue(nullptr);
       }
-
-      for(auto& thread: data->runningWriters) {
+      for(auto& thread: data->workerThreads) {
         pthread_join(thread, nullptr);
       }
 
-      // Be sure that all cluster are closed
       // Wait for writerThread to finish.
       data->clusterToWrite.pushToQueue(nullptr);
-
-      TINFO("Join writr");
       pthread_join(data->writerThread, nullptr);
 
       TINFO("ResolveRedirectIndexes");

@@ -100,7 +100,7 @@ namespace zim
         ClusterList clustersList;
         ClusterQueue clusterToWrite;
         TaskQueue taskList;
-        ThreadList runningWriters;
+        ThreadList workerThreads;
         pthread_t  writerThread;
         CompressionType compression = zimcompLzma;
         std::string basename;

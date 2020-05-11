@@ -22,6 +22,16 @@
 
 #include <cstdint>
 
+#ifdef __GNUC__
+#define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#define DEPRECATED __declspec(deprecated)
+#else
+#praga message("WARNING: You need to implement DEPRECATED for this compiler")
+#define DEPRECATED
+#endif
+
+
 namespace zim
 {
   // An index of an article (in a zim file)
