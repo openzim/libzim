@@ -156,6 +156,14 @@ namespace zim
                   << std::endl;
       }
 
+      // We need to wait that all indexation task has been done before closing the
+      // xapian database and add it to zim.
+      unsigned int wait = 0;
+      do {
+        microsleep(wait);
+        wait += 10;
+      } while(IndexTask::waiting_task.load() > 0);
+
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
@@ -165,7 +173,7 @@ namespace zim
         delete article;
       }
       if (withIndex) {
-        unsigned int wait = 0;
+        wait = 0;
         do {
           microsleep(wait);
           wait += 10;
@@ -189,7 +197,7 @@ namespace zim
 
       TINFO("Waiting for workers");
       // wait all cluster compression has been done
-      unsigned int wait = 0;
+      wait = 0;
       do {
         microsleep(wait);
         wait += 10;
