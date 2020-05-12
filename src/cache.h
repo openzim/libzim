@@ -24,13 +24,6 @@
 #include <limits>
 #include <iostream>
 
-#ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
-#undef NOMINMAX
-#undef max
-#endif
-
 namespace zim
 {
   /**
