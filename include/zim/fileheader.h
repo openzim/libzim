@@ -26,10 +26,8 @@
 #include <iosfwd>
 #include <limits>
 
-#ifdef _WIN32
-#define NOMINMAX 1
-#include <windows.h>
-#undef NOMINMAX
+// max may be defined as a macro by window includes
+#ifdef max
 #undef max
 #endif
 
