@@ -55,9 +55,21 @@ Cluster::~Cluster() {
   }
 }
 
-void Cluster::clear() {
+void Cluster::clear_data() {
+  clear_raw_data();
+  clear_compressed_data();
+}
+
+void Cluster::clear_raw_data() {
   Offsets().swap(blobOffsets);
   ClusterData().swap(_data);
+}
+
+void Cluster::clear_compressed_data() {
+  if (compressed_data.data()) {
+    delete[] compressed_data.data();
+    compressed_data = Blob();
+  }
 }
 
 void Cluster::close() {
@@ -66,6 +78,7 @@ void Cluster::close() {
 
     // We must compress the content in a buffer.
     compress();
+    clear_raw_data();
   }
   pthread_mutex_lock(&m_closedMutex);
   closed = true;
@@ -221,8 +234,6 @@ void Cluster::write(int out_fd) const
         if (_write(out_fd, compressed_data.data(), compressed_data.size()) == -1) {
           throw std::runtime_error("Error writing");
         }
-        delete [] compressed_data.data();
-        compressed_data = Blob();
         break;
       }
 
