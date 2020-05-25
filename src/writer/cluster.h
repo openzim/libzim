@@ -66,7 +66,7 @@ class Cluster {
     offset_t getOffset() const { return offset; }
     void setOffset(offset_t o) { offset = o; }
     bool is_extended() const { return isExtended; }
-    void clear();
+    void clear_data();
     void close();
     bool isClosed() const;
 
@@ -99,6 +99,8 @@ class Cluster {
     void compress();
     template<typename COMP_INFO>
     void _compress();
+    void clear_raw_data();
+    void clear_compressed_data();
 };
 
 };
