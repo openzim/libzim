@@ -1,3 +1,9 @@
+libzim 6.1.4
+============
+
+ * [Writer] Fix excessive memory usage. Data of the cluster were clean at the
+   end of the process, not once we don't need it.
+
 libzim 6.1.3
 ============
 
