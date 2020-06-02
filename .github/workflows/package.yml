@@ -1,0 +1,87 @@
+name: Packages
+on: [push, pull_request]
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: [debian-unstable, debian-bullseye, debian-buster, ubuntu-groovy, ubuntu-focal, ubuntu-eoan]
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: legoktm/gh-action-auto-dch@master
+        with:
+          fullname: Kiwix builder
+          email: release+launchpad@kiwix.org
+          distro: ${{ matrix.distro }}
+
+      - uses: legoktm/gh-action-build-deb@debian-unstable
+        if: matrix.distro == 'debian-unstable'
+        name: Build package for debian-unstable
+        id: build-debian-unstable
+        with:
+          args: --no-sign
+
+      - uses: legoktm/gh-action-build-deb@debian-bullseye
+        if: matrix.distro == 'debian-bullseye'
+        name: Build package for debian-bullseye
+        id: build-debian-bullseye
+        with:
+          args: --no-sign
+
+      - uses: legoktm/gh-action-build-deb@debian-buster
+        if: matrix.distro == 'debian-buster'
+        name: Build package for debian-buster
+        id: build-debian-buster
+        with:
+          args: --no-sign
+
+      - uses: legoktm/gh-action-build-deb@ubuntu-groovy
+        if: matrix.distro == 'ubuntu-groovy'
+        name: Build package for ubuntu-groovy
+        id: build-ubuntu-groovy
+        with:
+          args: --no-sign
+          ppa: kiwixteam/kiwix
+
+      - uses: legoktm/gh-action-build-deb@ubuntu-focal
+        if: matrix.distro == 'ubuntu-focal'
+        name: Build package for ubuntu-focal
+        id: build-ubuntu-focal
+        with:
+          args: --no-sign
+          ppa: kiwixteam/kiwix
+
+      - uses: legoktm/gh-action-build-deb@ubuntu-eoan
+        if: matrix.distro == 'ubuntu-eoan'
+        name: Build package for ubuntu-eoan
+        id: build-ubuntu-eoan
+        with:
+          args: --no-sign
+          ppa: kiwixteam/kiwix
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Packages for ${{ matrix.distro }}
+          path: output
+
+      - uses: legoktm/gh-action-dput@master
+        name: Upload dev package
+        # Only upload on pushes to master
+        if: github.event_name == 'push' && github.event.ref == 'refs/heads/master' && startswith(matrix.distro, 'ubuntu-')
+        with:
+          gpg_key: ${{ secrets.LAUNCHPAD_GPG }}
+          repository: ppa:kiwixteam/kiwix-dev
+          packages: output/*_source.changes
+
+      - uses: legoktm/gh-action-dput@master
+        name: Upload release package
+        # Only upload on pushes to master or tag
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') && startswith(matrix.distro, 'ubuntu-')
+        with:
+          gpg_key: ${{ secrets.LAUNCHPAD_GPG }}
+          repository: ppa:kiwixteam/kiwix
+          packages: output/*_source.changes
+
+
