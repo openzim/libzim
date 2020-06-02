@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Skip some extremely memory-intensive tests
+export SKIP_BIG_MEMORY_TEST=1
+%:
+	dh $@ --buildsystem=meson

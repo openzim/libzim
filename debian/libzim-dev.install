@@ -1,0 +1,3 @@
+usr/include/*
+usr/lib/*/libzim.so
+usr/lib/*/pkgconfig/*

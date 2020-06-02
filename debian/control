@@ -1,0 +1,69 @@
+Source: zimlib
+Section: libs
+Priority: optional
+Build-Depends: debhelper-compat (= 12),
+ liblzma-dev,
+ zlib1g-dev,
+ libicu-dev,
+ libxapian-dev,
+ libzstd-dev,
+ uuid-dev,
+ libgtest-dev,
+ meson,
+ ninja-build,
+ pkg-config
+Maintainer: Kiwix team <kiwix@kiwix.org>
+Homepage: https://www.openzim.org/wiki/Zimlib
+Standards-Version: 4.4.1
+Rules-Requires-Root: no
+
+Package: libzim6
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+ ${shlibs:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Conflicts: libzim0, libzim0v5, libzim2, libzim4, libzim5
+Replaces: libzim0, libzim0v5, libzim2, libzim4, libzim5
+Description: library implementation of ZIM specifications
+ ZIM (Zeno IMproved) is an open file format for storing the contents of
+ wiki for offline usage. This file format is primarily focused on
+ providing the contents of Wikipedia and Wikimedia projects for offline
+ use.
+ .
+ zimlib is the standard implementation of ZIM specification, which
+ implements the read and write method for ZIM files.
+ .
+ ZIM is a file format created with focus on extracting and encoding data
+ from Mediawiki for offline use.
+ .
+ Features of zimlib are:
+  * Native, coded in C++
+  * Extremely fast
+  * Minimal footprint
+  * Minimal dependencies
+  * Portable on most OS (Windows, Linux, Mac OS X)
+
+Package: libzim-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends},
+ libzim6 (= ${binary:Version}),
+ liblzma-dev,
+ zlib1g-dev,
+ libxapian-dev,
+ libicu-dev,
+ libzstd-dev
+Description: library implementation of ZIM specifications (development)
+ ZIM (Zeno IMproved) is an open file format for storing the contents of
+ wiki for offline usage. This file format is primarily focused on
+ providing the contents of Wikipedia and Wikimedia projects for offline
+ use.
+ .
+ zimlib is the standard implementation of ZIM specification, which
+ implements the read and write method for ZIM files.
+ .
+ ZIM is a file format created with focus on extracting and encoding data
+ from Mediawiki for offline use.
+ .
+ This package contains development files.
