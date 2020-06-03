@@ -1,3 +1,9 @@
+libzim 6.1.5
+============
+
+ * [Writer] Remove unused declaration of classes.
+   Those classes were not implemented nor used at all.
+
 libzim 6.1.4
 ============
 
