@@ -31,7 +31,6 @@ namespace zim
 {
   namespace writer
   {
-    class ArticleSource;
     class Article
     {
       public:
@@ -51,29 +50,6 @@ namespace zim
 
         // returns the next category id, to which the article is assigned to
         virtual std::string getNextCategory();
-    };
-
-    class Category
-    {
-      public:
-        virtual Blob getData() = 0;
-        virtual std::string getUrl() const = 0;
-        virtual std::string getTitle() const = 0;
-        virtual ~Category() = default;
-    };
-
-    class ArticleSource
-    {
-      public:
-        virtual void setFilename(const std::string& fname) { }
-        virtual const Article* getNextArticle() = 0;
-
-        // After fetching the articles and for each article the category ids
-        // using Article::getNextCategory, the writer has a list of category
-        // ids. Using this list, the writer fetches the category data using
-        // this method.
-        virtual Category* getCategory(const std::string& cid);
-        virtual ~ArticleSource() = default;
     };
 
   }
