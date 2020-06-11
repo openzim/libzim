@@ -364,7 +364,7 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    article_index_t ret(titleIndexReader->read<article_index_type>(
+    article_index_t ret(titleIndexReader->read_uint<article_index_type>(
                             offset_t(sizeof(article_index_t)*idx.v)));
 
     return ret;
@@ -401,7 +401,7 @@ namespace zim
 
   offset_t FileImpl::getOffset(const Reader* reader, size_t idx)
   {
-    offset_t offset(reader->read<offset_type>(offset_t(sizeof(offset_type)*idx)));
+    offset_t offset(reader->read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
     return offset;
   }
 

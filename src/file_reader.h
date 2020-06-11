@@ -39,7 +39,7 @@ class Reader {
 
     virtual void read(char* dest, offset_t offset, zsize_t size) const = 0;
     template<typename T>
-    T read(offset_t offset) const {
+    T read_uint(offset_t offset) const {
       ASSERT(offset.v, <, size().v);
       ASSERT(offset.v+sizeof(T), <=, size().v);
       char tmp_buf[sizeof(T)];
