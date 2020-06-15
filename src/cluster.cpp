@@ -59,7 +59,7 @@ namespace zim
   {
     // read first offset, which specifies, how many offsets we need to read
     OFFSET_TYPE offset;
-    offset = reader->read<OFFSET_TYPE>(offset_t(0));
+    offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
     offset_t data_address(offset);
@@ -126,9 +126,9 @@ namespace zim
   template<typename OFFSET_TYPE>
   zsize_t _read_size(const Reader* reader, offset_t offset)
   {
-    OFFSET_TYPE blob_offset = reader->read<OFFSET_TYPE>(offset);
+    OFFSET_TYPE blob_offset = reader->read_uint<OFFSET_TYPE>(offset);
     auto off = offset+offset_t(blob_offset-sizeof(OFFSET_TYPE));
-    auto s = reader->read<OFFSET_TYPE>(off);
+    auto s = reader->read_uint<OFFSET_TYPE>(off);
     return zsize_t(s);
   }
 

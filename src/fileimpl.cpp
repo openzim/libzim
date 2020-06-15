@@ -269,7 +269,17 @@ namespace zim
 
           for(zim::article_index_type i = 0; i < nb_articles; i++)
           {
-              articleListByCluster.push_back(std::make_pair(this->getDirent(article_index_t(i))->getClusterNumber().v, i));
+              // This is the offset of the dirent in the zimFile
+              auto indexOffset = getOffset(urlPtrOffsetReader.get(), i);
+              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
+              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
+              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
+                articleListByCluster.push_back(std::make_pair(0, i));
+              } else {
+                // If it is a classic article, get the clusterNumber (at offset 8)
+                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
+                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+              }
           }
           std::sort(articleListByCluster.begin(), articleListByCluster.end());
       });
@@ -364,7 +374,7 @@ namespace zim
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    article_index_t ret(titleIndexReader->read<article_index_type>(
+    article_index_t ret(titleIndexReader->read_uint<article_index_type>(
                             offset_t(sizeof(article_index_t)*idx.v)));
 
     return ret;
@@ -401,7 +411,7 @@ namespace zim
 
   offset_t FileImpl::getOffset(const Reader* reader, size_t idx)
   {
-    offset_t offset(reader->read<offset_type>(offset_t(sizeof(offset_type)*idx)));
+    offset_t offset(reader->read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
     return offset;
   }
 
