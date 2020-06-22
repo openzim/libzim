@@ -10,7 +10,8 @@ tests = [
     'uuid',
     'template',
     'iterator',
-    'find'
+    'find',
+    'compression'
 ]
 
 if gtest_dep.found() and not meson.is_cross_build()
