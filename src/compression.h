@@ -161,6 +161,7 @@ class Uncompressor
     }
 
     std::unique_ptr<char[]> get_data(zim::zsize_t* size) {
+      feed(nullptr, 0, CompStep::FINISH);
       size->v = stream.total_out;
       INFO::stream_end_decode(&stream);
       return std::move(ret_data);
