@@ -1,3 +1,9 @@
+libzim 6.1.6
+============
+
+ * Better (faster) implementation of the ordering of article by cluster.
+ * Fix compression algorithm.
+
 libzim 6.1.5
 ============
 
