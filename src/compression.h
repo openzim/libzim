@@ -161,6 +161,7 @@ class Uncompressor
     }
 
     std::unique_ptr<char[]> get_data(zim::zsize_t* size) {
+      feed(nullptr, 0, CompStep::FINISH);
       size->v = stream.total_out;
       INFO::stream_end_decode(&stream);
       return std::move(ret_data);
@@ -238,10 +239,15 @@ class Compressor
       stream.next_in = (unsigned char*)data;
       stream.avail_in = size;
       auto errcode = CompStatus::OTHER;
-      while (1) {
+      while (true) {
         errcode = INFO::stream_run_encode(&stream, step);
-        if (errcode == CompStatus::BUF_ERROR) {
-          if (stream.avail_out == 0 && stream.avail_in != 0) {
+        if (stream.avail_out == 0) {
+          if (errcode == CompStatus::OK) {
+            // lzma return a OK return status the first time it runs out of output memory.
+            // The BUF_ERROR is returned only the second time we call a lzma_code.
+            continue;
+          }
+          if (errcode == CompStatus::BUF_ERROR) {
             //Not enought output size
             ret_size *= 2;
             std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
@@ -252,8 +258,10 @@ class Compressor
             continue;
           }
         }
-        if (errcode == CompStatus::STREAM_END || errcode == CompStatus::OK)
+        if (errcode == CompStatus::STREAM_END || errcode == CompStatus::OK) {
+          // Everything ok, quit the loop
           break;
+        }
         return RunnerStatus::ERROR;
       };
       return RunnerStatus::NEED_MORE;

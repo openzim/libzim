@@ -171,13 +171,15 @@ CompStatus ZSTD_INFO::stream_run_encode(stream_t* stream, CompStep step) {
   stream->avail_out -= outBuf.pos;
   stream->total_out += outBuf.pos;
 
-  if (::ZSTD_isError(ret))
+  if (::ZSTD_isError(ret)) {
     return CompStatus::OTHER;
+  }
 
   if ( step == CompStep::STEP ) {
-    if ( stream->avail_in != 0)
+    if ( stream->avail_in != 0) {
       ASSERT(stream->avail_out, ==, 0u);
       return CompStatus::BUF_ERROR;
+    }
   } else if ( ret > 0 ) {
       return CompStatus::BUF_ERROR;
   }
