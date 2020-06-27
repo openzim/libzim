@@ -346,9 +346,9 @@ namespace zim
     while (true) {
         bufferDirentZone.reserve(size_type(bufferSize));
         zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        auto direntBuffer = std::unique_ptr<Buffer>(new MemoryBuffer<false>(bufferDirentZone.data(), bufferSize));
+        const MemoryBuffer<false> direntBuffer(bufferDirentZone.data(), bufferSize);
         try {
-          dirent = std::make_shared<const Dirent>(std::move(direntBuffer));
+          dirent = std::make_shared<const Dirent>(direntBuffer);
         } catch (InvalidSize&) {
           // buffer size is not enougth, try again :
           bufferSize += 256;
