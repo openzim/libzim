@@ -116,23 +116,6 @@ namespace zim
         mimeType = redirectMimeType;
       }
 
-      void setMimeType(uint16_t mime)
-      {
-        mimeType = mime;
-      }
-
-      void setLinktarget()
-      {
-        ASSERT(mimeType, ==, 0);
-        mimeType = linktargetMimeType;
-      }
-
-      void setDeleted()
-      {
-        ASSERT(mimeType, ==, 0);
-        mimeType = deletedMimeType;
-      }
-
       void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
         ASSERT(mimeType, ==, 0);
@@ -144,4 +127,3 @@ namespace zim
 }
 
 #endif // ZIM_DIRENT_H
-
