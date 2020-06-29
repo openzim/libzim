@@ -128,9 +128,14 @@ namespace zim
     }
 
     // read mime types
-    size = zsize_t(header.getUrlPtrPos() - header.getMimeListPos());
-    // No need to check access, getUrlPtrPos is in the zim file, and we are
-    // sure that getMimeListPos is 80.
+    // libzim write zims files two ways :
+    // - The old way by putting the urlPtrPos just after the mimetype.
+    // - The new way by putting the urlPtrPos at the end of the zim files.
+    //   In this case, the cluster data are always at 1024 bytes offset and we know that
+    //   mimetype list is before this.
+    // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
+    auto endMimeList = std::min(header.getUrlPtrPos(), static_cast<zim::offset_type>(1024));
+    size = zsize_t(endMimeList - header.getMimeListPos());
     auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
     offset_t current = offset_t(0);
     while (current.v < size.v)
