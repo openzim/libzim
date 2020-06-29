@@ -18,31 +18,7 @@
  */
 
 #include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <fstream>
 #include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <algorithm>
-#if defined(_MSC_VER)
-# include <BaseTsd.h>
-  typedef SSIZE_T ssize_t;
-#else
-# include <unistd.h>
-#endif
-
-#ifdef _WIN32
-#include <windows.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <io.h>
-#include <fileapi.h>
-#undef min
-#undef max
-#endif
-
 #include "gtest/gtest.h"
 
 #include <zim/zim.h>
