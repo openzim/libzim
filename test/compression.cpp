@@ -59,7 +59,15 @@ class CompressionTest : public testing::Test {
     typedef zim::Uncompressor<T> DecompressorT;
 };
 
-using CompressionAlgo = ::testing::Types<LZMA_INFO, ZSTD_INFO>;
+using CompressionAlgo = ::testing::Types<
+  LZMA_INFO
+#if defined(ENABLE_ZSTD)
+  ,ZSTD_INFO
+#endif
+#if defined(ENABLE_ZLIB)
+  ,ZIP_INFO
+#endif
+>;
 
 TYPED_TEST_CASE(CompressionTest, CompressionAlgo);
 
