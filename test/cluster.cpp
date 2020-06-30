@@ -58,8 +58,13 @@
 namespace
 {
 
-std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
+class TempFile
 {
+  int fd_;
+  std::string path_;
+public:
+  TempFile()
+  {
 #ifdef _WIN32
   wchar_t cbase[MAX_PATH];
   wchar_t ctmp[MAX_PATH];
@@ -71,8 +76,30 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
 #else
   char tmpl[] = "/tmp/test_cluster_XXXXXX";
   auto tmp_fd = mkstemp(tmpl);
+  path_ = tmpl;
 #endif
+  fd_ = tmp_fd;
+  }
+
+  TempFile(const TempFile& ) = delete;
+  void operator=(const TempFile& ) = delete;
+
+  ~TempFile()
+  {
+    close(fd_);
+#ifndef _WIN32
+    unlink(path_.c_str());
+#endif
+  }
+
+  int fd() const { return fd_; }
+};
+
+std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
+{
+  TempFile tmpFile;
   cluster.close();
+  const auto tmp_fd = tmpFile.fd();
   cluster.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
@@ -80,10 +107,6 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   lseek(tmp_fd, 0, SEEK_SET);
   if (read(tmp_fd, content, size) == -1)
     throw std::runtime_error("Cannot read");
-  close(tmp_fd);
-#ifndef _WIN32
-  unlink(tmpl);
-#endif
   return std::shared_ptr<zim::Buffer>(
       new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
 }
