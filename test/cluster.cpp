@@ -79,7 +79,9 @@ public:
     GetTempFileNameW(cbase, wname.c_str(), 0, ctmp);
     auto tmp_fd = _wopen(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
 #else
-    path_ = std::string("/tmp/") + name + "_XXXXXX";
+    const char* const TMPDIR = std::getenv("TMPDIR");
+    const std::string tmpdir(TMPDIR ? TMPDIR : "/tmp");
+    path_ = tmpdir + "/" + name + "_XXXXXX";
     auto tmp_fd = mkstemp(&path_[0]);
 #endif
     fd_ = tmp_fd;
