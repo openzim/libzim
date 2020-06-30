@@ -21,6 +21,7 @@
 #define DEBUG_H_
 
 #include <iostream>
+#include <sstream>
 #include <stdlib.h>
 
 #if defined (NDEBUG)
@@ -34,9 +35,10 @@
 template<typename T, typename U>
 void _on_assert_fail(const char* vara, const char* op, const char* varb,
                      T a, U b, const char* file, int line)  {
-  std::cerr << "\nAssertion failed at "<< file << ":" << line << "\n " <<
-      vara << "[" << a << "] " << op << " " << varb << "[" << b << "]" <<
-      std::endl;
+  std::ostringstream ss;
+  ss << "\nAssertion failed at "<< file << ":" << line << "\n " <<
+      vara << "[" << a << "] " << op << " " << varb << "[" << b << "]";
+  std::cerr << ss.str() << std::endl;
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
   void *callstack[64];
@@ -48,7 +50,7 @@ void _on_assert_fail(const char* vara, const char* op, const char* varb,
   }
   free(strings);
 #endif
-  exit(1);
+  throw std::runtime_error(ss.str());
 }
 
 # define ASSERT(left, operator, right) do { auto _left = left; auto _right = right; if (!((_left) operator (_right))) _on_assert_fail(#left, #operator, #right, _left, _right, __FILE__, __LINE__);  } while(0)
