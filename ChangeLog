@@ -1,3 +1,10 @@
+libzim 6.1.7
+============
+
+ * Do not assume urlPtrPos is just after the mimetype list.
+ * Fix compilation of compression test.
+ * Do not exit but throw an exception if an ASSERT is not fulfill.
+
 libzim 6.1.6
 ============
 
