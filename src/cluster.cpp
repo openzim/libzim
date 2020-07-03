@@ -103,7 +103,11 @@ namespace zim
   Blob Cluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   {
     if (this->size()) {
-      size = std::min(size, getBlobSize(n));
+      const auto blobSize = getBlobSize(n);
+      if ( offset.v > blobSize.v ) {
+        return Blob();
+      }
+      size = std::min(size, zsize_t(blobSize.v-offset.v));
       if (size.v > SIZE_MAX) {
         return Blob();
       }
