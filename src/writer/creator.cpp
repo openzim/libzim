@@ -74,15 +74,16 @@ namespace zim
 {
   namespace writer
   {
-    Creator::Creator(bool verbose)
+    Creator::Creator(bool verbose, CompressionType c)
       : verbose(verbose)
+      , compression(c)
     {}
 
     Creator::~Creator() = default;
 
     void Creator::startZimCreation(const std::string& fname)
     {
-      data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage));
+      data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage, compression));
       data->setMinChunkSize(minChunkSize);
 
       for(unsigned i=0; i<nbWorkerThreads; i++)
@@ -360,8 +361,10 @@ namespace zim
     CreatorData::CreatorData(const std::string& fname,
                                    bool verbose,
                                    bool withIndex,
-                                   std::string language)
-      : withIndex(withIndex),
+                                   std::string language,
+                                   CompressionType c)
+      : compression(c),
+        withIndex(withIndex),
         indexingLanguage(language),
 #if defined(ENABLE_XAPIAN)
         titleIndexer(language, IndexingMode::TITLE, true),
@@ -370,12 +373,12 @@ namespace zim
         nbArticles(0),
         nbRedirectArticles(0),
         nbCompArticles(0),
-	nbUnCompArticles(0),
-	nbFileArticles(0),
-	nbIndexArticles(0),
-	nbClusters(0),
-	nbCompClusters(0),
-	nbUnCompClusters(0),
+        nbUnCompArticles(0),
+        nbFileArticles(0),
+        nbIndexArticles(0),
+        nbClusters(0),
+        nbCompClusters(0),
+        nbUnCompClusters(0),
         start_time(time(NULL))
     {
       basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)

@@ -69,7 +69,8 @@ namespace zim
         typedef std::vector<pthread_t> ThreadList;
 
         CreatorData(const std::string& fname, bool verbose,
-                       bool withIndex, std::string language);
+                       bool withIndex, std::string language,
+                       CompressionType compression);
         virtual ~CreatorData();
 
         void addDirent(Dirent* dirent, const Article* article);
@@ -102,7 +103,7 @@ namespace zim
         TaskQueue taskList;
         ThreadList workerThreads;
         pthread_t  writerThread;
-        CompressionType compression = zimcompLzma;
+        const CompressionType compression;
         std::string basename;
         bool isEmpty = true;
         bool isExtended = false;

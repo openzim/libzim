@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 {
   unsigned max = 16;
   try {
-    zim::writer::Creator c;
+    zim::writer::Creator c(false, zim::zimcompZstd);
     c.startZimCreation("foo.zim");
     for (unsigned n = 0; n < max; ++n)
     {
