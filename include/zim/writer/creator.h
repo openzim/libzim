@@ -33,7 +33,7 @@ namespace zim
     class Creator
     {
       public:
-        Creator(bool verbose = false);
+        Creator(bool verbose = false, CompressionType c = zimcompLzma);
         virtual ~Creator();
 
         zim::size_type getMinChunkSize() const { return minChunkSize; }
@@ -55,6 +55,7 @@ namespace zim
       private:
         std::unique_ptr<CreatorData> data;
         bool verbose;
+        const CompressionType compression;
         bool withIndex = false;
         size_t minChunkSize = 1024-64;
         std::string indexingLanguage;
