@@ -103,6 +103,30 @@ TEST(ZimFile, openingAnEmptyZimFileSucceeds)
   ASSERT_TRUE(zimfile.verify());
 }
 
+bool isNastyOffset(int offset) {
+  if ( 6 <= offset && offset < 24 ) // Minor version or uuid
+    return false;
+
+  if ( 64 <= offset && offset < 72 ) // page or layout index
+    return false;
+
+  return true;
+}
+
+TEST(ZimFile, nastyEmptyZimFile)
+{
+  const std::string correctContent = emptyZimFileContent();
+  for ( int offset = 0; offset < 80; ++offset ) {
+    if ( isNastyOffset(offset) ) {
+      const TestContext ctx{ {"offset", std::to_string(offset) } };
+      std::string nastyContent(correctContent);
+      nastyContent[offset] = '\xff';
+      const auto tmpfile = makeTempFile("wrong_checksum_empty_zim_file", nastyContent);
+      EXPECT_THROW( zim::File(tmpfile->path()), std::runtime_error ) << ctx;
+    }
+  }
+}
+
 TEST(ZimFile, wrongChecksumInEmptyZimFile)
 {
   std::string zimfileContent = emptyZimFileContent();
