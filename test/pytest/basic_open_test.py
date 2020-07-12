@@ -61,16 +61,6 @@ def nasty_empty_zim_file(request, tmpdir):
         f.write(content)
     return filename
 
-@pytest.fixture
-def wrong_checksum_empty_zim_file(tmpdir):
-    content = gen_empty_zim_content()
-    content = content[:85] +b'\xFF' + content[86:]
-    filename = tmpdir/'wrong_checksum_empty.zim'
-    with open(str(filename), 'wb') as f:
-        f.write(content)
-    return filename
-
-
 def test_open_nasty_empty_zim(nasty_empty_zim_file):
     print("opening {}".format(nasty_empty_zim_file))
     with pytest.raises(RuntimeError):
@@ -81,8 +71,3 @@ def test_open_existing_zim(existing_zim_file):
     print("opening {}".format(existing_zim_file))
     f = libzim.File(str(existing_zim_file).encode())
     assert f.verify()
-
-def test_verify_wrong_checksum(wrong_checksum_empty_zim_file):
-    print("opening {}".format(wrong_checksum_empty_zim_file))
-    f = libzim.File(str(wrong_checksum_empty_zim_file).encode())
-    assert not f.verify()

@@ -103,4 +103,14 @@ TEST(ZimFile, openingAnEmptyZimFileSucceeds)
   ASSERT_TRUE(zimfile.verify());
 }
 
+TEST(ZimFile, wrongChecksumInEmptyZimFile)
+{
+  std::string zimfileContent = emptyZimFileContent();
+  zimfileContent[85] = '\xff';
+  const auto tmpfile = makeTempFile("wrong_checksum_empty_zim_file", zimfileContent);
+
+  zim::File zimfile(tmpfile->path());
+  ASSERT_FALSE(zimfile.verify());
+}
+
 } // unnamed namespace
