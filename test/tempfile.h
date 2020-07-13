@@ -31,9 +31,7 @@ namespace unittests
 class TempFile
 {
   int fd_;
-#ifndef _WIN32
   std::string path_;
-#endif
 public:
   explicit TempFile(const char* name);
 
@@ -43,6 +41,7 @@ public:
   ~TempFile();
 
   int fd() const { return fd_; }
+  std::string path() const { return path_; }
 };
 
 } // namespace unittests

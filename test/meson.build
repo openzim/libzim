@@ -6,6 +6,7 @@ tests = [
     'header',
     'uuid',
     'template',
+    'zimfile',
     'iterator',
     'find',
     'compression'

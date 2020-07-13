@@ -8,20 +8,6 @@ import hashlib
 
 DATADIR = Path(__file__).resolve().parent.parent/'data'
 
-@pytest.fixture(params=product(
-    (b'ZIM\x04', b''),
-    (0x00, 0x01, 0x11, 0x30, 0xFF),
-    range(0, 100, 10)
-))
-def wrong_zim(request, tmpdir):
-    prefix, byte, file_size = request.param
-    basename = 'prefix' if prefix else 'noprefix'
-    filename = tmpdir/'{}_{}_{:x}.zim'.format(basename, file_size, byte)
-    with open(str(filename), 'wb') as f:
-        f.write(prefix)
-        f.write(bytes([byte])*file_size)
-    return filename
-
 
 zim_files = filter(lambda p: p.suffix in ('.zim', '.zimaa'), DATADIR.glob('*.zim*'))
 
@@ -70,7 +56,7 @@ def _nasty_offset_filter(offset):
     # page and layout index
     if 64 <= offset < 72:
         return False
-  
+
     return True
 
 @pytest.fixture(params=filter(_nasty_offset_filter, range(80)))
@@ -91,12 +77,6 @@ def wrong_checksum_empty_zim_file(tmpdir):
     with open(str(filename), 'wb') as f:
         f.write(content)
     return filename
-
-
-def test_open_wrong_zim(wrong_zim):
-    print("opening {}".format(wrong_zim))
-    with pytest.raises(RuntimeError):
-        libzim.File(str(wrong_zim).encode())
 
 
 def test_open_nasty_empty_zim(nasty_empty_zim_file):
