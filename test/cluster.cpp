@@ -55,24 +55,18 @@
 #include "../src/endian_tools.h"
 #include "../src/config.h"
 
+#include "tempfile.h"
+
 namespace
 {
 
+using zim::unittests::TempFile;
+
 std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
 {
-#ifdef _WIN32
-  wchar_t cbase[MAX_PATH];
-  wchar_t ctmp[MAX_PATH];
-  GetTempPathW(MAX_PATH-14, cbase);
-  // This create a file for us, ensure it is unique.
-  // So we need to delete it and create the directory using the same name.
-  GetTempFileNameW(cbase, L"test_cluster", 0, ctmp);
-  auto tmp_fd = _wopen(ctmp, _O_CREAT | _O_TEMPORARY | _O_SHORT_LIVED | _O_RDWR | _O_TRUNC);
-#else
-  char tmpl[] = "/tmp/test_cluster_XXXXXX";
-  auto tmp_fd = mkstemp(tmpl);
-#endif
+  const TempFile tmpFile("test_cluster");
   cluster.close();
+  const auto tmp_fd = tmpFile.fd();
   cluster.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
@@ -80,10 +74,6 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   lseek(tmp_fd, 0, SEEK_SET);
   if (read(tmp_fd, content, size) == -1)
     throw std::runtime_error("Cannot read");
-  close(tmp_fd);
-#ifndef _WIN32
-  unlink(tmpl);
-#endif
   return std::shared_ptr<zim::Buffer>(
       new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
 }
