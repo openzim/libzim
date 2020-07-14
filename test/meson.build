@@ -25,7 +25,3 @@ if gtest_dep.found() and not meson.is_cross_build()
              workdir: meson.current_build_dir())
     endforeach
 endif
-
-if get_option('default_library') != 'static' and not meson.is_cross_build()
-    subdir('pytest')
-endif
