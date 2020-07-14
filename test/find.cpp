@@ -31,7 +31,7 @@ namespace
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article1 = file.findByTitle('U', "unkownTitle");
     auto article2 = file.findByTitle('A', "unkownTitle");
@@ -42,7 +42,7 @@ TEST(FindTests, NotFoundByTitle)
 // By URL
 TEST(FindTests, NotFoundByURL)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article1 = file.find('U', "unkwonUrl");
     auto article2 = file.find('A', "unkwonUrl");
@@ -53,7 +53,7 @@ TEST(FindTests, NotFoundByURL)
 // By URL (no ns)
 TEST(FindTests, NotFoundByURLDefaultNS)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article0 = file.find("unkwonUrl");
     auto article1 = file.find("U/unkwonUrl");
@@ -68,7 +68,7 @@ TEST(FindTests, NotFoundByURLDefaultNS)
 // ByTitle
 TEST(FindTests, ByTitle)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article1 = file.findByTitle('-', "j/body.js");
     auto article2 = file.findByTitle('A', "index.html");
@@ -79,7 +79,7 @@ TEST(FindTests, ByTitle)
 // By URL
 TEST(FindTests, ByURL)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article1 = file.find('-', "j/body.js");
     auto article2 = file.find('I', "m/115a35549794e50dcd03e60ef1a1ae24.png");
@@ -90,7 +90,7 @@ TEST(FindTests, ByURL)
 // By URL (no ns)
 TEST(FindTests, ByURLDefaultNS)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto article0 = file.find("A/Main_Page.html");
     auto article1 = file.find("I/s/ajax-loader.gif");

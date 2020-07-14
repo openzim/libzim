@@ -1,7 +1,4 @@
-
-configure_file(input : 'data/wikibooks_be_all_nopic_2017-02.zim',
-               output : 'wikibooks_be_all_nopic_2017-02.zim',
-               copy: true )
+subdir('data')
 
 tests = [
     'cluster',
@@ -23,7 +20,8 @@ if gtest_dep.found() and not meson.is_cross_build()
                               link_args: extra_link_args,
                               dependencies : deps + [gtest_dep],
                               build_rpath : '$ORIGIN')
-        test(test_name, test_exe, timeout : 120)
+        test(test_name, test_exe, timeout : 120,
+             workdir: meson.current_build_dir())
     endforeach
 endif
 
