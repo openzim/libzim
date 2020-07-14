@@ -21,6 +21,7 @@
 #include <zim/file.h>
 
 #include "tempfile.h"
+#include "../src/fs.h"
 
 #include "gtest/gtest.h"
 
@@ -135,6 +136,24 @@ TEST(ZimFile, wrongChecksumInEmptyZimFile)
 
   zim::File zimfile(tmpfile->path());
   ASSERT_FALSE(zimfile.verify());
+}
+
+TEST(ZimFile, openRealZimFile)
+{
+  const char* const zimfiles[] = {
+    "wikibooks_be_all_nopic_2017-02.zim",
+    "wikibooks_be_all_nopic_2017-02_splitted.zim",
+    "wikipedia_en_climate_change_nopic_2020-01.zim"
+  };
+
+  for ( const std::string fname : zimfiles ) {
+    const std::string path = zim::DEFAULTFS::join("data", fname);
+    const TestContext ctx{ {"path", path } };
+    std::unique_ptr<zim::File> zimfile;
+    EXPECT_NO_THROW( zimfile.reset(new zim::File(path)) ) << ctx;
+    if ( zimfile )
+      EXPECT_TRUE( zimfile->verify() ) << ctx;
+  }
 }
 
 } // unnamed namespace
