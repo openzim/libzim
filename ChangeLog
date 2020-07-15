@@ -1,3 +1,12 @@
+libzim 6.1.8
+============
+
+ * Increase default timeout for test to 120 seconds/test
+ * Compression algorithm to use can be passed to `zim::writer::Creator`
+ * Add automatic debian packaging of libzim.
+ * Fix using of tmpdir (and now use env var TMPDIR) during tests.
+
+
 libzim 6.1.7
 ============
 

@@ -1,5 +1,5 @@
 project('libzim', ['c', 'cpp'],
-  version : '6.1.7',
+  version : '6.1.8',
   license : 'GPL2',
   default_options : ['c_std=c11', 'cpp_std=c++11'])
 
