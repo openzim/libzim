@@ -56,6 +56,10 @@ if zstd_dep.found()
     deps += [zstd_dep]
 endif
 
+if target_machine.system() == 'freebsd'
+    deps += [execinfo_dep]
+endif
+
 if xapian_dep.found()
     sources += xapian_sources
     sources += lib_resources
