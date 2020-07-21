@@ -45,6 +45,26 @@ std::ostream& operator<<(std::ostream& out, const TestContext& ctx)
   return out;
 }
 
+std::string
+emptyZimFileContent()
+{
+  std::string content;
+  content += "ZIM\x04"; // Magic
+  content += "\x05" + std::string(3, '\0'); // Version
+  content += std::string(16, '\0'); // uuid
+  content += std::string(4, '\0'); // article count
+  content += std::string(4, '\0'); // cluster count
+  content += "\x50" + std::string(7, '\0'); // url ptr pos
+  content += "\x50" + std::string(7, '\0'); // title ptr pos
+  content += "\x50" + std::string(7, '\0'); // cluster ptr pos
+  content += "\x50" + std::string(7, '\0'); // mimelist ptr pos
+  content += std::string(4, '\0'); // main page index
+  content += std::string(4, '\0'); // layout page index
+  content += "\x50" + std::string(7, '\0'); // checksum pos
+  content += "\x8a\xbb\xad\x98\x64\xd5\x48\xb2\xb9\x71\xab\x30\xed\x29\xa4\x01"; // md5sum
+  return content;
+}
+
 std::unique_ptr<TempFile>
 makeTempFile(const char* name, const std::string& content)
 {
@@ -52,6 +72,7 @@ makeTempFile(const char* name, const std::string& content)
   write(p->fd(), &content[0], content.size());
   return p;
 }
+
 
 TEST(ZimFile, openingAnInvalidZimFileFails)
 {
@@ -72,6 +93,14 @@ TEST(ZimFile, openingAnInvalidZimFileFails)
       }
     }
   }
+}
+
+TEST(ZimFile, openingAnEmptyZimFileSucceeds)
+{
+  const auto tmpfile = makeTempFile("empty_zim_file", emptyZimFileContent());
+
+  zim::File zimfile(tmpfile->path());
+  ASSERT_TRUE(zimfile.verify());
 }
 
 } // unnamed namespace

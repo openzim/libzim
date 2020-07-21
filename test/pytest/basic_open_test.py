@@ -17,31 +17,23 @@ def existing_zim_file(request):
     zim_path = request.param
     return zim_path.with_suffix('.zim')
 
-def gen_empty_zim_content():
-    content = bytes()
-    content += b'ZIM\x04' # Magic
-    content += b'\x05\x00\x00\x00' # Version
-    content += bytes([0])*16 # uuid
-    content += bytes([0])*4 # article count
-    content += bytes([0])*4 # cluster count
-    content += bytes([80] + [0]*7) # url ptr pos
-    content += bytes([80] + [0]*7) # title ptr pos
-    content += bytes([80] + [0]*7) # cluster ptr pos
-    content += bytes([80] + [0]*7) # mimelist ptr pos
-    content += bytes([0])*4 # main page index
-    content += bytes([0])*4 # layout page index
-    content += bytes([80] + [0]*7) # checksum pos
-    md5sum = hashlib.md5(content).digest()
-    content += md5sum
-    return content
-
-
-@pytest.fixture
-def empty_zim_file(tmpdir):
-    filename = tmpdir/'empty.zim'
-    with open(str(filename), 'wb') as f:
-        f.write(gen_empty_zim_content())
-    return filename
+def gen_empty_zim_content():                          # CANNOT DELETE THIS YET
+    content = bytes()                                 # CANNOT DELETE THIS YET
+    content += b'ZIM\x04' # Magic                     # CANNOT DELETE THIS YET
+    content += b'\x05\x00\x00\x00' # Version          # CANNOT DELETE THIS YET
+    content += bytes([0])*16 # uuid                   # CANNOT DELETE THIS YET
+    content += bytes([0])*4 # article count           # CANNOT DELETE THIS YET
+    content += bytes([0])*4 # cluster count           # CANNOT DELETE THIS YET
+    content += bytes([80] + [0]*7) # url ptr pos      # CANNOT DELETE THIS YET
+    content += bytes([80] + [0]*7) # title ptr pos    # CANNOT DELETE THIS YET
+    content += bytes([80] + [0]*7) # cluster ptr pos  # CANNOT DELETE THIS YET
+    content += bytes([80] + [0]*7) # mimelist ptr pos # CANNOT DELETE THIS YET
+    content += bytes([0])*4 # main page index         # CANNOT DELETE THIS YET
+    content += bytes([0])*4 # layout page index       # CANNOT DELETE THIS YET
+    content += bytes([80] + [0]*7) # checksum pos     # CANNOT DELETE THIS YET
+    md5sum = hashlib.md5(content).digest()            # CANNOT DELETE THIS YET
+    content += md5sum                                 # CANNOT DELETE THIS YET
+    return content                                    # CANNOT DELETE THIS YET
 
 
 def _nasty_offset_filter(offset):
@@ -88,11 +80,6 @@ def test_open_nasty_empty_zim(nasty_empty_zim_file):
 def test_open_existing_zim(existing_zim_file):
     print("opening {}".format(existing_zim_file))
     f = libzim.File(str(existing_zim_file).encode())
-    assert f.verify()
-
-def test_open_empty_zim(empty_zim_file):
-    print("opening {}".format(empty_zim_file))
-    f = libzim.File(str(empty_zim_file).encode())
     assert f.verify()
 
 def test_verify_wrong_checksum(wrong_checksum_empty_zim_file):
