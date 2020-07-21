@@ -372,7 +372,7 @@ namespace zim
     return getDirent(getIndexByTitle(idx));
   }
 
-  article_index_t FileImpl::getIndexByTitle(article_index_t idx)
+  article_index_t FileImpl::getIndexByTitle(article_index_t idx) const
   {
     if (idx >= getCountArticles())
       throw std::out_of_range("article index out of range");
@@ -412,7 +412,7 @@ namespace zim
     return cluster;
   }
 
-  offset_t FileImpl::getOffset(const Reader* reader, size_t idx)
+  offset_t FileImpl::getOffset(const Reader* reader, size_t idx) const
   {
     offset_t offset(reader->read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
     return offset;

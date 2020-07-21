@@ -51,7 +51,7 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      offset_t getOffset(const Reader* reader, size_t idx);
+      offset_t getOffset(const Reader* reader, size_t idx) const;
 
       Cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
@@ -87,7 +87,7 @@ namespace zim
       getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(article_index_t idx);
       std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
-      article_index_t getIndexByTitle(article_index_t idx);
+      article_index_t getIndexByTitle(article_index_t idx) const;
       article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
 
 
