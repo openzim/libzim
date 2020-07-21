@@ -305,7 +305,7 @@ namespace zim
     log_trace("FileImpl::getDirent(" << idx << ')');
 
     if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
+      throw std::out_of_range("article index out of range");
 
     pthread_mutex_lock(&direntCacheLock);
     auto v = direntCache.getx(idx);
@@ -369,15 +369,13 @@ namespace zim
 
   std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(article_index_t idx)
   {
-    if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
     return getDirent(getIndexByTitle(idx));
   }
 
   article_index_t FileImpl::getIndexByTitle(article_index_t idx)
   {
     if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
+      throw std::out_of_range("article index out of range");
 
     article_index_t ret(titleIndexReader->read_uint<article_index_type>(
                             offset_t(sizeof(article_index_t)*idx.v)));
@@ -526,7 +524,7 @@ namespace zim
     {
       std::ostringstream msg;
       msg << "unknown mime type code " << idx;
-      throw std::runtime_error(msg.str());
+      throw ZimFileFormatError(msg.str());
     }
 
     return mimeTypes[idx];
