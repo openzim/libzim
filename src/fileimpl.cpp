@@ -265,34 +265,6 @@ namespace zim
     return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
   }
 
-  std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx)
-  {
-      std::call_once(orderOnceFlag, [this]
-      {
-          auto nb_articles = this->getCountArticles().v;
-          articleListByCluster.reserve(nb_articles);
-
-          for(zim::article_index_type i = 0; i < nb_articles; i++)
-          {
-              // This is the offset of the dirent in the zimFile
-              auto indexOffset = getOffset(urlPtrOffsetReader.get(), i);
-              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
-              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
-              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-                articleListByCluster.push_back(std::make_pair(0, i));
-              } else {
-                // If it is a classic article, get the clusterNumber (at offset 8)
-                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
-              }
-          }
-          std::sort(articleListByCluster.begin(), articleListByCluster.end());
-      });
-
-      if (idx >= articleListByCluster.size())
-          return std::pair<bool, article_index_t>(false, article_index_t(0));
-      return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
-  }
 
   std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
   FileImpl::getFileParts(offset_t offset, zsize_t size)
@@ -381,6 +353,35 @@ namespace zim
                             offset_t(sizeof(article_index_t)*idx.v)));
 
     return ret;
+  }
+
+  article_index_t FileImpl::getIndexByClusterOrder(article_index_t idx) const
+  {
+      std::call_once(orderOnceFlag, [this]
+      {
+          auto nb_articles = this->getCountArticles().v;
+          articleListByCluster.reserve(nb_articles);
+
+          for(zim::article_index_type i = 0; i < nb_articles; i++)
+          {
+              // This is the offset of the dirent in the zimFile
+              auto indexOffset = getOffset(urlPtrOffsetReader.get(), i);
+              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
+              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
+              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
+                articleListByCluster.push_back(std::make_pair(0, i));
+              } else {
+                // If it is a classic article, get the clusterNumber (at offset 8)
+                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
+                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+              }
+          }
+          std::sort(articleListByCluster.begin(), articleListByCluster.end());
+      });
+
+      if (idx >= getCountArticles())
+        throw std::out_of_range("article index out of range");
+      return article_index_t(articleListByCluster[idx.v].second);
   }
 
   std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)

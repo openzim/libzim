@@ -71,8 +71,8 @@ namespace zim
       MimeTypes mimeTypes;
 
       using pair_type = std::pair<cluster_index_type, article_index_type>;
-      std::vector<pair_type> articleListByCluster;
-      std::once_flag orderOnceFlag;
+      mutable std::vector<pair_type> articleListByCluster;
+      mutable std::once_flag orderOnceFlag;
 
     public:
       explicit FileImpl(const std::string& fname);
@@ -88,13 +88,13 @@ namespace zim
       std::shared_ptr<const Dirent> getDirent(article_index_t idx);
       std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
       article_index_t getIndexByTitle(article_index_t idx) const;
+      article_index_t getIndexByClusterOrder(article_index_t idx) const;
       article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
 
 
       std::pair<bool, article_index_t> findx(char ns, const std::string& url);
       std::pair<bool, article_index_t> findx(const std::string& url);
       std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
-      std::pair<bool, article_index_t> findxByClusterOrder(article_index_type idx);
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }

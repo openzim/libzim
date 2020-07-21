@@ -104,12 +104,7 @@ namespace zim
 
   Article File::getArticleByClusterOrder(article_index_type idx) const
   {
-      auto res = impl->findxByClusterOrder(idx);
-
-      if (res.first)
-        return Article(impl, res.second.v);
-      else
-        return Article();
+    return Article(impl, article_index_type(impl->getIndexByClusterOrder(article_index_t(idx))));
   }
 
   std::shared_ptr<const Cluster> File::getCluster(cluster_index_type idx) const
