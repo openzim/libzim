@@ -111,7 +111,6 @@ void ZIP_INFO::stream_end_encode(stream_t* stream) {
 }
 #endif // ENABLE_ZLIB
 
-#if defined(ENABLE_ZSTD)
 const std::string ZSTD_INFO::name = "zstd";
 
 ZSTD_INFO::stream_t::stream_t()
@@ -221,4 +220,3 @@ void ZSTD_INFO::stream_end_decode(stream_t* stream)
 void ZSTD_INFO::stream_end_encode(stream_t* stream)
 {
 }
-#endif

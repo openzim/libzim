@@ -136,9 +136,6 @@ void Cluster::compress()
 #if !defined(ENABLE_ZLIB)
     case zim::zimcompZip:
 #endif
-#if !defined(ENABLE_ZSTD)
-    case zim::zimcompZstd:
-#endif
       {
         throw std::runtime_error("Compression method not enabled in this library");
         break;
@@ -158,13 +155,11 @@ void Cluster::compress()
       }
 #endif
 
-#if defined(ENABLE_ZSTD)
     case zim::zimcompZstd:
       {
         _compress<ZSTD_INFO>();
         break;
       }
-#endif
 
     default:
       throw std::runtime_error("We cannot compress an uncompressed cluster");
