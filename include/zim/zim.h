@@ -36,6 +36,7 @@ namespace zim
 {
   // An index of an article (in a zim file)
   typedef uint32_t article_index_type;
+  typedef uint32_t entry_index_type;
 
   // An index of an cluster (in a zim file)
   typedef uint32_t cluster_index_type;

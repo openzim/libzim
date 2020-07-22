@@ -1,9 +1,12 @@
 include_directory = include_directories('.')
 
 install_headers(
+    'zim/archive.h',
     'zim/article.h',
     'zim/blob.h',
     'zim/error.h',
+    'zim/item.h',
+    'zim/entry.h',
     'zim/file.h',
     'zim/fileheader.h',
     'zim/fileiterator.h',

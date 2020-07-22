@@ -7,15 +7,18 @@ src_directory = include_directories('.')
 
 common_sources = [
 #    'config.h',
+    'archive.cpp',
     'article.cpp',
     'cluster.cpp',
     'dirent.cpp',
+    'entry.cpp',
     'envvalue.cpp',
     'file.cpp',
     'fileheader.cpp',
     'fileimpl.cpp',
     'file_compound.cpp',
     'file_reader.cpp',
+    'item.cpp',
     'blob.cpp',
     'buffer.cpp',
     'md5.c',
