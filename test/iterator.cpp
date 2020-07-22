@@ -38,7 +38,7 @@ TEST(ClusterIteratorTest, getArticleByClusterOrder)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto nbArticles = file.getCountArticles();
 
@@ -52,7 +52,7 @@ TEST(ClusterIteratorTest, getArticleByClusterOrder)
 
 TEST(getArticle, indexOutOfRange)
 {
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto nbArticles = file.getCountArticles();
 
@@ -77,7 +77,7 @@ TEST(IteratorTests, begin)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto it = file.begin();
     int i = 0;
@@ -93,7 +93,7 @@ TEST(IteratorTests, begin)
 TEST(IteratorTests, beginByTitle)
 {
     std::vector<zim::article_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto it = file.beginByTitle();
 
@@ -111,7 +111,7 @@ TEST(IteratorTests, beginByTitle)
 TEST(IteratorTests, beginByUrl)
 {
     std::vector<zim::article_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    zim::File file ("./test/wikibooks_be_all_nopic_2017-02.zim");
+    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
     auto it = file.beginByUrl();
     int i = 0;

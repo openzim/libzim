@@ -28,21 +28,44 @@ namespace zim
 namespace unittests
 {
 
+// TempFile is a utility class for working with temporary files in RAII fashion:
+//
+//   1. An empty temporary file is created (in the temporary file directory)
+//      by the constructor.
+//
+//   2. The file can be filled with data via the file descriptor (returned
+//      by the fd() member function).
+//
+//      -------------------------------------------------------------
+//      | IMPORTANT!                                                |
+//      |                                                           |
+//      | The file descriptor must NOT be close()-ed. Under Windows |
+//      | this will result in the file being removed.               |
+//      -------------------------------------------------------------
+//
+//   3. The destructor automatically (closes and) removes the file
+//
 class TempFile
 {
   int fd_;
-#ifndef _WIN32
   std::string path_;
-#endif
 public:
+  // Creates an empty file in the temporary directory (under Linux and friends
+  // its path is read from the TMPDIR environment variable or defaults to /tmp)
   explicit TempFile(const char* name);
 
   TempFile(const TempFile& ) = delete;
   void operator=(const TempFile& ) = delete;
 
+  // Closes and removes the file
   ~TempFile();
 
+  // File descriptor
+  // Important! It must NOT be close()-ed
   int fd() const { return fd_; }
+
+  // Absolute path of the file
+  std::string path() const { return path_; }
 };
 
 } // namespace unittests
