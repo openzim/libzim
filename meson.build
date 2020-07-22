@@ -31,8 +31,7 @@ conf.set('ENABLE_ZLIB', zlib_dep.found())
 
 lzma_dep = dependency('liblzma', static:static_linkage)
 
-zstd_dep = dependency('libzstd', required:false, static:static_linkage)
-conf.set('ENABLE_ZSTD', zstd_dep.found())
+zstd_dep = dependency('libzstd', static:static_linkage)
 
 if target_machine.system() == 'freebsd'
     execinfo_dep = cpp.find_library('execinfo')
@@ -43,7 +42,7 @@ xapian_dep = dependency('xapian-core',
                         static:static_linkage)
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
-pkg_requires = ['liblzma']
+pkg_requires = ['liblzma', 'libzstd']
 if build_machine.system() == 'windows'
     thread_dep = dependency('libpthreadVC2')
     pkg_requires += ['libpthreadVC2']
@@ -57,9 +56,7 @@ endif
 if zlib_dep.found()
     pkg_requires += ['zlib']
 endif
-if zstd_dep.found()
-    pkg_requires += ['libzstd']
-endif
+
 if xapian_dep.found()
     pkg_requires += ['xapian-core']
     icu_dep = dependency('icu-i18n', static:static_linkage)

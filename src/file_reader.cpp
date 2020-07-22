@@ -176,11 +176,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, Compres
 #endif
       break;
     case zimcompZstd:
-#if defined(ENABLE_ZSTD)
       uncompressed_data = uncompress<ZSTD_INFO>(this, offset, &uncompressed_size);
-#else
-      throw std::runtime_error("zstd not enabled in this library");
-#endif
       break;
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");

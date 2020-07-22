@@ -10,14 +10,10 @@
 #include "config.h"
 
 #include <lzma.h>
+#include <zstd.h>
 #if defined(ENABLE_ZLIB)
 #include <zlib.h>
 #endif
-
-#if defined(ENABLE_ZSTD)
-#include <zstd.h>
-#endif
-
 
 #include "zim_types.h"
 
@@ -68,7 +64,6 @@ struct ZIP_INFO {
 };
 #endif
 
-#if defined(ENABLE_ZSTD)
 struct ZSTD_INFO {
   struct stream_t
   {
@@ -96,8 +91,6 @@ struct ZSTD_INFO {
   static void stream_end_encode(stream_t* stream);
   static void stream_end_decode(stream_t* stream);
 };
-
-#endif
 
 
 namespace zim {

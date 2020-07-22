@@ -207,7 +207,6 @@ TEST(ClusterTest, read_write_clusterLzma)
   ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
 
-#if defined(ENABLE_ZSTD)
 TEST(ClusterTest, read_write_clusterZstd)
 {
   zim::writer::Cluster cluster(zim::zimcompZstd);
@@ -239,8 +238,6 @@ TEST(ClusterTest, read_write_clusterZstd)
   b = cluster2.getBlob(zim::blob_index_t(2));
   ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
 }
-
-#endif
 
 #if !defined(__APPLE__)
 TEST(ClusterTest, read_write_extended_cluster)
