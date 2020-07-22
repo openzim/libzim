@@ -18,7 +18,9 @@
  */
 
 #include <zim/search.h>
-#include <zim/file.h>
+#include <zim/archive.h>
+#include <zim/item.h>
+#include "fileimpl.h"
 #include "search_internal.h"
 #include "levenshtein.h"
 #include "fs.h"
@@ -136,9 +138,9 @@ class LevenshteinDistanceMaker : public Xapian::KeyMaker {
 }
 #endif
 
-Search::Search(const std::vector<const File*> zimfiles) :
+Search::Search(const std::vector<Archive>& archives) :
     internal(new InternalData),
-    zimfiles(zimfiles),
+    m_archives(archives),
     prefixes(""), query(""),
     latitude(0), longitude(0), distance(0),
     range_start(0), range_end(0),
@@ -150,7 +152,7 @@ Search::Search(const std::vector<const File*> zimfiles) :
     estimated_matches_number(0)
 {}
 
-Search::Search(const File* zimfile) :
+Search::Search(const Archive& archive) :
     internal(new InternalData),
     prefixes(""), query(""),
     latitude(0), longitude(0), distance(0),
@@ -162,12 +164,12 @@ Search::Search(const File* zimfile) :
     verbose(false),
     estimated_matches_number(0)
 {
-    zimfiles.push_back(zimfile);
+    m_archives.push_back(archive);
 }
 
 Search::Search(const Search& it) :
      internal(new InternalData),
-     zimfiles(it.zimfiles),
+     m_archives(it.m_archives),
      prefixes(it.prefixes),
      query(it.query),
      latitude(it.latitude), longitude(it.longitude), distance(it.distance),
@@ -183,7 +185,7 @@ Search::Search(const Search& it) :
 Search& Search::operator=(const Search& it)
 {
      if ( internal ) internal.reset();
-     zimfiles = it.zimfiles;
+     m_archives = it.m_archives;
      prefixes = it.prefixes;
      query = it.query;
      latitude = it.latitude;
@@ -208,8 +210,8 @@ void Search::set_verbose(bool verbose) {
     this->verbose = verbose;
 }
 
-Search& Search::add_zimfile(const File* zimfile) {
-    zimfiles.push_back(zimfile);
+Search& Search::add_archive(const Archive& archive) {
+    m_archives.push_back(archive);
     return *this;
 }
 
@@ -228,7 +230,7 @@ Search& Search::set_georange(float latitude, float longitude, float distance) {
 
 Search& Search::set_range(int start, int end) {
     this->range_start = start;
-    this->range_end = end; 
+    this->range_end = end;
     return *this;
 }
 
@@ -245,49 +247,42 @@ Search::iterator Search::begin() const {
         return new search_iterator::InternalData(this, internal->results.begin());
     }
 
-    std::vector<const File*>::const_iterator it;
     bool first = true;
     bool hasNewSuggestionFormat = false;
     std::string language;
     std::string stopwords;
-    for(it=zimfiles.begin(); it!=zimfiles.end(); it++)
+    for(auto& archive: m_archives)
     {
-        const File* zimfile = *it;
-        if (zimfile->is_multiPart()) {
-            continue;
-        }
-        zim::Article xapianArticle;
-        if (suggestion_mode) {
-          xapianArticle = zimfile->getArticle('X', "title/xapian");
-          if (xapianArticle.good()) {
+        std::string xapianPath;
+        auto impl = archive.getImpl();
+        if (suggestion_mode && impl->findx('X', "title/xapian").first) {
+            xapianPath = "X/title/xapian";
             hasNewSuggestionFormat = true;
-          }
-        }
-        if (!xapianArticle.good()) {
-          xapianArticle = zimfile->getArticle('X', "fulltext/xapian");
-        }
-        if (!xapianArticle.good()) {
-          xapianArticle = zimfile->getArticle('Z', "/fulltextIndex/xapian");
-        }
-        if (!xapianArticle.good()) {
+        } else if (impl->findx('X', "fulltext/xapian").first) {
+            xapianPath = "X/fulltext/xapian";
+        } else if (impl->findx('Z', "/fulltextIndex/xapian").first) {
+            xapianPath = "Z//fulltextIndex/xapian";
+        } else {
             continue;
         }
-        auto dbOffset = xapianArticle.getOffset();
-        if (dbOffset == 0) {
+        auto xapianEntry = archive.getEntryByPath(xapianPath);
+        auto accessInfo = xapianEntry.getItem()->getDirectAccessInformation();
+        if (accessInfo.second == 0) {
             continue;
         }
+
         DEFAULTFS::FD databasefd;
         try {
-            databasefd = DEFAULTFS::openFile(zimfile->getFilename());
+            databasefd = DEFAULTFS::openFile(accessInfo.first);
         } catch (...) {
-            std::cerr << "Impossible to open " << zimfile->getFilename() << std::endl;
+            std::cerr << "Impossible to open " << accessInfo.first << std::endl;
             std::cerr << strerror(errno) << std::endl;
             continue;
         }
-        if (!databasefd.seek(offset_t(dbOffset))) {
+        if (!databasefd.seek(offset_t(accessInfo.second))) {
             std::cerr << "Something went wrong seeking databasedb "
-                      << zimfile->getFilename() << std::endl;
-            std::cerr << "dbOffest = " << dbOffset << std::endl;
+                      << accessInfo.first << std::endl;
+            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
             continue;
         }
         Xapian::Database database;
@@ -295,8 +290,8 @@ Search::iterator Search::begin() const {
             database = Xapian::Database(databasefd.release());
         } catch( Xapian::DatabaseError& e) {
             std::cerr << "Something went wrong opening xapian database for zimfile "
-                      << zimfile->getFilename() << std::endl;
-            std::cerr << "dbOffest = " << dbOffset << std::endl;
+                      << accessInfo.first << std::endl;
+            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
             std::cerr << "error = " << e.get_msg() << std::endl;
             continue;
         }
@@ -310,10 +305,9 @@ Search::iterator Search::begin() const {
               // search query the same the database was created.
               // So we need a language, let's use the one of the zim.
               // If zimfile has no language metadata, we can't do lot more here :/
-              auto article = zimfile->getArticle('M', "Language");
-              if ( article.good() ) {
-                language = article.getData();
-              }
+              try {
+                language = archive.getMetadata("Language");
+              } catch(...) {}
             }
             stopwords = database.get_metadata("stopwords");
             this->prefixes = database.get_metadata("prefixes");

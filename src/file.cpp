@@ -182,7 +182,7 @@ namespace zim
     std::pair<bool, article_index_t> r = impl->findxByTitle(ns, title);
     return File::const_iterator(this, article_index_type(r.second), const_iterator::ArticleIterator);
   }
-
+/*
   std::unique_ptr<Search> File::search(const std::string& query, int start, int end) const {
       auto search = std::unique_ptr<Search>(new Search(this));
       search->set_query(query);
@@ -197,7 +197,7 @@ namespace zim
       search->set_suggestion_mode(true);
       return search;
   }
-
+*/
   offset_type File::getOffset(cluster_index_type clusterIdx, blob_index_type blobIdx) const
   {
     return offset_type(impl->getBlobOffset(

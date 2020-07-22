@@ -266,6 +266,13 @@ namespace zim
        */
       bool is_multiPart() const;
 
+      /** Get a shared ptr on the FileImpl
+       *
+       *  @internal
+       *  @return The shared_ptr
+       */
+      std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;
