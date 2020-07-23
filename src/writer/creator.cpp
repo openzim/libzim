@@ -251,8 +251,8 @@ namespace zim
         header->setMajorVersion(Fileheader::zimClassicMajorVersion);
       }
       header->setMinorVersion(Fileheader::zimMinorVersion);
-      header->setMainPage(std::numeric_limits<article_index_type>::max());
-      header->setLayoutPage(std::numeric_limits<article_index_type>::max());
+      header->setMainPage(std::numeric_limits<entry_index_type>::max());
+      header->setLayoutPage(std::numeric_limits<entry_index_type>::max());
 
       if (!mainUrl.empty() || !layoutUrl.empty())
       {
@@ -260,12 +260,12 @@ namespace zim
         {
           if (mainUrl == dirent->getFullUrl())
           {
-            header->setMainPage(article_index_type(dirent->getIdx()));
+            header->setMainPage(entry_index_type(dirent->getIdx()));
           }
 
           if (layoutUrl == dirent->getFullUrl())
           {
-            header->setLayoutPage(article_index_type(dirent->getIdx()));
+            header->setLayoutPage(entry_index_type(dirent->getIdx()));
           }
         }
       }
@@ -317,9 +317,9 @@ namespace zim
       header.setTitleIdxPos(lseek(out_fd, 0, SEEK_CUR));
       for (Dirent* dirent: data->titleIdx)
       {
-        char tmp_buff[sizeof(article_index_type)];
+        char tmp_buff[sizeof(entry_index_type)];
         toLittleEndian(dirent->getIdx().v, tmp_buff);
-        _write(out_fd, tmp_buff, sizeof(article_index_type));
+        _write(out_fd, tmp_buff, sizeof(entry_index_type));
       }
 
       TINFO(" write cluster offset list");
@@ -554,7 +554,7 @@ int mode =  _S_IREAD | _S_IWRITE;
     {
       // set index
       INFO("set index");
-      article_index_t idx(0);
+      entry_index_t idx(0);
       for (auto& dirent: dirents) {
         dirent->setIdx(idx);
         idx += 1;

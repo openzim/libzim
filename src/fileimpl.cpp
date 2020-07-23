@@ -158,25 +158,25 @@ namespace zim
   }
 
 
-  std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
+  std::pair<bool, entry_index_t> FileImpl::findx(char ns, const std::string& url)
   {
     log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
 
-    article_index_type l = article_index_type(getNamespaceBeginOffset(ns));
-    article_index_type u = article_index_type(getNamespaceEndOffset(ns));
+    entry_index_type l = entry_index_type(getNamespaceBeginOffset(ns));
+    entry_index_type u = entry_index_type(getNamespaceEndOffset(ns));
 
     if (l == u)
     {
       log_debug("namespace " << ns << " not found");
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
+      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
     }
 
     unsigned itcount = 0;
     while (u - l > 1)
     {
       ++itcount;
-      article_index_type p = l + (u - l) / 2;
-      auto d = getDirent(article_index_t(p));
+      entry_index_type p = l + (u - l) / 2;
+      auto d = getDirent(entry_index_t(p));
 
       int c = ns < d->getNamespace() ? -1
             : ns > d->getNamespace() ? 1
@@ -189,53 +189,53 @@ namespace zim
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, article_index_t>(true, article_index_t(p));
+        return std::pair<bool, entry_index_t>(true, entry_index_t(p));
       }
     }
 
-    auto d = getDirent(article_index_t(l));
+    auto d = getDirent(entry_index_t(l));
     int c = url.compare(d->getUrl());
 
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, article_index_t>(true, article_index_t(l));
+      return std::pair<bool, entry_index_t>(true, entry_index_t(l));
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
-    return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
+    return std::pair<bool, entry_index_t>(false, entry_index_t(c < 0 ? l : u));
   }
 
-  std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)
+  std::pair<bool, entry_index_t> FileImpl::findx(const std::string& url)
   {
     size_t start = 0;
     if (url[0] == '/') {
       start = 1;
     }
     if (url.size() < (2+start) || url[1+start] != '/')
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
+      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
     return findx(url[start], url.substr(2+start));
   }
 
-  std::pair<bool, article_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
+  std::pair<bool, entry_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
-    article_index_type l = article_index_type(getNamespaceBeginOffset(ns));
-    article_index_type u = article_index_type(getNamespaceEndOffset(ns));
+    entry_index_type l = entry_index_type(getNamespaceBeginOffset(ns));
+    entry_index_type u = entry_index_type(getNamespaceEndOffset(ns));
 
     if (l == u)
     {
       log_debug("namespace " << ns << " not found");
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
+      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
     }
 
     unsigned itcount = 0;
     while (u - l > 1)
     {
       ++itcount;
-      article_index_type p = l + (u - l) / 2;
-      auto d = getDirentByTitle(article_index_t(p));
+      entry_index_type p = l + (u - l) / 2;
+      auto d = getDirentByTitle(entry_index_t(p));
 
       int c = ns < d->getNamespace() ? -1
             : ns > d->getNamespace() ? 1
@@ -248,21 +248,21 @@ namespace zim
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, article_index_t>(true, article_index_t(p));
+        return std::pair<bool, entry_index_t>(true, entry_index_t(p));
       }
     }
 
-    auto d = getDirentByTitle(article_index_t(l));
+    auto d = getDirentByTitle(entry_index_t(l));
     int c = title.compare(d->getTitle());
 
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, article_index_t>(true, article_index_t(l));
+      return std::pair<bool, entry_index_t>(true, entry_index_t(l));
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
+    return std::pair<bool, entry_index_t>(false, entry_index_t(c < 0 ? l : u));
   }
 
 
@@ -272,7 +272,7 @@ namespace zim
     return zimFile->locate(offset, size);
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirent(article_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx)
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
 
@@ -339,30 +339,30 @@ namespace zim
     return dirent;
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(article_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(entry_index_t idx)
   {
     return getDirent(getIndexByTitle(idx));
   }
 
-  article_index_t FileImpl::getIndexByTitle(article_index_t idx) const
+  entry_index_t FileImpl::getIndexByTitle(entry_index_t idx) const
   {
     if (idx >= getCountArticles())
       throw std::out_of_range("entry index out of range");
 
-    article_index_t ret(titleIndexReader->read_uint<article_index_type>(
-                            offset_t(sizeof(article_index_t)*idx.v)));
+    entry_index_t ret(titleIndexReader->read_uint<entry_index_type>(
+                            offset_t(sizeof(entry_index_t)*idx.v)));
 
     return ret;
   }
 
-  article_index_t FileImpl::getIndexByClusterOrder(article_index_t idx) const
+  entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
   {
       std::call_once(orderOnceFlag, [this]
       {
           auto nb_articles = this->getCountArticles().v;
           articleListByCluster.reserve(nb_articles);
 
-          for(zim::article_index_type i = 0; i < nb_articles; i++)
+          for(zim::entry_index_type i = 0; i < nb_articles; i++)
           {
               // This is the offset of the dirent in the zimFile
               auto indexOffset = getOffset(urlPtrOffsetReader.get(), i);
@@ -381,7 +381,7 @@ namespace zim
 
       if (idx >= getCountArticles())
         throw std::out_of_range("entry index out of range");
-      return article_index_t(articleListByCluster[idx.v].second);
+      return entry_index_t(articleListByCluster[idx.v].second);
   }
 
   std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
@@ -432,7 +432,7 @@ namespace zim
     return getClusterOffset(clusterIdx) + offset_t(1) + cluster->getBlobOffset(blobIdx);
   }
 
-  article_index_t FileImpl::getNamespaceBeginOffset(char ch)
+  entry_index_t FileImpl::getNamespaceBeginOffset(char ch)
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
 
@@ -440,26 +440,26 @@ namespace zim
     NamespaceCache::const_iterator it = namespaceBeginCache.find(ch);
     if (it != namespaceBeginCache.end())
     {
-      article_index_t ret(it->second);
+      entry_index_t ret(it->second);
       pthread_mutex_unlock(&namespaceBeginLock);
       return ret;
     }
     pthread_mutex_unlock(&namespaceBeginLock);
 
-    article_index_type lower = 0;
-    article_index_type upper = article_index_type(getCountArticles());
-    auto d = getDirent(article_index_t(0));
+    entry_index_type lower = 0;
+    entry_index_type upper = entry_index_type(getCountArticles());
+    auto d = getDirent(entry_index_t(0));
     while (upper - lower > 1)
     {
-      article_index_type m = lower + (upper - lower) / 2;
-      auto d = getDirent(article_index_t(m));
+      entry_index_type m = lower + (upper - lower) / 2;
+      auto d = getDirent(entry_index_t(m));
       if (d->getNamespace() >= ch)
         upper = m;
       else
         lower = m;
     }
 
-    article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
+    entry_index_t ret = entry_index_t(d->getNamespace() < ch ? upper : lower);
     pthread_mutex_lock(&namespaceBeginLock);
     namespaceBeginCache[ch] = ret;
     pthread_mutex_unlock(&namespaceBeginLock);
@@ -467,7 +467,7 @@ namespace zim
     return ret;
   }
 
-  article_index_t FileImpl::getNamespaceEndOffset(char ch)
+  entry_index_t FileImpl::getNamespaceEndOffset(char ch)
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
 
@@ -475,19 +475,19 @@ namespace zim
     NamespaceCache::const_iterator it = namespaceEndCache.find(ch);
     if (it != namespaceEndCache.end())
     {
-      article_index_t ret = it->second;
+      entry_index_t ret = it->second;
       pthread_mutex_unlock(&namespaceEndLock);
       return ret;
     }
     pthread_mutex_unlock(&namespaceEndLock);
 
-    article_index_type lower = 0;
-    article_index_type upper = article_index_type(getCountArticles());
+    entry_index_type lower = 0;
+    entry_index_type upper = entry_index_type(getCountArticles());
     log_debug("namespace " << ch << " lower=" << lower << " upper=" << upper);
     while (upper - lower > 1)
     {
-      article_index_type m = lower + (upper - lower) / 2;
-      auto d = getDirent(article_index_t(m));
+      entry_index_type m = lower + (upper - lower) / 2;
+      auto d = getDirent(entry_index_t(m));
       if (d->getNamespace() > ch)
         upper = m;
       else
@@ -496,20 +496,20 @@ namespace zim
     }
 
     pthread_mutex_lock(&namespaceEndLock);
-    namespaceEndCache[ch] = article_index_t(upper);
+    namespaceEndCache[ch] = entry_index_t(upper);
     pthread_mutex_unlock(&namespaceEndLock);
 
-    return article_index_t(upper);
+    return entry_index_t(upper);
   }
 
   std::string FileImpl::getNamespaces()
   {
     std::string namespaces;
 
-    auto d = getDirent(article_index_t(0));
+    auto d = getDirent(entry_index_t(0));
     namespaces = d->getNamespace();
 
-    article_index_t idx(0);
+    entry_index_t idx(0);
     while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
     {
       d = getDirent(idx);

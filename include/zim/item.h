@@ -32,7 +32,7 @@ namespace zim
   class Item
   {
     public:
-      explicit Item(std::shared_ptr<FileImpl> file_, article_index_type idx_);
+      explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
 
       std::string getTitle() const;
       std::string getPath() const;

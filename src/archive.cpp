@@ -43,9 +43,9 @@ namespace zim
     return m_impl->getFilesize().v;
   }
 
-  article_index_type Archive::getEntryCount() const
+  entry_index_type Archive::getEntryCount() const
   {
-    return article_index_type(m_impl->getCountArticles());
+    return entry_index_type(m_impl->getCountArticles());
   }
 
   Uuid Archive::getUuid() const
@@ -101,7 +101,7 @@ namespace zim
 
   Entry Archive::getEntryByTitle(entry_index_type idx) const
   {
-    return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(article_index_t(idx))));
+    return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(entry_index_t(idx))));
   }
 
   Entry Archive::getEntryByTitle(const std::string& title) const
@@ -115,9 +115,9 @@ namespace zim
     throw EntryNotFound("Cannot find entry");
   }
 
-  Entry Archive::getEntryByClusterOrder(article_index_type idx) const
+  Entry Archive::getEntryByClusterOrder(entry_index_type idx) const
   {
-     return Entry(m_impl, entry_index_type(m_impl->getIndexByClusterOrder(article_index_t(idx))));
+     return Entry(m_impl, entry_index_type(m_impl->getIndexByClusterOrder(entry_index_t(idx))));
   }
 
   Entry Archive::getMainEntry() const {
@@ -205,14 +205,14 @@ namespace zim
   entry_index_type
   _toPathOrder<EntryOrder::titleOrder>(const FileImpl& impl, entry_index_type idx)
   {
-    return impl.getIndexByTitle(article_index_t(idx)).v;
+    return impl.getIndexByTitle(entry_index_t(idx)).v;
   }
 
   template<>
   entry_index_type
   _toPathOrder<EntryOrder::efficientOrder>(const FileImpl& impl, entry_index_type idx)
   {
-    return impl.getIndexByClusterOrder(article_index_t(idx)).v;
+    return impl.getIndexByClusterOrder(entry_index_t(idx)).v;
   }
 
 }

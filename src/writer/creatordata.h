@@ -121,12 +121,12 @@ namespace zim
 
         // Some stats
         bool verbose;
-        article_index_type nbArticles;
-        article_index_type nbRedirectArticles;
-        article_index_type nbCompArticles;
-        article_index_type nbUnCompArticles;
-        article_index_type nbFileArticles;
-        article_index_type nbIndexArticles;
+        entry_index_type nbArticles;
+        entry_index_type nbRedirectArticles;
+        entry_index_type nbCompArticles;
+        entry_index_type nbUnCompArticles;
+        entry_index_type nbFileArticles;
+        entry_index_type nbIndexArticles;
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
@@ -135,8 +135,8 @@ namespace zim
         cluster_index_t clusterCount() const
         { return cluster_index_t(clustersList.size()); }
 
-        article_index_t articleCount() const
-        { return article_index_t(dirents.size()); }
+        entry_index_t articleCount() const
+        { return entry_index_t(dirents.size()); }
 
         size_t getMinChunkSize()    { return minChunkSize; }
         void setMinChunkSize(size_t s)   { minChunkSize = s; }

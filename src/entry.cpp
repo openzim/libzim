@@ -34,7 +34,7 @@ using namespace zim;
 Entry::Entry(std::shared_ptr<FileImpl> file, entry_index_type idx)
   : m_file(file),
     m_idx(idx),
-    m_dirent(file->getDirent(article_index_t(idx)))
+    m_dirent(file->getDirent(entry_index_t(idx)))
 {}
 
 std::string Entry::getTitle() const
