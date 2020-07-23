@@ -86,13 +86,15 @@ namespace zim
   {
     log_trace("File::getArticle('" << path << ')');
     auto r = m_impl->findx(path);
-    if (!r.first) {
-      auto fallback_path = "A/" + path;
-      r = m_impl->findx(fallback_path);
-    }
-
     if (r.first) {
       return Entry(m_impl, entry_index_type(r.second));
+    }
+    for (auto ns:{'A', 'I', 'J', '-'}) {
+      auto fallback_path = std::string(1, ns) + "/" + path;
+      r = m_impl->findx(fallback_path);
+      if (r.first) {
+        return Entry(m_impl, entry_index_type(r.second));
+      }
     }
     throw EntryNotFound("Cannot find entry");
   }
@@ -104,10 +106,12 @@ namespace zim
 
   Entry Archive::getEntryByTitle(const std::string& title) const
   {
-    log_trace("File::getArticleByTitle('" << 'A' << "', \"" << title << ')');
-    auto r = m_impl->findxByTitle('A', title);
-    if (r.first)
-      return getEntryByTitle(entry_index_type(r.second));
+    for (auto ns:{'A', 'I', 'J', '-'}) {
+      log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
+      auto r = m_impl->findxByTitle(ns, title);
+      if (r.first)
+        return getEntryByTitle(entry_index_type(r.second));
+    }
     throw EntryNotFound("Cannot find entry");
   }
 
@@ -134,14 +138,23 @@ namespace zim
     if (r.first) {
       return iterator<EntryOrder::pathOrder>(m_impl, r.second.v);
     }
+    for(auto ns: {'A', 'I', 'J', '-'}) {
+      auto fallback_path = std::string(1, ns) + "/" + path;
+      auto r = m_impl->findx(fallback_path);
+      if (r.first) {
+        return iterator<EntryOrder::pathOrder>(m_impl, r.second.v);
+      }
+    }
     return end<EntryOrder::pathOrder>();
   }
 
   Archive::iterator<EntryOrder::titleOrder> Archive::findByTitle(const std::string& title) const
   {
-    auto r = m_impl->findxByTitle('A', title);
-    if (r.first) {
-      return iterator<EntryOrder::titleOrder>(m_impl, entry_index_type(r.second));
+    for(auto ns:{'A', 'I', 'J', '-'}) {
+      auto r = m_impl->findxByTitle(ns, title);
+      if (r.first) {
+        return iterator<EntryOrder::titleOrder>(m_impl, entry_index_type(r.second));
+      }
     }
     return end<EntryOrder::titleOrder>();
   }

@@ -18,9 +18,8 @@
  */
 
 #include <zim/zim.h>
-#include <zim/file.h>
+#include <zim/archive.h>
 #include <zim/error.h>
-#include <zim/fileiterator.h>
 
 #include "gtest/gtest.h"
 
@@ -28,9 +27,9 @@ namespace
 {
 
 
-TEST(ClusterIteratorTest, getArticleByClusterOrder)
+TEST(ClusterIteratorTest, getEntryByClusterOrder)
 {
-    std::vector<zim::article_index_type> expected = {
+    std::vector<zim::entry_index_type> expected = {
 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
@@ -38,29 +37,29 @@ TEST(ClusterIteratorTest, getArticleByClusterOrder)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto nbArticles = file.getCountArticles();
+    auto nbEntries = archive.getEntryCount();
 
-    ASSERT_EQ(nbArticles, expected.size());
+    ASSERT_EQ(nbEntries, expected.size());
 
-    for (auto i = 0u; i < nbArticles; i++)
+    for (auto i = 0u; i < nbEntries; i++)
     {
-        EXPECT_EQ(file.getArticleByClusterOrder(i).getIndex(), expected[i]);
+        EXPECT_EQ(archive.getEntryByClusterOrder(i).getIndex(), expected[i]);
     }
 }
 
-TEST(getArticle, indexOutOfRange)
+TEST(getEntry, indexOutOfRange)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto nbArticles = file.getCountArticles();
+    auto nbEntries = archive.getEntryCount();
 
     try {
-        file.getArticle(nbArticles);
+        archive.getEntryByPath(nbEntries);
         FAIL() << "Should throw exception\n";
-    }  catch (zim::ZimFileFormatError &e) {
-        ASSERT_EQ(e.what(), std::string("article index out of range"));
+    }  catch (std::out_of_range& e) {
+        ASSERT_EQ(e.what(), std::string("entry index out of range"));
     }  catch(...) {
         FAIL() << "Should throw exception\n";
     }
@@ -69,7 +68,7 @@ TEST(getArticle, indexOutOfRange)
 // ByTitle
 TEST(IteratorTests, begin)
 {
-    std::vector<zim::article_index_type> expected = {
+    std::vector<zim::entry_index_type> expected = {
 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
@@ -77,11 +76,11 @@ TEST(IteratorTests, begin)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = file.begin();
+    auto it = archive.begin<zim::EntryOrder::efficientOrder>();
     int i = 0;
-    while (it != file.end())
+    while (it != archive.end<zim::EntryOrder::efficientOrder>())
     {
         EXPECT_EQ(it->getIndex(), expected[i]);
         it++; i++;
@@ -92,10 +91,10 @@ TEST(IteratorTests, begin)
 // ByTitle
 TEST(IteratorTests, beginByTitle)
 {
-    std::vector<zim::article_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = file.beginByTitle();
+    auto it = archive.begin<zim::EntryOrder::titleOrder>();
 
     int i = 0;
     while (i < 10)
@@ -108,12 +107,12 @@ TEST(IteratorTests, beginByTitle)
 
 
 // ByUrl
-TEST(IteratorTests, beginByUrl)
+TEST(IteratorTests, beginByPath)
 {
-    std::vector<zim::article_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = file.beginByUrl();
+    auto it = archive.begin<zim::EntryOrder::pathOrder>();
     int i = 0;
     while (i < 10)
     {

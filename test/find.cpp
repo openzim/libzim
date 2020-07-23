@@ -18,9 +18,8 @@
  */
 
 #include <zim/zim.h>
-#include <zim/file.h>
+#include <zim/archive.h>
 #include <zim/error.h>
-#include <zim/fileiterator.h>
 
 #include "gtest/gtest.h"
 
@@ -31,36 +30,23 @@ namespace
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.findByTitle('U', "unkownTitle");
-    auto article2 = file.findByTitle('A', "unkownTitle");
-    ASSERT_EQ(article1->getIndex(), 0);
-    ASSERT_EQ(article2->getIndex(), 7);
+    auto it = archive.findByTitle("unkownTitle");
+    ASSERT_EQ(it, archive.end<zim::EntryOrder::titleOrder>());
 }
 
-// By URL
-TEST(FindTests, NotFoundByURL)
+// By Path
+TEST(FindTests, NotFoundByPath)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.find('U', "unkwonUrl");
-    auto article2 = file.find('A', "unkwonUrl");
-    ASSERT_EQ(article1->getIndex(), 0);
-    ASSERT_EQ(article2->getIndex(), 7);
-}
-
-// By URL (no ns)
-TEST(FindTests, NotFoundByURLDefaultNS)
-{
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
-
-    auto article0 = file.find("unkwonUrl");
-    auto article1 = file.find("U/unkwonUrl");
-    auto article2 = file.find("A/unkwonUrl");
-    ASSERT_EQ(article0->getIndex(), 0);
-    ASSERT_EQ(article1->getIndex(), 0);
-    ASSERT_EQ(article2->getIndex(), 7);
+    auto it0 = archive.findByPath("unkwonUrl");
+    auto it1 = archive.findByPath("U/unkwonUrl");
+    auto it2 = archive.findByPath("A/unkwonUrl");
+    ASSERT_EQ(it0, archive.end<zim::EntryOrder::pathOrder>());
+    ASSERT_EQ(it1, archive.end<zim::EntryOrder::pathOrder>());
+    ASSERT_EQ(it2, archive.end<zim::EntryOrder::pathOrder>());
 }
 
 // Found cases
@@ -68,36 +54,36 @@ TEST(FindTests, NotFoundByURLDefaultNS)
 // ByTitle
 TEST(FindTests, ByTitle)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.findByTitle('-', "j/body.js");
-    auto article2 = file.findByTitle('A', "index.html");
-    ASSERT_EQ(article1.getIndex(), 1);
-    ASSERT_EQ(article2->getIndex(), 7);
+    auto it1 = archive.findByTitle("j/body.js");
+    auto it2 = archive.findByTitle("Main Page");
+    ASSERT_EQ(it1->getIndex(), 1);
+    ASSERT_EQ(it2->getIndex(), 5);
 }
 
-// By URL
-TEST(FindTests, ByURL)
+// By Path (compatibility)
+TEST(FindTests, ByPathNoNS)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.find('-', "j/body.js");
-    auto article2 = file.find('I', "m/115a35549794e50dcd03e60ef1a1ae24.png");
-    ASSERT_EQ(article1->getIndex(), 1);
-    ASSERT_EQ(article2->getIndex(), 76);
+    auto it1 = archive.findByPath("j/body.js");
+    auto it2 = archive.findByPath("m/115a35549794e50dcd03e60ef1a1ae24.png");
+    ASSERT_EQ(it1->getIndex(), 1);
+    ASSERT_EQ(it2->getIndex(), 76);
 }
 
-// By URL (no ns)
-TEST(FindTests, ByURLDefaultNS)
+// By Path
+TEST(FindTests, ByPath)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article0 = file.find("A/Main_Page.html");
-    auto article1 = file.find("I/s/ajax-loader.gif");
-    auto article2 = file.find("-/j/head.js");
-    ASSERT_EQ(article0->getIndex(), 5);
-    ASSERT_EQ(article1->getIndex(), 80);
-    ASSERT_EQ(article2->getIndex(), 2);
+    auto it0 = archive.findByPath("A/Main_Page.html");
+    auto it1 = archive.findByPath("I/s/ajax-loader.gif");
+    auto it2 = archive.findByPath("-/j/head.js");
+    ASSERT_EQ(it0->getIndex(), 5);
+    ASSERT_EQ(it1->getIndex(), 80);
+    ASSERT_EQ(it2->getIndex(), 2);
 }
 
 } // namespace

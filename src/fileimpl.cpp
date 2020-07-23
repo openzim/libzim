@@ -277,7 +277,7 @@ namespace zim
     log_trace("FileImpl::getDirent(" << idx << ')');
 
     if (idx >= getCountArticles())
-      throw std::out_of_range("article index out of range");
+      throw std::out_of_range("entry index out of range");
 
     pthread_mutex_lock(&direntCacheLock);
     auto v = direntCache.getx(idx);
@@ -347,7 +347,7 @@ namespace zim
   article_index_t FileImpl::getIndexByTitle(article_index_t idx) const
   {
     if (idx >= getCountArticles())
-      throw std::out_of_range("article index out of range");
+      throw std::out_of_range("entry index out of range");
 
     article_index_t ret(titleIndexReader->read_uint<article_index_type>(
                             offset_t(sizeof(article_index_t)*idx.v)));
@@ -380,7 +380,7 @@ namespace zim
       });
 
       if (idx >= getCountArticles())
-        throw std::out_of_range("article index out of range");
+        throw std::out_of_range("entry index out of range");
       return article_index_t(articleListByCluster[idx.v].second);
   }
 

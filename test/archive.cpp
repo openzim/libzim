@@ -17,8 +17,10 @@
  *
  */
 
+#define ZIM_PRIVATE
 #include <zim/zim.h>
-#include <zim/file.h>
+#include <zim/archive.h>
+#include <zim/item.h>
 
 #include "tempfile.h"
 #include "../src/fs.h"
@@ -47,7 +49,7 @@ std::ostream& operator<<(std::ostream& out, const TestContext& ctx)
 }
 
 std::string
-emptyZimFileContent()
+emptyZimArchiveContent()
 {
   std::string content;
   content += "ZIM\x04"; // Magic
@@ -75,7 +77,7 @@ makeTempFile(const char* name, const std::string& content)
 }
 
 
-TEST(ZimFile, openingAnInvalidZimFileFails)
+TEST(ZimArchive, openingAnInvalidZimArchiveFails)
 {
   const char* const prefixes[] = { "ZIM\x04", "" };
   const unsigned char bytes[] = {0x00, 0x01, 0x11, 0x30, 0xFF};
@@ -90,18 +92,18 @@ TEST(ZimFile, openingAnInvalidZimFileFails)
         const std::string zimfileContent = prefix + std::string(count, byte);
         const auto tmpfile = makeTempFile("invalid_zim_file", zimfileContent);
 
-        EXPECT_THROW( zim::File(tmpfile->path()), std::runtime_error ) << ctx;
+        EXPECT_THROW( zim::Archive(tmpfile->path()), std::runtime_error ) << ctx;
       }
     }
   }
 }
 
-TEST(ZimFile, openingAnEmptyZimFileSucceeds)
+TEST(ZimArchive, openingAnEmptyZimArchiveSucceeds)
 {
-  const auto tmpfile = makeTempFile("empty_zim_file", emptyZimFileContent());
+  const auto tmpfile = makeTempFile("empty_zim_file", emptyZimArchiveContent());
 
-  zim::File zimfile(tmpfile->path());
-  ASSERT_TRUE(zimfile.verify());
+  zim::Archive archive(tmpfile->path());
+  ASSERT_TRUE(archive.check());
 }
 
 bool isNastyOffset(int offset) {
@@ -114,31 +116,31 @@ bool isNastyOffset(int offset) {
   return true;
 }
 
-TEST(ZimFile, nastyEmptyZimFile)
+TEST(ZimArchive, nastyEmptyZimArchive)
 {
-  const std::string correctContent = emptyZimFileContent();
+  const std::string correctContent = emptyZimArchiveContent();
   for ( int offset = 0; offset < 80; ++offset ) {
     if ( isNastyOffset(offset) ) {
       const TestContext ctx{ {"offset", std::to_string(offset) } };
       std::string nastyContent(correctContent);
       nastyContent[offset] = '\xff';
       const auto tmpfile = makeTempFile("wrong_checksum_empty_zim_file", nastyContent);
-      EXPECT_THROW( zim::File(tmpfile->path()), std::runtime_error ) << ctx;
+      EXPECT_THROW( zim::Archive(tmpfile->path()), std::runtime_error ) << ctx;
     }
   }
 }
 
-TEST(ZimFile, wrongChecksumInEmptyZimFile)
+TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
 {
-  std::string zimfileContent = emptyZimFileContent();
+  std::string zimfileContent = emptyZimArchiveContent();
   zimfileContent[85] = '\xff';
   const auto tmpfile = makeTempFile("wrong_checksum_empty_zim_file", zimfileContent);
 
-  zim::File zimfile(tmpfile->path());
-  ASSERT_FALSE(zimfile.verify());
+  zim::Archive archive(tmpfile->path());
+  ASSERT_FALSE(archive.check());
 }
 
-TEST(ZimFile, openRealZimFile)
+TEST(ZimArchive, openRealZimArchive)
 {
   const char* const zimfiles[] = {
     "wikibooks_be_all_nopic_2017-02.zim",
@@ -149,56 +151,67 @@ TEST(ZimFile, openRealZimFile)
   for ( const std::string fname : zimfiles ) {
     const std::string path = zim::DEFAULTFS::join("data", fname);
     const TestContext ctx{ {"path", path } };
-    std::unique_ptr<zim::File> zimfile;
-    EXPECT_NO_THROW( zimfile.reset(new zim::File(path)) ) << ctx;
-    if ( zimfile ) {
-      EXPECT_TRUE( zimfile->verify() ) << ctx;
+    std::unique_ptr<zim::Archive> archive;
+    EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
+    if ( archive ) {
+      EXPECT_TRUE( archive->check() ) << ctx;
     }
   }
 }
 
-TEST(ZimFile, multipart)
+TEST(ZimArchive, multipart)
 {
-  const zim::File zimfile1("./data/wikibooks_be_all_nopic_2017-02.zim");
-  const zim::File zimfile2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
-  ASSERT_FALSE(zimfile1.is_multiPart());
-  ASSERT_TRUE (zimfile2.is_multiPart());
+  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const zim::Archive archive2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
+  ASSERT_FALSE(archive1.is_multiPart());
+  ASSERT_TRUE (archive2.is_multiPart());
 
-  EXPECT_EQ(zimfile1.getFilesize(), zimfile2.getFilesize());
-  EXPECT_EQ(zimfile1.getCountClusters(), zimfile2.getCountClusters());
-  EXPECT_EQ(zimfile1.getNamespaces(), zimfile2.getNamespaces());
+  EXPECT_EQ(archive1.getFilesize(), archive2.getFilesize());
+  EXPECT_EQ(archive1.getClusterCount(), archive2.getClusterCount());
 
-  ASSERT_EQ(zimfile1.getCountArticles(), zimfile2.getCountArticles());
+  ASSERT_EQ(archive1.getEntryCount(), archive2.getEntryCount());
 
-  ASSERT_EQ(118, zimfile1.getCountArticles()); // ==> below loop is not a noop
-  for ( zim::article_index_type i = 0; i < zimfile1.getCountArticles(); ++i ) {
-    zim::Article article1 = zimfile1.getArticle(i);
-    zim::Article article2 = zimfile2.getArticle(i);
-    ASSERT_EQ(i, article1.getIndex());
-    ASSERT_EQ(i, article2.getIndex());
-    ASSERT_EQ(article1.getClusterNumber(), article2.getClusterNumber());
-    ASSERT_EQ(article1.getOffset(), article2.getOffset());
-    ASSERT_EQ(article1.getParameter(), article2.getParameter());
-    ASSERT_EQ(article1.getTitle(), article2.getTitle());
-    ASSERT_EQ(article1.getUrl(), article2.getUrl());
-    ASSERT_EQ(article1.getLongUrl(), article2.getLongUrl());
-    ASSERT_EQ(article1.getLibraryMimeType(), article2.getLibraryMimeType());
-    ASSERT_EQ(article1.isRedirect(), article2.isRedirect());
-    ASSERT_EQ(article1.isLinktarget(), article2.isLinktarget());
-    ASSERT_EQ(article1.isDeleted(), article2.isDeleted());
-    ASSERT_EQ(article1.getNamespace(), article2.getNamespace());
-    ASSERT_EQ(article1.getArticleSize(), article2.getArticleSize());
-    ASSERT_EQ(article1.getData(), article2.getData());
-    if ( !article1.isRedirect() && ! article1.isLinktarget() && !article1.isLinktarget() ) {
-      ASSERT_EQ(article1.getPage(true, 5), article2.getPage(true, 5));
-      ASSERT_EQ(article1.getPage(false, 5), article2.getPage(false, 5));
+  ASSERT_EQ(118, archive1.getEntryCount()); // ==> below loop is not a noop
+  {
+    auto range1 = archive1.iterEfficient();
+    auto range2 = archive2.iterEfficient();
+    for ( auto it1=range1.begin(), it2=range2.begin(); it1!=range1.end() && it2!=range2.end(); ++it1, ++it2 ) {
+      auto& entry1 = *it1;
+      auto& entry2 = *it2;
+      ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
+      ASSERT_EQ(entry1.getPath(), entry2.getPath());
+      ASSERT_EQ(entry1.getTitle(), entry2.getTitle());
+      ASSERT_EQ(entry1.isRedirect(), entry2.isRedirect());
+      if (!entry1.isRedirect()) {
+        auto item1 = entry1.getItem();
+        auto item2 = entry2.getItem();
+        ASSERT_EQ(item1.getMimetype(), item2.getMimetype());
+        ASSERT_EQ(item1.getSize(), item2.getSize());
+        ASSERT_EQ(item1.getData(), item2.getData());
+      }
     }
-    ASSERT_EQ(zimfile1.getArticleByTitle(i).getIndex(),
-              zimfile2.getArticleByTitle(i).getIndex()
-    );
-    ASSERT_EQ(zimfile1.getArticleByClusterOrder(i).getIndex(),
-              zimfile2.getArticleByClusterOrder(i).getIndex()
-    );
+  }
+
+  {
+    auto range1 = archive1.iterByPath();
+    auto range2 = archive2.iterByPath();
+    for ( auto it1=range1.begin(), it2=range2.begin(); it1!=range1.end() && it2!=range2.end(); ++it1, ++it2 ) {
+      auto& entry1 = *it1;
+      auto& entry2 = *it2;
+
+      ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
+    }
+  }
+
+  {
+    auto range1 = archive1.iterByTitle();
+    auto range2 = archive2.iterByTitle();
+    for ( auto it1=range1.begin(), it2=range2.begin(); it1!=range1.end() && it2!=range2.end(); ++it1, ++it2 ) {
+      auto& entry1 = *it1;
+      auto& entry2 = *it2;
+
+      ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
+    }
   }
 }
 
