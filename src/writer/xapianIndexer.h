@@ -20,7 +20,6 @@
 #ifndef LIBZIM_WRITER_XAPIANINDEXER_H
 #define LIBZIM_WRITER_XAPIANINDEXER_H
 
-#include <zim/article.h>
 #include <zim/writer/article.h>
 
 #include <unicode/locid.h>
