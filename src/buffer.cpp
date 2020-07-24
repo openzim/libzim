@@ -110,6 +110,13 @@ MMapBuffer::~MMapBuffer()
   munmap(_data, size_.v + _offset.v);
 }
 
+const char*
+MMapBuffer::dataImpl(offset_t offset) const
+{
+  offset += _offset;
+  return _data + offset.v;
+}
+
 #endif
 
 } //zim

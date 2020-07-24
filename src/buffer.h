@@ -104,10 +104,7 @@ class MMapBuffer : public Buffer {
     MMapBuffer(int fd, offset_t offset, zsize_t size);
     ~MMapBuffer();
 
-    const char* dataImpl(offset_t offset) const {
-      offset += _offset;
-      return _data + offset.v;
-    }
+    const char* dataImpl(offset_t offset) const;
 
   private:
     offset_t _offset;
