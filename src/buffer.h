@@ -66,25 +66,29 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 };
 
 
-template<bool CLEAN_AT_END>
-class MemoryBuffer : public Buffer {
+class MemoryRegionBuffer : public Buffer {
   public:
-    MemoryBuffer(const char* buffer, zsize_t size)
+    MemoryRegionBuffer(const char* buffer, zsize_t size)
       : Buffer(size),
         _data(buffer)
     {}
 
-    virtual ~MemoryBuffer() {
-        if ( CLEAN_AT_END ) {
-          delete [] _data;
-        }
-    }
-
     const char* dataImpl(offset_t offset) const {
         return _data + offset.v;
     }
-  private:
+  protected:
     const char* _data;
+};
+
+class AllocatedMemoryBuffer : public MemoryRegionBuffer {
+  public:
+    AllocatedMemoryBuffer(const char* buffer, zsize_t size)
+      : MemoryRegionBuffer(buffer, size)
+    {}
+
+    virtual ~AllocatedMemoryBuffer() {
+        delete [] _data;
+    }
 };
 
 

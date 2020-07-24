@@ -54,7 +54,7 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
   lseek(tmp_fd, 0, SEEK_SET);
   if (read(tmp_fd, content, size) == -1)
     throw std::runtime_error("Cannot read");
-  return std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  return std::shared_ptr<zim::Buffer>(new zim::AllocatedMemoryBuffer(content, zim::zsize_t(size)));
 }
 
 TEST(HeaderTest, read_write_header)

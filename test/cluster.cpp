@@ -75,7 +75,7 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   if (read(tmp_fd, content, size) == -1)
     throw std::runtime_error("Cannot read");
   return std::shared_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+      new zim::AllocatedMemoryBuffer(content, zim::zsize_t(size)));
 }
 
 TEST(ClusterTest, create_cluster)

@@ -58,7 +58,7 @@ std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
     throw std::runtime_error("Cannot read");
 
   return std::unique_ptr<zim::Buffer>(
-      new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+      new zim::AllocatedMemoryBuffer(content, zim::zsize_t(size)));
 }
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
