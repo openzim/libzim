@@ -32,8 +32,6 @@
 
 namespace zim {
 
-class MMapException : std::exception {};
-
 class Buffer : public std::enable_shared_from_this<Buffer> {
   public:
     explicit Buffer(zsize_t size)
@@ -85,6 +83,8 @@ class MemoryBuffer : public Buffer {
 
 
 #ifdef ENABLE_USE_MMAP
+class MMapException : std::exception {};
+
 class MMapBuffer : public Buffer {
   public:
     MMapBuffer(int fd, offset_t offset, zsize_t size);
