@@ -40,7 +40,11 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
       ASSERT(size_.v, <, SIZE_MAX);
     };
     virtual ~Buffer() {};
-    virtual const char* data(offset_t offset=offset_t(0)) const = 0;
+    const char* data(offset_t offset=offset_t(0)) const {
+      ASSERT(offset.v, <=, size_.v);
+      return dataImpl(offset);
+    }
+
     char at(offset_t offset) const {
         return *(data(offset));
     }
@@ -53,6 +57,9 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
       ASSERT(offset.v+sizeof(T), <=, size_.v);
       return fromLittleEndian<T>(data(offset));
     }
+
+  protected:
+    virtual const char* dataImpl(offset_t offset) const = 0;
 
   protected:
     const zsize_t size_;
@@ -73,8 +80,7 @@ class MemoryBuffer : public Buffer {
         }
     }
 
-    const char* data(offset_t offset) const {
-        ASSERT(offset.v, <=, size_.v);
+    const char* dataImpl(offset_t offset) const {
         return _data + offset.v;
     }
   private:
@@ -90,7 +96,7 @@ class MMapBuffer : public Buffer {
     MMapBuffer(int fd, offset_t offset, zsize_t size);
     ~MMapBuffer();
 
-    const char* data(offset_t offset) const {
+    const char* dataImpl(offset_t offset) const {
       offset += _offset;
       return _data + offset.v;
     }
@@ -112,8 +118,7 @@ class SubBuffer : public Buffer {
       ASSERT(offset.v+size.v, <=, src->size().v);
     }
 
-  const char* data(offset_t offset) const {
-        ASSERT(offset.v, <=, size_.v);
+  const char* dataImpl(offset_t offset) const {
         return _data.get() + offset.v;
     }
 
