@@ -39,6 +39,21 @@ std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) 
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// MemoryRegionBuffer
+////////////////////////////////////////////////////////////////////////////////
+
+MemoryRegionBuffer::MemoryRegionBuffer(const char* buffer, zsize_t size)
+  : Buffer(size)
+  , _data(buffer)
+{}
+
+const char*
+MemoryRegionBuffer::dataImpl(offset_t offset) const {
+    return _data + offset.v;
+}
+
+
 #ifdef ENABLE_USE_MMAP
 MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
   Buffer(size),

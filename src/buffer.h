@@ -72,16 +72,13 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
 class MemoryRegionBuffer : public Buffer {
   public:
-    MemoryRegionBuffer(const char* buffer, zsize_t size)
-      : Buffer(size),
-        _data(buffer)
-    {}
+    MemoryRegionBuffer(const char* buffer, zsize_t size);
 
-    const char* dataImpl(offset_t offset) const {
-        return _data + offset.v;
-    }
   protected:
-    const char* _data;
+    const char* dataImpl(offset_t offset) const;
+
+  protected:
+    const char* const _data;
 };
 
 class AllocatedMemoryBuffer : public Buffer {
