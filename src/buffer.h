@@ -112,25 +112,6 @@ class MMapBuffer : public Buffer {
 };
 #endif
 
-
-class SubBuffer : public Buffer {
-  public:
-    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
-      : Buffer(size),
-        _data(src, src->data(offset))
-    {
-      ASSERT(offset.v, <=, src->size().v);
-      ASSERT(offset.v+size.v, <=, src->size().v);
-    }
-
-  const char* dataImpl(offset_t offset) const {
-        return _data.get() + offset.v;
-    }
-
-  private:
-    std::shared_ptr<const char> _data;
-};
-
 };
 
 #endif //ZIM_BUFFER_H_

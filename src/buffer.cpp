@@ -34,6 +34,28 @@
 
 namespace zim {
 
+namespace {
+
+class SubBuffer : public Buffer {
+  public:
+    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
+      : Buffer(size),
+        _data(src, src->data(offset))
+    {
+      ASSERT(offset.v, <=, src->size().v);
+      ASSERT(offset.v+size.v, <=, src->size().v);
+    }
+
+  const char* dataImpl(offset_t offset) const {
+        return _data.get() + offset.v;
+    }
+
+  private:
+    const std::shared_ptr<const char> _data;
+};
+
+} // unnamed namespace
+
 std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) const
 {
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
@@ -117,6 +139,6 @@ MMapBuffer::dataImpl(offset_t offset) const
   return _data + offset.v;
 }
 
-#endif
+#endif // ENABLE_USE_MMAP
 
 } //zim
