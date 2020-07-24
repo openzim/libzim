@@ -53,6 +53,28 @@ MemoryRegionBuffer::dataImpl(offset_t offset) const {
     return _data + offset.v;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// AllocatedMemoryBuffer
+////////////////////////////////////////////////////////////////////////////////
+
+AllocatedMemoryBuffer::AllocatedMemoryBuffer(zsize_t size)
+  : Buffer(size)
+  , _data(new char[size.v])
+{}
+
+AllocatedMemoryBuffer::AllocatedMemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
+  : Buffer(size)
+  , _data(std::move(buffer))
+{}
+
+const char*
+AllocatedMemoryBuffer::dataImpl(offset_t offset) const {
+    return _data.get() + offset.v;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// MMapBuffer
+////////////////////////////////////////////////////////////////////////////////
 
 #ifdef ENABLE_USE_MMAP
 MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):

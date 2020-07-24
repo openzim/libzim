@@ -83,23 +83,15 @@ class MemoryRegionBuffer : public Buffer {
 
 class AllocatedMemoryBuffer : public Buffer {
   public:
-    explicit AllocatedMemoryBuffer(zsize_t size)
-      : Buffer(size)
-      , _data(new char[size.v])
-    {}
-
-    AllocatedMemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
-      : Buffer(size)
-      , _data(std::move(buffer))
-    {}
+    explicit AllocatedMemoryBuffer(zsize_t size);
+    AllocatedMemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
 
     char* buf() { return _data.get(); }
 
-    const char* dataImpl(offset_t offset) const {
-        return _data.get() + offset.v;
-    }
+  protected:
+    const char* dataImpl(offset_t offset) const;
 
-private:
+  private:
     const std::unique_ptr<char[]> _data;
 };
 
