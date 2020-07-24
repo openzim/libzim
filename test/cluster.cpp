@@ -70,12 +70,11 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   cluster.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  char* content = new char[size];
+  auto buf = std::make_shared<zim::AllocatedMemoryBuffer>(zim::zsize_t(size));
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, content, size) == -1)
+  if (read(tmp_fd, buf->buf(), size) == -1)
     throw std::runtime_error("Cannot read");
-  return std::shared_ptr<zim::Buffer>(
-      new zim::AllocatedMemoryBuffer(content, zim::zsize_t(size)));
+  return buf;
 }
 
 TEST(ClusterTest, create_cluster)

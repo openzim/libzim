@@ -52,13 +52,13 @@ std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
   dirent.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  char* content = new char[size];
+  typedef zim::AllocatedMemoryBuffer BufType;
+  std::unique_ptr<BufType> buf(new BufType(zim::zsize_t(size)));
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, content, size) == -1)
+  if (read(tmp_fd, buf->buf(), size) == -1)
     throw std::runtime_error("Cannot read");
 
-  return std::unique_ptr<zim::Buffer>(
-      new zim::AllocatedMemoryBuffer(content, zim::zsize_t(size)));
+  return buf;
 }
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
