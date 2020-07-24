@@ -7,9 +7,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [debian-unstable, debian-bullseye, debian-buster, ubuntu-groovy, ubuntu-focal, ubuntu-eoan]
+        distro: [debian-unstable, debian-bullseye, debian-buster, ubuntu-groovy, ubuntu-focal]
     steps:
       - uses: actions/checkout@v2
+
+      # Determine which PPA we should upload to
+      - name: PPA
+        id: ppa
+        run: |
+          if [[ $REF == refs/tags* ]]
+          then
+            echo "::set-output name=ppa::kiwixteam/release"
+          else
+            echo "::set-output name=ppa::kiwixteam/dev"
+          fi
+        env:
+          REF: ${{ github.ref }}
 
       - uses: legoktm/gh-action-auto-dch@master
         with:
@@ -44,6 +57,7 @@ jobs:
         id: build-ubuntu-groovy
         with:
           args: --no-sign
+          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: legoktm/gh-action-build-deb@ubuntu-focal
         if: matrix.distro == 'ubuntu-focal'
@@ -51,13 +65,7 @@ jobs:
         id: build-ubuntu-focal
         with:
           args: --no-sign
-
-      - uses: legoktm/gh-action-build-deb@ubuntu-eoan
-        if: matrix.distro == 'ubuntu-eoan'
-        name: Build package for ubuntu-eoan
-        id: build-ubuntu-eoan
-        with:
-          args: --no-sign
+          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: actions/upload-artifact@v2
         with:
