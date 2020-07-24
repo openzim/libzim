@@ -36,7 +36,7 @@ class MMapException : std::exception {};
 
 class Buffer : public std::enable_shared_from_this<Buffer> {
   public:
-    Buffer(zsize_t size)
+    explicit Buffer(zsize_t size)
       : size_(size)
     {
       ASSERT(size_.v, <, SIZE_MAX);
