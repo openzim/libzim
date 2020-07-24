@@ -1,7 +1,7 @@
 Source: zimlib
 Section: libs
 Priority: optional
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper-compat (= 13),
  liblzma-dev,
  zlib1g-dev,
  libicu-dev,

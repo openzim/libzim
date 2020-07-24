@@ -5,3 +5,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export SKIP_BIG_MEMORY_TEST=1
 %:
 	dh $@ --buildsystem=meson
+
+# Increase test timeout
+override_dh_auto_test:
+	dh_auto_test -- -t 3
