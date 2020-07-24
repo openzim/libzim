@@ -39,6 +39,10 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
     {
       ASSERT(size_.v, <, SIZE_MAX);
     };
+
+    Buffer(const Buffer& ) = delete;
+    void operator=(const Buffer& ) = delete;
+
     virtual ~Buffer() {};
     const char* data(offset_t offset=offset_t(0)) const {
       ASSERT(offset.v, <=, size_.v);
