@@ -108,6 +108,7 @@ class SubBuffer : public Buffer {
       : Buffer(size),
         _data(src, src->data(offset))
     {
+      ASSERT(offset.v, <=, src->size().v);
       ASSERT(offset.v+size.v, <=, src->size().v);
     }
 
