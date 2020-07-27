@@ -32,8 +32,10 @@ TEST(FindTests, NotFoundByTitle)
 {
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = archive.findByTitle("unkownTitle");
-    ASSERT_EQ(it, archive.end<zim::EntryOrder::titleOrder>());
+    auto range0 = archive.findByTitle("unkownTitle");
+    auto range1 = archive.findByTitle("j/body.js");
+    ASSERT_EQ(range0.begin(), range0.end());
+    ASSERT_EQ(range1.begin(), range1.end());
 }
 
 // By Path
@@ -41,12 +43,12 @@ TEST(FindTests, NotFoundByPath)
 {
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it0 = archive.findByPath("unkwonUrl");
-    auto it1 = archive.findByPath("U/unkwonUrl");
-    auto it2 = archive.findByPath("A/unkwonUrl");
-    ASSERT_EQ(it0, archive.end<zim::EntryOrder::pathOrder>());
-    ASSERT_EQ(it1, archive.end<zim::EntryOrder::pathOrder>());
-    ASSERT_EQ(it2, archive.end<zim::EntryOrder::pathOrder>());
+    auto range0 = archive.findByPath("unkwonUrl");
+    auto range1 = archive.findByPath("U/unkwonUrl");
+    auto range2 = archive.findByPath("A/unkwonUrl");
+    ASSERT_EQ(range0.begin(), range0.end());
+    ASSERT_EQ(range1.begin(), range1.end());
+    ASSERT_EQ(range2.begin(), range2.end());
 }
 
 // Found cases
@@ -56,12 +58,31 @@ TEST(FindTests, ByTitle)
 {
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it1 = archive.findByTitle("j/body.js");
-    auto it2 = archive.findByTitle("Main Page");
-    ASSERT_EQ(it1->getIndex(), 1);
-    ASSERT_EQ(it2->getIndex(), 5);
+    auto range0 = archive.findByTitle("Main Page");
+    ASSERT_EQ(range0.begin()->getIndex(), 5);
+    ASSERT_EQ(range0.end()->getIndex(), 7); // getIndex of an entry is always the path order.
+                                            // It happens that the 6th in title order is the 7th in path order.
+
+    auto count = 0;
+    for(auto& entry: range0) {
+      count++;
+      ASSERT_EQ(entry.getTitle().find("Main Page"), 0);
+    }
+    ASSERT_EQ(count, 1);
+
+    auto range1 = archive.findByTitle("Украінская");
+    ASSERT_EQ(range1.begin()->getIndex(), 53);
+    ASSERT_EQ(range1.end()->getIndex(), 58);
+
+    count = 0;
+    for(auto& entry: range1) {
+      count++;
+      ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+    }
+    ASSERT_EQ(count, 5);
 }
 
+#if 0
 // By Path (compatibility)
 TEST(FindTests, ByPathNoNS)
 {
@@ -72,18 +93,41 @@ TEST(FindTests, ByPathNoNS)
     ASSERT_EQ(it1->getIndex(), 1);
     ASSERT_EQ(it2->getIndex(), 76);
 }
+#endif
 
 // By Path
 TEST(FindTests, ByPath)
 {
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it0 = archive.findByPath("A/Main_Page.html");
-    auto it1 = archive.findByPath("I/s/ajax-loader.gif");
-    auto it2 = archive.findByPath("-/j/head.js");
-    ASSERT_EQ(it0->getIndex(), 5);
-    ASSERT_EQ(it1->getIndex(), 80);
-    ASSERT_EQ(it2->getIndex(), 2);
+    auto range0 = archive.findByPath("A/Main_Page.html");
+    auto range1 = archive.findByPath("I/s/");
+    auto range2 = archive.findByPath("-/j/head.js");
+
+    ASSERT_EQ(range0.begin()->getIndex(), 5);
+    auto count = 0;
+    for(auto& entry: range0) {
+      count++;
+      ASSERT_EQ(entry.getPath().find("A/Main_Page.html"), 0);
+    }
+    ASSERT_EQ(count, 1);
+
+    ASSERT_EQ(range1.begin()->getIndex(), 78);
+    count = 0;
+    for(auto& entry: range1) {
+      count++;
+      std::cout << entry.getPath() << std::endl;
+      ASSERT_EQ(entry.getPath().find("I/s/"), 0);
+    }
+    ASSERT_EQ(count, 31);
+
+    ASSERT_EQ(range2.begin()->getIndex(), 2);
+     count = 0;
+    for(auto& entry: range2) {
+      count++;
+      ASSERT_EQ(entry.getPath().find("-/j/head.js"), 0);
+    }
+    ASSERT_EQ(count, 1);
 }
 
 } // namespace

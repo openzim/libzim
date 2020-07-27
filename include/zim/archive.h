@@ -250,27 +250,27 @@ namespace zim
        */
       EntryRange<EntryOrder::efficientOrder> iterEfficient() const;
 
-      /** A end iterator over the entry in the archive.
+      /** Find a range of entry starting with path.
        *
-       * @tparam order The order to use to iterate the archive.
+       * The path is the "long path". (Ie, with the namespace)
+       *
+       * @param path The path prefix to search for.
+       * @return A range starting from the first entry starting with path
+       *         and ending past the last entry.
+       *         If no entry starts with `path`, begin == end.
        */
-       template<EntryOrder order>
-      iterator<order> end() const
-        { return iterator<order>(m_impl, entry_index_type(getEntryCount())); }
+      EntryRange<EntryOrder::pathOrder>  findByPath(std::string path) const;
 
-      /** Find the position of an entry using it path.
+      /** Find a range of entry starting with title.
        *
-       * @return A iterator to the entry corresponding to path.
-       *         `end` iterator if no entry correspond the the path.
-       */
-      iterator<EntryOrder::pathOrder>  findByPath(const std::string& path) const;
-
-      /** Find the position of an entry using it title.
+       * The entry title is search in `A` namespace.
        *
-       * @return A iterator to the entry corresponding to title.
-       *         `end` iterator if no entry correspond the the title.
+       * @param title The title prefix to search for.
+       * @return A range starting from the first entry starting with title
+       *         and ending past the last entry.
+       *         If no entry starts with `title`, begin == end.
        */
-      iterator<EntryOrder::titleOrder> findByTitle(const std::string& title) const;
+      EntryRange<EntryOrder::titleOrder> findByTitle(std::string title) const;
 
       /** hasChecksum.
        *

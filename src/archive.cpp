@@ -147,31 +147,77 @@ namespace zim
     return EntryRange<EntryOrder::efficientOrder>(m_impl, 0, getEntryCount());
   }
 
-  Archive::iterator<EntryOrder::pathOrder> Archive::findByPath(const std::string& path) const
+  Archive::EntryRange<EntryOrder::pathOrder> Archive::findByPath(std::string path) const
   {
-    auto r = m_impl->findx(path);
-    if (r.first) {
-      return iterator<EntryOrder::pathOrder>(m_impl, r.second.v);
-    }
-    for(auto ns: {'A', 'I', 'J', '-'}) {
-      auto fallback_path = std::string(1, ns) + "/" + path;
-      auto r = m_impl->findx(fallback_path);
-      if (r.first) {
-        return iterator<EntryOrder::pathOrder>(m_impl, r.second.v);
-      }
-    }
-    return end<EntryOrder::pathOrder>();
+    // "url order" means that the entries are stored by long url ("NS/url)".
+    //
+    // If we really want to search by url whatever is the namespace, we would have to
+    // search in all "content" (A, I, J, -) namespaces and then merge the results.
+    //
+    // It would be pretty complex as we would need to have iterate hover several ranges
+    // in the same time. Let's enforce that path is the full path and search in whatever
+    // namespace is in it.
+
+    // We have to return two iterator for a range of entry where `path` is a prefix.
+    // - The begin iterator is a iterator to the first entry with `path`  as a prefix (or (range) end if none)
+    // - The end iterator is the iterator pass the last entry with `path` as a prefix (or (gloabal) end)
+    //
+    // The findx return a iterator for the exact match or the one just after.
+    // So, for the begin iterator, we can simply use the index returned by findx
+    // For the end iterator we have to do the same but with a prefix "just after" the queried `path`
+    // So the end index will always be just after the prefix range. If there is no prefix range, both
+    // begin and end will be just after where it would be.
+    //
+    // Suposing a list of title :
+    // 0. aaaaaa
+    // 1. aaaaab
+    // 2. aabbaa
+    // 3. aabbbb
+    // 4. bbaaaa
+    // 5. bbbb
+    // 6. bbbbaa
+    // 7. bbbbbb
+    // 8. <past the end>
+
+    // If we search for prefix aabb, we must return 2/4
+    // A findx with aabb will return 2
+    // A findx with aabc will return 4
+    //
+    // If we search for prefix bbbb, we must return 5/8
+    // A findx with bbbb will return 5 (with exact match)
+    // A findx with bbbc will return 8
+    //
+    // If we search for prefix cccc, we must return 8/8
+    // A findx with cccc will return 8
+    // A findx with bbbc will return 8
+    //
+    // If we search for prefix a, we must return 0/4
+    // A findx with a will return 0
+    // A find with b will return 4
+    auto begin_idx = m_impl->findx(path).second;
+    path.back()++;
+    auto end_idx = m_impl->findx(path).second;
+    return Archive::EntryRange<EntryOrder::pathOrder>(m_impl, begin_idx.v, end_idx.v);
   }
 
-  Archive::iterator<EntryOrder::titleOrder> Archive::findByTitle(const std::string& title) const
+  Archive::EntryRange<EntryOrder::titleOrder> Archive::findByTitle(std::string title) const
   {
-    for(auto ns:{'A', 'I', 'J', '-'}) {
-      auto r = m_impl->findxByTitle(ns, title);
-      if (r.first) {
-        return iterator<EntryOrder::titleOrder>(m_impl, entry_index_type(r.second));
-      }
-    }
-    return end<EntryOrder::titleOrder>();
+    // "title order" means that the entries are stored by "NS/title" part.
+    // It is nice when we want to search for title in a specific namespace, but
+    // now we want to hide the namespace. It would be better if the "title order"
+    // would be real title order, whatever is the namespace.
+    //
+    // If we really want to search by title what ever is the namespace, we would have to
+    // search in all "content" namespace and then merge the results.
+    //
+    // The find by title is only used for the article (`A` namespace). So let's search
+    // only in it.
+
+    // See `Archive::findByPath` for the rational.
+    auto begin_idx = m_impl->findxByTitle('A', title).second;
+    title.back()++;
+    auto end_idx = m_impl->findxByTitle('A', title).second;
+    return Archive::EntryRange<EntryOrder::titleOrder>(m_impl, begin_idx.v, end_idx.v);
   }
 
   bool Archive::hasChecksum() const
