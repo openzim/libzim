@@ -50,7 +50,9 @@ namespace zim
   class Archive
   {
     public:
+      template<EntryOrder order> class EntryRange;
       template<EntryOrder order> class iterator;
+
       /** Archive constructor.
        *
        *  Construct an archive from a filename.
@@ -206,13 +208,47 @@ namespace zim
       bool hasMainEntry() const;
 
 
-      /** A begin iterator over the entry in the archive.
+      /** Get a "iterable" by path order.
        *
-       * @tparam order The order to use to iterate the archive.
+       *  This method allow to iterate hover the entries in a path order
+       *
+       *  ```
+       *  for(auto& entry:archive.iterByPath()) {
+       *     ...
+       *  }
+       *  ```
+       *
+       *  @return A range on all the entries, in path order.
        */
-      template<EntryOrder order>
-      iterator<order> begin() const
-        { return iterator<order>(m_impl, 0); }
+      EntryRange<EntryOrder::pathOrder> iterByPath() const;
+
+      /** Get a "iterable" by title order.
+       *
+       *  This method allow to iterate hover the entries in a title order
+       *
+       *  ```
+       *  for(auto& entry:archive.iterByTitle()) {
+       *     ...
+       *  }
+       *  ```
+       *
+       *  @return A range on all the entries, in title order.
+       */
+      EntryRange<EntryOrder::titleOrder> iterByTitle() const;
+
+      /** Get a "iterable" by a efficient order.
+       *
+       *  This method allow to iterate hover the entries in a efficient order
+       *
+       *  ```
+       *  for(auto& entry:archive.iterEfficient()) {
+       *     ...
+       *  }
+       *  ```
+       *
+       *  @return A range on all the entries, in efficitent order.
+       */
+      EntryRange<EntryOrder::efficientOrder> iterEfficient() const;
 
       /** A end iterator over the entry in the archive.
        *
@@ -292,6 +328,26 @@ namespace zim
   entry_index_type _toPathOrder<EntryOrder::titleOrder>(const FileImpl& file, entry_index_type idx);
   template<>
   entry_index_type _toPathOrder<EntryOrder::efficientOrder>(const FileImpl& file, entry_index_type idx);
+
+
+  template<EntryOrder order>
+  class Archive::EntryRange {
+    public:
+      explicit EntryRange(const std::shared_ptr<FileImpl> file, entry_index_type begin, entry_index_type end)
+        : m_file(file),
+          m_begin(begin),
+          m_end(end)
+      {}
+
+      iterator<order> begin() const
+        { return iterator<order>(m_file, entry_index_type(m_begin)); }
+      iterator<order> end() const
+        { return iterator<order>(m_file, entry_index_type(m_end)); }
+private:
+      std::shared_ptr<FileImpl> m_file;
+      entry_index_type m_begin;
+      entry_index_type m_end;
+  };
 
   template<EntryOrder order>
   class Archive::iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>

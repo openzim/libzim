@@ -78,12 +78,10 @@ TEST(IteratorTests, begin)
 
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = archive.begin<zim::EntryOrder::efficientOrder>();
     int i = 0;
-    while (it != archive.end<zim::EntryOrder::efficientOrder>())
-    {
-        EXPECT_EQ(it->getIndex(), expected[i]);
-        it++; i++;
+    for(auto& entry: archive.iterEfficient()) {
+        EXPECT_EQ(entry.getIndex(), expected[i]);
+        i++;
     }
 }
 
@@ -94,7 +92,7 @@ TEST(IteratorTests, beginByTitle)
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = archive.begin<zim::EntryOrder::titleOrder>();
+    auto it = archive.iterByTitle().begin();
 
     int i = 0;
     while (i < 10)
@@ -112,7 +110,7 @@ TEST(IteratorTests, beginByPath)
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto it = archive.begin<zim::EntryOrder::pathOrder>();
+    auto it = archive.iterByPath().begin();
     int i = 0;
     while (i < 10)
     {

@@ -132,6 +132,21 @@ namespace zim
     return m_impl->getFileheader().hasMainPage();
   }
 
+  Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
+  {
+    return EntryRange<EntryOrder::pathOrder>(m_impl, 0, getEntryCount());
+  }
+
+  Archive::EntryRange<EntryOrder::titleOrder> Archive::iterByTitle() const
+  {
+    return EntryRange<EntryOrder::titleOrder>(m_impl, 0, getEntryCount());
+  }
+
+  Archive::EntryRange<EntryOrder::efficientOrder> Archive::iterEfficient() const
+  {
+    return EntryRange<EntryOrder::efficientOrder>(m_impl, 0, getEntryCount());
+  }
+
   Archive::iterator<EntryOrder::pathOrder> Archive::findByPath(const std::string& path) const
   {
     auto r = m_impl->findx(path);
