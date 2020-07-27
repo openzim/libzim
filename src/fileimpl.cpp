@@ -171,50 +171,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
-    log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
-
-    article_index_type l = article_index_type(getNamespaceBeginOffset(ns));
-    article_index_type u = article_index_type(getNamespaceEndOffset(ns));
-
-    if (l == u)
-    {
-      log_debug("namespace " << ns << " not found");
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
-    }
-
-    unsigned itcount = 0;
-    while (u - l > 1)
-    {
-      ++itcount;
-      article_index_type p = l + (u - l) / 2;
-      auto d = getDirent(article_index_t(p));
-
-      int c = ns < d->getNamespace() ? -1
-            : ns > d->getNamespace() ? 1
-            : url.compare(d->getUrl());
-
-      if (c < 0)
-        u = p;
-      else if (c > 0)
-        l = p;
-      else
-      {
-        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, article_index_t>(true, article_index_t(p));
-      }
-    }
-
-    auto d = getDirent(article_index_t(l));
-    int c = url.compare(d->getUrl());
-
-    if (c == 0)
-    {
-      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, article_index_t>(true, article_index_t(l));
-    }
-
-    log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
-    return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
+    return zim::findx(*this, ns, url);
   }
 
   std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)

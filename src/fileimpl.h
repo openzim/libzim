@@ -117,6 +117,50 @@ namespace zim
       ClusterHandle readCluster(cluster_index_t idx);
   };
 
+
+  template<typename IMPL>
+  std::pair<bool, article_index_t> findx(IMPL& impl, char ns, const std::string& url)
+  {
+    article_index_type l = article_index_type(impl.getNamespaceBeginOffset(ns));
+    article_index_type u = article_index_type(impl.getNamespaceEndOffset(ns));
+
+    if (l == u)
+    {
+      return std::pair<bool, article_index_t>(false, article_index_t(0));
+    }
+
+    unsigned itcount = 0;
+    while (u - l > 1)
+    {
+      ++itcount;
+      article_index_type p = l + (u - l) / 2;
+      auto d = impl.getDirent(article_index_t(p));
+
+      int c = ns < d->getNamespace() ? -1
+            : ns > d->getNamespace() ? 1
+            : url.compare(d->getUrl());
+
+      if (c < 0)
+        u = p;
+      else if (c > 0)
+        l = p;
+      else
+      {
+        return std::pair<bool, article_index_t>(true, article_index_t(p));
+      }
+    }
+
+    auto d = impl.getDirent(article_index_t(l));
+    int c = url.compare(d->getUrl());
+
+    if (c == 0)
+    {
+      return std::pair<bool, article_index_t>(true, article_index_t(l));
+    }
+
+    return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
+  }
+
 }
 
 #endif // ZIM_FILEIMPL_H
