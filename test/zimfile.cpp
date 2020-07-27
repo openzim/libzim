@@ -151,8 +151,9 @@ TEST(ZimFile, openRealZimFile)
     const TestContext ctx{ {"path", path } };
     std::unique_ptr<zim::File> zimfile;
     EXPECT_NO_THROW( zimfile.reset(new zim::File(path)) ) << ctx;
-    if ( zimfile )
+    if ( zimfile ) {
       EXPECT_TRUE( zimfile->verify() ) << ctx;
+    }
   }
 }
 
