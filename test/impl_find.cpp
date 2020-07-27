@@ -44,6 +44,57 @@ const std::vector<std::pair<char, std::string>> articleurl = {
   {'a', "aa"},       //10
 };
 
+struct MockNamespace
+{
+  zim::article_index_t getCountArticles() const {
+    return zim::article_index_t(articleurl.size());
+  }
+
+  std::shared_ptr<const zim::Dirent> getDirent(zim::article_index_t idx) const {
+    auto info = articleurl.at(idx.v);
+    auto ret = std::make_shared<zim::Dirent>();
+    ret->setUrl(info.first, info.second);
+    return ret;
+  }
+};
+
+class NamespaceTest : public :: testing::Test
+{
+  protected:
+    MockNamespace impl;
+};
+
+TEST_F(NamespaceTest, BeginOffset)
+{
+  auto result = zim::getNamespaceBeginOffset(impl, 'a');
+  ASSERT_EQ(result.v, 10);
+
+  result = zim::getNamespaceBeginOffset(impl, 'A');
+  ASSERT_EQ(result.v, 0);
+
+  result = zim::getNamespaceBeginOffset(impl, 'M');
+  ASSERT_EQ(result.v, 9);
+
+  result = zim::getNamespaceBeginOffset(impl, 'U');
+  ASSERT_EQ(result.v, 10);
+}
+
+TEST_F(NamespaceTest, EndOffset)
+{
+  auto result = zim::getNamespaceEndOffset(impl, 'a');
+  ASSERT_EQ(result.v, 11);
+
+  result = zim::getNamespaceEndOffset(impl, 'A');
+  ASSERT_EQ(result.v, 9);
+
+  result = zim::getNamespaceEndOffset(impl, 'M');
+  ASSERT_EQ(result.v, 10);
+
+  result = zim::getNamespaceEndOffset(impl, 'U');
+  ASSERT_EQ(result.v, 10);
+}
+
+
 struct MockFindx
 {
   zim::article_index_t getNamespaceBeginOffset(char ns) const {

@@ -88,7 +88,6 @@ namespace zim
       article_index_t getIndexByTitle(article_index_t idx);
       article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
 
-
       std::pair<bool, article_index_t> findx(char ns, const std::string& url);
       std::pair<bool, article_index_t> findx(const std::string& url);
       std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
@@ -160,6 +159,44 @@ namespace zim
 
     return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
   }
+
+  template<typename IMPL>
+  article_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
+  {
+    article_index_type lower = 0;
+    article_index_type upper = article_index_type(impl.getCountArticles());
+    auto d = impl.getDirent(article_index_t(0));
+    while (upper - lower > 1)
+    {
+      article_index_type m = lower + (upper - lower) / 2;
+      auto d = impl.getDirent(article_index_t(m));
+      if (d->getNamespace() >= ch)
+        upper = m;
+      else
+        lower = m;
+    }
+
+    article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
+    return ret;
+  }
+
+  template<typename IMPL>
+  article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
+  {
+    article_index_type lower = 0;
+    article_index_type upper = article_index_type(impl.getCountArticles());
+    while (upper - lower > 1)
+    {
+      article_index_type m = lower + (upper - lower) / 2;
+      auto d = impl.getDirent(article_index_t(m));
+      if (d->getNamespace() > ch)
+        upper = m;
+      else
+        lower = m;
+    }
+    return article_index_t(upper);
+  }
+
 
 }
 

@@ -398,20 +398,8 @@ offset_t readOffset(const Reader& reader, size_t idx)
     }
     pthread_mutex_unlock(&namespaceBeginLock);
 
-    article_index_type lower = 0;
-    article_index_type upper = article_index_type(getCountArticles());
-    auto d = getDirent(article_index_t(0));
-    while (upper - lower > 1)
-    {
-      article_index_type m = lower + (upper - lower) / 2;
-      auto d = getDirent(article_index_t(m));
-      if (d->getNamespace() >= ch)
-        upper = m;
-      else
-        lower = m;
-    }
+    auto ret = zim::getNamespaceBeginOffset(*this, ch);
 
-    article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
     pthread_mutex_lock(&namespaceBeginLock);
     namespaceBeginCache[ch] = ret;
     pthread_mutex_unlock(&namespaceBeginLock);
@@ -433,25 +421,13 @@ offset_t readOffset(const Reader& reader, size_t idx)
     }
     pthread_mutex_unlock(&namespaceEndLock);
 
-    article_index_type lower = 0;
-    article_index_type upper = article_index_type(getCountArticles());
-    log_debug("namespace " << ch << " lower=" << lower << " upper=" << upper);
-    while (upper - lower > 1)
-    {
-      article_index_type m = lower + (upper - lower) / 2;
-      auto d = getDirent(article_index_t(m));
-      if (d->getNamespace() > ch)
-        upper = m;
-      else
-        lower = m;
-      log_debug("namespace " << d->getNamespace() << " m=" << m << " lower=" << lower << " upper=" << upper);
-    }
+    auto ret = zim::getNamespaceEndOffset(*this, ch);
 
     pthread_mutex_lock(&namespaceEndLock);
-    namespaceEndCache[ch] = article_index_t(upper);
+    namespaceEndCache[ch] = ret;
     pthread_mutex_unlock(&namespaceEndLock);
 
-    return article_index_t(upper);
+    return ret;
   }
 
   std::string FileImpl::getNamespaces()
