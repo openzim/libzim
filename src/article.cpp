@@ -172,18 +172,14 @@ namespace zim
   std::shared_ptr<const Cluster> Article::getCluster() const
   {
     auto dirent = getDirent();
-    if ( dirent->isRedirect()
-      || dirent->isLinktarget()
-      || dirent->isDeleted() ) {
+    if ( !dirent->isArticle() ) {
       return std::shared_ptr<const Cluster>();
     }
     return file->getCluster(dirent->getClusterNumber());
   }
   cluster_index_type Article::getClusterNumber() const {
     auto dirent= getDirent();
-    if ( dirent->isRedirect()
-      || dirent->isLinktarget()
-      || dirent->isDeleted() ) {
+    if ( !dirent->isArticle() ) {
       return std::numeric_limits<cluster_index_type>::max();
     }
     return dirent->getClusterNumber().v;
@@ -207,9 +203,7 @@ namespace zim
   offset_type Article::getOffset() const
   {
     auto dirent = getDirent();
-    if (dirent->isRedirect()
-        || dirent->isLinktarget()
-        || dirent->isDeleted())
+    if ( !dirent->isArticle() )
         return 0;
     return offset_type(file->getBlobOffset(dirent->getClusterNumber(), dirent->getBlobNumber()));
   }
@@ -217,9 +211,7 @@ namespace zim
   std::pair<std::string, offset_type> Article::getDirectAccessInformation() const
   {
     auto dirent = getDirent();
-    if ( dirent->isRedirect()
-      || dirent->isLinktarget()
-      || dirent->isDeleted() ) {
+    if ( !dirent->isArticle() ) {
         return std::make_pair("", 0);
     }
 

@@ -64,7 +64,7 @@ namespace zim
           ns('\0')
       {}
 
-      Dirent(std::unique_ptr<Buffer> buffer);
+      explicit Dirent(const Buffer& buffer);
 
       bool isRedirect() const                 { return mimeType == redirectMimeType; }
       bool isLinktarget() const               { return mimeType == linktargetMimeType; }
@@ -116,23 +116,6 @@ namespace zim
         mimeType = redirectMimeType;
       }
 
-      void setMimeType(uint16_t mime)
-      {
-        mimeType = mime;
-      }
-
-      void setLinktarget()
-      {
-        ASSERT(mimeType, ==, 0);
-        mimeType = linktargetMimeType;
-      }
-
-      void setDeleted()
-      {
-        ASSERT(mimeType, ==, 0);
-        mimeType = deletedMimeType;
-      }
-
       void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
         ASSERT(mimeType, ==, 0);
@@ -144,4 +127,3 @@ namespace zim
 }
 
 #endif // ZIM_DIRENT_H
-

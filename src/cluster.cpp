@@ -68,7 +68,7 @@ namespace zim
     offsets.clear();
     offsets.reserve(n_offset);
     offsets.push_back(offset_t(0));
-    
+
     auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
     offset_t current = offset_t(sizeof(OFFSET_TYPE));
     while (--n_offset)
@@ -77,7 +77,7 @@ namespace zim
       ASSERT(new_offset, >=, offset);
       ASSERT(offset, >=, data_address.v);
       ASSERT(offset, <=, reader->size().v);
-      
+
       offset = new_offset;
       offsets.push_back(offset_t(offset - data_address.v));
       current += sizeof(OFFSET_TYPE);
@@ -93,7 +93,7 @@ namespace zim
       if (blobSize.v > SIZE_MAX) {
         return Blob();
       }
-      auto buffer = reader->get_buffer(offsets[blob_index_type(n)], getBlobSize(n));
+      auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
       return Blob(buffer);
     } else {
       return Blob();
@@ -103,11 +103,15 @@ namespace zim
   Blob Cluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   {
     if (this->size()) {
-      offset += offsets[blob_index_type(n)];
-      size = std::min(size, getBlobSize(n));
+      const auto blobSize = getBlobSize(n);
+      if ( offset.v > blobSize.v ) {
+        return Blob();
+      }
+      size = std::min(size, zsize_t(blobSize.v-offset.v));
       if (size.v > SIZE_MAX) {
         return Blob();
       }
+      offset += offsets[blob_index_type(n)];
       auto buffer = reader->get_buffer(offset, size);
       return Blob(buffer);
     } else {

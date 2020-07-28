@@ -37,9 +37,10 @@ namespace zim
   const uint16_t Dirent::linktargetMimeType;
   const uint16_t Dirent::deletedMimeType;
 
-  Dirent::Dirent(std::unique_ptr<Buffer> buffer)
+  Dirent::Dirent(const Buffer& bufferRef)
     : Dirent()
   {
+    const Buffer* const buffer = &bufferRef;
     uint16_t mimeType = buffer->as<uint16_t>(offset_t(0));
     bool redirect = (mimeType == Dirent::redirectMimeType);
     bool linktarget = (mimeType == Dirent::linktargetMimeType);

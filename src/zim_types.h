@@ -16,7 +16,7 @@ struct REAL_TYPEDEF{
   explicit inline operator bool() const { return v != 0; }
   explicit inline operator B() const { return v; }
 
-  inline bool operator==(const REAL_TYPEDEF<B>& rhs)
+  inline bool operator==(const REAL_TYPEDEF<B>& rhs) const
   { return v == rhs.v; }
 };
 
