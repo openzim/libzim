@@ -101,7 +101,7 @@ namespace zim
 
   Entry Archive::getEntryByTitle(entry_index_type idx) const
   {
-    return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(entry_index_t(idx))));
+    return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(title_index_t(idx))));
   }
 
   Entry Archive::getEntryByTitle(const std::string& title) const
@@ -266,7 +266,7 @@ namespace zim
   entry_index_type
   _toPathOrder<EntryOrder::titleOrder>(const FileImpl& impl, entry_index_type idx)
   {
-    return impl.getIndexByTitle(entry_index_t(idx)).v;
+    return impl.getIndexByTitle(title_index_t(idx)).v;
   }
 
   template<>

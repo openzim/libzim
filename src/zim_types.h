@@ -80,6 +80,7 @@ explicit NAME(TYPE v=0) : REAL_TYPEDEF<TYPE>(v) {}; }; \
 static_assert(sizeof(NAME) == sizeof(TYPE), "");
 
 TYPEDEF(entry_index_t, entry_index_type)
+TYPEDEF(title_index_t, entry_index_type)
 TYPEDEF(cluster_index_t, cluster_index_type)
 TYPEDEF(blob_index_t, blob_index_type)
 

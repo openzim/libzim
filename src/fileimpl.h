@@ -86,15 +86,15 @@ namespace zim
       std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
       getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(entry_index_t idx);
-      std::shared_ptr<const Dirent> getDirentByTitle(entry_index_t idx);
-      entry_index_t getIndexByTitle(entry_index_t idx) const;
+      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx);
+      entry_index_t getIndexByTitle(title_index_t idx) const;
       entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
       entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
 
       std::pair<bool, entry_index_t> findx(char ns, const std::string& url);
       std::pair<bool, entry_index_t> findx(const std::string& url);
-      std::pair<bool, entry_index_t> findxByTitle(char ns, const std::string& title);
+      std::pair<bool, title_index_t> findxByTitle(char ns, const std::string& title);
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }

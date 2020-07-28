@@ -217,7 +217,7 @@ namespace zim
     return findx(url[start], url.substr(2+start));
   }
 
-  std::pair<bool, entry_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
+  std::pair<bool, title_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
@@ -227,7 +227,7 @@ namespace zim
     if (l == u)
     {
       log_debug("namespace " << ns << " not found");
-      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
+      return std::pair<bool, title_index_t>(false, title_index_t(0));
     }
 
     unsigned itcount = 0;
@@ -235,7 +235,7 @@ namespace zim
     {
       ++itcount;
       entry_index_type p = l + (u - l) / 2;
-      auto d = getDirentByTitle(entry_index_t(p));
+      auto d = getDirentByTitle(title_index_t(p));
 
       int c = ns < d->getNamespace() ? -1
             : ns > d->getNamespace() ? 1
@@ -248,21 +248,21 @@ namespace zim
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, entry_index_t>(true, entry_index_t(p));
+        return std::pair<bool, title_index_t>(true, title_index_t(p));
       }
     }
 
-    auto d = getDirentByTitle(entry_index_t(l));
+    auto d = getDirentByTitle(title_index_t(l));
     int c = title.compare(d->getTitle());
 
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, entry_index_t>(true, entry_index_t(l));
+      return std::pair<bool, title_index_t>(true, title_index_t(l));
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return std::pair<bool, entry_index_t>(false, entry_index_t(c < 0 ? l : u));
+    return std::pair<bool, title_index_t>(false, title_index_t(c < 0 ? l : u));
   }
 
 
@@ -339,14 +339,14 @@ namespace zim
     return dirent;
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(entry_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx)
   {
     return getDirent(getIndexByTitle(idx));
   }
 
-  entry_index_t FileImpl::getIndexByTitle(entry_index_t idx) const
+  entry_index_t FileImpl::getIndexByTitle(title_index_t idx) const
   {
-    if (idx >= getCountArticles())
+    if (idx.v >= getCountArticles().v)
       throw std::out_of_range("entry index out of range");
 
     entry_index_t ret(titleIndexReader->read_uint<entry_index_type>(
