@@ -157,4 +157,45 @@ TEST(ZimFile, openRealZimFile)
   }
 }
 
+TEST(ZimFile, multipart)
+{
+  const zim::File zimfile1("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const zim::File zimfile2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
+  ASSERT_FALSE(zimfile1.is_multiPart());
+  ASSERT_TRUE (zimfile2.is_multiPart());
+
+  EXPECT_EQ(zimfile1.getFilesize(), zimfile2.getFilesize());
+  EXPECT_EQ(zimfile1.getCountClusters(), zimfile2.getCountClusters());
+  EXPECT_EQ(zimfile1.getNamespaces(), zimfile2.getNamespaces());
+
+  ASSERT_EQ(zimfile1.getCountArticles(), zimfile2.getCountArticles());
+
+  ASSERT_EQ(118, zimfile1.getCountArticles()); // ==> below loop is not a noop
+  for ( zim::article_index_type i = 0; i < zimfile1.getCountArticles(); ++i ) {
+    const zim::Article article1 = zimfile1.getArticle(i);
+    const zim::Article article2 = zimfile2.getArticle(i);
+    ASSERT_EQ(i, article1.getIndex());
+    ASSERT_EQ(i, article2.getIndex());
+    ASSERT_EQ(article1.getParameter(), article2.getParameter());
+    ASSERT_EQ(article1.getTitle(), article2.getTitle());
+    ASSERT_EQ(article1.getUrl(), article2.getUrl());
+    ASSERT_EQ(article1.getLongUrl(), article2.getLongUrl());
+    ASSERT_EQ(article1.getLibraryMimeType(), article2.getLibraryMimeType());
+    ASSERT_EQ(article1.isRedirect(), article2.isRedirect());
+    ASSERT_EQ(article1.isLinktarget(), article2.isLinktarget());
+    ASSERT_EQ(article1.isDeleted(), article2.isDeleted());
+    ASSERT_EQ(article1.getNamespace(), article2.getNamespace());
+    ASSERT_EQ(article1.getArticleSize(), article2.getArticleSize());
+    ASSERT_EQ(article1.getData(), article2.getData());
+    ASSERT_EQ(article1.getClusterNumber(), article2.getClusterNumber());
+    ASSERT_EQ(article1.getOffset(), article2.getOffset());
+    ASSERT_EQ(zimfile1.getArticleByTitle(i).getIndex(),
+              zimfile2.getArticleByTitle(i).getIndex()
+    );
+    ASSERT_EQ(zimfile1.getArticleByClusterOrder(i).getIndex(),
+              zimfile2.getArticleByClusterOrder(i).getIndex()
+    );
+  }
+}
+
 } // unnamed namespace
