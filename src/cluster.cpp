@@ -87,7 +87,7 @@ namespace zim
 
   Blob Cluster::getBlob(blob_index_t n) const
   {
-    if (size()) {
+    if (n < count()) {
       auto blobSize = getBlobSize(n);
       if (blobSize.v > SIZE_MAX) {
         return Blob();
@@ -101,7 +101,7 @@ namespace zim
 
   Blob Cluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   {
-    if (this->size()) {
+    if (n < count()) {
       const auto blobSize = getBlobSize(n);
       if ( offset.v > blobSize.v ) {
         return Blob();
@@ -116,14 +116,6 @@ namespace zim
     } else {
       return Blob();
     }
-  }
-
-  zsize_t Cluster::size() const
-  {
-    if (isExtended)
-      return zsize_t(offsets.size() * sizeof(uint64_t) + reader->size().v);
-    else
-      return zsize_t(offsets.size() * sizeof(uint32_t) + reader->size().v);
   }
 
   template<typename OFFSET_TYPE>

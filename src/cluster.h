@@ -60,7 +60,6 @@ namespace zim
       bool isCompressed() const                { return compression != zimcompDefault && compression != zimcompNone; }
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
-      zsize_t size() const;
 
       zsize_t getBlobSize(blob_index_t n) const  { return zsize_t(offsets[blob_index_type(n)+1].v
                                                                 - offsets[blob_index_type(n)].v); }
