@@ -60,9 +60,7 @@ namespace zim
       offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
-      void clear();
 
-      void init_from_buffer(Buffer& buffer);
       static zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset);
   };
 
