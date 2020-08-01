@@ -40,9 +40,16 @@ namespace zim
 
       const CompressionType compression;
       const bool isExtended;
-      Offsets offsets;
       std::shared_ptr<const Reader> reader;
+
+      // offset (relative to the ZIM file) of the first blob of this cluster
       offset_t startOffset;
+
+      // offsets of the blob boundaries relative to the start of the first
+      // blob in this cluster. For a cluster with N blobs, this collection
+      // contains N+1 entries - the start of the first blob (which is always
+      // 0) and the end of the last blob are also included.
+      Offsets offsets;
 
       template<typename OFFSET_TYPE>
       offset_t read_header();
