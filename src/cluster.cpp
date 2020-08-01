@@ -62,7 +62,7 @@ namespace zim
     offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
-    offset_t data_address(offset);
+    const offset_t data_address(offset);
 
     // read offsets
     offsets.clear();
@@ -75,8 +75,7 @@ namespace zim
     {
       OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
       ASSERT(new_offset, >=, offset);
-      ASSERT(offset, >=, data_address.v);
-      ASSERT(offset, <=, reader->size().v);
+      ASSERT(new_offset, <=, reader->size().v);
 
       offset = new_offset;
       offsets.push_back(offset_t(offset - data_address.v));
