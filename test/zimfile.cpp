@@ -172,10 +172,12 @@ TEST(ZimFile, multipart)
 
   ASSERT_EQ(118, zimfile1.getCountArticles()); // ==> below loop is not a noop
   for ( zim::article_index_type i = 0; i < zimfile1.getCountArticles(); ++i ) {
-    const zim::Article article1 = zimfile1.getArticle(i);
-    const zim::Article article2 = zimfile2.getArticle(i);
+    zim::Article article1 = zimfile1.getArticle(i);
+    zim::Article article2 = zimfile2.getArticle(i);
     ASSERT_EQ(i, article1.getIndex());
     ASSERT_EQ(i, article2.getIndex());
+    ASSERT_EQ(article1.getClusterNumber(), article2.getClusterNumber());
+    ASSERT_EQ(article1.getOffset(), article2.getOffset());
     ASSERT_EQ(article1.getParameter(), article2.getParameter());
     ASSERT_EQ(article1.getTitle(), article2.getTitle());
     ASSERT_EQ(article1.getUrl(), article2.getUrl());
@@ -187,8 +189,10 @@ TEST(ZimFile, multipart)
     ASSERT_EQ(article1.getNamespace(), article2.getNamespace());
     ASSERT_EQ(article1.getArticleSize(), article2.getArticleSize());
     ASSERT_EQ(article1.getData(), article2.getData());
-    ASSERT_EQ(article1.getClusterNumber(), article2.getClusterNumber());
-    ASSERT_EQ(article1.getOffset(), article2.getOffset());
+    if ( !article1.isRedirect() && ! article1.isLinktarget() && !article1.isLinktarget() ) {
+      ASSERT_EQ(article1.getPage(true, 5), article2.getPage(true, 5));
+      ASSERT_EQ(article1.getPage(false, 5), article2.getPage(false, 5));
+    }
     ASSERT_EQ(zimfile1.getArticleByTitle(i).getIndex(),
               zimfile2.getArticleByTitle(i).getIndex()
     );
