@@ -96,7 +96,7 @@ namespace zim
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
-      offset_t getClusterOffset(cluster_index_t idx);
+      offset_t getClusterOffset(cluster_index_t idx) const;
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
       article_index_t getNamespaceBeginOffset(char ch);

@@ -49,6 +49,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 }
 
 } //unnamed namespace
+
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
@@ -425,7 +426,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     return cluster;
   }
 
-  offset_t FileImpl::getClusterOffset(cluster_index_t idx)
+  offset_t FileImpl::getClusterOffset(cluster_index_t idx) const
   {
     return readOffset(*clusterOffsetReader, idx.v);
   }
