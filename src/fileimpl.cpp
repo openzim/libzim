@@ -38,6 +38,17 @@ log_define("zim.file.impl")
 
 namespace zim
 {
+
+namespace
+{
+
+offset_t readOffset(const Reader& reader, size_t idx)
+{
+  offset_t offset(reader.read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
+  return offset;
+}
+
+} //unnamed namespace
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
@@ -275,7 +286,7 @@ namespace zim
           for(zim::article_index_type i = 0; i < nb_articles; i++)
           {
               // This is the offset of the dirent in the zimFile
-              auto indexOffset = getOffset(urlPtrOffsetReader.get(), i);
+              auto indexOffset = readOffset(*urlPtrOffsetReader, i);
               // Get the mimeType of the dirent (offset 0) to know the type of the dirent
               uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
               if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
@@ -326,7 +337,7 @@ namespace zim
               << direntCache.fillfactor());
     pthread_mutex_unlock(&direntCacheLock);
 
-    offset_t indexOffset = getOffset(urlPtrOffsetReader.get(), idx.v);
+    offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
     // We don't know the size of the dirent because it depends of the size of
     // the title, url and extra parameters.
     // This is a pitty but we have no choices.
@@ -414,15 +425,9 @@ namespace zim
     return cluster;
   }
 
-  offset_t FileImpl::getOffset(const Reader* reader, size_t idx)
-  {
-    offset_t offset(reader->read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
-    return offset;
-  }
-
   offset_t FileImpl::getClusterOffset(cluster_index_t idx)
   {
-    return getOffset(clusterOffsetReader.get(), idx.v);
+    return readOffset(*clusterOffsetReader, idx.v);
   }
 
   offset_t FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)

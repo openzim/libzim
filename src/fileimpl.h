@@ -51,8 +51,6 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      offset_t getOffset(const Reader* reader, size_t idx);
-
       Cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
