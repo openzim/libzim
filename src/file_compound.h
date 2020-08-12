@@ -73,7 +73,10 @@ class FileCompound : public std::map<Range, FilePart<>*, less_range> {
 #endif // ! defined(__APPLE__)
     }
 
-  private:
+  private: // functions
+    void addPart(FilePart<>* fpart);
+
+  private: // data
     zsize_t _fsize;
     mutable time_t mtime;
 };
