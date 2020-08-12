@@ -146,7 +146,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
-    auto ret_buffer = std::make_shared<AllocatedMemoryBuffer>(size);
+    auto ret_buffer = std::make_shared<MemoryBuffer>(size);
     read(ret_buffer->buf(), offset, size);
     return ret_buffer;
   }
@@ -179,7 +179,7 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, Compres
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
   }
-  return std::make_shared<AllocatedMemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
+  return std::make_shared<MemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
 }
 
 std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, CompressionType* comp, bool* extended) const {

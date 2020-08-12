@@ -81,10 +81,10 @@ class MemoryViewBuffer : public Buffer {
     const char* const _data;
 };
 
-class AllocatedMemoryBuffer : public Buffer {
+class MemoryBuffer : public Buffer {
   public:
-    explicit AllocatedMemoryBuffer(zsize_t size);
-    AllocatedMemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
+    explicit MemoryBuffer(zsize_t size);
+    MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
 
     char* buf() { return _data.get(); }
 

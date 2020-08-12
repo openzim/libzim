@@ -76,21 +76,21 @@ MemoryViewBuffer::dataImpl(offset_t offset) const {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// AllocatedMemoryBuffer
+// MemoryBuffer
 ////////////////////////////////////////////////////////////////////////////////
 
-AllocatedMemoryBuffer::AllocatedMemoryBuffer(zsize_t size)
+MemoryBuffer::MemoryBuffer(zsize_t size)
   : Buffer(size)
   , _data(new char[size.v])
 {}
 
-AllocatedMemoryBuffer::AllocatedMemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
+MemoryBuffer::MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
   : Buffer(size)
   , _data(std::move(buffer))
 {}
 
 const char*
-AllocatedMemoryBuffer::dataImpl(offset_t offset) const {
+MemoryBuffer::dataImpl(offset_t offset) const {
     return _data.get() + offset.v;
 }
 
