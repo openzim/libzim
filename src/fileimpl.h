@@ -81,8 +81,7 @@ namespace zim
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
 
-      std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
-      getFileParts(offset_t offset, zsize_t size);
+      FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(article_index_t idx);
       std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
       article_index_t getIndexByTitle(article_index_t idx);

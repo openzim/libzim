@@ -306,7 +306,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
       return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
   }
 
-  std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
+  FileCompound::PartRange
   FileImpl::getFileParts(offset_t offset, zsize_t size)
   {
     return zimFile->locate(offset, size);

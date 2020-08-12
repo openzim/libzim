@@ -22,6 +22,7 @@
 
 #include "file_part.h"
 #include "zim_types.h"
+#include "debug.h"
 #include <map>
 #include <memory>
 #include <cstdio>
@@ -31,8 +32,12 @@ namespace zim {
 class FileReader;
 
 struct Range {
-  Range(const offset_t point ) : min(point), max(point) {}
-  Range(const offset_t  min, const offset_t max) : min(min), max(max) {}
+  Range(const offset_t  min, const offset_t max)
+    : min(min), max(max)
+  {
+      // ASSERT(min, <, max);
+  }
+
   const offset_t min;
   const offset_t max;
 };
@@ -44,7 +49,9 @@ struct less_range : public std::binary_function< Range, Range, bool>
   }
 };
 
-class FileCompound : public std::map<Range, FilePart<>*, less_range> {
+class FileCompound : private std::map<Range, FilePart<>*, less_range> {
+    typedef std::map<Range, FilePart<>*, less_range> ImplType;
+
   public: // types
     typedef const_iterator PartIterator;
     typedef std::pair<PartIterator, PartIterator> PartRange;
@@ -54,10 +61,19 @@ class FileCompound : public std::map<Range, FilePart<>*, less_range> {
     FileCompound(FilePart<>* fpart);
     ~FileCompound();
 
+    using ImplType::begin;
+    using ImplType::end;
+
     zsize_t fsize() const { return _fsize; };
     time_t getMTime() const;
     bool fail() const { return empty(); };
     bool is_multiPart() const { return size() > 1; };
+
+    PartIterator locate(offset_t offset) const {
+      const PartIterator partIt = lower_bound(Range(offset, offset));
+      ASSERT(partIt != end(), ==, true);
+      return partIt;
+    }
 
     PartRange locate(offset_t offset, zsize_t size) const {
 #if ! defined(__APPLE__)
