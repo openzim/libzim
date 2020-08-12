@@ -171,7 +171,7 @@ std::string search_iterator::get_snippet() const {
            We parse it and use the html dump to avoid remove html tags in the
            content and be able to nicely cut the text at random place. */
         zim::MyHtmlParser htmlParser;
-        std::string content = entry.getItem()->getData();
+        std::string content = entry.getItem().getData();
         try {
             htmlParser.parse_html(content, "UTF-8", true);
         } catch (...) {}

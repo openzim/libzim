@@ -61,7 +61,7 @@ namespace zim
     }
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
-    return item->getData();
+    return item.getData();
   }
 
   std::vector<std::string> Archive::getMetadataKeys() const {

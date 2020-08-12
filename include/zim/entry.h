@@ -49,7 +49,7 @@ namespace zim
        * @return The Item associated to the entry.
        * @exception InvalidType if the entry is a redirection and follow is false.
        */
-      std::shared_ptr<Item> getItem(bool follow=false) const;
+      Item getItem(bool follow=false) const;
 
       /** Get the item associated to the target entry.
        *
@@ -59,7 +59,7 @@ namespace zim
        * @return the Item associated with the targeted entry.
        * @exception InvalidType if the entry is not a redirection.
        */
-      std::shared_ptr<Item> getRedirect() const;
+      Item getRedirect() const;
 
       /** Get the Entry targeted by the entry.
        *

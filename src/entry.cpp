@@ -52,7 +52,7 @@ bool Entry::isRedirect() const
   return m_dirent->isRedirect();
 }
 
-std::shared_ptr<Item> Entry::getItem(bool follow) const
+Item Entry::getItem(bool follow) const
 {
   if (isRedirect()) {
     if (! follow) {
@@ -63,10 +63,10 @@ std::shared_ptr<Item> Entry::getItem(bool follow) const
     return getRedirect();
  }
 
-  return std::make_shared<Item>(m_file, m_idx);
+  return Item(m_file, m_idx);
 }
 
-std::shared_ptr<Item> Entry::getRedirect() const {
+Item Entry::getRedirect() const {
   auto nextEntry = getRedirectEntry();
   auto watchdog = 50U;
   while (nextEntry.isRedirect() && --watchdog) {

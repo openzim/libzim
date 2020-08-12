@@ -266,7 +266,7 @@ Search::iterator Search::begin() const {
             continue;
         }
         auto xapianEntry = archive.getEntryByPath(xapianPath);
-        auto accessInfo = xapianEntry.getItem()->getDirectAccessInformation();
+        auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
         if (accessInfo.second == 0) {
             continue;
         }
