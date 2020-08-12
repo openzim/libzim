@@ -62,16 +62,16 @@ std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// MemoryRegionBuffer
+// MemoryViewBuffer
 ////////////////////////////////////////////////////////////////////////////////
 
-MemoryRegionBuffer::MemoryRegionBuffer(const char* buffer, zsize_t size)
+MemoryViewBuffer::MemoryViewBuffer(const char* buffer, zsize_t size)
   : Buffer(size)
   , _data(buffer)
 {}
 
 const char*
-MemoryRegionBuffer::dataImpl(offset_t offset) const {
+MemoryViewBuffer::dataImpl(offset_t offset) const {
     return _data + offset.v;
 }
 

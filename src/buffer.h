@@ -70,9 +70,9 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 };
 
 
-class MemoryRegionBuffer : public Buffer {
+class MemoryViewBuffer : public Buffer {
   public:
-    MemoryRegionBuffer(const char* buffer, zsize_t size);
+    MemoryViewBuffer(const char* buffer, zsize_t size);
 
   protected:
     const char* dataImpl(offset_t offset) const;
