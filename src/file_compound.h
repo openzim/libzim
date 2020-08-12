@@ -45,7 +45,11 @@ struct less_range : public std::binary_function< Range, Range, bool>
 };
 
 class FileCompound : public std::map<Range, FilePart<>*, less_range> {
-  public:
+  public: // types
+    typedef const_iterator PartIterator;
+    typedef std::pair<PartIterator, PartIterator> PartRange;
+
+  public: // functions
     FileCompound(const std::string& filename);
     FileCompound(FilePart<>* fpart);
     ~FileCompound();
@@ -55,8 +59,7 @@ class FileCompound : public std::map<Range, FilePart<>*, less_range> {
     bool fail() const { return empty(); };
     bool is_multiPart() const { return size() > 1; };
 
-    std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
-    locate(offset_t offset, zsize_t size) const {
+    PartRange locate(offset_t offset, zsize_t size) const {
 #if ! defined(__APPLE__)
         return equal_range(Range(offset, offset+size));
 #else
