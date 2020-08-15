@@ -157,7 +157,6 @@ TEST(ZimFile, openRealZimFile)
   }
 }
 
-#if ! defined(__APPLE__)
 TEST(ZimFile, multipart)
 {
   const zim::File zimfile1("./data/wikibooks_be_all_nopic_2017-02.zim");
@@ -202,6 +201,5 @@ TEST(ZimFile, multipart)
     );
   }
 }
-#endif // ! defined(__APPLE__)
 
 } // unnamed namespace
