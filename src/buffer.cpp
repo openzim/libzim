@@ -34,10 +34,69 @@
 
 namespace zim {
 
+namespace {
+
+class SubBuffer : public Buffer {
+  public:
+    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
+      : Buffer(size),
+        _data(src, src->data(offset))
+    {
+      ASSERT(offset.v, <=, src->size().v);
+      ASSERT(offset.v+size.v, <=, src->size().v);
+    }
+
+  const char* dataImpl(offset_t offset) const {
+        return _data.get() + offset.v;
+    }
+
+  private:
+    const std::shared_ptr<const char> _data;
+};
+
+} // unnamed namespace
+
 std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) const
 {
   return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// MemoryViewBuffer
+////////////////////////////////////////////////////////////////////////////////
+
+MemoryViewBuffer::MemoryViewBuffer(const char* buffer, zsize_t size)
+  : Buffer(size)
+  , _data(buffer)
+{}
+
+const char*
+MemoryViewBuffer::dataImpl(offset_t offset) const {
+    return _data + offset.v;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// MemoryBuffer
+////////////////////////////////////////////////////////////////////////////////
+
+MemoryBuffer::MemoryBuffer(zsize_t size)
+  : Buffer(size)
+  , _data(new char[size.v])
+{}
+
+MemoryBuffer::MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
+  : Buffer(size)
+  , _data(std::move(buffer))
+{}
+
+const char*
+MemoryBuffer::dataImpl(offset_t offset) const {
+    return _data.get() + offset.v;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// MMapBuffer
+////////////////////////////////////////////////////////////////////////////////
 
 #ifdef ENABLE_USE_MMAP
 MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
@@ -73,6 +132,13 @@ MMapBuffer::~MMapBuffer()
   munmap(_data, size_.v + _offset.v);
 }
 
-#endif
+const char*
+MMapBuffer::dataImpl(offset_t offset) const
+{
+  offset += _offset;
+  return _data + offset.v;
+}
+
+#endif // ENABLE_USE_MMAP
 
 } //zim

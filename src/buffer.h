@@ -32,22 +32,28 @@
 
 namespace zim {
 
-class MMapException : std::exception {};
-
 class Buffer : public std::enable_shared_from_this<Buffer> {
   public:
-    Buffer(zsize_t size)
+    explicit Buffer(zsize_t size)
       : size_(size)
     {
       ASSERT(size_.v, <, SIZE_MAX);
     };
+
+    Buffer(const Buffer& ) = delete;
+    void operator=(const Buffer& ) = delete;
+
     virtual ~Buffer() {};
-    virtual const char* data(offset_t offset=offset_t(0)) const = 0;
-    virtual char at(offset_t offset) const {
+    const char* data(offset_t offset=offset_t(0)) const {
+      ASSERT(offset.v, <=, size_.v);
+      return dataImpl(offset);
+    }
+
+    char at(offset_t offset) const {
         return *(data(offset));
     }
     zsize_t size() const { return size_; }
-    virtual std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
+    std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
 
     template<typename T>
     T as(offset_t offset) const {
@@ -57,68 +63,54 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
     }
 
   protected:
+    virtual const char* dataImpl(offset_t offset) const = 0;
+
+  protected:
     const zsize_t size_;
 };
 
 
-template<bool CLEAN_AT_END>
+class MemoryViewBuffer : public Buffer {
+  public:
+    MemoryViewBuffer(const char* buffer, zsize_t size);
+
+  protected:
+    const char* dataImpl(offset_t offset) const;
+
+  protected:
+    const char* const _data;
+};
+
 class MemoryBuffer : public Buffer {
   public:
-    MemoryBuffer(const char* buffer, zsize_t size)
-      : Buffer(size),
-        _data(buffer)
-    {}
+    explicit MemoryBuffer(zsize_t size);
+    MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
 
-    virtual ~MemoryBuffer() {
-        if ( CLEAN_AT_END ) {
-          delete [] _data;
-        }
-    }
+    char* buf() { return _data.get(); }
 
-    const char* data(offset_t offset) const {
-        ASSERT(offset.v, <=, size_.v);
-        return _data + offset.v;
-    }
+  protected:
+    const char* dataImpl(offset_t offset) const;
+
   private:
-    const char* _data;
+    const std::unique_ptr<char[]> _data;
 };
 
 
 #ifdef ENABLE_USE_MMAP
+class MMapException : std::exception {};
+
 class MMapBuffer : public Buffer {
   public:
     MMapBuffer(int fd, offset_t offset, zsize_t size);
     ~MMapBuffer();
 
-    const char* data(offset_t offset) const {
-      offset += _offset;
-      return _data + offset.v;
-    }
+    const char* dataImpl(offset_t offset) const;
 
   private:
     offset_t _offset;
     char* _data;
 };
 #endif
-
-
-class SubBuffer : public Buffer {
-  public:
-    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
-      : Buffer(size),
-        _data(src, src->data(offset))
-    {
-      ASSERT(offset.v+size.v, <=, src->size().v);
-    }
-
-  const char* data(offset_t offset) const {
-        ASSERT(offset.v, <=, size_.v);
-        return _data.get() + offset.v;
-    }
-
-  private:
-    std::shared_ptr<const char> _data;
-};
 
 };
 
