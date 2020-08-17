@@ -75,7 +75,9 @@ subdir('static')
 subdir('src')
 subdir('examples')
 subdir('test')
-subdir('docs')
+if get_option('doc')
+  subdir('docs')
+endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : libzim,

@@ -1,5 +1,5 @@
 
-sphinx = find_program('sphinx-build')
+sphinx = find_program('sphinx-build', native:true)
 
 sphinx_target = run_target('doc',
     command: [sphinx, '-bhtml',
