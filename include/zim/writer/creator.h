@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009 Tommi Maekitalo
+ * Copyright (C) 20017-2020 Matthieu Gautier <mgautier@kymeria.fr>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,7 +23,7 @@
 
 #include <memory>
 #include <zim/zim.h>
-#include <zim/writer/article.h>
+#include <zim/writer/item.h>
 
 namespace zim
 {
@@ -45,7 +46,7 @@ namespace zim
 
 
         virtual void startZimCreation(const std::string& fname);
-        virtual void addArticle(std::shared_ptr<Article> article);
+        virtual void addItem(std::shared_ptr<Item> item);
         virtual void finishZimCreation();
 
         virtual Url getMainUrl() const { return Url(); }

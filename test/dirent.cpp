@@ -74,7 +74,7 @@ TEST(DirentTest, set_get_data_dirent)
 {
   zim::Dirent dirent;
   dirent.setUrl('A', "Bar");
-  dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
+  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
   dirent.setVersion(54346);
 
   ASSERT_TRUE(!dirent.isRedirect());
@@ -98,7 +98,7 @@ TEST(DirentTest, read_write_article_dirent)
   zim::writer::Dirent dirent;
   dirent.setUrl(zim::writer::Url('A', "Bar"));
   dirent.setTitle("Foo");
-  dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
+  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
 
   ASSERT_TRUE(!dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), 'A');
@@ -124,7 +124,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
 {
   zim::writer::Dirent dirent;
   dirent.setUrl(zim::writer::Url('A', "L\xc3\xbcliang"));
-  dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
+  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
 
   ASSERT_TRUE(!dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), 'A');
@@ -218,7 +218,7 @@ TEST(DirentTest, dirent_size)
 {
   zim::writer::Dirent dirent;
   std::string s;
-  dirent.setArticle(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
+  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
   dirent.setUrl(zim::writer::Url('A', "Bar"));
 
   // case url set, title empty, extralen empty

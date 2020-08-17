@@ -95,7 +95,7 @@ namespace zim
 
       zim::MyHtmlParser htmlParser;
       try {
-        htmlParser.parse_html(p_article->getData(), "UTF-8", true);
+        htmlParser.parse_html(p_item->getData(), "UTF-8", true);
       } catch (...) {}
       if (htmlParser.dump.find("NOINDEX") != string::npos)
       {
@@ -103,10 +103,10 @@ namespace zim
       }
 
       Xapian::Document document;
-      document.set_data(p_article->getUrl().getLongUrl());
+      document.set_data(p_item->getUrl().getLongUrl());
       indexer.set_document(document);
 
-      auto title = p_article->getTitle();
+      auto title = p_item->getTitle();
       auto normalizedTitle = zim::removeAccents(title);
       auto keywords = zim::removeAccents(htmlParser.keywords);
       auto content = zim::removeAccents(htmlParser.dump);

@@ -120,7 +120,7 @@ namespace zim
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
-          ASSERT(isArticle(), ==, true);
+          ASSERT(isItem(), ==, true);
           cluster = _cluster;
           info.d.blobNumber = _cluster->count();
         }
@@ -135,7 +135,7 @@ namespace zim
         bool isRedirect() const                 { return mimeType == redirectMimeType; }
         bool isLinktarget() const               { return mimeType == linktargetMimeType; }
         bool isDeleted() const                  { return mimeType == deletedMimeType; }
-        bool isArticle() const                  { return !isRedirect() && !isLinktarget() && !isDeleted(); }
+        bool isItem() const                     { return !isRedirect() && !isLinktarget() && !isDeleted(); }
         uint16_t getMimeType() const            { return mimeType; }
         size_t getDirentSize() const
         {
@@ -148,7 +148,7 @@ namespace zim
         offset_t getOffset() const { return offset; }
         void setOffset(offset_t o) { offset = o; }
 
-        void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
+        void setItem(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
         {
           ASSERT(mimeType, ==, 0);
           mimeType = mimeType_;

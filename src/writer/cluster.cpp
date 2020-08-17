@@ -240,10 +240,10 @@ void Cluster::write(int out_fd) const
   }
 }
 
-void Cluster::addArticle(const zim::writer::Article* article)
+void Cluster::addItem(const zim::writer::Item* item)
 {
-  auto filename = article->getFilename();
-  auto size = article->getSize();
+  auto filename = item->getFilename();
+  auto size = item->getSize();
   _size += size;
   blobOffsets.push_back(offset_t(_size.v));
   isExtended |= (size>UINT32_MAX);
@@ -251,7 +251,7 @@ void Cluster::addArticle(const zim::writer::Article* article)
     return;
 
   if (filename.empty()) {
-    _data.emplace_back(DataType::plain, article->getData());
+    _data.emplace_back(DataType::plain, item->getData());
   }
   else {
     _data.emplace_back(DataType::file, filename);

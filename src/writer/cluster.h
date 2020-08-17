@@ -27,7 +27,7 @@
 #include <pthread.h>
 #include <functional>
 
-#include <zim/writer/article.h>
+#include <zim/writer/item.h>
 #include "../zim_types.h"
 
 namespace zim {
@@ -58,7 +58,7 @@ class Cluster {
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
 
-    void addArticle(const zim::writer::Article* article);
+    void addItem(const zim::writer::Item* item);
     void addData(const char* data, zsize_t size);
 
     blob_index_t count() const  { return blob_index_t(blobOffsets.size() - 1); }

@@ -18,23 +18,23 @@
  */
 
 #include <zim/blob.h>
-#include <zim/writer/article.h>
+#include <zim/writer/item.h>
 
 namespace zim
 {
   namespace writer
   {
-    bool Article::isLinktarget() const
+    bool Item::isLinktarget() const
     {
       return false;
     }
 
-    bool Article::isDeleted() const
+    bool Item::isDeleted() const
     {
       return false;
     }
 
-    std::string Article::getNextCategory()
+    std::string Item::getNextCategory()
     {
       return std::string();
     }

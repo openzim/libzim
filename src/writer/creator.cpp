@@ -96,32 +96,32 @@ namespace zim
       pthread_create(&data->writerThread, NULL, clusterWriter, this->data.get());
     }
 
-    void Creator::addArticle(std::shared_ptr<Article> article)
+    void Creator::addItem(std::shared_ptr<Item> item)
     {
-      auto dirent = data->createDirentFromArticle(article.get());
-      data->addDirent(dirent, article.get());
-      data->nbArticles++;
-      if (article->isRedirect()) {
-        data->nbRedirectArticles++;
+      auto dirent = data->createDirentFromItem(item.get());
+      data->addDirent(dirent, item.get());
+      data->nbItems++;
+      if (item->isRedirect()) {
+        data->nbRedirectItems++;
       } else {
-        if (article->shouldCompress())
-          data->nbCompArticles++;
+        if (item->shouldCompress())
+          data->nbCompItems++;
         else
-          data->nbUnCompArticles++;
-        if (!article->getFilename().empty())
-          data->nbFileArticles++;
-        if (article->shouldIndex())
-          data->nbIndexArticles++;
+          data->nbUnCompItems++;
+        if (!item->getFilename().empty())
+          data->nbFileItems++;
+        if (item->shouldIndex())
+          data->nbIndexItems++;
       }
-      if (verbose && data->nbArticles%1000 == 0){
+      if (verbose && data->nbItems%1000 == 0){
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbArticles
-                  << "; RA:" << data->nbRedirectArticles
-                  << "; CA:" << data->nbCompArticles
-                  << "; UA:" << data->nbUnCompArticles
-                  << "; FA:" << data->nbFileArticles
-                  << "; IA:" << data->nbIndexArticles
+                  << "; A:" << data->nbItems
+                  << "; RA:" << data->nbRedirectItems
+                  << "; CA:" << data->nbCompItems
+                  << "; UA:" << data->nbUnCompItems
+                  << "; FA:" << data->nbFileItems
+                  << "; IA:" << data->nbIndexItems
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
@@ -130,10 +130,10 @@ namespace zim
       }
 
 #if defined(ENABLE_XAPIAN)
-      if (article->shouldIndex()) {
-        data->titleIndexer.index(article.get());
-        if(withIndex && !article->isRedirect()) {
-          data->taskList.pushToQueue(new IndexTask(article));
+      if (item->shouldIndex()) {
+        data->titleIndexer.index(item.get());
+        if(withIndex && !item->isRedirect()) {
+          data->taskList.pushToQueue(new IndexTask(item));
         }
       }
 #endif
@@ -144,12 +144,12 @@ namespace zim
       if (verbose) {
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbArticles
-                  << "; RA:" << data->nbRedirectArticles
-                  << "; CA:" << data->nbCompArticles
-                  << "; UA:" << data->nbUnCompArticles
-                  << "; FA:" << data->nbFileArticles
-                  << "; IA:" << data->nbIndexArticles
+                  << "; A:" << data->nbItems
+                  << "; RA:" << data->nbRedirectItems
+                  << "; CA:" << data->nbCompItems
+                  << "; UA:" << data->nbUnCompItems
+                  << "; FA:" << data->nbFileItems
+                  << "; IA:" << data->nbIndexItems
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
                   << "; UC:" << data->nbUnCompClusters
@@ -168,10 +168,10 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
-        auto article = data->titleIndexer.getMetaArticle();
-        auto dirent = data->createDirentFromArticle(article);
-        data->addDirent(dirent, article);
-        delete article;
+        auto item = data->titleIndexer.getMetaItem();
+        auto dirent = data->createDirentFromItem(item);
+        data->addDirent(dirent, item);
+        delete item;
       }
       if (withIndex) {
         wait = 0;
@@ -182,14 +182,14 @@ namespace zim
 
         data->indexer->indexingPostlude();
         microsleep(100);
-        auto article = data->indexer->getMetaArticle();
-        auto dirent = data->createDirentFromArticle(article);
-        data->addDirent(dirent, article);
-        delete article;
+        auto item = data->indexer->getMetaItem();
+        auto dirent = data->createDirentFromItem(item);
+        data->addDirent(dirent, item);
+        delete item;
       }
 #endif
 
-      // When we've seen all articles, write any remaining clusters.
+      // When we've seen all items, write any remaining clusters.
       if (data->compCluster->count())
         data->closeCluster(true);
 
@@ -219,8 +219,8 @@ namespace zim
       TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
 
-      TINFO("Set article indexes");
-      data->setArticleIndexes();
+      TINFO("Set entry indexes");
+      data->setEntryIndexes();
 
       TINFO("Resolve mimetype");
       data->resolveMimeTypes();
@@ -370,12 +370,12 @@ namespace zim
         titleIndexer(language, IndexingMode::TITLE, true),
 #endif
         verbose(verbose),
-        nbArticles(0),
-        nbRedirectArticles(0),
-        nbCompArticles(0),
-        nbUnCompArticles(0),
-        nbFileArticles(0),
-        nbIndexArticles(0),
+        nbItems(0),
+        nbRedirectItems(0),
+        nbCompItems(0),
+        nbUnCompItems(0),
+        nbFileItems(0),
+        nbIndexItems(0),
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
@@ -434,7 +434,7 @@ int mode =  _S_IREAD | _S_IWRITE;
 #endif
     }
 
-    void CreatorData::addDirent(Dirent* dirent, const Article* article)
+    void CreatorData::addDirent(Dirent* dirent, const Item* item)
     {
       auto ret = dirents.insert(dirent);
       if (!ret.second) {
@@ -459,14 +459,14 @@ int mode =  _S_IREAD | _S_IWRITE;
       }
 
       // Add blob data to compressed or uncompressed cluster.
-      auto articleSize = article->getSize();
-      if (articleSize > 0)
+      auto itemSize = item->getSize();
+      if (itemSize > 0)
       {
         isEmpty = false;
       }
 
       Cluster *cluster;
-      if (article->shouldCompress())
+      if (item->shouldCompress())
       {
         cluster = compCluster;
       }
@@ -478,43 +478,43 @@ int mode =  _S_IREAD | _S_IWRITE;
       // If cluster will be too large, write it to dis, and open a new
       // one for the content.
       if ( cluster->count()
-        && cluster->size().v+articleSize >= minChunkSize * 1024
+        && cluster->size().v+itemSize >= minChunkSize * 1024
          )
       {
-        log_info("cluster with " << cluster->count() << " articles, " <<
+        log_info("cluster with " << cluster->count() << " items, " <<
                  cluster->size() << " bytes; current title \"" <<
                  dirent->getTitle() << '\"');
-        cluster = closeCluster(article->shouldCompress());
+        cluster = closeCluster(item->shouldCompress());
       }
 
       dirent->setCluster(cluster);
-      cluster->addArticle(article);
+      cluster->addItem(item);
     }
 
-    Dirent* CreatorData::createDirentFromArticle(const Article* article)
+    Dirent* CreatorData::createDirentFromItem(const Item* item)
     {
       auto dirent = pool.getDirent();
-      dirent->setUrl(article->getUrl());
-      dirent->setTitle(article->getTitle());
+      dirent->setUrl(item->getUrl());
+      dirent->setTitle(item->getTitle());
 
-      if (article->isRedirect())
+      if (item->isRedirect())
       {
         dirent->setRedirect(nullptr);
-        dirent->setRedirectUrl(article->getRedirectUrl());
+        dirent->setRedirectUrl(item->getRedirectUrl());
       }
-      else if (article->isLinktarget())
+      else if (item->isLinktarget())
       {
         dirent->setLinktarget();
       }
-      else if (article->isDeleted())
+      else if (item->isDeleted())
       {
         dirent->setDeleted();
       }
       else
       {
-        auto mimetype = article->getMimeType();
+        auto mimetype = item->getMimeType();
         if (mimetype.empty()) {
-          std::cerr << "Warning, " << article->getUrl().getLongUrl() << " have empty mimetype." << std::endl;
+          std::cerr << "Warning, " << item->getUrl().getLongUrl() << " have empty mimetype." << std::endl;
           mimetype = "application/octet-stream";
         }
         dirent->setMimeType(getMimeTypeIdx(mimetype));
@@ -550,7 +550,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       return cluster;
     }
 
-    void CreatorData::setArticleIndexes()
+    void CreatorData::setEntryIndexes()
     {
       // set index
       INFO("set index");
@@ -610,7 +610,7 @@ int mode =  _S_IREAD | _S_IWRITE;
 
       for (auto& dirent: dirents)
       {
-        if (dirent->isArticle())
+        if (dirent->isItem())
           dirent->setMimeType(mapping[dirent->getMimeType()]);
       }
     }

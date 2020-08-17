@@ -80,24 +80,24 @@ void XapianIndexer::indexingPrelude(const string indexPath_)
   writableDatabase.begin_transaction(true);
 }
 
-void XapianIndexer::index(const zim::writer::Article* article)
+void XapianIndexer::index(const zim::writer::Item* item)
 {
   switch (indexingMode) {
     case IndexingMode::TITLE:
-      indexTitle(article);
+      indexTitle(item);
       break;
     case IndexingMode::FULL:
-      indexFull(article);
+      indexFull(item);
       break;
   }
 }
 
 
-void XapianIndexer::indexFull(const zim::writer::Article* article)
+void XapianIndexer::indexFull(const zim::writer::Item* item)
 {
 }
 
-void XapianIndexer::indexTitle(const zim::writer::Article* article)
+void XapianIndexer::indexTitle(const zim::writer::Item* item)
 {
   Xapian::Stem stemmer;
   Xapian::TermGenerator indexer;
@@ -110,10 +110,10 @@ void XapianIndexer::indexTitle(const zim::writer::Article* article)
   indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
   Xapian::Document currentDocument;
   currentDocument.clear_values();
-  currentDocument.set_data(article->getUrl().getLongUrl());
+  currentDocument.set_data(item->getUrl().getLongUrl());
   indexer.set_document(currentDocument);
 
-  std::string accentedTitle = article->getTitle();
+  std::string accentedTitle = item->getTitle();
   std::string title = zim::removeAccents(accentedTitle);
 
   currentDocument.add_value(0, accentedTitle);
@@ -141,23 +141,23 @@ void XapianIndexer::indexingPostlude()
   this->writableDatabase.close();
 }
 
-XapianMetaArticle* XapianIndexer::getMetaArticle()
+XapianMetaItem* XapianIndexer::getMetaItem()
 {
-  return new XapianMetaArticle(this, indexingMode);
+  return new XapianMetaItem(this, indexingMode);
 }
 
-zim::size_type XapianMetaArticle::getSize() const
+zim::size_type XapianMetaItem::getSize() const
 {
   std::ifstream in(indexer->getIndexPath(), std::ios::binary|std::ios::ate);
   return in.tellg();
 }
 
-std::string XapianMetaArticle::getFilename() const
+std::string XapianMetaItem::getFilename() const
 {
   return indexer->getIndexPath();
 }
 
-zim::Blob XapianMetaArticle::getData() const
+zim::Blob XapianMetaItem::getData() const
 {
   throw std::logic_error("We should not pass here.");
   return zim::Blob();

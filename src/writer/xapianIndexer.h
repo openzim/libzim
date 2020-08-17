@@ -20,7 +20,7 @@
 #ifndef LIBZIM_WRITER_XAPIANINDEXER_H
 #define LIBZIM_WRITER_XAPIANINDEXER_H
 
-#include <zim/writer/article.h>
+#include <zim/writer/item.h>
 
 #include <unicode/locid.h>
 #include <xapian.h>
@@ -40,7 +40,7 @@ enum class IndexingMode {
   FULL
 };
 
-class XapianMetaArticle : public zim::writer::Article
+class XapianMetaItem : public zim::writer::Item
 {
  private:
   XapianIndexer* indexer;
@@ -48,9 +48,9 @@ class XapianMetaArticle : public zim::writer::Article
   mutable std::string data;
 
  public:
-  XapianMetaArticle(XapianIndexer* indexer, IndexingMode mode) : indexer(indexer), mode(mode)
+  XapianMetaItem(XapianIndexer* indexer, IndexingMode mode) : indexer(indexer), mode(mode)
   {}
-  virtual ~XapianMetaArticle() = default;
+  virtual ~XapianMetaItem() = default;
   virtual zim::Blob getData() const;
   virtual zim::writer::Url getUrl() const {
     switch (mode) {
@@ -86,14 +86,14 @@ class XapianIndexer
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
   void indexingPrelude(const string indexPath);
-  void index(const zim::writer::Article* article);
+  void index(const zim::writer::Item* item);
   void flush();
   void indexingPostlude();
-  XapianMetaArticle* getMetaArticle();
+  XapianMetaItem* getMetaItem();
 
  protected:
-  void indexTitle(const zim::writer::Article* article);
-  void indexFull(const zim::writer::Article* article);
+  void indexTitle(const zim::writer::Item* item);
+  void indexFull(const zim::writer::Item* item);
 
   Xapian::WritableDatabase writableDatabase;
   std::string stemmer_language;

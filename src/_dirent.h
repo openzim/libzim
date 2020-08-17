@@ -116,7 +116,7 @@ namespace zim
         mimeType = redirectMimeType;
       }
 
-      void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
+      void setItem(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
         ASSERT(mimeType, ==, 0);
         mimeType = mimeType_;

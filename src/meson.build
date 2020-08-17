@@ -28,7 +28,7 @@ common_sources = [
     'tools.cpp',
     'compression.cpp',
     'writer/creator.cpp',
-    'writer/article.cpp',
+    'writer/item.cpp',
     'writer/cluster.cpp',
     'writer/dirent.cpp',
     'writer/workers.cpp',

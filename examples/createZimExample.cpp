@@ -23,15 +23,15 @@
 #include <zim/writer/creator.h>
 #include <zim/blob.h>
 
-class TestArticle : public zim::writer::Article
+class TestItem : public zim::writer::Item
 {
     std::string _id;
     std::string _data;
 
   public:
-    TestArticle()  { }
-    explicit TestArticle(const std::string& id);
-    virtual ~TestArticle() = default;
+    TestItem()  { }
+    explicit TestItem(const std::string& id);
+    virtual ~TestItem() = default;
 
     virtual std::string getAid() const;
     virtual zim::writer::Url getUrl() const;
@@ -48,40 +48,40 @@ class TestArticle : public zim::writer::Article
     { return zim::Blob(&_data[0], _data.size()); }
 };
 
-TestArticle::TestArticle(const std::string& id)
+TestItem::TestItem(const std::string& id)
   : _id(id)
 {
   std::ostringstream data;
-  data << "this is article " << id << std::endl;
+  data << "this is item " << id << std::endl;
   _data = data.str();
 }
 
-std::string TestArticle::getAid() const
+std::string TestItem::getAid() const
 {
   return _id;
 }
 
-zim::writer::Url TestArticle::getUrl() const
+zim::writer::Url TestItem::getUrl() const
 {
   return zim::writer::Url('A', _id);
 }
 
-std::string TestArticle::getTitle() const
+std::string TestItem::getTitle() const
 {
   return _id;
 }
 
-bool TestArticle::isRedirect() const
+bool TestItem::isRedirect() const
 {
   return false;
 }
 
-std::string TestArticle::getMimeType() const
+std::string TestItem::getMimeType() const
 {
   return "text/plain";
 }
 
-zim::writer::Url TestArticle::getRedirectUrl() const
+zim::writer::Url TestItem::getRedirectUrl() const
 {
   return zim::writer::Url();
 }
@@ -96,8 +96,8 @@ int main(int argc, char* argv[])
     {
       std::ostringstream id;
       id << (n + 1);
-      auto article = std::make_shared<TestArticle>(id.str());
-      c.addArticle(article);
+      auto article = std::make_shared<TestItem>(id.str());
+      c.addItem(article);
     }
     c.finishZimCreation();
   }

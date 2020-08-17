@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_WRITER_ARTICLESOURCE_H
-#define ZIM_WRITER_ARTICLESOURCE_H
+#ifndef ZIM_WRITER_ITEM_H
+#define ZIM_WRITER_ITEM_H
 
 #include <stdexcept>
 #include <zim/blob.h>
@@ -31,7 +31,7 @@ namespace zim
 {
   namespace writer
   {
-    class Article
+    class Item
     {
       public:
         virtual Url getUrl() const = 0;
@@ -46,13 +46,13 @@ namespace zim
         virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
         virtual std::string getFilename() const = 0;
-        virtual ~Article() = default;
+        virtual ~Item() = default;
 
-        // returns the next category id, to which the article is assigned to
+        // returns the next category id, to which the item is assigned to
         virtual std::string getNextCategory();
     };
 
   }
 }
 
-#endif // ZIM_WRITER_ARTICLESOURCE_H
+#endif // ZIM_WRITER_ITEM_H
