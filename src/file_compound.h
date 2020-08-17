@@ -57,7 +57,20 @@ class FileCompound : public std::map<Range, FilePart<>*, less_range> {
 
     std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
     locate(offset_t offset, zsize_t size) const {
+#if ! defined(__APPLE__)
         return equal_range(Range(offset, offset+size));
+#else
+        // Workaround for https://github.com/openzim/libzim/issues/398
+        // Under MacOS the implementation of std::map::equal_range() makes
+        // assumptions about the properties of the key comparison function and
+        // abuses the std::map requirement that it must contain unique keys. As
+        // a result, when a map m is queried with an element k that is
+        // equivalent to more than one keys present in m,
+        // m.equal_range(k).first may be different from m.lower_bound(k) (the
+        // latter one returning the correct result).
+        const Range queryRange(offset, offset+size);
+        return {lower_bound(queryRange), upper_bound(queryRange)};
+#endif // ! defined(__APPLE__)
     }
 
   private:
