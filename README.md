@@ -8,6 +8,7 @@ openZIM project at https://openzim.org/.
 
 [![latest release](https://img.shields.io/github/v/tag/openzim/libzim?label=latest%20release&sort=semver)](https://download.openzim.org/release/libzim/)
 [![Build Status](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amaster)](https://github.com/openzim/libzim/actions?query=branch%3Amaster)
+[![Doc Status](https://readthedocs.org/projects/libzim/badge/?style=flat)](https://libzim.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/openzim/libzim/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
@@ -42,6 +43,11 @@ libraries need to be available:
 * [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
 * [UUID](http://e2fsprogs.sourceforge.net/) (package `uuid-dev` on Ubuntu)
 * [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
+
+To build the documentations you need the packages :
+
+* [Doxygen](https://www.doxygen.nl)
+* Python packages [Sphinx](https://www.sphinx-doc.org), [breathe](https://breathe.readthedocs.io) and [exhale](https://exhale.readthedocs.io).
 
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
@@ -80,6 +86,12 @@ By default, it will compile dynamic linked libraries. All binary files
 will be created in the `build` directory created automatically by
 Meson. If you want statically linked libraries, you can add
 `--default-library=static` option to the Meson command.
+
+If you want to build the documentation, we need to pass the `-Ddoc=true` option and run the `doc` target:
+```bash
+meson . build -Ddoc=true
+ninja -C build doc
+```
 
 Depending of you system, `ninja` may be called `ninja-build`.
 
