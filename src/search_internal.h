@@ -26,6 +26,8 @@
 #include <xapian.h>
 #endif
 
+#include <zim/entry.h>
+
 namespace zim {
 
 struct Search::InternalData {
@@ -43,18 +45,39 @@ struct search_iterator::InternalData {
     Xapian::Document _document;
     bool document_fetched;
 #endif
-    Article _article;
-    bool article_fetched;
+    std::unique_ptr<Entry> _entry;
+
+    InternalData(const InternalData& other) :
+#if defined(ENABLE_XAPIAN)
+      search(other.search),
+      iterator(other.iterator),
+      _document(other._document),
+      document_fetched(other.document_fetched),
+#endif
+      _entry(other._entry ? new Entry(*other._entry) : nullptr )
+    {
+    }
+
+    InternalData& operator=(const InternalData& other)
+    {
+      if (this != &other) {
+        search = other.search;
+        iterator = other.iterator;
+        _document = other._document;
+        document_fetched = other.document_fetched;
+        _entry.reset(new Entry(*other._entry.get()));
+      }
+      return *this;
+    }
 
 
 #if defined(ENABLE_XAPIAN)
-    InternalData(const Search* search, Xapian::MSetIterator iterator) : 
+    InternalData(const Search* search, Xapian::MSetIterator iterator) :
         search(search),
         iterator(iterator),
-        document_fetched(false),
-        article_fetched(false)
+        document_fetched(false)
     {};
-    
+
     Xapian::Document get_document() {
         if ( !document_fetched ) {
             if (iterator != search->internal->results.end()) {
@@ -69,24 +92,20 @@ struct search_iterator::InternalData {
     int get_databasenumber() {
 #if defined(ENABLE_XAPIAN)
         Xapian::docid docid = *iterator;
-        return (docid - 1) % search->zimfiles.size();
+        return (docid - 1) % search->m_archives.size();
 #endif
         return 0;
     }
 
-    Article& get_article() {
+    Entry& get_entry() {
 #if defined(ENABLE_XAPIAN)
-        if ( !article_fetched ) {
+        if ( !_entry ) {
             int databasenumber = get_databasenumber();
-            const File* file = search->zimfiles[databasenumber];
-            if ( ! file )
-                _article = Article();
-            else
-                _article = file->getArticleByUrl(get_document().get_data());
-            article_fetched = true;
+            auto archive = search->m_archives.at(databasenumber);
+            _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
         }
 #endif
-        return _article;
+        return *_entry.get();
     }
 };
 

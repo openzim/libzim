@@ -51,16 +51,16 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      offset_t getOffset(const Reader* reader, size_t idx);
+      static offset_t getOffset(const Reader* reader, size_t idx);
 
-      Cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
+      Cache<entry_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
       Cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;
-      typedef std::map<char, article_index_t> NamespaceCache;
+      typedef std::map<char, entry_index_t> NamespaceCache;
 
       NamespaceCache namespaceBeginCache;
       pthread_mutex_t namespaceBeginLock;
@@ -70,9 +70,9 @@ namespace zim
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      using pair_type = std::pair<cluster_index_type, article_index_type>;
-      std::vector<pair_type> articleListByCluster;
-      std::once_flag orderOnceFlag;
+      using pair_type = std::pair<cluster_index_type, entry_index_type>;
+      mutable std::vector<pair_type> articleListByCluster;
+      mutable std::once_flag orderOnceFlag;
 
     public:
       explicit FileImpl(const std::string& fname);
@@ -85,25 +85,25 @@ namespace zim
 
       std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
       getFileParts(offset_t offset, zsize_t size);
-      std::shared_ptr<const Dirent> getDirent(article_index_t idx);
-      std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
-      article_index_t getIndexByTitle(article_index_t idx);
-      article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
+      std::shared_ptr<const Dirent> getDirent(entry_index_t idx);
+      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx);
+      entry_index_t getIndexByTitle(title_index_t idx) const;
+      entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
+      entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
 
-      std::pair<bool, article_index_t> findx(char ns, const std::string& url);
-      std::pair<bool, article_index_t> findx(const std::string& url);
-      std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
-      std::pair<bool, article_index_t> findxByClusterOrder(article_index_type idx);
+      std::pair<bool, entry_index_t> findx(char ns, const std::string& url);
+      std::pair<bool, entry_index_t> findx(const std::string& url);
+      std::pair<bool, title_index_t> findxByTitle(char ns, const std::string& title);
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
       offset_t getClusterOffset(cluster_index_t idx);
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
-      article_index_t getNamespaceBeginOffset(char ch);
-      article_index_t getNamespaceEndOffset(char ch);
-      article_index_t getNamespaceCount(char ns)
+      entry_index_t getNamespaceBeginOffset(char ch);
+      entry_index_t getNamespaceEndOffset(char ch);
+      entry_index_t getNamespaceCount(char ns)
         { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
       std::string getNamespaces();

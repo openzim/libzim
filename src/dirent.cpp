@@ -54,12 +54,12 @@ namespace zim
 
     if (redirect)
     {
-      article_index_t redirectIndex(buffer->as<article_index_type>(current));
-      current += sizeof(article_index_t);
+      entry_index_t redirectIndex(buffer->as<entry_index_type>(current));
+      current += sizeof(entry_index_t);
 
       log_debug("redirectIndex=" << redirectIndex);
 
-      setRedirect(article_index_t(redirectIndex));
+      setRedirect(entry_index_t(redirectIndex));
     }
     else if (linktarget || deleted)
     {

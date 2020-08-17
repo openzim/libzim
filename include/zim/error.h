@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2020 Matthieu Gautier <mgautier@kymeria.fr>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,6 +32,21 @@ namespace zim
         { }
   };
 
+  class InvalidType: public std::logic_error
+  {
+    public:
+      explicit InvalidType(const std::string& msg)
+        : std::logic_error(msg)
+      {}
+  };
+
+  class EntryNotFound : public std::runtime_error
+  {
+    public:
+      explicit EntryNotFound(const std::string& msg)
+       : std::runtime_error(msg)
+      {}
+  };
 }
 
 #endif // ZIM_ERROR_H

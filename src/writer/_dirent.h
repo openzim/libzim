@@ -59,7 +59,7 @@ namespace zim
         std::string title;
         Cluster* cluster = nullptr;
         Url redirectUrl;
-        article_index_t idx = article_index_t(0);
+        entry_index_t idx = entry_index_t(0);
         offset_t offset;
 
       public:
@@ -94,7 +94,7 @@ namespace zim
           info.r.redirectDirent = target;
           mimeType = redirectMimeType;
         }
-        article_index_t getRedirectIndex() const      { return isRedirect() ? info.r.redirectDirent->getIdx() : article_index_t(0); }
+        entry_index_t getRedirectIndex() const      { return isRedirect() ? info.r.redirectDirent->getIdx() : entry_index_t(0); }
 
         void setMimeType(uint16_t mime)
         {
@@ -114,8 +114,8 @@ namespace zim
         }
 
 
-        void setIdx(article_index_t idx_)      { idx = idx_; }
-        article_index_t getIdx() const         { return idx; }
+        void setIdx(entry_index_t idx_)      { idx = idx_; }
+        entry_index_t getIdx() const         { return idx; }
 
 
         void setCluster(zim::writer::Cluster* _cluster)

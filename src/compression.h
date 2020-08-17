@@ -172,7 +172,7 @@ class Uncompressor
  *
  * @param reader         The reader where the data is.
  * @param startOffset    The offset where the data is in the reader.
- * @param dest_size[out] The size of the uncompressed data.
+ * @param[out] dest_size The size of the uncompressed data.
  * @return A pointer to the uncompressed data. This must be deleted (delete[])
 */
 template<typename INFO>

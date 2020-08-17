@@ -28,7 +28,7 @@
 namespace zim
 {
 
-class File;
+class Archive;
 class Search
 {
     friend class search_iterator;
@@ -36,8 +36,8 @@ class Search
     public:
         typedef search_iterator iterator;
 
-        explicit Search(const std::vector<const File*> zimfiles);
-        explicit Search(const File* zimfile);
+        explicit Search(const std::vector<Archive>& archives);
+        explicit Search(const Archive& archive);
         Search(const Search& it);
         Search& operator=(const Search& it);
         Search(Search&& it);
@@ -46,7 +46,7 @@ class Search
 
         void set_verbose(bool verbose);
 
-        Search& add_zimfile(const File* zimfile);
+        Search& add_archive(const Archive& archive);
         Search& set_query(const std::string& query);
         Search& set_georange(float latitude, float longitude, float distance);
         Search& set_range(int start, int end);
@@ -59,7 +59,7 @@ class Search
     private:
          struct InternalData;
          std::unique_ptr<InternalData> internal;
-         std::vector<const File*> zimfiles;
+         std::vector<Archive> m_archives;
 
          mutable std::map<std::string, int> valuesmap;
          mutable std::string prefixes;

@@ -34,8 +34,8 @@
 
 namespace zim
 {
-  // An index of an article (in a zim file)
-  typedef uint32_t article_index_type;
+  // An index of an entry (in a zim file)
+  typedef uint32_t entry_index_type;
 
   // An index of an cluster (in a zim file)
   typedef uint32_t cluster_index_type;
@@ -43,7 +43,7 @@ namespace zim
   // An index of a blog (in a cluster)
   typedef uint32_t blob_index_type;
 
-  // The size of something (article, zim, cluster, blob, ...)
+  // The size of something (entry, zim, cluster, blob, ...)
   typedef uint64_t size_type;
 
   // An offset.

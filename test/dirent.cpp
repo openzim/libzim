@@ -148,7 +148,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
 TEST(DirentTest, read_write_redirect_dirent)
 {
   zim::writer::Dirent targetDirent;
-  targetDirent.setIdx(zim::article_index_t(321));
+  targetDirent.setIdx(zim::entry_index_t(321));
   zim::writer::Dirent dirent;
   dirent.setUrl(zim::writer::Url('A', "Bar"));
   dirent.setRedirect(&targetDirent);
@@ -236,7 +236,7 @@ TEST(DirentTest, dirent_size)
 TEST(DirentTest, redirect_dirent_size)
 {
   zim::writer::Dirent targetDirent;
-  targetDirent.setIdx(zim::article_index_t(321));
+  targetDirent.setIdx(zim::entry_index_t(321));
   zim::writer::Dirent dirent;
   dirent.setUrl(zim::writer::Url('A', "Bar"));
   dirent.setRedirect(&targetDirent);
