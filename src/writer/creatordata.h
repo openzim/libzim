@@ -74,7 +74,7 @@ namespace zim
         virtual ~CreatorData();
 
         void addDirent(Dirent* dirent);
-        void addItemData(Dirent* dirent, const Item* item);
+        void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
         Dirent* createItemDirent(const Item* item);
         Dirent* createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath);
         Cluster* closeCluster(bool compressed);

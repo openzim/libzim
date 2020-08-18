@@ -101,10 +101,11 @@ namespace zim
     void Creator::addItem(std::shared_ptr<Item> item)
     {
       auto dirent = data->createItemDirent(item.get());
+      auto compressContent = isCompressibleMimetype(item->getMimeType());
       data->addDirent(dirent);
-      data->addItemData(dirent, item.get());
+      data->addItemData(dirent, item->getContentProvider(), compressContent);
       data->nbItems++;
-      if (isCompressibleMimetype(item->getMimeType())) {
+      if (compressContent) {
         data->nbCompItems++;
       } else {
         data->nbUnCompItems++;
@@ -196,7 +197,7 @@ namespace zim
         auto item = data->titleIndexer.getMetaItem();
         auto dirent = data->createItemDirent(item);
         data->addDirent(dirent);
-        data->addItemData(dirent, item);
+        data->addItemData(dirent, item->getContentProvider(), false);
         delete item;
       }
       if (withIndex) {
@@ -211,7 +212,7 @@ namespace zim
         auto item = data->indexer->getMetaItem();
         auto dirent = data->createItemDirent(item);
         data->addDirent(dirent);
-        data->addItemData(dirent, item);
+        data->addItemData(dirent, item->getContentProvider(), false);
         delete item;
       }
 #endif
@@ -486,17 +487,15 @@ int mode =  _S_IREAD | _S_IWRITE;
       }
     }
 
-    void CreatorData::addItemData(Dirent* dirent, const Item* item)
+    void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
     {
       // Add blob data to compressed or uncompressed cluster.
-      auto contentProvider = item->getContentProvider();
-      auto itemSize = contentProvider->getSize();
+      auto itemSize = provider->getSize();
       if (itemSize > 0)
       {
         isEmpty = false;
       }
 
-      auto compressContent = isCompressibleMimetype(item->getMimeType());
       auto cluster = compressContent ? compCluster : uncompCluster;
 
       // If cluster will be too large, write it to dis, and open a new
@@ -512,7 +511,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       }
 
       dirent->setCluster(cluster);
-      cluster->addContent(std::move(contentProvider));
+      cluster->addContent(std::move(provider));
     }
 
     Dirent* CreatorData::createItemDirent(const Item* item)
