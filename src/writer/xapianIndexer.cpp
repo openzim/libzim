@@ -24,6 +24,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <cassert>
 
 /* Constructor */
 XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingMode, const bool verbose)
@@ -80,25 +81,9 @@ void XapianIndexer::indexingPrelude(const string indexPath_)
   writableDatabase.begin_transaction(true);
 }
 
-void XapianIndexer::index(const zim::writer::Item* item)
+void XapianIndexer::indexTitle(const std::string& path, const std::string& title)
 {
-  switch (indexingMode) {
-    case IndexingMode::TITLE:
-      indexTitle(item);
-      break;
-    case IndexingMode::FULL:
-      indexFull(item);
-      break;
-  }
-}
-
-
-void XapianIndexer::indexFull(const zim::writer::Item* item)
-{
-}
-
-void XapianIndexer::indexTitle(const zim::writer::Item* item)
-{
+  assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
   Xapian::TermGenerator indexer;
   try {
@@ -110,16 +95,15 @@ void XapianIndexer::indexTitle(const zim::writer::Item* item)
   indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
   Xapian::Document currentDocument;
   currentDocument.clear_values();
-  currentDocument.set_data(item->getPath());
+  currentDocument.set_data(path);
   indexer.set_document(currentDocument);
 
-  std::string accentedTitle = item->getTitle();
-  std::string title = zim::removeAccents(accentedTitle);
+  std::string unaccentedTitle = zim::removeAccents(title);
 
-  currentDocument.add_value(0, accentedTitle);
+  currentDocument.add_value(0, title);
 
-  if (!title.empty()) {
-    indexer.index_text(title, 1);
+  if (!unaccentedTitle.empty()) {
+    indexer.index_text(unaccentedTitle, 1);
   }
 
   /* add to the database */

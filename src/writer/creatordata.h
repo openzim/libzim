@@ -73,8 +73,10 @@ namespace zim
                        CompressionType compression);
         virtual ~CreatorData();
 
-        void addDirent(Dirent* dirent, const Item* item);
-        Dirent* createDirentFromItem(const Item* item);
+        void addDirent(Dirent* dirent);
+        void addItemData(Dirent* dirent, const Item* item);
+        Dirent* createItemDirent(const Item* item);
+        Dirent* createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath);
         Cluster* closeCluster(bool compressed);
 
         void setEntryIndexes();

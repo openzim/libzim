@@ -86,15 +86,13 @@ class XapianIndexer
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
   void indexingPrelude(const string indexPath);
-  void index(const zim::writer::Item* item);
   void flush();
   void indexingPostlude();
   XapianMetaItem* getMetaItem();
 
- protected:
-  void indexTitle(const zim::writer::Item* item);
-  void indexFull(const zim::writer::Item* item);
+  void indexTitle(const std::string& path, const std::string& title);
 
+ protected:
   Xapian::WritableDatabase writableDatabase;
   std::string stemmer_language;
   Xapian::SimpleStopper stopper;

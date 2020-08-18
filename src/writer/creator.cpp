@@ -98,21 +98,18 @@ namespace zim
 
     void Creator::addItem(std::shared_ptr<Item> item)
     {
-      auto dirent = data->createDirentFromItem(item.get());
-      data->addDirent(dirent, item.get());
+      auto dirent = data->createItemDirent(item.get());
+      data->addDirent(dirent);
+      data->addItemData(dirent, item.get());
       data->nbItems++;
-      if (item->isRedirect()) {
-        data->nbRedirectItems++;
-      } else {
-        if (item->shouldCompress())
-          data->nbCompItems++;
-        else
-          data->nbUnCompItems++;
-        if (!item->getFilename().empty())
-          data->nbFileItems++;
-        if (item->shouldIndex())
-          data->nbIndexItems++;
-      }
+      if (item->shouldCompress())
+        data->nbCompItems++;
+      else
+        data->nbUnCompItems++;
+      if (!item->getFilename().empty())
+        data->nbFileItems++;
+      if (item->shouldIndex())
+        data->nbIndexItems++;
       if (verbose && data->nbItems%1000 == 0){
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
@@ -131,13 +128,42 @@ namespace zim
 
 #if defined(ENABLE_XAPIAN)
       if (item->shouldIndex()) {
-        data->titleIndexer.index(item.get());
-        if(withIndex && !item->isRedirect()) {
+        data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
+        if(withIndex) {
           data->taskList.pushToQueue(new IndexTask(item));
         }
       }
 #endif
     }
+
+    void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
+    {
+      auto dirent = data->createRedirectDirent(path, title, targetPath);
+      data->addDirent(dirent);
+      data->nbItems++;
+      data->nbRedirectItems++;
+      if (verbose && data->nbItems%1000 == 0){
+        double seconds = difftime(time(NULL),data->start_time);
+        std::cout << "T:" << (int)seconds
+                  << "; A:" << data->nbItems
+                  << "; RA:" << data->nbRedirectItems
+                  << "; CA:" << data->nbCompItems
+                  << "; UA:" << data->nbUnCompItems
+                  << "; FA:" << data->nbFileItems
+                  << "; IA:" << data->nbIndexItems
+                  << "; C:" << data->nbClusters
+                  << "; CC:" << data->nbCompClusters
+                  << "; UC:" << data->nbUnCompClusters
+                  << "; WC:" << data->taskList.size()
+                  << std::endl;
+      }
+
+#if defined(ENABLE_XAPIAN)
+      if (!title.empty()) {
+        data->titleIndexer.indexTitle(path, title);
+      }
+#endif
+     }
 
     void Creator::finishZimCreation()
     {
@@ -169,8 +195,9 @@ namespace zim
       {
         data->titleIndexer.indexingPostlude();
         auto item = data->titleIndexer.getMetaItem();
-        auto dirent = data->createDirentFromItem(item);
-        data->addDirent(dirent, item);
+        auto dirent = data->createItemDirent(item);
+        data->addDirent(dirent);
+        data->addItemData(dirent, item);
         delete item;
       }
       if (withIndex) {
@@ -183,8 +210,9 @@ namespace zim
         data->indexer->indexingPostlude();
         microsleep(100);
         auto item = data->indexer->getMetaItem();
-        auto dirent = data->createDirentFromItem(item);
-        data->addDirent(dirent, item);
+        auto dirent = data->createItemDirent(item);
+        data->addDirent(dirent);
+        data->addItemData(dirent, item);
         delete item;
       }
 #endif
@@ -435,7 +463,7 @@ int mode =  _S_IREAD | _S_IWRITE;
 #endif
     }
 
-    void CreatorData::addDirent(Dirent* dirent, const Item* item)
+    void CreatorData::addDirent(Dirent* dirent)
     {
       auto ret = dirents.insert(dirent);
       if (!ret.second) {
@@ -458,7 +486,10 @@ int mode =  _S_IREAD | _S_IWRITE;
         unresolvedRedirectDirents.insert(dirent);
         return;
       }
+    }
 
+    void CreatorData::addItemData(Dirent* dirent, const Item* item)
+    {
       // Add blob data to compressed or uncompressed cluster.
       auto itemSize = item->getSize();
       if (itemSize > 0)
@@ -492,7 +523,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       cluster->addItem(item);
     }
 
-    Dirent* CreatorData::createDirentFromItem(const Item* item)
+    Dirent* CreatorData::createItemDirent(const Item* item)
     {
       auto dirent = pool.getDirent();
       auto path = item->getPath();
@@ -500,22 +531,24 @@ int mode =  _S_IREAD | _S_IWRITE;
       dirent->setPath(path.substr(2, std::string::npos));
       dirent->setTitle(item->getTitle());
 
-      if (item->isRedirect())
-      {
-        dirent->setRedirect(nullptr);
-        auto redirectPath = item->getRedirectPath();
-        dirent->setRedirectNs(redirectPath[0]);
-        dirent->setRedirectPath(redirectPath.substr(2, std::string::npos));
+      auto mimetype = item->getMimeType();
+      if (mimetype.empty()) {
+        std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
+        mimetype = "application/octet-stream";
       }
-      else
-      {
-        auto mimetype = item->getMimeType();
-        if (mimetype.empty()) {
-          std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
-          mimetype = "application/octet-stream";
-        }
-        dirent->setMimeType(getMimeTypeIdx(mimetype));
-      }
+      dirent->setMimeType(getMimeTypeIdx(mimetype));
+      return dirent;
+    }
+
+    Dirent* CreatorData::createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath)
+    {
+      auto dirent = pool.getDirent();
+      dirent->setNamespace(path[0]);
+      dirent->setPath(path.substr(2, std::string::npos));
+      dirent->setTitle(title);
+      dirent->setRedirectNs(targetPath[0]);
+      dirent->setRedirectPath(targetPath.substr(2, std::string::npos));
+      dirent->setRedirect(nullptr);
       return dirent;
     }
 

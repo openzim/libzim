@@ -46,6 +46,10 @@ namespace zim
 
         virtual void startZimCreation(const std::string& fname);
         virtual void addItem(std::shared_ptr<Item> item);
+        virtual void addRedirection(
+            const std::string& path,
+            const std::string& title,
+            const std::string& targetpath);
         virtual void finishZimCreation();
 
         virtual std::string getMainPath() const { return ""; }
