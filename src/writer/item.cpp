@@ -17,13 +17,63 @@
  *
  */
 
-#include <zim/blob.h>
 #include <zim/writer/item.h>
+#include "xapian/myhtmlparse.h"
+#include "tools.h"
 
 namespace zim
 {
   namespace writer
   {
+    class DefaultIndexData : public IndexData {
+      public:
+        DefaultIndexData(const std::string& htmlData, const std::string& title)
+          : title(title)
+        {
+          try {
+            htmlParser.parse_html(htmlData, "UTF-8", true);
+          } catch(...) {}
+        }
+
+        bool hasIndexData() const {
+          return (htmlParser.dump.find("NOINDEX") == std::string::npos);
+        }
+
+        std::string getTitle() const {
+          return zim::removeAccents(title);
+        }
+
+        std::string getContent() const {
+          return zim::removeAccents(htmlParser.dump);
+        }
+
+        std::string getKeywords() const {
+          return zim::removeAccents(htmlParser.keywords);
+        }
+
+        uint32_t getWordCount() const {
+          return countWords(htmlParser.dump);
+        }
+
+        std::tuple<bool, double, double> getGeoPosition() const
+        {
+          if(!htmlParser.has_geoPosition) {
+            return std::make_tuple(false, 0, 0);
+          }
+          return std::make_tuple(true, htmlParser.latitude, htmlParser.longitude);
+        }
+
+      private:
+        zim::MyHtmlParser htmlParser;
+        std::string title;
+
+    };
+
+    std::unique_ptr<IndexData> Item::getIndexData() const
+    {
+      return std::unique_ptr<IndexData>(new DefaultIndexData(getData(), getTitle()));
+
+    }
      // Item içmplementation
   }
 }

@@ -30,15 +30,26 @@ namespace zim
 {
   namespace writer
   {
+    class IndexData {
+      public:
+        virtual ~IndexData() = default;
+        virtual bool hasIndexData() const = 0;
+        virtual std::string getTitle() const = 0;
+        virtual std::string getContent() const = 0;
+        virtual std::string getKeywords() const = 0;
+        virtual uint32_t getWordCount() const = 0;
+        virtual std::tuple<bool, double, double> getGeoPosition() const = 0;
+    };
+
     class Item
     {
       public:
         virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getMimeType() const = 0;
-        virtual bool shouldIndex() const = 0;
         virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
+        virtual std::unique_ptr<IndexData> getIndexData() const;
         virtual std::string getFilename() const = 0;
         virtual ~Item() = default;
     };

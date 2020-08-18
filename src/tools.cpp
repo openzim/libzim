@@ -72,6 +72,21 @@ std::string zim::removeAccents(const std::string& text)
   return unaccentedText;
 }
 
+uint32_t zim::countWords(const std::string& text)
+{
+  unsigned int numWords = 1;
+  unsigned int length = text.size();
+
+  for (unsigned int i = 0; i < length;) {
+    while (i < length && text[i] != ' ') {
+      i++;
+    }
+    numWords++;
+      i++;
+    }
+  return numWords;
+}
+
 
 void zim::microsleep(int microseconds) {
 #ifdef __MINGW32__

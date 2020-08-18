@@ -62,7 +62,7 @@ XapianIndexer::~XapianIndexer()
   }
 }
 
-void XapianIndexer::indexingPrelude(const string indexPath_)
+void XapianIndexer::indexingPrelude(const std::string indexPath_)
 {
   indexPath = indexPath_;
   writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);

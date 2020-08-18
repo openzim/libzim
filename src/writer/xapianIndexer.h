@@ -25,7 +25,6 @@
 #include <unicode/locid.h>
 #include <xapian.h>
 #include <zim/blob.h>
-#include "xapian/myhtmlparse.h"
 
 
 namespace zim {
@@ -85,7 +84,7 @@ class XapianIndexer
   XapianIndexer(const std::string& language, IndexingMode mode, bool verbose);
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
-  void indexingPrelude(const string indexPath);
+  void indexingPrelude(const std::string indexPath);
   void flush();
   void indexingPostlude();
   XapianMetaItem* getMetaItem();

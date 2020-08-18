@@ -102,14 +102,24 @@ namespace zim
       data->addDirent(dirent);
       data->addItemData(dirent, item.get());
       data->nbItems++;
-      if (isCompressibleMimetype(item->getMimeType()))
+      if (isCompressibleMimetype(item->getMimeType())) {
         data->nbCompItems++;
-      else
+      } else {
         data->nbUnCompItems++;
+      }
       if (!item->getFilename().empty())
         data->nbFileItems++;
-      if (item->shouldIndex())
+
+#if defined(ENABLE_XAPIAN)
+      if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
         data->nbIndexItems++;
+        data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
+        if(withIndex) {
+          data->taskList.pushToQueue(new IndexTask(item));
+        }
+      }
+#endif
+
       if (verbose && data->nbItems%1000 == 0){
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
@@ -126,14 +136,6 @@ namespace zim
                   << std::endl;
       }
 
-#if defined(ENABLE_XAPIAN)
-      if (item->shouldIndex()) {
-        data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
-        if(withIndex) {
-          data->taskList.pushToQueue(new IndexTask(item));
-        }
-      }
-#endif
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
