@@ -34,21 +34,12 @@ namespace zim {
 
 namespace writer {
 
-enum class DataType { plain, file };
-struct Data {
-  Data(zim::writer::DataType type, const std::string& value) :
-    type(type), value(value) {}
-  Data(zim::writer::DataType type, const char* data, zim::size_type size) :
-    type(type), value(data, size) {}
-  DataType type;
-  std::string value;
-};
-
 using writer_t = std::function<void(const Blob& data)>;
+class ContentProvider;
 
 class Cluster {
   typedef std::vector<offset_t> Offsets;
-  typedef std::vector<Data> ClusterData;
+  typedef std::vector<std::unique_ptr<ContentProvider>> ClusterProviders;
 
 
   public:
@@ -58,8 +49,8 @@ class Cluster {
     void setCompression(CompressionType c) { compression = c; }
     CompressionType getCompression() const { return compression; }
 
-    void addItem(const zim::writer::Item* item);
-    void addData(const char* data, zsize_t size);
+    void addContent(std::unique_ptr<ContentProvider> provider);
+    void addContent(const std::string& data);
 
     blob_index_t count() const  { return blob_index_t(blobOffsets.size() - 1); }
     zsize_t size() const;
@@ -85,7 +76,7 @@ class Cluster {
     Offsets blobOffsets;
     offset_t offset;
     zsize_t _size;
-    ClusterData _data;
+    ClusterProviders m_providers;
     mutable Blob compressed_data;
     std::string tmp_filename;
     mutable pthread_mutex_t m_closedMutex;

@@ -45,6 +45,7 @@
 #include "gtest/gtest.h"
 
 #include <zim/zim.h>
+#include <zim/writer/contentProvider.h>
 
 #include "../src/buffer.h"
 #include "../src/cluster.h"
@@ -87,9 +88,9 @@ TEST(ClusterTest, create_cluster)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addContent(blob0);
+  cluster.addContent(blob1);
+  cluster.addContent(blob2);
 
   ASSERT_EQ(cluster.count().v, 3U);
   ASSERT_EQ(cluster.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
@@ -105,9 +106,9 @@ TEST(ClusterTest, read_write_cluster)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnop vwxyz");
 
-  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addContent(blob0);
+  cluster.addContent(blob1);
+  cluster.addContent(blob2);
 
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
@@ -124,9 +125,11 @@ TEST(ClusterTest, read_write_empty)
 {
   zim::writer::Cluster cluster(zim::zimcompNone);
 
-  cluster.addData(0, zim::zsize_t(0));
-  cluster.addData(0, zim::zsize_t(0));
-  cluster.addData(0, zim::zsize_t(0));
+  std::string emptyString;
+
+  cluster.addContent(emptyString);
+  cluster.addContent(emptyString);
+  cluster.addContent(emptyString);
 
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
@@ -148,9 +151,9 @@ TEST(ClusterTest, read_write_clusterZ)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addContent(blob0);
+  cluster.addContent(blob1);
+  cluster.addContent(blob2);
 
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
@@ -176,9 +179,9 @@ TEST(ClusterTest, read_write_clusterLzma)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addContent(blob0);
+  cluster.addContent(blob1);
+  cluster.addContent(blob2);
 
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
@@ -202,9 +205,9 @@ TEST(ClusterTest, read_write_clusterZstd)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
 
-  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
+  cluster.addContent(blob0);
+  cluster.addContent(blob1);
+  cluster.addContent(blob2);
 
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
@@ -220,7 +223,31 @@ TEST(ClusterTest, read_write_clusterZstd)
   ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
 
-#if !defined(__APPLE__)
+class FakeProvider : public zim::writer::ContentProvider
+{
+  public:
+    FakeProvider(zim::size_type size)
+      : size(size),
+        offset(0),
+        buffer(new char[1024*1024U])
+    {
+      memset(buffer.get(), 0, 1024*1024U);
+    }
+
+    zim::size_type getSize() const { return size; }
+    zim::Blob feed() {
+      auto outSize = std::min(zim::size_type(1024*1024), size-offset);
+      auto blob = zim::Blob(buffer.get(), outSize);
+      offset += outSize;
+      return blob;
+    }
+
+  private:
+    zim::size_type size;
+    zim::offset_type offset;
+    std::unique_ptr<char[]> buffer;
+};
+
 TEST(ClusterTest, read_write_extended_cluster)
 {
   //zim::writer doesn't suport 32 bits architectures.
@@ -230,6 +257,7 @@ TEST(ClusterTest, read_write_extended_cluster)
 
   char* SKIP_BIG_MEMORY_TEST = std::getenv("SKIP_BIG_MEMORY_TEST");
   if (SKIP_BIG_MEMORY_TEST != nullptr && std::string(SKIP_BIG_MEMORY_TEST) == "1") {
+    std::cout << "Skip big memory test" << std::endl;
     return;
   }
 
@@ -238,39 +266,19 @@ TEST(ClusterTest, read_write_extended_cluster)
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
   zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
+  auto bigProvider = std::unique_ptr<zim::writer::ContentProvider>(new FakeProvider(bigger_than_4g));
 
-  std::shared_ptr<zim::Buffer> buffer;
-  {
-    char* blob3 = nullptr;
-    try {
-      blob3 = new char[bigger_than_4g];
-      // MEM = 4GiB
-    } catch (std::bad_alloc& e) {
-      // Not enough memory, we cannot test cluster bigger than 4Go :(
-      return;
-    }
+  zim::writer::Cluster cluster(zim::zimcompNone);
+  cluster.addContent(blob0);
+  cluster.addContent(blob1);
+  cluster.addContent(blob2);
+  cluster.addContent(std::move(bigProvider));
 
-    {
-      zim::writer::Cluster cluster(zim::zimcompNone);
-      cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-      cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-      cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
-      try {
-        cluster.addData(blob3, zim::zsize_t(bigger_than_4g));
-        // MEM = 8GiB
-      } catch (std::bad_alloc& e) {
-        // Not enough memory, we cannot test cluster bigger than 4Go :(
-        delete[] blob3;
-        return;
-      }
-      ASSERT_EQ(cluster.is_extended(), true);
+  ASSERT_EQ(cluster.is_extended(), true);
 
-      delete[] blob3;
-      // MEM = 4GiB
+  auto buffer = write_to_buffer(cluster);
+  // 4GiB
 
-      buffer = write_to_buffer(cluster);
-    }
-  }
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, true);
@@ -284,10 +292,16 @@ TEST(ClusterTest, read_write_extended_cluster)
   ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
   ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
-#endif
+
 
 TEST(ClusterTest, read_extended_cluster)
 {
+  char* SKIP_BIG_MEMORY_TEST = std::getenv("SKIP_BIG_MEMORY_TEST");
+  if (SKIP_BIG_MEMORY_TEST != nullptr && std::string(SKIP_BIG_MEMORY_TEST) == "1") {
+    std::cout << "Skip big memory test" << std::endl;
+    return;
+  }
+
   std::FILE* tmpfile = std::tmpfile();
   int fd = fileno(tmpfile);
   ssize_t bytes_written;

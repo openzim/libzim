@@ -18,6 +18,7 @@
  */
 
 #include <zim/writer/item.h>
+#include <zim/writer/contentProvider.h>
 #include "xapian/myhtmlparse.h"
 #include "tools.h"
 
@@ -68,6 +69,15 @@ namespace zim
         std::string title;
 
     };
+
+    std::unique_ptr<ContentProvider> Item::getContentProvider() const
+    {
+      if (!getFilename().empty()) {
+        return std::unique_ptr<ContentProvider>(new FileProvider(getFilename()));
+      } else {
+        return std::unique_ptr<ContentProvider>(new StringProvider(getData()));
+      }
+    }
 
     std::unique_ptr<IndexData> Item::getIndexData() const
     {

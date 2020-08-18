@@ -30,6 +30,7 @@ namespace zim
 {
   namespace writer
   {
+    class ContentProvider;
     class IndexData {
       public:
         virtual ~IndexData() = default;
@@ -47,10 +48,10 @@ namespace zim
         virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getMimeType() const = 0;
-        virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
-        virtual std::unique_ptr<IndexData> getIndexData() const;
         virtual std::string getFilename() const = 0;
+        virtual std::unique_ptr<ContentProvider> getContentProvider() const;
+        virtual std::unique_ptr<IndexData> getIndexData() const;
         virtual ~Item() = default;
     };
 

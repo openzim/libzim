@@ -23,6 +23,8 @@
 #include "../debug.h"
 #include "../compression.h"
 
+#include <zim/writer/contentProvider.h>
+
 #include <sstream>
 #include <fstream>
 
@@ -62,7 +64,7 @@ void Cluster::clear_data() {
 
 void Cluster::clear_raw_data() {
   Offsets().swap(blobOffsets);
-  ClusterData().swap(_data);
+  ClusterProviders().swap(m_providers);
 }
 
 void Cluster::clear_compressed_data() {
@@ -240,57 +242,40 @@ void Cluster::write(int out_fd) const
   }
 }
 
-void Cluster::addItem(const zim::writer::Item* item)
+
+void Cluster::addContent(std::unique_ptr<ContentProvider> provider)
 {
-  auto filename = item->getFilename();
-  auto size = item->getSize();
+  auto size = provider->getSize();
   _size += size;
   blobOffsets.push_back(offset_t(_size.v));
   isExtended |= (size>UINT32_MAX);
   if (size == 0)
     return;
 
-  if (filename.empty()) {
-    _data.emplace_back(DataType::plain, item->getData());
-  }
-  else {
-    _data.emplace_back(DataType::file, filename);
-  }
+  m_providers.push_back(std::move(provider));
 }
 
-void Cluster::addData(const char* data, zsize_t size)
+void Cluster::addContent(const std::string& data)
 {
-  _size += size;
-  blobOffsets.push_back(offset_t(_size.v));
-  isExtended |= (size.v>UINT32_MAX);
-  if (size.v == 0)
-    return;
-
-  _data.emplace_back(DataType::plain, data, size.v);
+  auto contentProvider = std::unique_ptr<ContentProvider>(new StringProvider(data));
+  addContent(std::move(contentProvider));
 }
 
 void Cluster::write_data(writer_t writer) const
 {
-  for (auto& data: _data)
+  for (auto& provider: m_providers)
   {
-    ASSERT(data.value.empty(), ==, false);
-    if (data.type == DataType::plain) {
-      writer(Blob(data.value.c_str(), data.value.size()));
-    } else {
-      int fd = open(data.value.c_str(), O_RDONLY);
-      if (fd == -1) {
-        throw std::runtime_error(std::string("cannot open ") + data.value);
+    ASSERT(provider->getSize(), !=, 0U);
+    zim::size_type size = 0;
+    while(true) {
+      auto blob = provider->feed();
+      if(blob.size() == 0) {
+        break;
       }
-      char* buffer = new char[1024*1024];
-      while (true) {
-        auto r = read(fd, buffer, 1024*1024);
-        if (!r)
-          break;
-        writer(Blob(buffer, r));
-      }
-      delete [] buffer;
-      ::close(fd);
+      size += blob.size();
+      writer(blob);
     }
+    ASSERT(size, ==, provider->getSize());
   }
 }
 

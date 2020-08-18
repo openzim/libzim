@@ -127,7 +127,6 @@ namespace zim
         entry_index_type nbRedirectItems;
         entry_index_type nbCompItems;
         entry_index_type nbUnCompItems;
-        entry_index_type nbFileItems;
         entry_index_type nbIndexItems;
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;

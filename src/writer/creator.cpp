@@ -17,6 +17,8 @@
  *
  */
 
+#include <zim/writer/creator.h>
+
 #include "config.h"
 
 #include "creatordata.h"
@@ -24,7 +26,7 @@
 #include "debug.h"
 #include "workers.h"
 #include <zim/blob.h>
-#include <zim/writer/creator.h>
+#include <zim/writer/contentProvider.h>
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
@@ -107,8 +109,6 @@ namespace zim
       } else {
         data->nbUnCompItems++;
       }
-      if (!item->getFilename().empty())
-        data->nbFileItems++;
 
 #if defined(ENABLE_XAPIAN)
       if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
@@ -127,7 +127,6 @@ namespace zim
                   << "; RA:" << data->nbRedirectItems
                   << "; CA:" << data->nbCompItems
                   << "; UA:" << data->nbUnCompItems
-                  << "; FA:" << data->nbFileItems
                   << "; IA:" << data->nbIndexItems
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
@@ -151,7 +150,6 @@ namespace zim
                   << "; RA:" << data->nbRedirectItems
                   << "; CA:" << data->nbCompItems
                   << "; UA:" << data->nbUnCompItems
-                  << "; FA:" << data->nbFileItems
                   << "; IA:" << data->nbIndexItems
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
@@ -176,7 +174,6 @@ namespace zim
                   << "; RA:" << data->nbRedirectItems
                   << "; CA:" << data->nbCompItems
                   << "; UA:" << data->nbUnCompItems
-                  << "; FA:" << data->nbFileItems
                   << "; IA:" << data->nbIndexItems
                   << "; C:" << data->nbClusters
                   << "; CC:" << data->nbCompClusters
@@ -405,7 +402,6 @@ namespace zim
         nbRedirectItems(0),
         nbCompItems(0),
         nbUnCompItems(0),
-        nbFileItems(0),
         nbIndexItems(0),
         nbClusters(0),
         nbCompClusters(0),
@@ -493,7 +489,8 @@ int mode =  _S_IREAD | _S_IWRITE;
     void CreatorData::addItemData(Dirent* dirent, const Item* item)
     {
       // Add blob data to compressed or uncompressed cluster.
-      auto itemSize = item->getSize();
+      auto contentProvider = item->getContentProvider();
+      auto itemSize = contentProvider->getSize();
       if (itemSize > 0)
       {
         isEmpty = false;
@@ -515,7 +512,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       }
 
       dirent->setCluster(cluster);
-      cluster->addItem(item);
+      cluster->addContent(std::move(contentProvider));
     }
 
     Dirent* CreatorData::createItemDirent(const Item* item)
