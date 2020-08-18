@@ -242,8 +242,8 @@ namespace zim
 
     void Creator::fillHeader(Fileheader* header) const
     {
-      auto mainUrl = getMainUrl();
-      auto layoutUrl = getLayoutUrl();
+      auto mainPath = getMainPath();
+      auto layoutPath = getLayoutPath();
 
       if (data->isExtended) {
         header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
@@ -254,16 +254,17 @@ namespace zim
       header->setMainPage(std::numeric_limits<entry_index_type>::max());
       header->setLayoutPage(std::numeric_limits<entry_index_type>::max());
 
-      if (!mainUrl.empty() || !layoutUrl.empty())
+      if (!mainPath.empty() || !layoutPath.empty())
       {
         for (auto& dirent: data->dirents)
         {
-          if (mainUrl == dirent->getFullUrl())
+          auto direntFullPath = std::string(1, dirent->getNamespace()) + "/" + dirent->getPath();
+          if (mainPath == direntFullPath)
           {
             header->setMainPage(entry_index_type(dirent->getIdx()));
           }
 
-          if (layoutUrl == dirent->getFullUrl())
+          if (layoutPath == direntFullPath)
           {
             header->setLayoutPage(entry_index_type(dirent->getIdx()));
           }
@@ -444,7 +445,7 @@ int mode =  _S_IREAD | _S_IWRITE;
           dirents.erase(ret.first);
           dirents.insert(dirent);
         } else {
-          std::cerr << "Impossible to add " << dirent->getFullUrl().getLongUrl() << std::endl;
+          std::cerr << "Impossible to add " << dirent->getNamespace() << "/" << dirent->getPath() << std::endl;
           std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
           return;
@@ -494,13 +495,17 @@ int mode =  _S_IREAD | _S_IWRITE;
     Dirent* CreatorData::createDirentFromItem(const Item* item)
     {
       auto dirent = pool.getDirent();
-      dirent->setUrl(item->getUrl());
+      auto path = item->getPath();
+      dirent->setNamespace(path[0]);
+      dirent->setPath(path.substr(2, std::string::npos));
       dirent->setTitle(item->getTitle());
 
       if (item->isRedirect())
       {
         dirent->setRedirect(nullptr);
-        dirent->setRedirectUrl(item->getRedirectUrl());
+        auto redirectPath = item->getRedirectPath();
+        dirent->setRedirectNs(redirectPath[0]);
+        dirent->setRedirectPath(redirectPath.substr(2, std::string::npos));
       }
       else if (item->isLinktarget())
       {
@@ -514,7 +519,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       {
         auto mimetype = item->getMimeType();
         if (mimetype.empty()) {
-          std::cerr << "Warning, " << item->getUrl().getLongUrl() << " have empty mimetype." << std::endl;
+          std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
           mimetype = "application/octet-stream";
         }
         dirent->setMimeType(getMimeTypeIdx(mimetype));
@@ -567,10 +572,10 @@ int mode =  _S_IREAD | _S_IWRITE;
       INFO("Resolve redirect");
       for (auto dirent: unresolvedRedirectDirents)
       {
-        Dirent tmpDirent(dirent->getRedirectUrl());
+        Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
-          INFO("Invalid redirection " << dirent->getFullUrl().getLongUrl() << " redirecting to (missing) " << dirent->getRedirectUrl().getLongUrl());
+          INFO("Invalid redirection " << dirent->getNamespace() << '/' << dirent->getPath() << " redirecting to (missing) " << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
         } else  {
           dirent->setRedirect(*target_pos);

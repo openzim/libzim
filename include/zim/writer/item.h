@@ -24,7 +24,6 @@
 #include <zim/blob.h>
 #include <zim/zim.h>
 #include <zim/uuid.h>
-#include <zim/writer/url.h>
 #include <string>
 
 namespace zim
@@ -34,7 +33,7 @@ namespace zim
     class Item
     {
       public:
-        virtual Url getUrl() const = 0;
+        virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual bool isRedirect() const = 0;
         virtual bool isLinktarget() const;
@@ -42,7 +41,7 @@ namespace zim
         virtual std::string getMimeType() const = 0;
         virtual bool shouldCompress() const = 0;
         virtual bool shouldIndex() const = 0;
-        virtual Url getRedirectUrl() const = 0;
+        virtual std::string getRedirectPath() const = 0;
         virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;
         virtual std::string getFilename() const = 0;

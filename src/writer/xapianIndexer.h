@@ -52,14 +52,14 @@ class XapianMetaItem : public zim::writer::Item
   {}
   virtual ~XapianMetaItem() = default;
   virtual zim::Blob getData() const;
-  virtual zim::writer::Url getUrl() const {
+  virtual std::string getPath() const {
     switch (mode) {
       case IndexingMode::FULL:
-        return zim::writer::Url('X', "fulltext/xapian");
+        return "X/fulltext/xapian";
       case IndexingMode::TITLE:
-        return zim::writer::Url('X', "title/xapian");
+        return "X/title/xapian";
     }
-    return zim::writer::Url();
+    return "";
   }
   virtual std::string getTitle() const {
     switch (mode) {
@@ -74,7 +74,7 @@ class XapianMetaItem : public zim::writer::Item
   virtual bool isRedirect() const { return false; }
   virtual bool shouldIndex() const { return false; }
   virtual bool shouldCompress() const { return false; }
-  virtual zim::writer::Url getRedirectUrl() const { return zim::writer::Url(); }
+  virtual std::string getRedirectPath() const { return ""; }
   virtual zim::size_type getSize() const;
   virtual std::string getFilename() const;
 };

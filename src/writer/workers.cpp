@@ -103,7 +103,7 @@ namespace zim
       }
 
       Xapian::Document document;
-      document.set_data(p_item->getUrl().getLongUrl());
+      document.set_data(p_item->getPath());
       indexer.set_document(document);
 
       auto title = p_item->getTitle();

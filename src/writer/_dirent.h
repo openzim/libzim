@@ -55,41 +55,47 @@ namespace zim
 
         uint16_t mimeType;
         DirentInfo info {};
-        Url url;
+        char ns;
+        std::string path;
         std::string title;
         Cluster* cluster = nullptr;
-        Url redirectUrl;
+        char redirectNs;
+        std::string redirectPath;
         entry_index_t idx = entry_index_t(0);
         offset_t offset;
 
       public:
         Dirent()
           : mimeType(0),
-            url(),
+            ns(),
+            path(),
             title(),
-            redirectUrl()
+            redirectNs(),
+            redirectPath()
         {
           info.d.clusterNumber = cluster_index_t(0);
           info.d.blobNumber = blob_index_t(0);
         }
 
-        explicit Dirent(Url url_ )
+        explicit Dirent(char ns_, std::string path_ )
           : Dirent()
-          { url = url_; }
+          { ns = ns_; path = path_; }
 
-        char getNamespace() const               { return url.getNs(); }
-        const std::string& getTitle() const     { return title.empty() ? url.getUrl() : title; }
+        char getNamespace() const               { return ns; }
+        void setNamespace(char ns_)              { ns = ns_; }
+        const std::string& getTitle() const     { return title.empty() ? path : title; }
         void setTitle(const std::string& title_) { title = title_; }
-        const std::string& getUrl() const       { return url.getUrl(); }
-        const Url& getFullUrl() const { return url; }
-        void setUrl(Url url_) {
-          url = url_;
+        const std::string& getPath() const       { return path; }
+        void setPath(const std::string& path_) {
+          path = path_;
         }
 
         uint32_t getVersion() const            { return version; }
 
-        void setRedirectUrl(Url redirectUrl_)     { redirectUrl = redirectUrl_; }
-        const Url& getRedirectUrl() const         { return redirectUrl; }
+        void setRedirectNs(char redirectNs_)      { redirectNs = redirectNs_; }
+        char getRedirectNs() { return redirectNs; }
+        void setRedirectPath(const std::string& redirectPath_)     { redirectPath = redirectPath_; }
+        const std::string& getRedirectPath() const         { return redirectPath; }
         void setRedirect(const Dirent* target) {
           info.r.redirectDirent = target;
           mimeType = redirectMimeType;
@@ -139,8 +145,8 @@ namespace zim
         uint16_t getMimeType() const            { return mimeType; }
         size_t getDirentSize() const
         {
-          size_t ret = (isRedirect() ? 12 : 16) + url.getUrl().size() + 2;
-          if (title != url.getUrl())
+          size_t ret = (isRedirect() ? 12 : 16) + path.size() + 2;
+          if (title != path)
             ret += title.size();
           return ret;
         }
@@ -165,12 +171,12 @@ namespace zim
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)
     {
-      return d1->url < d2->url;
+      return d1->ns < d2->ns || (d1->ns == d2->ns && d1->path < d2->path);
     }
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1->url.getNs() < d2->url.getNs()
-        || (d1->url.getNs() == d2->url.getNs() && d1->getTitle() < d2->getTitle());
+      return d1->ns < d2->ns
+        || (d1->ns == d2->ns && d1->getTitle() < d2->getTitle());
     }
   }
 }

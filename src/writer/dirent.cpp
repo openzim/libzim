@@ -65,11 +65,10 @@ void zim::writer::Dirent::write(int out_fd) const
     _write(out_fd, header.d, 16);
   }
 
-  auto& url = getUrl();
-  _write(out_fd, url.c_str(), url.size()+1);
+  _write(out_fd, path.c_str(), path.size()+1);
 
   std::string t = getTitle();
-  if (t != getUrl())
+  if (t != path)
     _write(out_fd, t.c_str(), t.size());
   char c = 0;
   _write(out_fd, &c, 1);

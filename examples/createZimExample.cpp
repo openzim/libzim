@@ -34,12 +34,12 @@ class TestItem : public zim::writer::Item
     virtual ~TestItem() = default;
 
     virtual std::string getAid() const;
-    virtual zim::writer::Url getUrl() const;
+    virtual std::string getPath() const;
     virtual std::string getTitle() const;
     virtual bool isRedirect() const;
     virtual bool shouldCompress() const { return true; }
     virtual std::string getMimeType() const;
-    virtual zim::writer::Url getRedirectUrl() const;
+    virtual std::string getRedirectPath() const;
     virtual bool shouldIndex() const { return false; }
     virtual zim::size_type getSize() const { return _data.size(); }
     virtual std::string getFilename() const { return ""; }
@@ -61,9 +61,9 @@ std::string TestItem::getAid() const
   return _id;
 }
 
-zim::writer::Url TestItem::getUrl() const
+std::string TestItem::getPath() const
 {
-  return zim::writer::Url('A', _id);
+  return std::string("A/") + _id;
 }
 
 std::string TestItem::getTitle() const
@@ -81,9 +81,9 @@ std::string TestItem::getMimeType() const
   return "text/plain";
 }
 
-zim::writer::Url TestItem::getRedirectUrl() const
+std::string TestItem::getRedirectPath() const
 {
-  return zim::writer::Url();
+  return "";
 }
 
 int main(int argc, char* argv[])

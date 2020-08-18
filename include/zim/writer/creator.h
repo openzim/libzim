@@ -49,8 +49,8 @@ namespace zim
         virtual void addItem(std::shared_ptr<Item> item);
         virtual void finishZimCreation();
 
-        virtual Url getMainUrl() const { return Url(); }
-        virtual Url getLayoutUrl() const { return Url(); }
+        virtual std::string getMainPath() const { return ""; }
+        virtual std::string getLayoutPath() const { return ""; }
         virtual zim::Uuid getUuid() const { return Uuid::generate(); }
 
       private:

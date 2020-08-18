@@ -110,7 +110,7 @@ void XapianIndexer::indexTitle(const zim::writer::Item* item)
   indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
   Xapian::Document currentDocument;
   currentDocument.clear_values();
-  currentDocument.set_data(item->getUrl().getLongUrl());
+  currentDocument.set_data(item->getPath());
   indexer.set_document(currentDocument);
 
   std::string accentedTitle = item->getTitle();
