@@ -102,7 +102,7 @@ namespace zim
       data->addDirent(dirent);
       data->addItemData(dirent, item.get());
       data->nbItems++;
-      if (item->shouldCompress())
+      if (isCompressibleMimetype(item->getMimeType()))
         data->nbCompItems++;
       else
         data->nbUnCompItems++;
@@ -497,15 +497,8 @@ int mode =  _S_IREAD | _S_IWRITE;
         isEmpty = false;
       }
 
-      Cluster *cluster;
-      if (item->shouldCompress())
-      {
-        cluster = compCluster;
-      }
-      else
-      {
-        cluster = uncompCluster;
-      }
+      auto compressContent = isCompressibleMimetype(item->getMimeType());
+      auto cluster = compressContent ? compCluster : uncompCluster;
 
       // If cluster will be too large, write it to dis, and open a new
       // one for the content.
@@ -516,7 +509,7 @@ int mode =  _S_IREAD | _S_IWRITE;
         log_info("cluster with " << cluster->count() << " items, " <<
                  cluster->size() << " bytes; current title \"" <<
                  dirent->getTitle() << '\"');
-        cluster = closeCluster(item->shouldCompress());
+        cluster = closeCluster(compressContent);
       }
 
       dirent->setCluster(cluster);

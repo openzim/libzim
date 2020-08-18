@@ -36,7 +36,6 @@ namespace zim
         virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getMimeType() const = 0;
-        virtual bool shouldCompress() const = 0;
         virtual bool shouldIndex() const = 0;
         virtual zim::size_type getSize() const = 0;
         virtual Blob getData() const = 0;

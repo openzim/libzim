@@ -50,6 +50,14 @@
 # include <chrono>
 #endif
 
+bool zim::isCompressibleMimetype(const std::string& mimetype)
+{
+  return mimetype.find("text") == 0
+      || mimetype.find("+xml") != std::string::npos
+      || mimetype.find("+json") != std::string::npos
+      || mimetype == "application/javascript"
+      || mimetype == "application/json";
+}
 
 std::string zim::removeAccents(const std::string& text)
 {
