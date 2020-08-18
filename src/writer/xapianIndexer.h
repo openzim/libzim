@@ -39,45 +39,6 @@ enum class IndexingMode {
   FULL
 };
 
-class XapianMetaItem : public zim::writer::Item
-{
- private:
-  XapianIndexer* indexer;
-  IndexingMode mode;
-  mutable std::string data;
-
- public:
-  XapianMetaItem(XapianIndexer* indexer, IndexingMode mode) : indexer(indexer), mode(mode)
-  {}
-  virtual ~XapianMetaItem() = default;
-  virtual zim::Blob getData() const;
-  virtual std::string getPath() const {
-    switch (mode) {
-      case IndexingMode::FULL:
-        return "X/fulltext/xapian";
-      case IndexingMode::TITLE:
-        return "X/title/xapian";
-    }
-    return "";
-  }
-  virtual std::string getTitle() const {
-    switch (mode) {
-      case IndexingMode::FULL:
-        return "Xapian Fulltext Index";
-      case IndexingMode::TITLE:
-        return "Xapian Title Index";
-    }
-    return "";
-  }
-  virtual std::string getMimeType() const { return "application/octet-stream+xapian"; }
-  virtual bool isRedirect() const { return false; }
-  virtual bool shouldIndex() const { return false; }
-  virtual bool shouldCompress() const { return false; }
-  virtual std::string getRedirectPath() const { return ""; }
-  virtual zim::size_type getSize() const;
-  virtual std::string getFilename() const;
-};
-
 class XapianIndexer
 {
  public:
@@ -87,7 +48,6 @@ class XapianIndexer
   void indexingPrelude(const std::string indexPath);
   void flush();
   void indexingPostlude();
-  XapianMetaItem* getMetaItem();
 
   void indexTitle(const std::string& path, const std::string& title);
 

@@ -125,24 +125,3 @@ void XapianIndexer::indexingPostlude()
   this->writableDatabase.close();
 }
 
-XapianMetaItem* XapianIndexer::getMetaItem()
-{
-  return new XapianMetaItem(this, indexingMode);
-}
-
-zim::size_type XapianMetaItem::getSize() const
-{
-  std::ifstream in(indexer->getIndexPath(), std::ios::binary|std::ios::ate);
-  return in.tellg();
-}
-
-std::string XapianMetaItem::getFilename() const
-{
-  return indexer->getIndexPath();
-}
-
-zim::Blob XapianMetaItem::getData() const
-{
-  throw std::logic_error("We should not pass here.");
-  return zim::Blob();
-}

@@ -194,11 +194,16 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
-        auto item = data->titleIndexer.getMetaItem();
-        auto dirent = data->createItemDirent(item);
+        auto dirent = data->pool.getDirent();
+        dirent->setNamespace('X');
+        dirent->setPath("title/xapian");
+        dirent->setMimeType(data->getMimeTypeIdx("application/octet-stream+xapian"));
         data->addDirent(dirent);
-        data->addItemData(dirent, item->getContentProvider(), false);
-        delete item;
+        data->addItemData(
+          dirent,
+          std::unique_ptr<ContentProvider>(new FileProvider(data->titleIndexer.getIndexPath())),
+          false
+        );
       }
       if (withIndex) {
         wait = 0;
@@ -209,11 +214,16 @@ namespace zim
 
         data->indexer->indexingPostlude();
         microsleep(100);
-        auto item = data->indexer->getMetaItem();
-        auto dirent = data->createItemDirent(item);
+        auto dirent = data->pool.getDirent();
+        dirent->setNamespace('X');
+        dirent->setPath("fulltext/xapian");
+        dirent->setMimeType(data->getMimeTypeIdx("application/octet-stream+xapian"));
         data->addDirent(dirent);
-        data->addItemData(dirent, item->getContentProvider(), false);
-        delete item;
+        data->addItemData(
+          dirent,
+          std::unique_ptr<ContentProvider>(new FileProvider(data->indexer->getIndexPath())),
+          false
+        );
       }
 #endif
 
