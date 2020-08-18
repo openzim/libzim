@@ -171,54 +171,6 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent2.getRedirectIndex().v, 321U);
 }
 
-TEST(DirentTest, read_write_linktarget_dirent)
-{
-  zim::writer::Dirent dirent;
-  dirent.setNamespace('A');
-  dirent.setPath("Bar");
-  dirent.setLinktarget();
-
-  ASSERT_TRUE(!dirent.isRedirect());
-  ASSERT_TRUE(dirent.isLinktarget());
-  ASSERT_TRUE(!dirent.isDeleted());
-  ASSERT_EQ(dirent.getNamespace(), 'A');
-  ASSERT_EQ(dirent.getPath(), "Bar");
-
-  auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
-
-  ASSERT_TRUE(!dirent2.isRedirect());
-  ASSERT_TRUE(dirent2.isLinktarget());
-  ASSERT_TRUE(!dirent2.isDeleted());
-  ASSERT_EQ(dirent2.getNamespace(), 'A');
-  ASSERT_EQ(dirent2.getUrl(), "Bar");
-  ASSERT_EQ(dirent2.getTitle(), "Bar");
-}
-
-TEST(DirentTest, read_write_deleted_dirent)
-{
-  zim::writer::Dirent dirent;
-  dirent.setNamespace('A');
-  dirent.setPath("Bar");
-  dirent.setDeleted();
-
-  ASSERT_TRUE(!dirent.isRedirect());
-  ASSERT_TRUE(!dirent.isLinktarget());
-  ASSERT_TRUE(dirent.isDeleted());
-  ASSERT_EQ(dirent.getNamespace(), 'A');
-  ASSERT_EQ(dirent.getPath(), "Bar");
-
-  auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
-
-  ASSERT_TRUE(!dirent2.isRedirect());
-  ASSERT_TRUE(!dirent2.isLinktarget());
-  ASSERT_TRUE(dirent2.isDeleted());
-  ASSERT_EQ(dirent2.getNamespace(), 'A');
-  ASSERT_EQ(dirent2.getUrl(), "Bar");
-  ASSERT_EQ(dirent2.getTitle(), "Bar");
-}
-
 TEST(DirentTest, dirent_size)
 {
   zim::writer::Dirent dirent;

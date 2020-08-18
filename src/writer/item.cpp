@@ -24,20 +24,6 @@ namespace zim
 {
   namespace writer
   {
-    bool Item::isLinktarget() const
-    {
-      return false;
-    }
-
-    bool Item::isDeleted() const
-    {
-      return false;
-    }
-
-    std::string Item::getNextCategory()
-    {
-      return std::string();
-    }
-
+     // Item içmplementation
   }
 }

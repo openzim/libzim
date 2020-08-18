@@ -54,10 +54,6 @@ void zim::writer::Dirent::write(int out_fd) const
     zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
     _write(out_fd, header.d, 12);
   }
-  else if (isLinktarget() || isDeleted())
-  {
-    _write(out_fd, header.d, 8);
-  }
   else
   {
     zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);

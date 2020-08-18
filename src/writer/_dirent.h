@@ -49,8 +49,6 @@ namespace zim
     class Dirent
     {
         static const uint16_t redirectMimeType = 0xffff;
-        static const uint16_t linktargetMimeType = 0xfffe;
-        static const uint16_t deletedMimeType = 0xfffd;
         static const uint32_t version = 0;
 
         uint16_t mimeType;
@@ -107,19 +105,6 @@ namespace zim
           mimeType = mime;
         }
 
-        void setLinktarget()
-        {
-          ASSERT(mimeType, ==, 0);
-          mimeType = linktargetMimeType;
-        }
-
-        void setDeleted()
-        {
-          ASSERT(mimeType, ==, 0);
-          mimeType = deletedMimeType;
-        }
-
-
         void setIdx(entry_index_t idx_)      { idx = idx_; }
         entry_index_t getIdx() const         { return idx; }
 
@@ -139,9 +124,7 @@ namespace zim
         }
 
         bool isRedirect() const                 { return mimeType == redirectMimeType; }
-        bool isLinktarget() const               { return mimeType == linktargetMimeType; }
-        bool isDeleted() const                  { return mimeType == deletedMimeType; }
-        bool isItem() const                     { return !isRedirect() && !isLinktarget() && !isDeleted(); }
+        bool isItem() const                     { return !isRedirect(); }
         uint16_t getMimeType() const            { return mimeType; }
         size_t getDirentSize() const
         {

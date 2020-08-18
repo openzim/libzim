@@ -41,7 +41,6 @@ namespace zim
         void setMinChunkSize(zim::size_type s) { minChunkSize = s; }
         void setIndexing(bool indexing, std::string language)
         { withIndex = indexing; indexingLanguage = language; }
-        DEPRECATED void setCompressionThreads(unsigned ct) { nbWorkerThreads = ct; }
         void setNbWorkerThreads(unsigned ct) { nbWorkerThreads = ct; }
 
 

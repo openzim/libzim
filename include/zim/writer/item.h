@@ -36,8 +36,6 @@ namespace zim
         virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual bool isRedirect() const = 0;
-        virtual bool isLinktarget() const;
-        virtual bool isDeleted() const;
         virtual std::string getMimeType() const = 0;
         virtual bool shouldCompress() const = 0;
         virtual bool shouldIndex() const = 0;
@@ -46,9 +44,6 @@ namespace zim
         virtual Blob getData() const = 0;
         virtual std::string getFilename() const = 0;
         virtual ~Item() = default;
-
-        // returns the next category id, to which the item is assigned to
-        virtual std::string getNextCategory();
     };
 
   }

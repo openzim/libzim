@@ -507,14 +507,6 @@ int mode =  _S_IREAD | _S_IWRITE;
         dirent->setRedirectNs(redirectPath[0]);
         dirent->setRedirectPath(redirectPath.substr(2, std::string::npos));
       }
-      else if (item->isLinktarget())
-      {
-        dirent->setLinktarget();
-      }
-      else if (item->isDeleted())
-      {
-        dirent->setDeleted();
-      }
       else
       {
         auto mimetype = item->getMimeType();
