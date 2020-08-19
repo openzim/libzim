@@ -55,6 +55,7 @@ namespace zim
         virtual void finishZimCreation();
 
         virtual std::string getMainPath() const { return ""; }
+        virtual std::string getFaviconPath() const { return ""; }
         virtual zim::Uuid getUuid() const { return Uuid::generate(); }
 
       private:

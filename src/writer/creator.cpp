@@ -191,6 +191,25 @@ namespace zim
 
     void Creator::finishZimCreation()
     {
+      // Create mandatory entries
+      auto faviconPath = getFaviconPath();
+      if (!faviconPath.empty()) {
+        addRedirection("-/favicon", "", getFaviconPath());
+      }
+
+      // Create a redirection for the mainPage.
+      // We need to keep the created dirent to set the fileheader.
+      // pool.getDirent() return a dirent on a pool allocated memory.
+      // Dirent doesn't have to be deleted.
+      auto mainPath = getMainPath();
+      if (!mainPath.empty()) {
+        addRedirection("-/mainPage", "", mainPath);
+        auto tmpDirent = data->pool.getDirent();
+        tmpDirent->setNamespace('-');
+        tmpDirent->setPath("mainPage");
+        data->mainPageDirent = *data->dirents.find(tmpDirent);
+      }
+
       if (verbose) {
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
@@ -303,28 +322,17 @@ namespace zim
 
     void Creator::fillHeader(Fileheader* header) const
     {
-      auto mainPath = getMainPath();
-
       if (data->isExtended) {
         header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
       } else {
         header->setMajorVersion(Fileheader::zimClassicMajorVersion);
       }
       header->setMinorVersion(Fileheader::zimMinorVersion);
-      header->setMainPage(std::numeric_limits<entry_index_type>::max());
+      header->setMainPage(
+        data->mainPageDirent
+        ? entry_index_type(data->mainPageDirent->getIdx())
+        : std::numeric_limits<entry_index_type>::max());
       header->setLayoutPage(std::numeric_limits<entry_index_type>::max());
-
-      if (!mainPath.empty())
-      {
-        for (auto& dirent: data->dirents)
-        {
-          auto direntFullPath = std::string(1, dirent->getNamespace()) + "/" + dirent->getPath();
-          if (mainPath == direntFullPath)
-          {
-            header->setMainPage(entry_index_type(dirent->getIdx()));
-          }
-        }
-      }
 
       header->setUuid( getUuid() );
       header->setArticleCount( data->dirents.size() );
@@ -419,7 +427,8 @@ namespace zim
                                    bool withIndex,
                                    std::string language,
                                    CompressionType c)
-      : compression(c),
+      : mainPageDirent(nullptr),
+        compression(c),
         withIndex(withIndex),
         indexingLanguage(language),
 #if defined(ENABLE_XAPIAN)

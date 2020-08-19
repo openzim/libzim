@@ -94,6 +94,7 @@ namespace zim
         UrlSortedDirents   dirents;
         UrlSortedDirents   unresolvedRedirectDirents;
         TitleSortedDirents titleIdx;
+        Dirent*            mainPageDirent;
 
         MimeTypesMap mimeTypesMap;
         RMimeTypesMap rmimeTypesMap;
