@@ -22,6 +22,8 @@
 #include "xapian/myhtmlparse.h"
 #include "tools.h"
 
+#include <sstream>
+
 namespace zim
 {
   namespace writer
@@ -70,18 +72,19 @@ namespace zim
 
     };
 
-    std::unique_ptr<ContentProvider> Item::getContentProvider() const
-    {
-      if (!getFilename().empty()) {
-        return std::unique_ptr<ContentProvider>(new FileProvider(getFilename()));
-      } else {
-        return std::unique_ptr<ContentProvider>(new StringProvider(getData()));
-      }
-    }
 
     std::unique_ptr<IndexData> Item::getIndexData() const
     {
-      return std::unique_ptr<IndexData>(new DefaultIndexData(getData(), getTitle()));
+      auto provider = getContentProvider();
+      std::ostringstream ss;
+      while (true) {
+        auto blob = provider->feed();
+        if(blob.size() == 0) {
+          break;
+        }
+        ss << blob;
+      }
+      return std::unique_ptr<IndexData>(new DefaultIndexData(ss.str(), getTitle()));
     }
 
     Item::Hints Item::getHints() const {

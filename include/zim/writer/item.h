@@ -55,9 +55,7 @@ namespace zim
         virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getMimeType() const = 0;
-        virtual Blob getData() const = 0;
-        virtual std::string getFilename() const = 0;
-        virtual std::unique_ptr<ContentProvider> getContentProvider() const;
+        virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
         virtual std::unique_ptr<IndexData> getIndexData() const;
         virtual Hints getHints() const;
         virtual ~Item() = default;

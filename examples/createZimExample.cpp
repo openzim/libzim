@@ -20,6 +20,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include <zim/writer/contentProvider.h>
 #include <zim/writer/creator.h>
 #include <zim/blob.h>
 
@@ -33,19 +35,11 @@ class TestItem : public zim::writer::Item
     explicit TestItem(const std::string& id);
     virtual ~TestItem() = default;
 
-    virtual std::string getAid() const;
     virtual std::string getPath() const;
     virtual std::string getTitle() const;
-    virtual bool isRedirect() const;
-    virtual bool shouldCompress() const { return true; }
     virtual std::string getMimeType() const;
-    virtual std::string getRedirectPath() const;
-    virtual bool shouldIndex() const { return false; }
-    virtual zim::size_type getSize() const { return _data.size(); }
-    virtual std::string getFilename() const { return ""; }
 
-    virtual zim::Blob getData() const
-    { return zim::Blob(&_data[0], _data.size()); }
+    virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const;
 };
 
 TestItem::TestItem(const std::string& id)
@@ -54,11 +48,6 @@ TestItem::TestItem(const std::string& id)
   std::ostringstream data;
   data << "this is item " << id << std::endl;
   _data = data.str();
-}
-
-std::string TestItem::getAid() const
-{
-  return _id;
 }
 
 std::string TestItem::getPath() const
@@ -71,19 +60,14 @@ std::string TestItem::getTitle() const
   return _id;
 }
 
-bool TestItem::isRedirect() const
-{
-  return false;
-}
-
 std::string TestItem::getMimeType() const
 {
   return "text/plain";
 }
 
-std::string TestItem::getRedirectPath() const
+std::unique_ptr<zim::writer::ContentProvider> TestItem::getContentProvider() const
 {
-  return "";
+  return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider(_data));
 }
 
 int main(int argc, char* argv[])
