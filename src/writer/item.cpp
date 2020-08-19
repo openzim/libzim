@@ -90,5 +90,24 @@ namespace zim
     Item::Hints Item::getHints() const {
       return Hints();
     }
+
+    std::unique_ptr<ContentProvider> StringItem::getContentProvider() const
+    {
+      auto shared_string = std::shared_ptr<const std::string>(shared_from_this(), &content);
+      return std::unique_ptr<ContentProvider>(new SharedStringProvider(shared_string));
+    }
+
+    std::unique_ptr<IndexData> StringItem::getIndexData() const
+    {
+      return std::unique_ptr<IndexData>(new DefaultIndexData(content, title));
+    }
+
+
+    std::unique_ptr<ContentProvider> FileItem::getContentProvider() const
+    {
+      return std::unique_ptr<ContentProvider>(new FileProvider(filepath));
+    }
+
+
   }
 }

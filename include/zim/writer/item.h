@@ -61,6 +61,55 @@ namespace zim
         virtual ~Item() = default;
     };
 
+    class BasicItem : public Item
+    {
+      public:
+        BasicItem(const std::string& path, const std::string& mimetype, const std::string& title)
+          : path(path),
+            mimetype(mimetype),
+            title(title)
+        {}
+
+        std::string getPath() const { return path; }
+        std::string getTitle() const { return title; }
+        std::string getMimeType() const { return mimetype; }
+
+      protected:
+        std::string path;
+        std::string mimetype;
+        std::string title;
+    };
+
+    class StringItem : public BasicItem, std::enable_shared_from_this<StringItem>
+    {
+      public:
+        StringItem(const std::string& path, const std::string& mimetype, const std::string& title, const std::string& content)
+          : BasicItem(path, mimetype, title),
+            content(content)
+        {}
+
+        std::unique_ptr<ContentProvider> getContentProvider() const;
+        std::unique_ptr<IndexData> getIndexData() const;
+
+      protected:
+        std::string content;
+
+    };
+
+    class FileItem : public BasicItem
+    {
+      public:
+        FileItem(const std::string& path, const std::string& mimetype, const std::string& title, const std::string& filepath)
+          : BasicItem(path, mimetype, title),
+            filepath(filepath)
+        {}
+
+        std::unique_ptr<ContentProvider> getContentProvider() const;
+
+      protected:
+        std::string filepath;
+    };
+
   }
 }
 

@@ -50,6 +50,21 @@ namespace zim
         bool feeded;
     };
 
+    class SharedStringProvider : public ContentProvider {
+      public:
+        explicit SharedStringProvider(std::shared_ptr<const std::string> content)
+          : content(content),
+            feeded(false)
+        {}
+        zim::size_type getSize() const { return content->size(); }
+        Blob feed();
+
+      protected:
+        std::shared_ptr<const std::string> content;
+        bool feeded;
+
+    };
+
     class FileProvider : public ContentProvider {
       public:
         explicit FileProvider(const std::string& filename);

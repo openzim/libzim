@@ -36,6 +36,15 @@ namespace zim
       return Blob(content.data(), content.size());
     }
 
+    Blob SharedStringProvider::feed()
+    {
+      if (feeded) {
+        return Blob(nullptr, 0);
+      }
+      feeded = true;
+      return Blob(content->data(), content->size());
+    }
+
     FileProvider::FileProvider(const std::string& filename)
       : buffer(new char[1024*1024])
     {
