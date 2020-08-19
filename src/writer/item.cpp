@@ -82,8 +82,10 @@ namespace zim
     std::unique_ptr<IndexData> Item::getIndexData() const
     {
       return std::unique_ptr<IndexData>(new DefaultIndexData(getData(), getTitle()));
-
     }
-     // Item içmplementation
+
+    Item::Hints Item::getHints() const {
+      return Hints();
+    }
   }
 }

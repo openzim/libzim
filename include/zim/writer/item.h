@@ -26,10 +26,16 @@
 #include <zim/uuid.h>
 #include <string>
 
+#include <map>
+
 namespace zim
 {
   namespace writer
   {
+    enum HintKeys {
+      COMPRESS
+    };
+
     class ContentProvider;
     class IndexData {
       public:
@@ -45,6 +51,7 @@ namespace zim
     class Item
     {
       public:
+        using Hints = std::map<HintKeys, uint64_t>;
         virtual std::string getPath() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getMimeType() const = 0;
@@ -52,6 +59,7 @@ namespace zim
         virtual std::string getFilename() const = 0;
         virtual std::unique_ptr<ContentProvider> getContentProvider() const;
         virtual std::unique_ptr<IndexData> getIndexData() const;
+        virtual Hints getHints() const;
         virtual ~Item() = default;
     };
 

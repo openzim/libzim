@@ -100,8 +100,17 @@ namespace zim
 
     void Creator::addItem(std::shared_ptr<Item> item)
     {
+      auto hints = item->getHints();
+
       auto dirent = data->createItemDirent(item.get());
-      auto compressContent = isCompressibleMimetype(item->getMimeType());
+
+      bool compressContent;
+      try {
+        compressContent = bool(hints.at(COMPRESS));
+      } catch(std::out_of_range&) {
+        compressContent = isCompressibleMimetype(item->getMimeType());
+      }
+
       data->addDirent(dirent);
       data->addItemData(dirent, item->getContentProvider(), compressContent);
       data->nbItems++;
