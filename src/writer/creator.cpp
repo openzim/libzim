@@ -304,7 +304,6 @@ namespace zim
     void Creator::fillHeader(Fileheader* header) const
     {
       auto mainPath = getMainPath();
-      auto layoutPath = getLayoutPath();
 
       if (data->isExtended) {
         header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
@@ -315,7 +314,7 @@ namespace zim
       header->setMainPage(std::numeric_limits<entry_index_type>::max());
       header->setLayoutPage(std::numeric_limits<entry_index_type>::max());
 
-      if (!mainPath.empty() || !layoutPath.empty())
+      if (!mainPath.empty())
       {
         for (auto& dirent: data->dirents)
         {
@@ -323,11 +322,6 @@ namespace zim
           if (mainPath == direntFullPath)
           {
             header->setMainPage(entry_index_type(dirent->getIdx()));
-          }
-
-          if (layoutPath == direntFullPath)
-          {
-            header->setLayoutPage(entry_index_type(dirent->getIdx()));
           }
         }
       }
