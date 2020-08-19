@@ -46,6 +46,8 @@ namespace zim
 
         virtual void startZimCreation(const std::string& fname);
         virtual void addItem(std::shared_ptr<Item> item);
+        virtual void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain");
+        virtual void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype);
         virtual void addRedirection(
             const std::string& path,
             const std::string& title,

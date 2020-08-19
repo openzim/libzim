@@ -138,6 +138,29 @@ namespace zim
 
     }
 
+    void Creator::addMetadata(const std::string& name, const std::string& content, const std::string& mimetype)
+    {
+      auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
+      addMetadata(name, std::move(provider), mimetype);
+    }
+
+    void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
+    {
+      auto dirent = data->pool.getDirent();
+      auto compressContent = isCompressibleMimetype(mimetype);
+      dirent->setNamespace('M');
+      dirent->setPath(name);
+      dirent->setMimeType(data->getMimeTypeIdx(mimetype));
+      data->addDirent(dirent);
+      data->addItemData(dirent, std::move(provider), compressContent);
+      data->nbItems++;
+      if (compressContent) {
+        data->nbCompItems++;
+      } else {
+        data->nbUnCompItems++;
+      }
+    }
+
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
     {
       auto dirent = data->createRedirectDirent(path, title, targetPath);
