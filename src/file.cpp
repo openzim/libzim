@@ -203,6 +203,13 @@ namespace zim
       return search;
   }
 
+  offset_type File::getOffset(cluster_index_type clusterIdx, blob_index_type blobIdx) const
+  {
+    return offset_type(impl->getBlobOffset(
+                           cluster_index_t(clusterIdx),
+                           blob_index_t(blobIdx)));
+  }
+
   time_t File::getMTime() const
   {
     return impl->getMTime();
