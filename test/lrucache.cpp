@@ -37,9 +37,3 @@ TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
     size_t size = cache_lru.size();
     EXPECT_EQ(TEST2_CACHE_CAPACITY, size);
 }
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    int ret = RUN_ALL_TESTS();
-    return ret;
-}
