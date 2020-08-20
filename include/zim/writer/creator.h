@@ -44,15 +44,15 @@ namespace zim
         void setNbWorkerThreads(unsigned ct) { nbWorkerThreads = ct; }
 
 
-        virtual void startZimCreation(const std::string& fname);
-        virtual void addItem(std::shared_ptr<Item> item);
-        virtual void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain");
-        virtual void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype);
-        virtual void addRedirection(
+        void startZimCreation(const std::string& fname);
+        void addItem(std::shared_ptr<Item> item);
+        void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain");
+        void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype);
+        void addRedirection(
             const std::string& path,
             const std::string& title,
             const std::string& targetpath);
-        virtual void finishZimCreation();
+        void finishZimCreation();
 
         virtual std::string getMainPath() const { return ""; }
         virtual std::string getFaviconPath() const { return ""; }
