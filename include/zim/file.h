@@ -61,6 +61,7 @@ namespace zim
       offset_type getClusterOffset(cluster_index_type idx) const;
 
       Blob getBlob(cluster_index_type clusterIdx, blob_index_type blobIdx) const;
+      offset_type getOffset(cluster_index_type clusterIdx, blob_index_type blobIdx) const;
 
       article_index_type getNamespaceBeginOffset(char ch) const;
       article_index_type getNamespaceEndOffset(char ch) const;
