@@ -51,8 +51,6 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      offset_t getOffset(const Reader* reader, size_t idx);
-
       Cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
@@ -83,8 +81,7 @@ namespace zim
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
 
-      std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
-      getFileParts(offset_t offset, zsize_t size);
+      FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(article_index_t idx);
       std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
       article_index_t getIndexByTitle(article_index_t idx);
@@ -98,7 +95,7 @@ namespace zim
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
-      offset_t getClusterOffset(cluster_index_t idx);
+      offset_t getClusterOffset(cluster_index_t idx) const;
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
       article_index_t getNamespaceBeginOffset(char ch);

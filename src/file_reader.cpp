@@ -60,7 +60,7 @@ FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_t offs
 char FileReader::read(offset_t offset) const {
   ASSERT(offset.v, <, _size.v);
   offset += _offset;
-  auto part_pair = source->lower_bound(offset);
+  auto part_pair = source->locate(offset);
   auto& fhandle = part_pair->second->fhandle();
   offset_t local_offset = offset - part_pair->first.min;
   ASSERT(local_offset, <=, part_pair->first.max);

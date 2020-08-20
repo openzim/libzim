@@ -62,7 +62,7 @@ namespace zim
     offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
-    offset_t data_address(offset);
+    const offset_t data_address(offset);
 
     // read offsets
     offsets.clear();
@@ -75,8 +75,7 @@ namespace zim
     {
       OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
       ASSERT(new_offset, >=, offset);
-      ASSERT(offset, >=, data_address.v);
-      ASSERT(offset, <=, reader->size().v);
+      ASSERT(new_offset, <=, reader->size().v);
 
       offset = new_offset;
       offsets.push_back(offset_t(offset - data_address.v));
@@ -88,7 +87,7 @@ namespace zim
 
   Blob Cluster::getBlob(blob_index_t n) const
   {
-    if (size()) {
+    if (n < count()) {
       auto blobSize = getBlobSize(n);
       if (blobSize.v > SIZE_MAX) {
         return Blob();
@@ -102,7 +101,7 @@ namespace zim
 
   Blob Cluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   {
-    if (this->size()) {
+    if (n < count()) {
       const auto blobSize = getBlobSize(n);
       if ( offset.v > blobSize.v ) {
         return Blob();
@@ -117,14 +116,6 @@ namespace zim
     } else {
       return Blob();
     }
-  }
-
-  zsize_t Cluster::size() const
-  {
-    if (isExtended)
-      return zsize_t(offsets.size() * sizeof(uint64_t) + reader->size().v);
-    else
-      return zsize_t(offsets.size() * sizeof(uint32_t) + reader->size().v);
   }
 
   template<typename OFFSET_TYPE>
