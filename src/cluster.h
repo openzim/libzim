@@ -42,7 +42,8 @@ namespace zim
       const bool isExtended;
       std::shared_ptr<const Reader> reader;
 
-      // offset (relative to the ZIM file) of the first blob of this cluster
+      // offset of the first blob of this cluster relative to the beginning
+      // of the (uncompressed) cluster data
       offset_t startOffset;
 
       // offsets of the blob boundaries relative to the start of the first
