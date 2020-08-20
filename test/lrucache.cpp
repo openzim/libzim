@@ -13,6 +13,15 @@ TEST(CacheTest, SimplePut) {
     EXPECT_EQ(1, cache_lru.size());
 }
 
+TEST(CacheTest, OverwritingPut) {
+    zim::lru_cache<int, int> cache_lru(1);
+    cache_lru.put(7, 777);
+    cache_lru.put(7, 222);
+    EXPECT_TRUE(cache_lru.exists(7));
+    EXPECT_EQ(222, cache_lru.get(7));
+    EXPECT_EQ(1, cache_lru.size());
+}
+
 TEST(CacheTest, MissingValue) {
     zim::lru_cache<int, int> cache_lru(1);
     EXPECT_TRUE(cache_lru.get(7).miss());
