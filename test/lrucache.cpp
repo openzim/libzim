@@ -15,7 +15,9 @@ TEST(CacheTest, SimplePut) {
 
 TEST(CacheTest, MissingValue) {
     zim::lru_cache<int, int> cache_lru(1);
-    EXPECT_THROW(cache_lru.get(7), std::range_error);
+    EXPECT_TRUE(cache_lru.get(7).miss());
+    EXPECT_FALSE(cache_lru.get(7).hit());
+    EXPECT_THROW(cache_lru.get(7).value(), std::range_error);
 }
 
 TEST(CacheTest1, KeepsAllValuesWithinCapacity) {

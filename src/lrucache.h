@@ -17,11 +17,32 @@ namespace zim {
 
 template<typename key_t, typename value_t>
 class lru_cache {
-public:
+public: // types
 	typedef typename std::pair<key_t, value_t> key_value_pair_t;
 	typedef typename std::list<key_value_pair_t>::iterator list_iterator_t;
 
-	lru_cache(size_t max_size) :
+  class AccessResult
+  {
+    const bool hit_;
+    const value_t* const val_;
+  public:
+    explicit AccessResult(const value_t& val) : hit_(true), val_(&val) {}
+    AccessResult() : hit_(false), val_(nullptr) {}
+
+    bool hit() const { return hit_; }
+    bool miss() const { return !hit(); }
+    const value_t& value() const
+    {
+      if ( miss() )
+        throw std::range_error("There is no such key in cache");
+      return *val_;
+    }
+
+    operator const value_t& () const { return value(); }
+  };
+
+public: // functions
+	explicit lru_cache(size_t max_size) :
 		_max_size(max_size) {
 	}
 
@@ -42,13 +63,13 @@ public:
 		}
 	}
 
-	const value_t& get(const key_t& key) {
+	AccessResult get(const key_t& key) {
 		auto it = _cache_items_map.find(key);
 		if (it == _cache_items_map.end()) {
-			throw std::range_error("There is no such key in cache");
+			return AccessResult();
 		} else {
 			_cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
-			return it->second->second;
+			return AccessResult(it->second->second);
 		}
 	}
 
@@ -60,7 +81,7 @@ public:
 		return _cache_items_map.size();
 	}
 
-private:
+private: // data
 	std::list<key_value_pair_t> _cache_items_list;
 	std::unordered_map<key_t, list_iterator_t> _cache_items_map;
 	size_t _max_size;
