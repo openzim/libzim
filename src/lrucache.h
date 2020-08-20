@@ -24,10 +24,10 @@ public: // types
   class AccessResult
   {
     const bool hit_;
-    const value_t* const val_;
+    const value_t val_;
   public:
-    explicit AccessResult(const value_t& val) : hit_(true), val_(&val) {}
-    AccessResult() : hit_(false), val_(nullptr) {}
+    explicit AccessResult(const value_t& val) : hit_(true), val_(val) {}
+    AccessResult() : hit_(false), val_() {}
 
     bool hit() const { return hit_; }
     bool miss() const { return !hit(); }
@@ -35,7 +35,7 @@ public: // types
     {
       if ( miss() )
         throw std::range_error("There is no such key in cache");
-      return *val_;
+      return val_;
     }
 
     operator const value_t& () const { return value(); }
