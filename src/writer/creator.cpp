@@ -76,9 +76,9 @@ namespace zim
 {
   namespace writer
   {
-    Creator::Creator(bool verbose, CompressionType c)
+    Creator::Creator(bool verbose, CompressionType comptype)
       : verbose(verbose)
-      , compression(c)
+      , compression(comptype)
     {}
 
     Creator::~Creator() = default;

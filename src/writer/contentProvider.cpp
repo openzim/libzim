@@ -45,12 +45,12 @@ namespace zim
       return Blob(content->data(), content->size());
     }
 
-    FileProvider::FileProvider(const std::string& filename)
+    FileProvider::FileProvider(const std::string& filepath)
       : buffer(new char[1024*1024])
     {
-      fd = open(filename.c_str(), O_RDONLY);
+      fd = open(filepath.c_str(), O_RDONLY);
       if (fd == -1) {
-        throw std::runtime_error(std::string("cannot open ") + filename);
+        throw std::runtime_error(std::string("cannot open ") + filepath);
       }
       size = lseek(fd, 0, SEEK_END);
       lseek(fd, 0, SEEK_SET);

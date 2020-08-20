@@ -48,22 +48,96 @@ namespace zim
         virtual std::tuple<bool, double, double> getGeoPosition() const = 0;
     };
 
+    /**
+     * Item represent data to be added to the archive.
+     *
+     * This is a abstract class the user need to implement.
+     * libzim provides `BasicItem`, `StringItem` and `FileItem`
+     * to simplify (or avoid) this reimplementation.
+     */
     class Item
     {
       public:
         using Hints = std::map<HintKeys, uint64_t>;
+
+        /**
+         * The path of the item.
+         *
+         * The path must be absolute and contain the namespace.
+         * Path must be unique.
+         *
+         * @return the path of the item.
+         */
         virtual std::string getPath() const = 0;
+
+        /**
+         * The title of the item.
+         *
+         * Item's title is indexed and is used for the suggestion system.
+         * Title don't have to be unique.
+         *
+         * @return the title of the item.
+         */
         virtual std::string getTitle() const = 0;
+
+        /**
+         * The mimetype of the item.
+         *
+         * Mimetype is store within the content.
+         * It is also used to detect if the content must be compressed or not.
+         *
+         * @return the mimetype of the item.
+         */
         virtual std::string getMimeType() const = 0;
+
+        /**
+         * The content provider of the item.
+         *
+         * The content provider is responsible to provide the content to the creator.
+         * The returned content provider must stay valid even after creator release
+         * its reference to the item.
+         *
+         * @return the contentProvider of the item.
+         */
         virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
+
+        /**
+         * The index data of the item.
+         *
+         * The index data is the data to index. (May be different from the content
+         * to store).
+         * The returned index data must stay valid even after creator release
+         * its reference to the item.
+         *
+         * @return the indexData of the item.
+         */
         virtual std::unique_ptr<IndexData> getIndexData() const;
+
+        /**
+         * Hints to help the creator takes decision about the item.
+         *
+         * @return A list of hints.
+         */
         virtual Hints getHints() const;
         virtual ~Item() = default;
     };
 
+    /**
+     * A BasicItem is a partial implementation of a Item.
+     *
+     * `BasicItem` provides a basic implementation for everything about an `Item`
+     * but the actual content of the item.
+     */
     class BasicItem : public Item
     {
       public:
+        /**
+         * Create a BasicItem with the given path, mimetype and title.
+         *
+         * @param path the path of the item.
+         * @param mimetype the mimetype of the item.
+         * @param title the title of the item.
+         */
         BasicItem(const std::string& path, const std::string& mimetype, const std::string& title)
           : path(path),
             mimetype(mimetype),
@@ -80,10 +154,22 @@ namespace zim
         std::string title;
     };
 
+    /**
+     * A `StringItem` is a full implemented item where the content is stored in a string.
+     */
     class StringItem : public BasicItem, std::enable_shared_from_this<StringItem>
     {
       public:
-        StringItem(const std::string& path, const std::string& mimetype, const std::string& title, const std::string& content)
+        /**
+         * Create a StringItem with the given path, mimetype, title and content.
+         *
+         * @param path the path of the item.
+         * @param mimetype the mimetype of the item.
+         * @param title the title of the item.
+         * @param content the content of the item.
+         */
+        StringItem(const std::string& path, const std::string& mimetype,
+                   const std::string& title, const std::string& content)
           : BasicItem(path, mimetype, title),
             content(content)
         {}
@@ -96,10 +182,22 @@ namespace zim
 
     };
 
+    /**
+     * A `FileItem` is a full implemented item where the content is file.
+     */
     class FileItem : public BasicItem
     {
       public:
-        FileItem(const std::string& path, const std::string& mimetype, const std::string& title, const std::string& filepath)
+        /**
+         * Create a FileItem with the given path, mimetype, title and filenpath.
+         *
+         * @param path the path of the item.
+         * @param mimetype the mimetype of the item.
+         * @param title the title of the item.
+         * @param filepath the path of the file in the filesystem.
+         */
+        FileItem(const std::string& path, const std::string& mimetype,
+                 const std::string& title, const std::string& filepath)
           : BasicItem(path, mimetype, title),
             filepath(filepath)
         {}

@@ -31,32 +31,141 @@ namespace zim
   namespace writer
   {
     class CreatorData;
+
+    /**
+     * The `Creator` is responsible to create a zim file.
+     *
+     * Once the `Creator` is instantiated, it can be configured with the
+     * `set*` methods.
+     * Then the creation process must be started with `startZimCreation`.
+     * Elements of the zim file can be added using the `add*` methods.
+     * The final steps is to call `finishZimCreation`.
+     *
+     * The `Creator` must be inherited and child class must reimplement
+     * `get*` methods to provide further information.
+     * Thoses `get*` methods will be called at the end of the process so
+     * custom creator can deduce the value to return while they are creating
+     * the zim file.
+     */
     class Creator
     {
       public:
-        Creator(bool verbose = false, CompressionType c = zimcompLzma);
+
+        /**
+         * Creator constructor.
+         *
+         * @param verbose If the creator print verbose information.
+         * @param comptype The compression algorithm to use.
+         */
+        Creator(bool verbose = false, CompressionType comptype = zimcompLzma);
         virtual ~Creator();
 
         zim::size_type getMinChunkSize() const { return minChunkSize; }
-        void setMinChunkSize(zim::size_type s) { minChunkSize = s; }
+
+        /**
+         * Set the minimum size of the cluster.
+         *
+         * Creator will try to create cluster with this minimum size (uncompressed size).
+         *
+         * @param size The minimum size of a cluster.
+         */
+        void setMinChunkSize(zim::size_type size) { minChunkSize = size; }
+
+        /**
+         * Configure the fulltext indexing feature.
+         *
+         * @param indexing True if we must fulltext index the content.
+         * @param language Language to use for the indexation.
+         */
         void setIndexing(bool indexing, std::string language)
         { withIndex = indexing; indexingLanguage = language; }
-        void setNbWorkerThreads(unsigned ct) { nbWorkerThreads = ct; }
+
+        /**
+         * Set the number of thread to use for the internal worker.
+         *
+         * @param nbWorkers The number of workers to use.
+         */
+        void setNbWorkerThreads(unsigned nbWorkers) { nbWorkerThreads = nbWorkers; }
 
 
+        /**
+         * Start the zim creation.
+         *
+         * The creator must have been configured before calling this method.
+         *
+         * @param fname The filename of the zim to create.
+         */
         void startZimCreation(const std::string& fname);
+
+        /**
+         * Add a item to the archive.
+         *
+         * @param item The item to add.
+         */
         void addItem(std::shared_ptr<Item> item);
+
+        /**
+         * Add a metadata to the archive.
+         *
+         * @param name the name of the metadata
+         * @param content the content of the metadata
+         * @param mimetype the mimetype of the metadata.
+         *                 Only used to detect if the metadata must be compressed or not.
+         */
         void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain");
+
+        /**
+         * Add a metadata to the archive using a contentProvider instead of plain string.
+         *
+         * @param name the name of the metadata.
+         * @param provider the provider of the content of the metadata.
+         * @param mimetype the mimetype of the metadata.
+         *                 Only used to detect if the metadata must be compressed.
+         */
         void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype);
+
+        /**
+         * Add a redirection to the archive.
+         *
+         * @param path the path of the redirection.
+         * @param title the title of the redirection.
+         * @param targetpath the path of the target of the redirection
+         */
         void addRedirection(
             const std::string& path,
             const std::string& title,
             const std::string& targetpath);
+
+        /**
+         * Finalize the zim creation.
+         */
         void finishZimCreation();
 
+        /**
+         * Return the path of the main page.
+         *
+         * Must be reimplemented.
+         *
+         * @return The path of the main page.
+         */
         virtual std::string getMainPath() const { return ""; }
-        virtual std::string getFaviconPath() const { return ""; }
-        virtual zim::Uuid getUuid() const { return Uuid::generate(); }
+
+        /**
+         * Return the path of the favicon.
+         *
+         * Must be reimplemented.
+         *
+         * @return The path of the favicon.
+         */
+       virtual std::string getFaviconPath() const { return ""; }
+        /**
+         * Return the uuid of the archive.
+         *
+         * Must be reimplemented.
+         *
+         * @return The uuid of the archive.
+         */
+       virtual zim::Uuid getUuid() const { return Uuid::generate(); }
 
       private:
         std::unique_ptr<CreatorData> data;
