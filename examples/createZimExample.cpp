@@ -74,7 +74,8 @@ int main(int argc, char* argv[])
 {
   unsigned max = 16;
   try {
-    zim::writer::Creator c(false, zim::zimcompZstd);
+    zim::writer::Creator c;
+    c.configVerbose(false).configCompression(zim::zimcompZstd);
     c.startZimCreation("foo.zim");
     for (unsigned n = 0; n < max; ++n)
     {

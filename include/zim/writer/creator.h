@@ -36,7 +36,7 @@ namespace zim
      * The `Creator` is responsible to create a zim file.
      *
      * Once the `Creator` is instantiated, it can be configured with the
-     * `set*` methods.
+     * `config*` methods.
      * Then the creation process must be started with `startZimCreation`.
      * Elements of the zim file can be added using the `add*` methods.
      * The final steps is to call `finishZimCreation`.
@@ -57,45 +57,61 @@ namespace zim
          * @param verbose If the creator print verbose information.
          * @param comptype The compression algorithm to use.
          */
-        Creator(bool verbose = false, CompressionType comptype = zimcompLzma);
+        Creator();
         virtual ~Creator();
 
-        zim::size_type getMinChunkSize() const { return minChunkSize; }
+        /**
+         * Configure the verbosity of the creator
+         *
+         * @param verbose if the creator print verbose information.
+         * @return a reference to itself.
+         */
+        Creator& configVerbose(bool verbose);
+
+        /**
+         * Configure the compression algorithm to use.
+         *
+         * @param comptype the compression algorithm to use.
+         * @return a reference to itself.
+         */
+        Creator& configCompression(CompressionType comptype);
 
         /**
          * Set the minimum size of the cluster.
          *
-         * Creator will try to create cluster with this minimum size (uncompressed size).
+         * Creator will try to create cluster with this minimum size
+         * (uncompressed size).
          *
          * @param size The minimum size of a cluster.
+         * @return a reference to itself.
          */
-        void setMinChunkSize(zim::size_type size) { minChunkSize = size; }
+        Creator& configMinClusterSize(zim::size_type size);
 
         /**
          * Configure the fulltext indexing feature.
          *
          * @param indexing True if we must fulltext index the content.
          * @param language Language to use for the indexation.
+         * @return a reference to itself.
          */
-        void setIndexing(bool indexing, std::string language)
-        { withIndex = indexing; indexingLanguage = language; }
+        Creator& configIndexing(bool indexing, std::string language);
 
         /**
          * Set the number of thread to use for the internal worker.
          *
          * @param nbWorkers The number of workers to use.
+         * @return a reference to itself.
          */
-        void setNbWorkerThreads(unsigned nbWorkers) { nbWorkerThreads = nbWorkers; }
-
+        Creator& configNbWorkers(unsigned nbWorkers);
 
         /**
          * Start the zim creation.
          *
          * The creator must have been configured before calling this method.
          *
-         * @param fname The filename of the zim to create.
+         * @param filepath the path of the zim file to create.
          */
-        void startZimCreation(const std::string& fname);
+        void startZimCreation(const std::string& filepath);
 
         /**
          * Add a item to the archive.
@@ -169,12 +185,12 @@ namespace zim
 
       private:
         std::unique_ptr<CreatorData> data;
-        bool verbose;
-        const CompressionType compression;
-        bool withIndex = false;
-        size_t minChunkSize = 1024-64;
-        std::string indexingLanguage;
-        unsigned nbWorkerThreads = 4;
+        bool m_verbose = false;
+        CompressionType m_compression = zimcompLzma;
+        bool m_withIndex = false;
+        size_t m_minClusterSize = 1024-64;
+        std::string m_indexingLanguage;
+        unsigned m_nbWorkers = 4;
 
         void fillHeader(Fileheader* header) const;
         void write() const;

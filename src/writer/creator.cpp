@@ -64,7 +64,7 @@ log_define("zim.writer.creator")
     } while(false)
 
 #define TINFO(e) \
-    if (verbose) { \
+    if (m_verbose) { \
         double seconds = difftime(time(NULL), data->start_time); \
         std::cout << "T:" << (int)(seconds) \
                   << "; " << e << std::endl; \
@@ -76,19 +76,48 @@ namespace zim
 {
   namespace writer
   {
-    Creator::Creator(bool verbose, CompressionType comptype)
-      : verbose(verbose)
-      , compression(comptype)
-    {}
-
+    Creator::Creator() = default;
     Creator::~Creator() = default;
 
-    void Creator::startZimCreation(const std::string& fname)
+    Creator& Creator::configVerbose(bool verbose)
     {
-      data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage, compression));
-      data->setMinChunkSize(minChunkSize);
+      m_verbose = verbose;
+      return *this;
+    }
 
-      for(unsigned i=0; i<nbWorkerThreads; i++)
+    Creator& Creator::configCompression(CompressionType comptype)
+    {
+      m_compression = comptype;
+      return *this;
+    }
+
+    Creator& Creator::configMinClusterSize(zim::size_type size)
+    {
+      m_minClusterSize = size;
+      return *this;
+    }
+
+    Creator& Creator::configIndexing(bool indexing, std::string language)
+    {
+      m_withIndex = indexing;
+      m_indexingLanguage = language;
+      return *this;
+    }
+
+    Creator& Creator::configNbWorkers(unsigned nbWorkers)
+    {
+      m_nbWorkers = nbWorkers;
+      return *this;
+    }
+
+    void Creator::startZimCreation(const std::string& filepath)
+    {
+      data = std::unique_ptr<CreatorData>(
+        new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression)
+      );
+      data->setMinChunkSize(m_minClusterSize);
+
+      for(unsigned i=0; i<m_nbWorkers; i++)
       {
         pthread_t thread;
         pthread_create(&thread, NULL, taskRunner, this->data.get());
@@ -124,13 +153,13 @@ namespace zim
       if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
         data->nbIndexItems++;
         data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
-        if(withIndex) {
+        if(m_withIndex) {
           data->taskList.pushToQueue(new IndexTask(item));
         }
       }
 #endif
 
-      if (verbose && data->nbItems%1000 == 0){
+      if (m_verbose && data->nbItems%1000 == 0){
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
                   << "; A:" << data->nbItems
@@ -176,7 +205,7 @@ namespace zim
       data->addDirent(dirent);
       data->nbItems++;
       data->nbRedirectItems++;
-      if (verbose && data->nbItems%1000 == 0){
+      if (m_verbose && data->nbItems%1000 == 0){
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
                   << "; A:" << data->nbItems
@@ -219,7 +248,7 @@ namespace zim
         data->mainPageDirent = *data->dirents.find(tmpDirent);
       }
 
-      if (verbose) {
+      if (m_verbose) {
         double seconds = difftime(time(NULL),data->start_time);
         std::cout << "T:" << (int)seconds
                   << "; A:" << data->nbItems
@@ -256,7 +285,7 @@ namespace zim
           false
         );
       }
-      if (withIndex) {
+      if (m_withIndex) {
         wait = 0;
         do {
           microsleep(wait);
@@ -294,7 +323,7 @@ namespace zim
       } while(ClusterTask::waiting_task.load() > 0);
 
       // Quit all workerThreads
-      for (auto i=0U; i< nbWorkerThreads; i++) {
+      for (auto i=0U; i< m_nbWorkers; i++) {
         data->taskList.pushToQueue(nullptr);
       }
       for(auto& thread: data->workerThreads) {
