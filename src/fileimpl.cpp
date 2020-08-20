@@ -320,8 +320,8 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw ZimFileFormatError("article index out of range");
 
     pthread_mutex_lock(&direntCacheLock);
-    auto v = direntCache.getx(idx);
-    if (v.first)
+    auto v = direntCache.get(idx);
+    if (v.hit())
     {
       log_debug("dirent " << idx << " found in cache; hits "
                 << direntCache.getHits() << " misses "
@@ -329,7 +329,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
                 << direntCache.hitRatio() * 100 << "% fillfactor "
                 << direntCache.fillfactor());
       pthread_mutex_unlock(&direntCacheLock);
-      return v.second;
+      return v.value();
     }
 
     log_debug("dirent " << idx << " not found in cache; hits "
