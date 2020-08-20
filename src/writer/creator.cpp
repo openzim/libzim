@@ -230,18 +230,16 @@ namespace zim
     void Creator::finishZimCreation()
     {
       // Create mandatory entries
-      auto faviconPath = getFaviconPath();
-      if (!faviconPath.empty()) {
-        addRedirection("-/favicon", "", getFaviconPath());
+      if (!m_faviconPath.empty()) {
+        addRedirection("-/favicon", "", m_faviconPath);
       }
 
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
       // pool.getDirent() return a dirent on a pool allocated memory.
       // Dirent doesn't have to be deleted.
-      auto mainPath = getMainPath();
-      if (!mainPath.empty()) {
-        addRedirection("-/mainPage", "", mainPath);
+      if (!m_mainPath.empty()) {
+        addRedirection("-/mainPage", "", m_mainPath);
         auto tmpDirent = data->pool.getDirent();
         tmpDirent->setNamespace('-');
         tmpDirent->setPath("mainPage");
@@ -372,7 +370,7 @@ namespace zim
         : std::numeric_limits<entry_index_type>::max());
       header->setLayoutPage(std::numeric_limits<entry_index_type>::max());
 
-      header->setUuid( getUuid() );
+      header->setUuid( m_uuid );
       header->setArticleCount( data->dirents.size() );
 
       header->setMimeListPos( Fileheader::size );

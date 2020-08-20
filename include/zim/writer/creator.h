@@ -41,11 +41,8 @@ namespace zim
      * Elements of the zim file can be added using the `add*` methods.
      * The final steps is to call `finishZimCreation`.
      *
-     * The `Creator` must be inherited and child class must reimplement
-     * `get*` methods to provide further information.
-     * Thoses `get*` methods will be called at the end of the process so
-     * custom creator can deduce the value to return while they are creating
-     * the zim file.
+     * During the creation of the zim file (and before the call to `finishZimCreation`),
+     * some values must be set using the `set*` methods.
      */
     class Creator
     {
@@ -158,39 +155,41 @@ namespace zim
         void finishZimCreation();
 
         /**
-         * Return the path of the main page.
+         * Set the path of the main page.
          *
-         * Must be reimplemented.
-         *
-         * @return The path of the main page.
+         * @param mainPath The path of the main page.
          */
-        virtual std::string getMainPath() const { return ""; }
+        void setMainPath(const std::string& mainPath) { m_mainPath = mainPath; }
 
         /**
-         * Return the path of the favicon.
+         * Set the path of the favicon.
          *
-         * Must be reimplemented.
-         *
-         * @return The path of the favicon.
+         * @param faviconPath The path of the favicon.
          */
-       virtual std::string getFaviconPath() const { return ""; }
+        void setFaviconPath(const std::string& faviconPath) { m_faviconPath = faviconPath; }
+
         /**
-         * Return the uuid of the archive.
+         * Set the uuid of the the archive.
          *
-         * Must be reimplemented.
-         *
-         * @return The uuid of the archive.
+         * @param uuid The uuid of the archive.
          */
-       virtual zim::Uuid getUuid() const { return Uuid::generate(); }
+        void setUuid(const zim::Uuid& uuid) { m_uuid = uuid; }
 
       private:
         std::unique_ptr<CreatorData> data;
+
+        // configuration
         bool m_verbose = false;
         CompressionType m_compression = zimcompLzma;
         bool m_withIndex = false;
         size_t m_minClusterSize = 1024-64;
         std::string m_indexingLanguage;
         unsigned m_nbWorkers = 4;
+
+        // zim data
+        std::string m_mainPath;
+        std::string m_faviconPath;
+        Uuid m_uuid;
 
         void fillHeader(Fileheader* header) const;
         void write() const;

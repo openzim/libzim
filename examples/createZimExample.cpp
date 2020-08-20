@@ -84,6 +84,7 @@ int main(int argc, char* argv[])
       auto article = std::make_shared<TestItem>(id.str());
       c.addItem(article);
     }
+    c.setMainPath("A/0");
     c.finishZimCreation();
   }
   catch (const std::exception& e)
