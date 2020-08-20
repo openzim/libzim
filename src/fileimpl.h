@@ -28,7 +28,6 @@
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include <mutex>
-#include "cache.h"
 #include "lrucache.h"
 #include "_dirent.h"
 #include "cluster.h"
@@ -55,7 +54,7 @@ namespace zim
       lru_cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
-      Cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
+      lru_cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;

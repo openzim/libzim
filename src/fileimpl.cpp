@@ -403,12 +403,12 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw ZimFileFormatError("cluster index out of range");
 
     pthread_mutex_lock(&clusterCacheLock);
-    auto cluster(clusterCache.get(idx));
+    const auto cachedCluster(clusterCache.get(idx));
     pthread_mutex_unlock(&clusterCacheLock);
-    if (cluster)
+    if (cachedCluster.hit())
     {
       log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-      return cluster;
+      return cachedCluster.value();
     }
 
     offset_t clusterOffset(getClusterOffset(idx));
@@ -416,7 +416,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     CompressionType comp;
     bool extended;
     std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
-    cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp, extended));
+    const auto cluster = std::make_shared<Cluster>(reader, comp, extended);
 
     log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
     pthread_mutex_lock(&clusterCacheLock);
