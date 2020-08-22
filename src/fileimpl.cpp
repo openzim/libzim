@@ -62,7 +62,6 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
-      clusterCacheLock(PTHREAD_MUTEX_INITIALIZER),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
       namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
       namespaceEndLock(PTHREAD_MUTEX_INITIALIZER)
@@ -412,18 +411,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    std::promise<ClusterHandle> clusterPromise;
-    pthread_mutex_lock(&clusterCacheLock);
-    const auto x = clusterCache.getOrPut(idx, clusterPromise.get_future().share());
-    pthread_mutex_unlock(&clusterCacheLock);
-    if ( x.hit() ) {
-      log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-    } else {
-      log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-      clusterPromise.set_value(readCluster(idx));
-    }
-
-    return x.value().get();
+    return clusterCache.getOrPut(idx, [=](){ return readCluster(idx); });
   }
 
   offset_t FileImpl::getClusterOffset(cluster_index_t idx) const

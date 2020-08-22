@@ -24,12 +24,12 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <future>
 #include <pthread.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include <mutex>
 #include "lrucache.h"
+#include "concurrent_cache.h"
 #include "_dirent.h"
 #include "cluster.h"
 #include "buffer.h"
@@ -56,9 +56,7 @@ namespace zim
       pthread_mutex_t direntCacheLock;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
-      typedef std::shared_future<ClusterHandle> ClusterFuture;
-      lru_cache<cluster_index_t, ClusterFuture> clusterCache;
-      pthread_mutex_t clusterCacheLock;
+      ConcurrentCache<cluster_index_t, ClusterHandle> clusterCache;
 
       bool cacheUncompressedCluster;
       typedef std::map<char, article_index_t> NamespaceCache;
