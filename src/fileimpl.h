@@ -54,7 +54,7 @@ namespace zim
       lru_cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
-      lru_cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
+      lru_cache<cluster_index_t, std::shared_ptr<const Cluster>> clusterCache;
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;
@@ -111,6 +111,9 @@ namespace zim
       std::string getChecksum();
       bool verify();
       bool is_multiPart() const;
+
+  private:
+      std::shared_ptr<const Cluster> readCluster(cluster_index_t idx);
   };
 
 }

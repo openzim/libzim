@@ -397,6 +397,16 @@ offset_t readOffset(const Reader& reader, size_t idx)
     return ret;
   }
 
+  std::shared_ptr<const Cluster> FileImpl::readCluster(cluster_index_t idx)
+  {
+    offset_t clusterOffset(getClusterOffset(idx));
+    log_debug("read cluster " << idx << " from offset " << clusterOffset);
+    CompressionType comp;
+    bool extended;
+    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
+    return std::make_shared<Cluster>(reader, comp, extended);
+  }
+
   std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
   {
     if (idx >= getCountClusters())
@@ -411,12 +421,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
       return cachedCluster.value();
     }
 
-    offset_t clusterOffset(getClusterOffset(idx));
-    log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    CompressionType comp;
-    bool extended;
-    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
-    const auto cluster = std::make_shared<Cluster>(reader, comp, extended);
+    const auto cluster = readCluster(idx);
 
     log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
     pthread_mutex_lock(&clusterCacheLock);
