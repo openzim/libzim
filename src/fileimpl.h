@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <future>
 #include <pthread.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
@@ -54,7 +55,9 @@ namespace zim
       lru_cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
-      lru_cache<cluster_index_t, std::shared_ptr<const Cluster>> clusterCache;
+      typedef std::shared_ptr<const Cluster> ClusterHandle;
+      typedef std::shared_future<ClusterHandle> ClusterFuture;
+      lru_cache<cluster_index_t, ClusterFuture> clusterCache;
       pthread_mutex_t clusterCacheLock;
 
       bool cacheUncompressedCluster;
@@ -113,7 +116,7 @@ namespace zim
       bool is_multiPart() const;
 
   private:
-      std::shared_ptr<const Cluster> readCluster(cluster_index_t idx);
+      ClusterHandle readCluster(cluster_index_t idx);
   };
 
 }
