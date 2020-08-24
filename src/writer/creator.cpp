@@ -70,6 +70,23 @@ log_define("zim.writer.creator")
                   << "; " << e << std::endl; \
     }
 
+#define TPROGRESS() \
+    if (m_verbose ) { \
+        double seconds = difftime(time(NULL),data->start_time);  \
+        std::cout << "T:" << (int)seconds \
+                  << "; A:" << data->nbItems \
+                  << "; RA:" << data->nbRedirectItems \
+                  << "; CA:" << data->nbCompItems \
+                  << "; UA:" << data->nbUnCompItems \
+                  << "; IA:" << data->nbIndexItems \
+                  << "; C:" << data->nbClusters \
+                  << "; CC:" << data->nbCompClusters \
+                  << "; UC:" << data->nbUnCompClusters \
+                  << "; WC:" << data->taskList.size() \
+                  << std::endl; \
+    }
+
+
 #define CLUSTER_BASE_OFFSET 1024
 
 namespace zim
@@ -159,19 +176,8 @@ namespace zim
       }
 #endif
 
-      if (m_verbose && data->nbItems%1000 == 0){
-        double seconds = difftime(time(NULL),data->start_time);
-        std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbItems
-                  << "; RA:" << data->nbRedirectItems
-                  << "; CA:" << data->nbCompItems
-                  << "; UA:" << data->nbUnCompItems
-                  << "; IA:" << data->nbIndexItems
-                  << "; C:" << data->nbClusters
-                  << "; CC:" << data->nbCompClusters
-                  << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->taskList.size()
-                  << std::endl;
+      if (data->nbItems%1000 == 0) {
+        TPROGRESS();
       }
 
     }
@@ -205,19 +211,8 @@ namespace zim
       data->addDirent(dirent);
       data->nbItems++;
       data->nbRedirectItems++;
-      if (m_verbose && data->nbItems%1000 == 0){
-        double seconds = difftime(time(NULL),data->start_time);
-        std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbItems
-                  << "; RA:" << data->nbRedirectItems
-                  << "; CA:" << data->nbCompItems
-                  << "; UA:" << data->nbUnCompItems
-                  << "; IA:" << data->nbIndexItems
-                  << "; C:" << data->nbClusters
-                  << "; CC:" << data->nbCompClusters
-                  << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->taskList.size()
-                  << std::endl;
+      if (data->nbItems%1000 == 0){
+        TPROGRESS();
       }
 
 #if defined(ENABLE_XAPIAN)
@@ -246,20 +241,7 @@ namespace zim
         data->mainPageDirent = *data->dirents.find(tmpDirent);
       }
 
-      if (m_verbose) {
-        double seconds = difftime(time(NULL),data->start_time);
-        std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbItems
-                  << "; RA:" << data->nbRedirectItems
-                  << "; CA:" << data->nbCompItems
-                  << "; UA:" << data->nbUnCompItems
-                  << "; IA:" << data->nbIndexItems
-                  << "; C:" << data->nbClusters
-                  << "; CC:" << data->nbCompClusters
-                  << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->taskList.size()
-                  << std::endl;
-      }
+      TPROGRESS();
 
       // We need to wait that all indexation task has been done before closing the
       // xapian database and add it to zim.
