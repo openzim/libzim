@@ -6,7 +6,6 @@ install_headers(
     'zim/error.h',
     'zim/item.h',
     'zim/entry.h',
-    'zim/fileheader.h',
     'zim/search.h',
     'zim/search_iterator.h',
     'zim/uuid.h',

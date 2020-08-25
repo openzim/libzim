@@ -26,7 +26,6 @@
 #include <memory>
 #include <pthread.h>
 #include <zim/zim.h>
-#include <zim/fileheader.h>
 #include <mutex>
 #include "lrucache.h"
 #include "concurrent_cache.h"
@@ -35,6 +34,7 @@
 #include "buffer.h"
 #include "file_reader.h"
 #include "file_compound.h"
+#include "fileheader.h"
 #include "zim_types.h"
 
 namespace zim

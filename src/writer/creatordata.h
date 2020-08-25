@@ -20,7 +20,6 @@
 #ifndef ZIM_WRITER_CREATOR_DATA_H
 #define ZIM_WRITER_CREATOR_DATA_H
 
-#include <zim/fileheader.h>
 #include <zim/writer/item.h>
 #include "queue.h"
 #include "_dirent.h"
@@ -31,6 +30,7 @@
 #include <fstream>
 #include "config.h"
 
+#include "../fileheader.h"
 #include "direntPool.h"
 
 #if defined(ENABLE_XAPIAN)
