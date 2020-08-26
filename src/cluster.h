@@ -40,9 +40,17 @@ namespace zim
 
       const CompressionType compression;
       const bool isExtended;
-      Offsets offsets;
       std::shared_ptr<const Reader> reader;
+
+      // offset of the first blob of this cluster relative to the beginning
+      // of the (uncompressed) cluster data
       offset_t startOffset;
+
+      // offsets of the blob boundaries relative to the start of the first
+      // blob in this cluster. For a cluster with N blobs, this collection
+      // contains N+1 entries - the start of the first blob (which is always
+      // 0) and the end of the last blob are also included.
+      Offsets offsets;
 
       template<typename OFFSET_TYPE>
       offset_t read_header();
@@ -53,16 +61,13 @@ namespace zim
       bool isCompressed() const                { return compression != zimcompDefault && compression != zimcompNone; }
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
-      zsize_t size() const;
 
       zsize_t getBlobSize(blob_index_t n) const  { return zsize_t(offsets[blob_index_type(n)+1].v
                                                                 - offsets[blob_index_type(n)].v); }
       offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
-      void clear();
 
-      void init_from_buffer(Buffer& buffer);
       static zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset);
   };
 

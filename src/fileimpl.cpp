@@ -38,6 +38,18 @@ log_define("zim.file.impl")
 
 namespace zim
 {
+
+namespace
+{
+
+offset_t readOffset(const Reader& reader, size_t idx)
+{
+  offset_t offset(reader.read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
+  return offset;
+}
+
+} //unnamed namespace
+
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
@@ -50,7 +62,6 @@ namespace zim
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
-      clusterCacheLock(PTHREAD_MUTEX_INITIALIZER),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
       namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
       namespaceEndLock(PTHREAD_MUTEX_INITIALIZER)
@@ -265,8 +276,7 @@ namespace zim
     return std::pair<bool, title_index_t>(false, title_index_t(c < 0 ? l : u));
   }
 
-
-  std::pair<FileCompound::const_iterator, FileCompound::const_iterator>
+  FileCompound::PartRange
   FileImpl::getFileParts(offset_t offset, zsize_t size)
   {
     return zimFile->locate(offset, size);
@@ -280,8 +290,8 @@ namespace zim
       throw std::out_of_range("entry index out of range");
 
     pthread_mutex_lock(&direntCacheLock);
-    auto v = direntCache.getx(idx);
-    if (v.first)
+    auto v = direntCache.get(idx);
+    if (v.hit())
     {
       log_debug("dirent " << idx << " found in cache; hits "
                 << direntCache.getHits() << " misses "
@@ -289,7 +299,7 @@ namespace zim
                 << direntCache.hitRatio() * 100 << "% fillfactor "
                 << direntCache.fillfactor());
       pthread_mutex_unlock(&direntCacheLock);
-      return v.second;
+      return v.value();
     }
 
     log_debug("dirent " << idx << " not found in cache; hits "
@@ -298,7 +308,7 @@ namespace zim
               << direntCache.fillfactor());
     pthread_mutex_unlock(&direntCacheLock);
 
-    offset_t indexOffset = getOffset(urlPtrOffsetReader.get(), idx.v);
+    offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
     // We don't know the size of the dirent because it depends of the size of
     // the title, url and extra parameters.
     // This is a pitty but we have no choices.
@@ -318,7 +328,7 @@ namespace zim
     while (true) {
         bufferDirentZone.reserve(size_type(bufferSize));
         zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        const MemoryBuffer<false> direntBuffer(bufferDirentZone.data(), bufferSize);
+        const MemoryViewBuffer direntBuffer(bufferDirentZone.data(), bufferSize);
         try {
           dirent = std::make_shared<const Dirent>(direntBuffer);
         } catch (InvalidSize&) {
@@ -365,7 +375,7 @@ namespace zim
           for(zim::entry_index_type i = 0; i < nb_articles; i++)
           {
               // This is the offset of the dirent in the zimFile
-              auto indexOffset = getOffset(urlPtrOffsetReader.get(), i);
+              auto indexOffset = readOffset(*urlPtrOffsetReader, i);
               // Get the mimeType of the dirent (offset 0) to know the type of the dirent
               uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
               if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
@@ -379,9 +389,19 @@ namespace zim
           std::sort(articleListByCluster.begin(), articleListByCluster.end());
       });
 
-      if (idx >= getCountArticles())
+      if (idx.v >= articleListByCluster.size())
         throw std::out_of_range("entry index out of range");
       return entry_index_t(articleListByCluster[idx.v].second);
+  }
+
+  FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
+  {
+    offset_t clusterOffset(getClusterOffset(idx));
+    log_debug("read cluster " << idx << " from offset " << clusterOffset);
+    CompressionType comp;
+    bool extended;
+    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
+    return std::make_shared<Cluster>(reader, comp, extended);
   }
 
   std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
@@ -389,39 +409,12 @@ namespace zim
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    pthread_mutex_lock(&clusterCacheLock);
-    auto cluster(clusterCache.get(idx));
-    pthread_mutex_unlock(&clusterCacheLock);
-    if (cluster)
-    {
-      log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-      return cluster;
-    }
-
-    offset_t clusterOffset(getClusterOffset(idx));
-    log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    CompressionType comp;
-    bool extended;
-    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
-    cluster = std::shared_ptr<Cluster>(new Cluster(reader, comp, extended));
-
-    log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-    pthread_mutex_lock(&clusterCacheLock);
-    clusterCache.put(idx, cluster);
-    pthread_mutex_unlock(&clusterCacheLock);
-
-    return cluster;
+    return clusterCache.getOrPut(idx, [=](){ return readCluster(idx); });
   }
 
-  offset_t FileImpl::getOffset(const Reader* reader, size_t idx)
+  offset_t FileImpl::getClusterOffset(cluster_index_t idx) const
   {
-    offset_t offset(reader->read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
-    return offset;
-  }
-
-  offset_t FileImpl::getClusterOffset(cluster_index_t idx)
-  {
-    return getOffset(clusterOffsetReader.get(), idx.v);
+    return readOffset(*clusterOffsetReader, idx.v);
   }
 
   offset_t FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)

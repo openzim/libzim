@@ -1,6 +1,7 @@
 subdir('data')
 
 tests = [
+    'lrucache',
     'cluster',
     'dirent',
     'header',

@@ -50,11 +50,11 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
   header.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  char* content = new char[size];
+  auto buf = std::make_shared<zim::MemoryBuffer>(zim::zsize_t(size));
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, content, size) == -1)
+  if (read(tmp_fd, buf->buf(), size) == -1)
     throw std::runtime_error("Cannot read");
-  return std::shared_ptr<zim::Buffer>(new zim::MemoryBuffer<true>(content, zim::zsize_t(size)));
+  return buf;
 }
 
 TEST(HeaderTest, read_write_header)

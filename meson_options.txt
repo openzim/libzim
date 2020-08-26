@@ -12,3 +12,5 @@ Header index are used to access articles, having them in memory can improve acce
 If false, we directly read the index in the file at each article access.''')
 option('static-linkage', type : 'boolean', value : false,
   description : 'Link statically with the dependencies.')
+option('doc', type : 'boolean', value : false,
+  description : 'Build the documentations.')
