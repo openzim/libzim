@@ -62,6 +62,8 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      m_startUserEntry(0),
+      m_endUserEntry(0),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
       namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
       namespaceEndLock(PTHREAD_MUTEX_INITIALIZER)
@@ -166,6 +168,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
       current += (len + 1);
     }
+    const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
   }
 
 
@@ -326,10 +329,10 @@ offset_t readOffset(const Reader& reader, size_t idx)
   {
       std::call_once(orderOnceFlag, [this]
       {
-          auto nb_articles = this->getCountArticles().v;
-          articleListByCluster.reserve(nb_articles);
+          articleListByCluster.reserve(getUserEntryCount().v);
 
-          for(zim::entry_index_type i = 0; i < nb_articles; i++)
+          auto endIdx = getEndUserEntry().v;
+          for(auto i = getStartUserEntry().v; i < endIdx; i++)
           {
               // This is the offset of the dirent in the zimFile
               auto indexOffset = readOffset(*urlPtrOffsetReader, i);

@@ -45,7 +45,7 @@ namespace zim
 
   entry_index_type Archive::getEntryCount() const
   {
-    return entry_index_type(m_impl->getCountArticles());
+    return m_impl->getUserEntryCount().v;
   }
 
   Uuid Archive::getUuid() const
@@ -134,12 +134,12 @@ namespace zim
 
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
   {
-    return EntryRange<EntryOrder::pathOrder>(m_impl, 0, getEntryCount());
+    return EntryRange<EntryOrder::pathOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
   }
 
   Archive::EntryRange<EntryOrder::titleOrder> Archive::iterByTitle() const
   {
-    return EntryRange<EntryOrder::titleOrder>(m_impl, 0, getEntryCount());
+    return EntryRange<EntryOrder::titleOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
   }
 
   Archive::EntryRange<EntryOrder::efficientOrder> Archive::iterEfficient() const
