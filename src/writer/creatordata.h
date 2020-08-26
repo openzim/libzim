@@ -77,7 +77,7 @@ namespace zim
         void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
         Dirent* createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title);
         Dirent* createItemDirent(const Item* item);
-        Dirent* createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath);
+        Dirent* createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath);
         Cluster* closeCluster(bool compressed);
 
         void setEntryIndexes();

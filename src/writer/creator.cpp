@@ -204,7 +204,7 @@ namespace zim
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
     {
-      auto dirent = data->createRedirectDirent(path, title, targetPath);
+      auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
       data->addDirent(dirent);
       data->nbItems++;
       data->nbRedirectItems++;
@@ -223,19 +223,20 @@ namespace zim
     {
       // Create mandatory entries
       if (!m_faviconPath.empty()) {
-        addRedirection("-/favicon", "", m_faviconPath);
+        auto dirent = data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
+        data->addDirent(dirent);
+        data->nbItems++;
+        data->nbRedirectItems++;
       }
 
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
-      // pool.getDirent() return a dirent on a pool allocated memory.
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
-        addRedirection("-/mainPage", "", m_mainPath);
-        auto tmpDirent = data->pool.getDirent();
-        tmpDirent->setNamespace('-');
-        tmpDirent->setPath("mainPage");
-        data->mainPageDirent = *data->dirents.find(tmpDirent);
+        data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
+        data->addDirent(data->mainPageDirent);
+        data->nbItems++;
+        data->nbRedirectItems++;
       }
 
       TPROGRESS();
@@ -577,14 +578,14 @@ int mode =  _S_IREAD | _S_IWRITE;
         std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
         mimetype = "application/octet-stream";
       }
-      return createDirent(path[0], path.substr(2, std::string::npos), mimetype, item->getTitle());
+      return createDirent('C', item->getPath(), mimetype, item->getTitle());
     }
 
-    Dirent* CreatorData::createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath)
+    Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
     {
-      auto dirent = createDirent(path[0], path.substr(2, std::string::npos), "", title);
-      dirent->setRedirectNs(targetPath[0]);
-      dirent->setRedirectPath(targetPath.substr(2, std::string::npos));
+      auto dirent = createDirent(ns, path, "", title);
+      dirent->setRedirectNs(targetNs);
+      dirent->setRedirectPath(targetPath);
       dirent->setRedirect(nullptr);
       return dirent;
     }
@@ -637,8 +638,14 @@ int mode =  _S_IREAD | _S_IWRITE;
         Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
-          INFO("Invalid redirection " << dirent->getNamespace() << '/' << dirent->getPath() << " redirecting to (missing) " << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
+          INFO("Invalid redirection "
+              << dirent->getNamespace() << '/' << dirent->getPath()
+              << " redirecting to (missing) "
+              << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
+          if (dirent == mainPageDirent) {
+            mainPageDirent = nullptr;
+          }
         } else  {
           dirent->setRedirect(*target_pos);
         }
