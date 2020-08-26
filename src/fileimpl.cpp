@@ -62,7 +62,6 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
-      clusterCacheLock(PTHREAD_MUTEX_INITIALIZER),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
       namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
       namespaceEndLock(PTHREAD_MUTEX_INITIALIZER)
@@ -397,33 +396,22 @@ offset_t readOffset(const Reader& reader, size_t idx)
     return ret;
   }
 
-  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
+  FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
   {
-    if (idx >= getCountClusters())
-      throw ZimFileFormatError("cluster index out of range");
-
-    pthread_mutex_lock(&clusterCacheLock);
-    const auto cachedCluster(clusterCache.get(idx));
-    pthread_mutex_unlock(&clusterCacheLock);
-    if (cachedCluster.hit())
-    {
-      log_debug("cluster " << idx << " found in cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-      return cachedCluster.value();
-    }
-
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     CompressionType comp;
     bool extended;
     std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
-    const auto cluster = std::make_shared<Cluster>(reader, comp, extended);
+    return std::make_shared<Cluster>(reader, comp, extended);
+  }
 
-    log_debug("put cluster " << idx << " into cluster cache; hits " << clusterCache.getHits() << " misses " << clusterCache.getMisses() << " ratio " << clusterCache.hitRatio() * 100 << "% fillfactor " << clusterCache.fillfactor());
-    pthread_mutex_lock(&clusterCacheLock);
-    clusterCache.put(idx, cluster);
-    pthread_mutex_unlock(&clusterCacheLock);
+  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
+  {
+    if (idx >= getCountClusters())
+      throw ZimFileFormatError("cluster index out of range");
 
-    return cluster;
+    return clusterCache.getOrPut(idx, [=](){ return readCluster(idx); });
   }
 
   offset_t FileImpl::getClusterOffset(cluster_index_t idx) const

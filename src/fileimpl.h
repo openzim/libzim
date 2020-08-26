@@ -29,6 +29,7 @@
 #include <zim/fileheader.h>
 #include <mutex>
 #include "lrucache.h"
+#include "concurrent_cache.h"
 #include "_dirent.h"
 #include "cluster.h"
 #include "buffer.h"
@@ -54,8 +55,8 @@ namespace zim
       lru_cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
-      lru_cache<cluster_index_t, std::shared_ptr<Cluster>> clusterCache;
-      pthread_mutex_t clusterCacheLock;
+      typedef std::shared_ptr<const Cluster> ClusterHandle;
+      ConcurrentCache<cluster_index_t, ClusterHandle> clusterCache;
 
       bool cacheUncompressedCluster;
       typedef std::map<char, article_index_t> NamespaceCache;
@@ -111,6 +112,9 @@ namespace zim
       std::string getChecksum();
       bool verify();
       bool is_multiPart() const;
+
+  private:
+      ClusterHandle readCluster(cluster_index_t idx);
   };
 
 }

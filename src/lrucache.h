@@ -34,34 +34,43 @@
  */
 
 #ifndef _LRUCACHE_HPP_INCLUDED_
-#define	_LRUCACHE_HPP_INCLUDED_
+#define _LRUCACHE_HPP_INCLUDED_
 
 #include <map>
 #include <list>
 #include <cstddef>
 #include <stdexcept>
+#include <cassert>
 
 namespace zim {
 
 template<typename key_t, typename value_t>
 class lru_cache {
 public: // types
-	typedef typename std::pair<key_t, value_t> key_value_pair_t;
-	typedef typename std::list<key_value_pair_t>::iterator list_iterator_t;
+  typedef typename std::pair<key_t, value_t> key_value_pair_t;
+  typedef typename std::list<key_value_pair_t>::iterator list_iterator_t;
+
+  enum AccessStatus {
+    HIT, // key was found in the cache
+    PUT, // key was not in the cache but was created by the getOrPut() access
+    MISS // key was not in the cache; get() access failed
+  };
 
   class AccessResult
   {
-    const bool hit_;
+    const AccessStatus status_;
     const value_t val_;
   public:
-    explicit AccessResult(const value_t& val) : hit_(true), val_(val) {}
-    AccessResult() : hit_(false), val_() {}
+    AccessResult(const value_t& val, AccessStatus status)
+      : status_(status), val_(val)
+    {}
+    AccessResult() : status_(MISS), val_() {}
 
-    bool hit() const { return hit_; }
+    bool hit() const { return status_ == HIT; }
     bool miss() const { return !hit(); }
     const value_t& value() const
     {
-      if ( miss() )
+      if ( status_ == MISS )
         throw std::range_error("There is no such key in cache");
       return val_;
     }
@@ -70,51 +79,69 @@ public: // types
   };
 
 public: // functions
-	explicit lru_cache(size_t max_size) :
-		_max_size(max_size) {
-	}
+  explicit lru_cache(size_t max_size) :
+    _max_size(max_size) {
+  }
 
-	void put(const key_t& key, const value_t& value) {
-		auto it = _cache_items_map.find(key);
-		if (it != _cache_items_map.end()) {
-			_cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
-      it->second->second = value;
-		} else {
-      _cache_items_list.push_front(key_value_pair_t(key, value));
-		  _cache_items_map[key] = _cache_items_list.begin();
-      if (_cache_items_map.size() > _max_size) {
-        auto last = _cache_items_list.end();
-        last--;
-        _cache_items_map.erase(last->first);
-        _cache_items_list.pop_back();
-      }
+  // If 'key' is present in the cache, returns the associated value,
+  // otherwise puts the given value into the cache (and returns it with
+  // a status of a cache miss).
+  AccessResult getOrPut(const key_t& key, const value_t& value) {
+    auto it = _cache_items_map.find(key);
+    if (it != _cache_items_map.end()) {
+      _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
+      return AccessResult(it->second->second, HIT);
+    } else {
+      putMissing(key, value);
+      return AccessResult(value, PUT);
     }
-	}
+  }
 
-	AccessResult get(const key_t& key) {
-		auto it = _cache_items_map.find(key);
-		if (it == _cache_items_map.end()) {
-			return AccessResult();
-		} else {
-			_cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
-			return AccessResult(it->second->second);
-		}
-	}
+  void put(const key_t& key, const value_t& value) {
+    auto it = _cache_items_map.find(key);
+    if (it != _cache_items_map.end()) {
+      _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
+      it->second->second = value;
+    } else {
+      putMissing(key, value);
+    }
+  }
 
-	bool exists(const key_t& key) const {
-		return _cache_items_map.find(key) != _cache_items_map.end();
-	}
+  AccessResult get(const key_t& key) {
+    auto it = _cache_items_map.find(key);
+    if (it == _cache_items_map.end()) {
+      return AccessResult();
+    } else {
+      _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
+      return AccessResult(it->second->second, HIT);
+    }
+  }
 
-	size_t size() const {
-		return _cache_items_map.size();
-	}
+  bool exists(const key_t& key) const {
+    return _cache_items_map.find(key) != _cache_items_map.end();
+  }
+
+  size_t size() const {
+    return _cache_items_map.size();
+  }
+
+private: // functions
+  void putMissing(const key_t& key, const value_t& value) {
+    assert(_cache_items_map.find(key) == _cache_items_map.end());
+    _cache_items_list.push_front(key_value_pair_t(key, value));
+    _cache_items_map[key] = _cache_items_list.begin();
+    if (_cache_items_map.size() > _max_size) {
+      _cache_items_map.erase(_cache_items_list.back().first);
+      _cache_items_list.pop_back();
+    }
+  }
 
 private: // data
-	std::list<key_value_pair_t> _cache_items_list;
-	std::map<key_t, list_iterator_t> _cache_items_map;
-	size_t _max_size;
+  std::list<key_value_pair_t> _cache_items_list;
+  std::map<key_t, list_iterator_t> _cache_items_map;
+  size_t _max_size;
 };
 
 } // namespace zim
 
-#endif	/* _LRUCACHE_HPP_INCLUDED_ */
+#endif  /* _LRUCACHE_HPP_INCLUDED_ */
