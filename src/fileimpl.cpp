@@ -63,6 +63,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      m_newNamespaceScheme(false),
       m_startUserEntry(0),
       m_endUserEntry(0),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
@@ -169,7 +170,16 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
       current += (len + 1);
     }
-    const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
+
+    const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
+    if (m_newNamespaceScheme) {
+      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
+    } else {
+      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
+    }
+
+
   }
 
 

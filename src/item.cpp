@@ -41,7 +41,11 @@ std::string Item::getTitle() const
 
 std::string Item::getPath() const
 {
-  return m_dirent->getLongUrl();
+  if (m_file->isNewNamespaceScheme()) {
+    return m_dirent->getUrl();
+  } else {
+    return m_dirent->getLongUrl();
+  }
 }
 
 std::string Item::getMimetype() const
