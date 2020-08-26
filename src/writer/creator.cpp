@@ -190,11 +190,8 @@ namespace zim
 
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
-      auto dirent = data->pool.getDirent();
+      auto dirent = data->createDirent('M', name, mimetype, "");
       auto compressContent = isCompressibleMimetype(mimetype);
-      dirent->setNamespace('M');
-      dirent->setPath(name);
-      dirent->setMimeType(data->getMimeTypeIdx(mimetype));
       data->addDirent(dirent);
       data->addItemData(dirent, std::move(provider), compressContent);
       data->nbItems++;
@@ -254,10 +251,7 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
-        auto dirent = data->pool.getDirent();
-        dirent->setNamespace('X');
-        dirent->setPath("title/xapian");
-        dirent->setMimeType(data->getMimeTypeIdx("application/octet-stream+xapian"));
+        auto dirent = data->createDirent('X', "title/xapian", "application/octet-stream+xapian", "");
         data->addDirent(dirent);
         data->addItemData(
           dirent,
@@ -274,10 +268,7 @@ namespace zim
 
         data->indexer->indexingPostlude();
         microsleep(100);
-        auto dirent = data->pool.getDirent();
-        dirent->setNamespace('X');
-        dirent->setPath("fulltext/xapian");
-        dirent->setMimeType(data->getMimeTypeIdx("application/octet-stream+xapian"));
+        auto dirent = data->createDirent('X', "fulltext/xapian", "application/octet-stream+xapian", "");
         data->addDirent(dirent);
         data->addItemData(
           dirent,
@@ -568,29 +559,30 @@ int mode =  _S_IREAD | _S_IWRITE;
       cluster->addContent(std::move(provider));
     }
 
-    Dirent* CreatorData::createItemDirent(const Item* item)
+    Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
     {
       auto dirent = pool.getDirent();
-      auto path = item->getPath();
-      dirent->setNamespace(path[0]);
-      dirent->setPath(path.substr(2, std::string::npos));
-      dirent->setTitle(item->getTitle());
+      dirent->setNamespace(ns);
+      dirent->setPath(path);
+      dirent->setMimeType(getMimeTypeIdx(mimetype));
+      dirent->setTitle(title);
+      return dirent;
+    }
 
+    Dirent* CreatorData::createItemDirent(const Item* item)
+    {
+      auto path = item->getPath();
       auto mimetype = item->getMimeType();
       if (mimetype.empty()) {
         std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
         mimetype = "application/octet-stream";
       }
-      dirent->setMimeType(getMimeTypeIdx(mimetype));
-      return dirent;
+      return createDirent(path[0], path.substr(2, std::string::npos), mimetype, item->getTitle());
     }
 
     Dirent* CreatorData::createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath)
     {
-      auto dirent = pool.getDirent();
-      dirent->setNamespace(path[0]);
-      dirent->setPath(path.substr(2, std::string::npos));
-      dirent->setTitle(title);
+      auto dirent = createDirent(path[0], path.substr(2, std::string::npos), "", title);
       dirent->setRedirectNs(targetPath[0]);
       dirent->setRedirectPath(targetPath.substr(2, std::string::npos));
       dirent->setRedirect(nullptr);
