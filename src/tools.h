@@ -22,12 +22,15 @@
 #define OPENZIM_LIBZIM_TOOLS_H
 
 #include <string>
+#include <tuple>
 
 namespace zim {
   bool isCompressibleMimetype(const std::string& mimetype);
   std::string removeAccents(const std::string& text);
   uint32_t countWords(const std::string& text);
   void microsleep(int microseconds);
+
+  std::tuple<char, std::string> parseLongPath(const std::string& longPath);
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H

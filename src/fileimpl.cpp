@@ -33,6 +33,7 @@
 #include "log.h"
 #include "envvalue.h"
 #include "md5.h"
+#include "tools.h"
 
 log_define("zim.file.impl")
 
@@ -179,13 +180,13 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
   std::pair<bool, entry_index_t> FileImpl::findx(const std::string& url)
   {
-    size_t start = 0;
-    if (url[0] == '/') {
-      start = 1;
-    }
-    if (url.size() < (2+start) || url[1+start] != '/')
-      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
-    return findx(url[start], url.substr(2+start));
+    char ns;
+    std::string path;
+    try {
+      std::tie(ns, path) = parseLongPath(url);
+      return findx(ns, path);
+    } catch (...) {}
+    return { false, entry_index_t(0) };
   }
 
   std::pair<bool, title_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
