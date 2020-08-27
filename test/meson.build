@@ -10,7 +10,8 @@ tests = [
     'zimfile',
     'iterator',
     'find',
-    'compression'
+    'compression',
+    'impl_find'
 ]
 
 if gtest_dep.found() and not meson.is_cross_build()
