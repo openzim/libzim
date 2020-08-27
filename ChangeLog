@@ -1,3 +1,16 @@
+libzim 6.2.0
+============
+
+ * Fix compilation of libzim on freebsd.
+ * Rewrite unit tests to remove python based test and use gtest all the time.
+ * Make libzstd mandatory.
+ * Support for meson 0.45.
+ * Fix multipart support on macos.
+ * Add a documentation system.
+ * Better cache system implementatino (huge speed up).
+ * Various (and numerous) small refactoring.
+
+
 libzim 6.1.8
 ============
 
