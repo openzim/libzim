@@ -11,7 +11,8 @@ tests = [
     'iterator',
     'find',
     'compression',
-    'impl_find'
+    'impl_find',
+    'idatastream'
 ]
 
 if gtest_dep.found() and not meson.is_cross_build()
