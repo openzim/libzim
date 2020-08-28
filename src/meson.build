@@ -26,6 +26,7 @@ common_sources = [
     'levenshtein.cpp',
     'tools.cpp',
     'compression.cpp',
+    'idatastream.cpp',
     'writer/creator.cpp',
     'writer/article.cpp',
     'writer/cluster.cpp',
