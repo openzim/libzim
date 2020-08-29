@@ -116,17 +116,22 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
 
 } // unnamed namespace
 
+////////////////////////////////////////////////////////////////////////////////
+// Cluster
+////////////////////////////////////////////////////////////////////////////////
+
   std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset)
   {
     CompressionType comp;
     bool extended;
     std::shared_ptr<const Reader> reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
-    return std::make_shared<Cluster>(reader, comp, extended);
+    return (comp == zimcompDefault || comp == zimcompNone)
+         ? std::make_shared<Cluster>(reader, extended)
+         : std::make_shared<CompressedCluster>(reader, comp, extended);
   }
 
-  Cluster::Cluster(std::shared_ptr<const Reader> reader_, CompressionType comp, bool isExtended)
-    : compression(comp),
-      isExtended(isExtended),
+  Cluster::Cluster(std::shared_ptr<const Reader> reader_, bool isExtended)
+    : isExtended(isExtended),
       reader(reader_),
       startOffset(0)
   {
@@ -212,4 +217,33 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
     }
   }
 
+////////////////////////////////////////////////////////////////////////////////
+// CompressedCluster
+////////////////////////////////////////////////////////////////////////////////
+
+CompressedCluster::CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended)
+  : Cluster(reader, isExtended)
+  , compression_(comp)
+{
+  ASSERT(compression_, >, zimcompNone);
 }
+
+bool
+CompressedCluster::isCompressed() const
+{
+  return true;
+}
+
+CompressionType
+CompressedCluster::getCompression() const
+{
+  return compression_;
+}
+
+offset_t
+CompressedCluster::getBlobOffset(blob_index_t n) const
+{
+  throw std::logic_error("CompressedCluster::getBlobOffset() should never be called");
+}
+
+} // namespace zim

@@ -40,7 +40,6 @@ namespace zim
       typedef std::vector<offset_t> Offsets;
 
     public:
-      const CompressionType compression;
       const bool isExtended;
 
     private:
@@ -60,19 +59,33 @@ namespace zim
       offset_t read_header();
 
     public:
-      Cluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
-      CompressionType getCompression() const   { return compression; }
-      bool isCompressed() const                { return compression != zimcompDefault && compression != zimcompNone; }
+      Cluster(std::shared_ptr<const Reader> reader, bool isExtended);
+      virtual ~Cluster() {}
+
+      virtual bool isCompressed() const                { return false; }
+      virtual CompressionType getCompression() const   { return zimcompNone; }
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
 
       zsize_t getBlobSize(blob_index_t n) const;
-
-      offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
+      virtual offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
       static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+  };
+
+  class CompressedCluster : public Cluster
+  {
+    public:
+      CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
+
+      virtual bool isCompressed() const override;
+      virtual CompressionType getCompression() const override;
+      virtual offset_t getBlobOffset(blob_index_t n) const override;
+
+    private:
+      const CompressionType compression_;
   };
 
 }
