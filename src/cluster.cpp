@@ -41,23 +41,6 @@ namespace zim
 namespace
 {
 
-template<typename OFFSET_TYPE>
-zsize_t _read_size(const Reader* reader, offset_t offset)
-{
-  OFFSET_TYPE blob_offset = reader->read_uint<OFFSET_TYPE>(offset);
-  auto off = offset+offset_t(blob_offset-sizeof(OFFSET_TYPE));
-  auto s = reader->read_uint<OFFSET_TYPE>(off);
-  return zsize_t(s);
-}
-
-zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset)
-{
-  if (isExtended)
-    return _read_size<uint64_t>(reader, offset);
-  else
-    return _read_size<uint32_t>(reader, offset);
-}
-
 std::shared_ptr<const Buffer>
 getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
 {
@@ -94,9 +77,8 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
     case zimcompDefault:
     case zimcompNone:
       {
-        auto size = read_size(&zimReader, *extended, offset + offset_t(1));
       // No compression, just a sub_reader
-        return zimReader.sub_reader(offset+offset_t(1), size);
+        return zimReader.sub_reader(offset+offset_t(1));
       }
       break;
     case zimcompLzma:
@@ -141,7 +123,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
     } else {
       startOffset = read_header<uint32_t>();
     }
-    reader = reader->sub_reader(startOffset);
+    reader = reader->sub_reader(startOffset, zsize_t(offsets.back().v));
     auto d1 = reader->offset();
     ASSERT(d+startOffset, ==, d1);
   }
@@ -151,8 +133,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
   offset_t Cluster::read_header()
   {
     // read first offset, which specifies, how many offsets we need to read
-    OFFSET_TYPE offset;
-    offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
+    OFFSET_TYPE offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
     const offset_t data_address(offset);
@@ -174,7 +155,6 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
       offsets.push_back(offset_t(offset - data_address.v));
       current += sizeof(OFFSET_TYPE);
     }
-    ASSERT(offset, ==, reader->size().v);
     return data_address;
   }
 
