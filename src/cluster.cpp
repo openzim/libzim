@@ -125,6 +125,9 @@ namespace zim
     }
   }
 
+namespace
+{
+
   template<typename OFFSET_TYPE>
   zsize_t _read_size(const Reader* reader, offset_t offset)
   {
@@ -134,16 +137,13 @@ namespace zim
     return zsize_t(s);
   }
 
-  zsize_t Cluster::read_size(const Reader* reader, bool isExtended, offset_t offset)
+  zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset)
   {
     if (isExtended)
       return _read_size<uint64_t>(reader, offset);
     else
       return _read_size<uint32_t>(reader, offset);
   }
-
-namespace
-{
 
 std::shared_ptr<const Buffer>
 getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
@@ -181,7 +181,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
     case zimcompDefault:
     case zimcompNone:
       {
-        auto size = Cluster::read_size(&zimReader, *extended, offset + offset_t(1));
+        auto size = read_size(&zimReader, *extended, offset + offset_t(1));
       // No compression, just a sub_reader
         return zimReader.sub_reader(offset+offset_t(1), size);
       }
