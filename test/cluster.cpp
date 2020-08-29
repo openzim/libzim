@@ -161,12 +161,9 @@ TEST(ClusterTest, read_write_clusterZ)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  auto b = cluster2.getBlob(zim::blob_index_t(0));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
-  b = cluster2.getBlob(zim::blob_index_t(1));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
-  b = cluster2.getBlob(zim::blob_index_t(2));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
+  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
+  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
 
 #endif
@@ -192,12 +189,9 @@ TEST(ClusterTest, read_write_clusterLzma)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  auto b = cluster2.getBlob(zim::blob_index_t(0));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
-  b = cluster2.getBlob(zim::blob_index_t(1));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
-  b = cluster2.getBlob(zim::blob_index_t(2));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
+  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
+  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
 
 TEST(ClusterTest, read_write_clusterZstd)
@@ -221,12 +215,9 @@ TEST(ClusterTest, read_write_clusterZstd)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  auto b = cluster2.getBlob(zim::blob_index_t(0));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
-  b = cluster2.getBlob(zim::blob_index_t(1));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
-  b = cluster2.getBlob(zim::blob_index_t(2));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
+  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
+  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
 
 #if !defined(__APPLE__)
@@ -289,12 +280,9 @@ TEST(ClusterTest, read_write_extended_cluster)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(3)).v, bigger_than_4g);
-  auto b = cluster2.getBlob(zim::blob_index_t(0));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
-  b = cluster2.getBlob(zim::blob_index_t(1));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
-  b = cluster2.getBlob(zim::blob_index_t(2));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
+  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
+  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
 #endif
 
@@ -370,14 +358,11 @@ TEST(ClusterTest, read_extended_cluster)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(3)).v, bigger_than_4g);
 
 
-  auto b = cluster2.getBlob(zim::blob_index_t(0));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob0.data()));
-  b = cluster2.getBlob(zim::blob_index_t(1));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob1.data()));
-  b = cluster2.getBlob(zim::blob_index_t(2));
-  ASSERT_TRUE(std::equal(b.data(), b.end(), blob2.data()));
+  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
+  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
+  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 
-  b = cluster2.getBlob(zim::blob_index_t(3));
+  const zim::Blob b = cluster2.getBlob(zim::blob_index_t(3));
   if (SIZE_MAX == UINT32_MAX) {
     ASSERT_EQ(b.data(), nullptr);
     ASSERT_EQ(b.size(), 0U);
