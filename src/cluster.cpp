@@ -22,6 +22,7 @@
 #include <zim/error.h>
 #include "file_reader.h"
 #include "endian_tools.h"
+#include "readerdatastreamwrapper.h"
 #include <algorithm>
 #include <stdlib.h>
 #include <sstream>
@@ -201,11 +202,45 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
 // CompressedCluster
 ////////////////////////////////////////////////////////////////////////////////
 
+namespace
+{
+
+class IDSBlobBuffer : public Buffer
+{
+  IDataStream::Blob blob_;
+  size_t offset_;
+  size_t size_;
+
+public:
+  IDSBlobBuffer(const IDataStream::Blob& blob, size_t offset, size_t size)
+    : Buffer(zsize_t(size))
+    , blob_(blob)
+    , offset_(offset)
+    , size_(size)
+  {
+    ASSERT(offset_, <=, blob_.size());
+    ASSERT(offset_+size_, <=, blob_.size());
+  }
+
+  const char* dataImpl(offset_t offset) const
+  {
+    return blob_.data() + offset_ + offset.v;
+  }
+};
+
+Blob idsBlob2zimBlob(const IDataStream::Blob& blob, size_t offset, size_t size)
+{
+  return Blob(std::make_shared<IDSBlobBuffer>(blob, offset, size));
+}
+
+} // unnamed namespace
+
 CompressedCluster::CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended)
   : Cluster(reader, isExtended)
   , compression_(comp)
 {
   ASSERT(compression_, >, zimcompNone);
+  readBlobs();
 }
 
 bool
@@ -224,6 +259,30 @@ offset_t
 CompressedCluster::getBlobOffset(blob_index_t n) const
 {
   throw std::logic_error("CompressedCluster::getBlobOffset() should never be called");
+}
+
+void
+CompressedCluster::readBlobs()
+{
+  ReaderDataStreamWrapper rdsw(reader.get());
+  const size_t n = count().v;
+  for ( size_t i = 0; i < n; ++i )
+    blobs_.push_back(rdsw.readBlob(getBlobSize(blob_index_t(i)).v));
+}
+
+Blob
+CompressedCluster::getBlob(blob_index_t n) const
+{
+  ASSERT(n.v, <, blobs_.size());
+  const IDataStream::Blob& blob = blobs_[n.v];
+  return idsBlob2zimBlob(blob, 0, blob.size());
+}
+
+Blob
+CompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
+{
+  ASSERT(n.v, <, blobs_.size());
+  return idsBlob2zimBlob(blobs_[n.v], offset.v, size.v);
 }
 
 } // namespace zim

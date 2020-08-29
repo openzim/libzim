@@ -23,7 +23,8 @@
 #include <zim/zim.h>
 #include "buffer.h"
 #include "zim_types.h"
-#include "file_reader.h"
+#include "reader.h"
+#include "idatastream.h"
 #include <iosfwd>
 #include <vector>
 #include <memory>
@@ -42,7 +43,7 @@ namespace zim
     public:
       const bool isExtended;
 
-    private:
+    protected:
       std::shared_ptr<const Reader> reader;
 
       // offset of the first blob of this cluster relative to the beginning
@@ -69,23 +70,29 @@ namespace zim
 
       zsize_t getBlobSize(blob_index_t n) const;
       virtual offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
-      Blob getBlob(blob_index_t n) const;
-      Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
+      virtual Blob getBlob(blob_index_t n) const;
+      virtual Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
       static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
   };
 
   class CompressedCluster : public Cluster
   {
-    public:
+    public: // functions
       CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
 
-      virtual bool isCompressed() const override;
-      virtual CompressionType getCompression() const override;
-      virtual offset_t getBlobOffset(blob_index_t n) const override;
+      bool isCompressed() const override;
+      CompressionType getCompression() const override;
+      offset_t getBlobOffset(blob_index_t n) const override;
+      Blob getBlob(blob_index_t n) const override;
+      Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
 
-    private:
+    private: // functions
+      void readBlobs();
+
+    private: // data
       const CompressionType compression_;
+      std::vector<IDataStream::Blob> blobs_;
   };
 
 }
