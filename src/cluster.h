@@ -43,9 +43,10 @@ namespace zim
     public:
       const bool isExtended;
 
-    protected:
+    private:
       std::shared_ptr<const Reader> reader;
 
+    protected:
       // offset of the first blob of this cluster relative to the beginning
       // of the (uncompressed) cluster data
       offset_t startOffset;
@@ -56,8 +57,12 @@ namespace zim
       // 0) and the end of the last blob are also included.
       Offsets offsets;
 
+    private:
       template<typename OFFSET_TYPE>
       offset_t read_header();
+
+    protected:
+      Cluster(bool isExtended) : isExtended(isExtended) {}
 
     public:
       Cluster(std::shared_ptr<const Reader> reader, bool isExtended);
@@ -88,7 +93,10 @@ namespace zim
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
 
     private: // functions
-      void readBlobs();
+      template<typename OFFSET_TYPE>
+      void readHeader(IDataStream& ds);
+
+      void readBlobs(IDataStream& ds);
 
     private: // data
       const CompressionType compression_;

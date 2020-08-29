@@ -236,11 +236,19 @@ Blob idsBlob2zimBlob(const IDataStream::Blob& blob, size_t offset, size_t size)
 } // unnamed namespace
 
 CompressedCluster::CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended)
-  : Cluster(reader, isExtended)
+  : Cluster(isExtended)
   , compression_(comp)
 {
   ASSERT(compression_, >, zimcompNone);
-  readBlobs();
+
+  ReaderDataStreamWrapper rdsw(reader.get());
+
+  if ( isExtended )
+    readHeader<uint64_t>(rdsw);
+  else
+    readHeader<uint32_t>(rdsw);
+
+  readBlobs(rdsw);
 }
 
 bool
@@ -261,13 +269,36 @@ CompressedCluster::getBlobOffset(blob_index_t n) const
   throw std::logic_error("CompressedCluster::getBlobOffset() should never be called");
 }
 
+template<typename OFFSET_TYPE>
 void
-CompressedCluster::readBlobs()
+CompressedCluster::readHeader(IDataStream& ds)
 {
-  ReaderDataStreamWrapper rdsw(reader.get());
+  startOffset = offset_t(ds.read<OFFSET_TYPE>());
+
+  size_t n_offset = startOffset.v / sizeof(OFFSET_TYPE);
+
+  // read offsets
+  offsets.clear();
+  offsets.reserve(n_offset);
+  offsets.push_back(offset_t(0));
+
+  OFFSET_TYPE offset = startOffset.v;
+  while (--n_offset)
+  {
+    OFFSET_TYPE new_offset = ds.read<OFFSET_TYPE>();
+    ASSERT(new_offset, >=, offset);
+
+    offset = new_offset;
+    offsets.push_back(offset_t(offset - startOffset.v));
+  }
+}
+
+void
+CompressedCluster::readBlobs(IDataStream& ds)
+{
   const size_t n = count().v;
   for ( size_t i = 0; i < n; ++i )
-    blobs_.push_back(rdsw.readBlob(getBlobSize(blob_index_t(i)).v));
+    blobs_.push_back(ds.readBlob(getBlobSize(blob_index_t(i)).v));
 }
 
 Blob
