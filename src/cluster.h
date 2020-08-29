@@ -70,6 +70,7 @@ namespace zim
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
       static zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset);
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
   };
 
 }

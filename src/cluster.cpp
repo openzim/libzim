@@ -141,4 +141,11 @@ namespace zim
       return _read_size<uint32_t>(reader, offset);
   }
 
+  std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset)
+  {
+    CompressionType comp;
+    bool extended;
+    std::shared_ptr<const Reader> reader = zimReader.sub_clusterReader(clusterOffset, &comp, &extended);
+    return std::make_shared<Cluster>(reader, comp, extended);
+  }
 }
