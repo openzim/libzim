@@ -21,7 +21,6 @@
 #include <zim/error.h>
 #include "file_reader.h"
 #include "file_compound.h"
-#include "cluster.h"
 #include "buffer.h"
 #include <errno.h>
 #include <string.h>

@@ -142,23 +142,27 @@ namespace zim
       return _read_size<uint32_t>(reader, offset);
   }
 
-std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, CompressionType comp) const
+namespace
+{
+
+std::shared_ptr<const Buffer>
+getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
 {
   zsize_t uncompressed_size(0);
   std::unique_ptr<char[]> uncompressed_data;
   switch (comp) {
     case zimcompLzma:
-      uncompressed_data = uncompress<LZMA_INFO>(this, offset, &uncompressed_size);
+      uncompressed_data = uncompress<LZMA_INFO>(&zimReader, offset, &uncompressed_size);
       break;
     case zimcompZip:
 #if defined(ENABLE_ZLIB)
-      uncompressed_data = uncompress<ZIP_INFO>(this, offset, &uncompressed_size);
+      uncompressed_data = uncompress<ZIP_INFO>(&zimReader, offset, &uncompressed_size);
 #else
       throw std::runtime_error("zlib not enabled in this library");
 #endif
       break;
     case zimcompZstd:
-      uncompressed_data = uncompress<ZSTD_INFO>(this, offset, &uncompressed_size);
+      uncompressed_data = uncompress<ZSTD_INFO>(&zimReader, offset, &uncompressed_size);
       break;
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
@@ -166,8 +170,10 @@ std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, Compres
   return std::make_shared<MemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
 }
 
-std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, CompressionType* comp, bool* extended) const {
-  uint8_t clusterInfo = read(offset);
+std::unique_ptr<const Reader>
+getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp, bool* extended)
+{
+  uint8_t clusterInfo = zimReader.read(offset);
   *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
   *extended = clusterInfo & 0x10;
 
@@ -175,16 +181,16 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, Compres
     case zimcompDefault:
     case zimcompNone:
       {
-        auto size = Cluster::read_size(this, *extended, offset + offset_t(1));
+        auto size = Cluster::read_size(&zimReader, *extended, offset + offset_t(1));
       // No compression, just a sub_reader
-        return sub_reader(offset+offset_t(1), size);
+        return zimReader.sub_reader(offset+offset_t(1), size);
       }
       break;
     case zimcompLzma:
     case zimcompZip:
     case zimcompZstd:
       {
-        auto buffer = get_clusterBuffer(offset+offset_t(1), *comp);
+        auto buffer = getClusterBuffer(zimReader, offset+offset_t(1), *comp);
         return std::unique_ptr<Reader>(new BufferReader(buffer));
       }
       break;
@@ -195,11 +201,13 @@ std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, Compres
   }
 }
 
+} // unnamed namespace
+
   std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset)
   {
     CompressionType comp;
     bool extended;
-    std::shared_ptr<const Reader> reader = zimReader.sub_clusterReader(clusterOffset, &comp, &extended);
+    std::shared_ptr<const Reader> reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
     return std::make_shared<Cluster>(reader, comp, extended);
   }
 }

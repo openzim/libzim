@@ -57,14 +57,7 @@ class Reader {
     }
     virtual offset_t offset() const = 0;
 
-    std::unique_ptr<const Reader> sub_clusterReader(offset_t offset,
-                                                    CompressionType* comp,
-                                                    bool* extented) const;
-
     bool can_read(offset_t offset, zsize_t size);
-
-  private:
-    std::shared_ptr<const Buffer> get_clusterBuffer(offset_t offset, CompressionType comp) const;
 };
 
 };
