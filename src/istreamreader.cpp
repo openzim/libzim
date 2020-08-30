@@ -19,9 +19,14 @@
 
 #include "istreamreader.h"
 #include "file_reader.h"
+#include "bufdatastream.h"
 
 namespace zim
 {
+
+////////////////////////////////////////////////////////////////////////////////
+// IDataStream
+////////////////////////////////////////////////////////////////////////////////
 
 std::unique_ptr<const Reader>
 IStreamReader::sub_reader(zsize_t size)
@@ -29,6 +34,40 @@ IStreamReader::sub_reader(zsize_t size)
   auto buffer = Buffer::makeBuffer(size);
   readImpl(buffer.data(), size);
   return std::unique_ptr<Reader>(new BufferReader(buffer));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// BufDataStream
+////////////////////////////////////////////////////////////////////////////////
+
+void
+BufDataStream::readImpl(void* buf, size_t nbytes)
+{
+  ASSERT(nbytes, <=, size_);
+  memcpy(buf, data_, nbytes);
+  data_ += nbytes;
+  size_ -= nbytes;
+}
+
+namespace
+{
+
+struct NoDelete
+{
+  template<class T> void operator()(T*) {}
+};
+
+} // unnamed namespace
+
+IDataStream::Blob
+BufDataStream::readBlobImpl(size_t nbytes)
+{
+  ASSERT(nbytes, <=, size_);
+  const IDataStream::Blob::DataPtr dataPtr(data_, NoDelete());
+  const IDataStream::Blob blob(dataPtr, nbytes);
+  data_ += nbytes;
+  size_ -= nbytes;
+  return blob;
 }
 
 } // namespace zim
