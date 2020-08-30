@@ -28,6 +28,7 @@
 #include <iosfwd>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 #include "zim_types.h"
 #include "zim/error.h"
@@ -110,13 +111,15 @@ namespace zim
       template<typename OFFSET_TYPE>
       void readHeader(IDataStream& ds);
 
-      void readBlobs(IDataStream& ds);
+      void ensureBlobIsDecompressed(blob_index_t i) const;
 
     private: // data
       const std::unique_ptr<IDataStream> ds_;
       const CompressionType compression_;
       std::vector<size_t> blobSizes_;
-      std::vector<IDataStream::Blob> blobs_;
+
+      mutable std::mutex blobAccessMutex_;
+      mutable std::vector<IDataStream::Blob> blobs_;
   };
 
 }

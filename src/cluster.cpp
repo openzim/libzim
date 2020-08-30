@@ -238,8 +238,6 @@ CompressedCluster::CompressedCluster(std::shared_ptr<const Reader> reader, Compr
     readHeader<uint64_t>(*ds_);
   else
     readHeader<uint32_t>(*ds_);
-
-  readBlobs(*ds_);
 }
 
 bool
@@ -292,16 +290,17 @@ CompressedCluster::readHeader(IDataStream& ds)
 }
 
 void
-CompressedCluster::readBlobs(IDataStream& ds)
+CompressedCluster::ensureBlobIsDecompressed(blob_index_t n) const
 {
-  const size_t n = count().v;
-  for ( size_t i = 0; i < n; ++i )
-    blobs_.push_back(ds.readBlob(getBlobSize(blob_index_t(i)).v));
+  for ( size_t i = blobs_.size(); i <= n.v; ++i )
+    blobs_.push_back(ds_->readBlob(getBlobSize(blob_index_t(i)).v));
 }
 
 Blob
 CompressedCluster::getBlob(blob_index_t n) const
 {
+  std::lock_guard<std::mutex> lock(blobAccessMutex_);
+  ensureBlobIsDecompressed(n);
   ASSERT(n.v, <, blobs_.size());
   const IDataStream::Blob& blob = blobs_[n.v];
   return idsBlob2zimBlob(blob, 0, blob.size());
@@ -310,6 +309,8 @@ CompressedCluster::getBlob(blob_index_t n) const
 Blob
 CompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
 {
+  std::lock_guard<std::mutex> lock(blobAccessMutex_);
+  ensureBlobIsDecompressed(n);
   ASSERT(n.v, <, blobs_.size());
   return idsBlob2zimBlob(blobs_[n.v], offset.v, size.v);
 }
