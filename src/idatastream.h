@@ -52,6 +52,7 @@ public: // types
     typedef std::shared_ptr<const char> DataPtr;
 
   public: // functions
+    Blob() : data_(), size_(0) {}
     Blob(const DataPtr& data, size_t size) : data_(data) , size_(size) {}
 
     const char* data() const { return data_.get(); }
