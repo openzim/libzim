@@ -48,7 +48,7 @@ class IDataStream
 public: // types
   class Blob
   {
-  private: // types
+  public: // types
     typedef std::shared_ptr<const char> DataPtr;
 
   public: // functions

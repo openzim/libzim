@@ -18,9 +18,14 @@
  */
 
 #include "idatastream.h"
+#include "bufdatastream.h"
 
 namespace zim
 {
+
+////////////////////////////////////////////////////////////////////////////////
+// IDataStream
+////////////////////////////////////////////////////////////////////////////////
 
 IDataStream::Blob
 IDataStream::readBlobImpl(size_t size)
@@ -28,6 +33,40 @@ IDataStream::readBlobImpl(size_t size)
   std::shared_ptr<char> buf(new char[size], std::default_delete<char[]>());
   readImpl(buf.get(), size);
   return Blob(buf, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// BufDataStream
+////////////////////////////////////////////////////////////////////////////////
+
+void
+BufDataStream::readImpl(void* buf, size_t nbytes)
+{
+  ASSERT(nbytes, <=, size_);
+  memcpy(buf, data_, nbytes);
+  data_ += nbytes;
+  size_ -= nbytes;
+}
+
+namespace
+{
+
+struct NoDelete
+{
+  template<class T> void operator()(T*) {}
+};
+
+} // unnamed namespace
+
+IDataStream::Blob
+BufDataStream::readBlobImpl(size_t nbytes)
+{
+  ASSERT(nbytes, <=, size_);
+  const IDataStream::Blob::DataPtr dataPtr(data_, NoDelete());
+  const IDataStream::Blob blob(dataPtr, nbytes);
+  data_ += nbytes;
+  size_ -= nbytes;
+  return blob;
 }
 
 } // namespace zim
