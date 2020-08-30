@@ -13,6 +13,8 @@ openZIM project at https://openzim.org/.
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/zimlib.svg)](https://repology.org/project/zimlib/versions)
+
 Disclaimer
 ----------
 
