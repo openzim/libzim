@@ -12,7 +12,8 @@ tests = [
     'find',
     'compression',
     'impl_find',
-    'istreamreader'
+    'istreamreader',
+    'decodeddatastream'
 ]
 
 if gtest_dep.found() and not meson.is_cross_build()
