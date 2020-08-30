@@ -29,6 +29,7 @@
 #include <memory>
 
 #include "zim_types.h"
+#include "zim/error.h"
 
 namespace zim
 {
@@ -62,8 +63,8 @@ namespace zim
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
 
-      zsize_t getBlobSize(blob_index_t n) const  { return zsize_t(offsets[blob_index_type(n)+1].v
-                                                                - offsets[blob_index_type(n)].v); }
+      zsize_t getBlobSize(blob_index_t n) const;
+
       offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
