@@ -52,11 +52,11 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      lru_cache<article_index_t, std::shared_ptr<const Dirent>> direntCache;
+      lru_cache<article_index_type, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_t, ClusterHandle> clusterCache;
+      ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       bool cacheUncompressedCluster;
       typedef std::map<char, article_index_t> NamespaceCache;

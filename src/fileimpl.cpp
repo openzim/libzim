@@ -276,7 +276,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw ZimFileFormatError("article index out of range");
 
     pthread_mutex_lock(&direntCacheLock);
-    auto v = direntCache.get(idx);
+    auto v = direntCache.get(idx.v);
     if (v.hit())
     {
       log_debug("dirent " << idx << " found in cache; hits "
@@ -329,7 +329,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
     log_debug("dirent read from " << indexOffset);
     pthread_mutex_lock(&direntCacheLock);
-    direntCache.put(idx, dirent);
+    direntCache.put(idx.v, dirent);
     pthread_mutex_unlock(&direntCacheLock);
 
     return dirent;
@@ -368,7 +368,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    return clusterCache.getOrPut(idx, [=](){ return readCluster(idx); });
+    return clusterCache.getOrPut(idx.v, [=](){ return readCluster(idx); });
   }
 
   offset_t FileImpl::getClusterOffset(cluster_index_t idx) const
