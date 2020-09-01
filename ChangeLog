@@ -1,3 +1,9 @@
+libzim 6.2.1
+============
+
+ * Update readme and add link to repology.org packages list.
+ * Fix compilation on windows.
+
 libzim 6.2.0
 ============
 
