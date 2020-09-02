@@ -357,10 +357,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
   {
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    CompressionType comp;
-    bool extended;
-    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
-    return std::make_shared<Cluster>(reader, comp, extended);
+    return Cluster::read(*zimReader, clusterOffset);
   }
 
   std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)

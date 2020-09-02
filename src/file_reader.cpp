@@ -21,9 +21,7 @@
 #include <zim/error.h>
 #include "file_reader.h"
 #include "file_compound.h"
-#include "cluster.h"
 #include "buffer.h"
-#include "compression.h"
 #include <errno.h>
 #include <string.h>
 #include <cstring>
@@ -157,59 +155,6 @@ bool Reader::can_read(offset_t offset, zsize_t size)
     return (offset.v <= this->size().v && (offset.v+size.v) <= this->size().v);
 }
 
-
-std::shared_ptr<const Buffer> Reader::get_clusterBuffer(offset_t offset, CompressionType comp) const
-{
-  zsize_t uncompressed_size(0);
-  std::unique_ptr<char[]> uncompressed_data;
-  switch (comp) {
-    case zimcompLzma:
-      uncompressed_data = uncompress<LZMA_INFO>(this, offset, &uncompressed_size);
-      break;
-    case zimcompZip:
-#if defined(ENABLE_ZLIB)
-      uncompressed_data = uncompress<ZIP_INFO>(this, offset, &uncompressed_size);
-#else
-      throw std::runtime_error("zlib not enabled in this library");
-#endif
-      break;
-    case zimcompZstd:
-      uncompressed_data = uncompress<ZSTD_INFO>(this, offset, &uncompressed_size);
-      break;
-    default:
-      throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
-  }
-  return std::make_shared<MemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
-}
-
-std::unique_ptr<const Reader> Reader::sub_clusterReader(offset_t offset, CompressionType* comp, bool* extended) const {
-  uint8_t clusterInfo = read(offset);
-  *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
-  *extended = clusterInfo & 0x10;
-
-  switch (*comp) {
-    case zimcompDefault:
-    case zimcompNone:
-      {
-        auto size = Cluster::read_size(this, *extended, offset + offset_t(1));
-      // No compression, just a sub_reader
-        return sub_reader(offset+offset_t(1), size);
-      }
-      break;
-    case zimcompLzma:
-    case zimcompZip:
-    case zimcompZstd:
-      {
-        auto buffer = get_clusterBuffer(offset+offset_t(1), *comp);
-        return std::unique_ptr<Reader>(new BufferReader(buffer));
-      }
-      break;
-    case zimcompBzip2:
-      throw std::runtime_error("bzip2 not enabled in this library");
-    default:
-      throw ZimFileFormatError("Invalid compression flag");
-  }
-}
 
 std::unique_ptr<const Reader> FileReader::sub_reader(offset_t offset, zsize_t size) const
 {

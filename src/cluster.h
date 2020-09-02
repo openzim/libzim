@@ -39,8 +39,11 @@ namespace zim
   class Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<offset_t> Offsets;
 
+    public:
       const CompressionType compression;
       const bool isExtended;
+
+    private:
       std::shared_ptr<const Reader> reader;
 
       // offset of the first blob of this cluster relative to the beginning
@@ -69,7 +72,7 @@ namespace zim
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
-      static zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset);
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
   };
 
 }
