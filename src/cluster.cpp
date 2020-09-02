@@ -85,6 +85,12 @@ namespace zim
     return data_address;
   }
 
+  zsize_t Cluster::getBlobSize(blob_index_t n) const
+  {
+      if (blob_index_type(n)+1 >= offsets.size()) throw ZimFileFormatError("blob index out of range");
+      return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v);
+  }
+
   Blob Cluster::getBlob(blob_index_t n) const
   {
     if (n < count()) {
