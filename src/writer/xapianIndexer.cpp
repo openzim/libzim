@@ -24,6 +24,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <cassert>
 
 /* Constructor */
 XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingMode, const bool verbose)
@@ -61,7 +62,7 @@ XapianIndexer::~XapianIndexer()
   }
 }
 
-void XapianIndexer::indexingPrelude(const string indexPath_)
+void XapianIndexer::indexingPrelude(const std::string indexPath_)
 {
   indexPath = indexPath_;
   writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);
@@ -80,25 +81,9 @@ void XapianIndexer::indexingPrelude(const string indexPath_)
   writableDatabase.begin_transaction(true);
 }
 
-void XapianIndexer::index(const zim::writer::Article* article)
+void XapianIndexer::indexTitle(const std::string& path, const std::string& title)
 {
-  switch (indexingMode) {
-    case IndexingMode::TITLE:
-      indexTitle(article);
-      break;
-    case IndexingMode::FULL:
-      indexFull(article);
-      break;
-  }
-}
-
-
-void XapianIndexer::indexFull(const zim::writer::Article* article)
-{
-}
-
-void XapianIndexer::indexTitle(const zim::writer::Article* article)
-{
+  assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
   Xapian::TermGenerator indexer;
   try {
@@ -110,16 +95,15 @@ void XapianIndexer::indexTitle(const zim::writer::Article* article)
   indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
   Xapian::Document currentDocument;
   currentDocument.clear_values();
-  currentDocument.set_data(article->getUrl().getLongUrl());
+  currentDocument.set_data(path);
   indexer.set_document(currentDocument);
 
-  std::string accentedTitle = article->getTitle();
-  std::string title = zim::removeAccents(accentedTitle);
+  std::string unaccentedTitle = zim::removeAccents(title);
 
-  currentDocument.add_value(0, accentedTitle);
+  currentDocument.add_value(0, title);
 
-  if (!title.empty()) {
-    indexer.index_text(title, 1);
+  if (!unaccentedTitle.empty()) {
+    indexer.index_text(unaccentedTitle, 1);
   }
 
   /* add to the database */
@@ -141,24 +125,3 @@ void XapianIndexer::indexingPostlude()
   this->writableDatabase.close();
 }
 
-XapianMetaArticle* XapianIndexer::getMetaArticle()
-{
-  return new XapianMetaArticle(this, indexingMode);
-}
-
-zim::size_type XapianMetaArticle::getSize() const
-{
-  std::ifstream in(indexer->getIndexPath(), std::ios::binary|std::ios::ate);
-  return in.tellg();
-}
-
-std::string XapianMetaArticle::getFilename() const
-{
-  return indexer->getIndexPath();
-}
-
-zim::Blob XapianMetaArticle::getData() const
-{
-  throw std::logic_error("We should not pass here.");
-  return zim::Blob();
-}

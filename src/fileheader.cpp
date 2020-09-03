@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/fileheader.h>
+#include "fileheader.h"
 #include <zim/error.h>
 #include <iostream>
 #include <algorithm>

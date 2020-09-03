@@ -6,7 +6,6 @@ install_headers(
     'zim/error.h',
     'zim/item.h',
     'zim/entry.h',
-    'zim/fileheader.h',
     'zim/search.h',
     'zim/search_iterator.h',
     'zim/uuid.h',
@@ -15,9 +14,9 @@ install_headers(
 )
 
 install_headers(
-    'zim/writer/article.h',
-    'zim/writer/url.h',
+    'zim/writer/item.h',
     'zim/writer/creator.h',
+    'zim/writer/contentProvider.h',
     subdir:'zim/writer'
 )
 

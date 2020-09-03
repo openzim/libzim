@@ -20,8 +20,7 @@
 #ifndef ZIM_WRITER_CREATOR_DATA_H
 #define ZIM_WRITER_CREATOR_DATA_H
 
-#include <zim/fileheader.h>
-#include <zim/writer/article.h>
+#include <zim/writer/item.h>
 #include "queue.h"
 #include "_dirent.h"
 #include "workers.h"
@@ -31,6 +30,7 @@
 #include <fstream>
 #include "config.h"
 
+#include "../fileheader.h"
 #include "direntPool.h"
 
 #if defined(ENABLE_XAPIAN)
@@ -73,11 +73,14 @@ namespace zim
                        CompressionType compression);
         virtual ~CreatorData();
 
-        void addDirent(Dirent* dirent, const Article* article);
-        Dirent* createDirentFromArticle(const Article* article);
+        void addDirent(Dirent* dirent);
+        void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
+        Dirent* createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title);
+        Dirent* createItemDirent(const Item* item);
+        Dirent* createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath);
         Cluster* closeCluster(bool compressed);
 
-        void setArticleIndexes();
+        void setEntryIndexes();
         void resolveRedirectIndexes();
         void createTitleIndex();
         void resolveMimeTypes();
@@ -92,6 +95,7 @@ namespace zim
         UrlSortedDirents   dirents;
         UrlSortedDirents   unresolvedRedirectDirents;
         TitleSortedDirents titleIdx;
+        Dirent*            mainPageDirent;
 
         MimeTypesMap mimeTypesMap;
         RMimeTypesMap rmimeTypesMap;
@@ -121,12 +125,11 @@ namespace zim
 
         // Some stats
         bool verbose;
-        entry_index_type nbArticles;
-        entry_index_type nbRedirectArticles;
-        entry_index_type nbCompArticles;
-        entry_index_type nbUnCompArticles;
-        entry_index_type nbFileArticles;
-        entry_index_type nbIndexArticles;
+        entry_index_type nbItems;
+        entry_index_type nbRedirectItems;
+        entry_index_type nbCompItems;
+        entry_index_type nbUnCompItems;
+        entry_index_type nbIndexItems;
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
@@ -135,7 +138,7 @@ namespace zim
         cluster_index_t clusterCount() const
         { return cluster_index_t(clustersList.size()); }
 
-        entry_index_t articleCount() const
+        entry_index_t itemCount() const
         { return entry_index_t(dirents.size()); }
 
         size_t getMinChunkSize()    { return minChunkSize; }

@@ -20,12 +20,11 @@
 #ifndef LIBZIM_WRITER_XAPIANINDEXER_H
 #define LIBZIM_WRITER_XAPIANINDEXER_H
 
-#include <zim/writer/article.h>
+#include <zim/writer/item.h>
 
 #include <unicode/locid.h>
 #include <xapian.h>
 #include <zim/blob.h>
-#include "xapian/myhtmlparse.h"
 
 
 namespace zim {
@@ -40,61 +39,19 @@ enum class IndexingMode {
   FULL
 };
 
-class XapianMetaArticle : public zim::writer::Article
-{
- private:
-  XapianIndexer* indexer;
-  IndexingMode mode;
-  mutable std::string data;
-
- public:
-  XapianMetaArticle(XapianIndexer* indexer, IndexingMode mode) : indexer(indexer), mode(mode)
-  {}
-  virtual ~XapianMetaArticle() = default;
-  virtual zim::Blob getData() const;
-  virtual zim::writer::Url getUrl() const {
-    switch (mode) {
-      case IndexingMode::FULL:
-        return zim::writer::Url('X', "fulltext/xapian");
-      case IndexingMode::TITLE:
-        return zim::writer::Url('X', "title/xapian");
-    }
-    return zim::writer::Url();
-  }
-  virtual std::string getTitle() const {
-    switch (mode) {
-      case IndexingMode::FULL:
-        return "Xapian Fulltext Index";
-      case IndexingMode::TITLE:
-        return "Xapian Title Index";
-    }
-    return "";
-  }
-  virtual std::string getMimeType() const { return "application/octet-stream+xapian"; }
-  virtual bool isRedirect() const { return false; }
-  virtual bool shouldIndex() const { return false; }
-  virtual bool shouldCompress() const { return false; }
-  virtual zim::writer::Url getRedirectUrl() const { return zim::writer::Url(); }
-  virtual zim::size_type getSize() const;
-  virtual std::string getFilename() const;
-};
-
 class XapianIndexer
 {
  public:
   XapianIndexer(const std::string& language, IndexingMode mode, bool verbose);
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
-  void indexingPrelude(const string indexPath);
-  void index(const zim::writer::Article* article);
+  void indexingPrelude(const std::string indexPath);
   void flush();
   void indexingPostlude();
-  XapianMetaArticle* getMetaArticle();
+
+  void indexTitle(const std::string& path, const std::string& title);
 
  protected:
-  void indexTitle(const zim::writer::Article* article);
-  void indexFull(const zim::writer::Article* article);
-
   Xapian::WritableDatabase writableDatabase;
   std::string stemmer_language;
   Xapian::SimpleStopper stopper;

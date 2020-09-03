@@ -20,85 +20,71 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include <zim/writer/contentProvider.h>
 #include <zim/writer/creator.h>
 #include <zim/blob.h>
 
-class TestArticle : public zim::writer::Article
+class TestItem : public zim::writer::Item
 {
     std::string _id;
     std::string _data;
 
   public:
-    TestArticle()  { }
-    explicit TestArticle(const std::string& id);
-    virtual ~TestArticle() = default;
+    TestItem()  { }
+    explicit TestItem(const std::string& id);
+    virtual ~TestItem() = default;
 
-    virtual std::string getAid() const;
-    virtual zim::writer::Url getUrl() const;
+    virtual std::string getPath() const;
     virtual std::string getTitle() const;
-    virtual bool isRedirect() const;
-    virtual bool shouldCompress() const { return true; }
     virtual std::string getMimeType() const;
-    virtual zim::writer::Url getRedirectUrl() const;
-    virtual bool shouldIndex() const { return false; }
-    virtual zim::size_type getSize() const { return _data.size(); }
-    virtual std::string getFilename() const { return ""; }
 
-    virtual zim::Blob getData() const
-    { return zim::Blob(&_data[0], _data.size()); }
+    virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const;
 };
 
-TestArticle::TestArticle(const std::string& id)
+TestItem::TestItem(const std::string& id)
   : _id(id)
 {
   std::ostringstream data;
-  data << "this is article " << id << std::endl;
+  data << "this is item " << id << std::endl;
   _data = data.str();
 }
 
-std::string TestArticle::getAid() const
+std::string TestItem::getPath() const
+{
+  return std::string("A/") + _id;
+}
+
+std::string TestItem::getTitle() const
 {
   return _id;
 }
 
-zim::writer::Url TestArticle::getUrl() const
-{
-  return zim::writer::Url('A', _id);
-}
-
-std::string TestArticle::getTitle() const
-{
-  return _id;
-}
-
-bool TestArticle::isRedirect() const
-{
-  return false;
-}
-
-std::string TestArticle::getMimeType() const
+std::string TestItem::getMimeType() const
 {
   return "text/plain";
 }
 
-zim::writer::Url TestArticle::getRedirectUrl() const
+std::unique_ptr<zim::writer::ContentProvider> TestItem::getContentProvider() const
 {
-  return zim::writer::Url();
+  return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider(_data));
 }
 
 int main(int argc, char* argv[])
 {
   unsigned max = 16;
   try {
-    zim::writer::Creator c(false, zim::zimcompZstd);
+    zim::writer::Creator c;
+    c.configVerbose(false).configCompression(zim::zimcompZstd);
     c.startZimCreation("foo.zim");
     for (unsigned n = 0; n < max; ++n)
     {
       std::ostringstream id;
       id << (n + 1);
-      auto article = std::make_shared<TestArticle>(id.str());
-      c.addArticle(article);
+      auto article = std::make_shared<TestItem>(id.str());
+      c.addItem(article);
     }
+    c.setMainPath("A/0");
     c.finishZimCreation();
   }
   catch (const std::exception& e)

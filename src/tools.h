@@ -24,8 +24,9 @@
 #include <string>
 
 namespace zim {
-
+  bool isCompressibleMimetype(const std::string& mimetype);
   std::string removeAccents(const std::string& text);
+  uint32_t countWords(const std::string& text);
   void microsleep(int microseconds);
 }
 

@@ -50,6 +50,14 @@
 # include <chrono>
 #endif
 
+bool zim::isCompressibleMimetype(const std::string& mimetype)
+{
+  return mimetype.find("text") == 0
+      || mimetype.find("+xml") != std::string::npos
+      || mimetype.find("+json") != std::string::npos
+      || mimetype == "application/javascript"
+      || mimetype == "application/json";
+}
 
 std::string zim::removeAccents(const std::string& text)
 {
@@ -62,6 +70,21 @@ std::string zim::removeAccents(const std::string& text)
   std::string unaccentedText;
   ustring.toUTF8String(unaccentedText);
   return unaccentedText;
+}
+
+uint32_t zim::countWords(const std::string& text)
+{
+  unsigned int numWords = 1;
+  unsigned int length = text.size();
+
+  for (unsigned int i = 0; i < length;) {
+    while (i < length && text[i] != ' ') {
+      i++;
+    }
+    numWords++;
+      i++;
+    }
+  return numWords;
 }
 
 

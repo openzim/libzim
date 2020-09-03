@@ -18,6 +18,13 @@ struct REAL_TYPEDEF{
 
   inline bool operator==(const REAL_TYPEDEF<B>& rhs) const
   { return v == rhs.v; }
+
+  inline REAL_TYPEDEF<B>& operator++()
+  { v++; return *this; }
+
+  inline REAL_TYPEDEF<B> operator++(int)
+  { return REAL_TYPEDEF<B>(v++); }
+
 };
 
 template<typename T> inline T& operator+= (T& lhs, const T& rhs)

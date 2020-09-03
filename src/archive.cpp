@@ -66,11 +66,11 @@ namespace zim
 
   std::vector<std::string> Archive::getMetadataKeys() const {
     std::vector<std::string> ret;
-    auto start = entry_index_type(m_impl->getNamespaceBeginOffset('M'));
-    auto end = entry_index_type(m_impl->getNamespaceEndOffset('M'));
+    auto start = m_impl->getNamespaceBeginOffset('M');
+    auto end = m_impl->getNamespaceEndOffset('M');
     for (auto idx=start; idx!=end; idx++) {
-      auto entry = Entry(m_impl, entry_index_type(idx));
-      ret.push_back(entry.getPath());
+      auto dirent = m_impl->getDirent(idx);
+      ret.push_back(dirent->getUrl());
     }
     return ret;
   }
