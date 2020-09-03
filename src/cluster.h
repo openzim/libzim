@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009 Tommi Maekitalo
+ * Copyright (C) 2020 Veloman Yunkan
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,93 +36,94 @@
 
 namespace zim
 {
-  class Blob;
-  class Reader;
 
-  class Cluster : public std::enable_shared_from_this<Cluster> {
-    public:
-      const bool isExtended;
+class Blob;
+class Reader;
 
-    protected:
-      explicit Cluster(bool isExtended) : isExtended(isExtended) {}
+class Cluster : public std::enable_shared_from_this<Cluster> {
+  public:
+    const bool isExtended;
 
-    public:
-      virtual ~Cluster() {}
+  protected:
+    explicit Cluster(bool isExtended) : isExtended(isExtended) {}
 
-      virtual bool isCompressed() const = 0;
-      virtual CompressionType getCompression() const = 0;
+  public:
+    virtual ~Cluster() {}
 
-      virtual blob_index_t count() const = 0;
+    virtual bool isCompressed() const = 0;
+    virtual CompressionType getCompression() const = 0;
 
-      virtual zsize_t getBlobSize(blob_index_t n) const = 0;
-      virtual offset_t getBlobOffset(blob_index_t n) const = 0;
-      virtual Blob getBlob(blob_index_t n) const = 0;
-      virtual Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const = 0;
+    virtual blob_index_t count() const = 0;
 
-      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
-  };
+    virtual zsize_t getBlobSize(blob_index_t n) const = 0;
+    virtual offset_t getBlobOffset(blob_index_t n) const = 0;
+    virtual Blob getBlob(blob_index_t n) const = 0;
+    virtual Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const = 0;
 
-  class NonCompressedCluster : public Cluster {
-      typedef std::vector<offset_t> Offsets;
+    static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+};
 
-    private:
-      std::shared_ptr<const Reader> reader;
+class NonCompressedCluster : public Cluster {
+    typedef std::vector<offset_t> Offsets;
 
-      // offset of the first blob of this cluster relative to the beginning
-      // of the (uncompressed) cluster data
-      offset_t startOffset;
+  private:
+    std::shared_ptr<const Reader> reader;
 
-      // offsets of the blob boundaries relative to the start of the first
-      // blob in this cluster. For a cluster with N blobs, this collection
-      // contains N+1 entries - the start of the first blob (which is always
-      // 0) and the end of the last blob are also included.
-      Offsets offsets;
+    // offset of the first blob of this cluster relative to the beginning
+    // of the (uncompressed) cluster data
+    offset_t startOffset;
 
-      template<typename OFFSET_TYPE>
-      offset_t read_header();
+    // offsets of the blob boundaries relative to the start of the first
+    // blob in this cluster. For a cluster with N blobs, this collection
+    // contains N+1 entries - the start of the first blob (which is always
+    // 0) and the end of the last blob are also included.
+    Offsets offsets;
 
-    public:
-      NonCompressedCluster(std::shared_ptr<const Reader> reader, bool isExtended);
+    template<typename OFFSET_TYPE>
+    offset_t read_header();
 
-      bool isCompressed() const override { return false; }
-      CompressionType getCompression() const override { return zimcompNone; }
+  public:
+    NonCompressedCluster(std::shared_ptr<const Reader> reader, bool isExtended);
 
-      blob_index_t count() const override { return blob_index_t(offsets.size() - 1); }
+    bool isCompressed() const override { return false; }
+    CompressionType getCompression() const override { return zimcompNone; }
 
-      zsize_t getBlobSize(blob_index_t n) const override;
-      offset_t getBlobOffset(blob_index_t n) const override { return startOffset + offsets[blob_index_type(n)]; }
-      Blob getBlob(blob_index_t n) const override;
-      Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
-  };
+    blob_index_t count() const override { return blob_index_t(offsets.size() - 1); }
 
-  class CompressedCluster : public Cluster
-  {
-    public: // functions
-      CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
+    zsize_t getBlobSize(blob_index_t n) const override;
+    offset_t getBlobOffset(blob_index_t n) const override { return startOffset + offsets[blob_index_type(n)]; }
+    Blob getBlob(blob_index_t n) const override;
+    Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
+};
 
-      bool isCompressed() const override;
-      CompressionType getCompression() const override;
-      blob_index_t count() const override;
-      zsize_t getBlobSize(blob_index_t n) const override;
-      offset_t getBlobOffset(blob_index_t n) const override;
-      Blob getBlob(blob_index_t n) const override;
-      Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
+class CompressedCluster : public Cluster
+{
+  public: // functions
+    CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
 
-    private: // functions
-      template<typename OFFSET_TYPE>
-      void readHeader(IDataStream& ds);
+    bool isCompressed() const override;
+    CompressionType getCompression() const override;
+    blob_index_t count() const override;
+    zsize_t getBlobSize(blob_index_t n) const override;
+    offset_t getBlobOffset(blob_index_t n) const override;
+    Blob getBlob(blob_index_t n) const override;
+    Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
 
-      void ensureBlobIsDecompressed(blob_index_t i) const;
+  private: // functions
+    template<typename OFFSET_TYPE>
+    void readHeader(IDataStream& ds);
 
-    private: // data
-      const std::unique_ptr<IDataStream> ds_;
-      const CompressionType compression_;
-      std::vector<size_t> blobSizes_;
+    void ensureBlobIsDecompressed(blob_index_t i) const;
 
-      mutable std::mutex blobAccessMutex_;
-      mutable std::vector<IDataStream::Blob> blobs_;
-  };
+  private: // data
+    const std::unique_ptr<IDataStream> ds_;
+    const CompressionType compression_;
+    std::vector<size_t> blobSizes_;
 
-}
+    mutable std::mutex blobAccessMutex_;
+    mutable std::vector<IDataStream::Blob> blobs_;
+};
+
+} // unnamed namespace
 
 #endif // ZIM_CLUSTER_H

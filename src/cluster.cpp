@@ -105,90 +105,90 @@ Cluster::read(const Reader& zimReader, offset_t clusterOffset)
 // NonCompressedCluster
 ////////////////////////////////////////////////////////////////////////////////
 
-  NonCompressedCluster::NonCompressedCluster(std::shared_ptr<const Reader> reader_, bool isExtended)
-    : Cluster(isExtended),
-      reader(reader_),
-      startOffset(0)
-  {
-    auto d = reader->offset();
-    if (isExtended) {
-      startOffset = read_header<uint64_t>();
-    } else {
-      startOffset = read_header<uint32_t>();
-    }
-    reader = reader->sub_reader(startOffset, zsize_t(offsets.back().v));
-    auto d1 = reader->offset();
-    ASSERT(d+startOffset, ==, d1);
+NonCompressedCluster::NonCompressedCluster(std::shared_ptr<const Reader> reader_, bool isExtended)
+  : Cluster(isExtended),
+    reader(reader_),
+    startOffset(0)
+{
+  auto d = reader->offset();
+  if (isExtended) {
+    startOffset = read_header<uint64_t>();
+  } else {
+    startOffset = read_header<uint32_t>();
   }
+  reader = reader->sub_reader(startOffset, zsize_t(offsets.back().v));
+  auto d1 = reader->offset();
+  ASSERT(d+startOffset, ==, d1);
+}
 
-  /* This return the number of char read */
-  template<typename OFFSET_TYPE>
-  offset_t NonCompressedCluster::read_header()
+/* This return the number of char read */
+template<typename OFFSET_TYPE>
+offset_t NonCompressedCluster::read_header()
+{
+  // read first offset, which specifies, how many offsets we need to read
+  OFFSET_TYPE offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
+
+  size_t n_offset = offset / sizeof(OFFSET_TYPE);
+  const offset_t data_address(offset);
+
+  // read offsets
+  offsets.clear();
+  offsets.reserve(n_offset);
+  offsets.push_back(offset_t(0));
+
+  auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
+  offset_t current = offset_t(sizeof(OFFSET_TYPE));
+  while (--n_offset)
   {
-    // read first offset, which specifies, how many offsets we need to read
-    OFFSET_TYPE offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
+    OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
+    ASSERT(new_offset, >=, offset);
+    ASSERT(new_offset, <=, reader->size().v);
 
-    size_t n_offset = offset / sizeof(OFFSET_TYPE);
-    const offset_t data_address(offset);
-
-    // read offsets
-    offsets.clear();
-    offsets.reserve(n_offset);
-    offsets.push_back(offset_t(0));
-
-    auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
-    offset_t current = offset_t(sizeof(OFFSET_TYPE));
-    while (--n_offset)
-    {
-      OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
-      ASSERT(new_offset, >=, offset);
-      ASSERT(new_offset, <=, reader->size().v);
-
-      offset = new_offset;
-      offsets.push_back(offset_t(offset - data_address.v));
-      current += sizeof(OFFSET_TYPE);
-    }
-    return data_address;
+    offset = new_offset;
+    offsets.push_back(offset_t(offset - data_address.v));
+    current += sizeof(OFFSET_TYPE);
   }
+  return data_address;
+}
 
-  zsize_t NonCompressedCluster::getBlobSize(blob_index_t n) const
-  {
-      if (blob_index_type(n)+1 >= offsets.size()) throw ZimFileFormatError("blob index out of range");
-      return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v);
-  }
+zsize_t NonCompressedCluster::getBlobSize(blob_index_t n) const
+{
+    if (blob_index_type(n)+1 >= offsets.size()) throw ZimFileFormatError("blob index out of range");
+    return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v);
+}
 
-  Blob NonCompressedCluster::getBlob(blob_index_t n) const
-  {
-    if (n < count()) {
-      auto blobSize = getBlobSize(n);
-      if (blobSize.v > SIZE_MAX) {
-        return Blob();
-      }
-      auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
-      return Blob(buffer);
-    } else {
+Blob NonCompressedCluster::getBlob(blob_index_t n) const
+{
+  if (n < count()) {
+    auto blobSize = getBlobSize(n);
+    if (blobSize.v > SIZE_MAX) {
       return Blob();
     }
+    auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
+    return Blob(buffer);
+  } else {
+    return Blob();
   }
+}
 
-  Blob NonCompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
-  {
-    if (n < count()) {
-      const auto blobSize = getBlobSize(n);
-      if ( offset.v > blobSize.v ) {
-        return Blob();
-      }
-      size = std::min(size, zsize_t(blobSize.v-offset.v));
-      if (size.v > SIZE_MAX) {
-        return Blob();
-      }
-      offset += offsets[blob_index_type(n)];
-      auto buffer = reader->get_buffer(offset, size);
-      return Blob(buffer);
-    } else {
+Blob NonCompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
+{
+  if (n < count()) {
+    const auto blobSize = getBlobSize(n);
+    if ( offset.v > blobSize.v ) {
       return Blob();
     }
+    size = std::min(size, zsize_t(blobSize.v-offset.v));
+    if (size.v > SIZE_MAX) {
+      return Blob();
+    }
+    offset += offsets[blob_index_type(n)];
+    auto buffer = reader->get_buffer(offset, size);
+    return Blob(buffer);
+  } else {
+    return Blob();
   }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // CompressedCluster
