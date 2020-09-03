@@ -38,15 +38,34 @@ namespace zim
   class Reader;
 
   class Cluster : public std::enable_shared_from_this<Cluster> {
-      typedef std::vector<offset_t> Offsets;
-
     public:
       const bool isExtended;
+
+    protected:
+      explicit Cluster(bool isExtended) : isExtended(isExtended) {}
+
+    public:
+      virtual ~Cluster() {}
+
+      virtual bool isCompressed() const = 0;
+      virtual CompressionType getCompression() const = 0;
+
+      virtual blob_index_t count() const = 0;
+
+      virtual zsize_t getBlobSize(blob_index_t n) const = 0;
+      virtual offset_t getBlobOffset(blob_index_t n) const = 0;
+      virtual Blob getBlob(blob_index_t n) const = 0;
+      virtual Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const = 0;
+
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+  };
+
+  class NonCompressedCluster : public Cluster {
+      typedef std::vector<offset_t> Offsets;
 
     private:
       std::shared_ptr<const Reader> reader;
 
-    protected:
       // offset of the first blob of this cluster relative to the beginning
       // of the (uncompressed) cluster data
       offset_t startOffset;
@@ -57,28 +76,21 @@ namespace zim
       // 0) and the end of the last blob are also included.
       Offsets offsets;
 
-    private:
       template<typename OFFSET_TYPE>
       offset_t read_header();
 
-    protected:
-      Cluster(bool isExtended) : isExtended(isExtended) {}
-
     public:
-      Cluster(std::shared_ptr<const Reader> reader, bool isExtended);
-      virtual ~Cluster() {}
+      NonCompressedCluster(std::shared_ptr<const Reader> reader, bool isExtended);
 
-      virtual bool isCompressed() const                { return false; }
-      virtual CompressionType getCompression() const   { return zimcompNone; }
+      bool isCompressed() const override { return false; }
+      CompressionType getCompression() const override { return zimcompNone; }
 
-      blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
+      blob_index_t count() const override { return blob_index_t(offsets.size() - 1); }
 
-      zsize_t getBlobSize(blob_index_t n) const;
-      virtual offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
-      virtual Blob getBlob(blob_index_t n) const;
-      virtual Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
-
-      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+      zsize_t getBlobSize(blob_index_t n) const override;
+      offset_t getBlobOffset(blob_index_t n) const override { return startOffset + offsets[blob_index_type(n)]; }
+      Blob getBlob(blob_index_t n) const override;
+      Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
   };
 
   class CompressedCluster : public Cluster
@@ -88,6 +100,8 @@ namespace zim
 
       bool isCompressed() const override;
       CompressionType getCompression() const override;
+      blob_index_t count() const override;
+      zsize_t getBlobSize(blob_index_t n) const override;
       offset_t getBlobOffset(blob_index_t n) const override;
       Blob getBlob(blob_index_t n) const override;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const override;
@@ -100,6 +114,7 @@ namespace zim
 
     private: // data
       const CompressionType compression_;
+      std::vector<size_t> blobSizes_;
       std::vector<IDataStream::Blob> blobs_;
   };
 
