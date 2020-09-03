@@ -52,11 +52,11 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      lru_cache<entry_index_t, std::shared_ptr<const Dirent>> direntCache;
+      lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_t, ClusterHandle> clusterCache;
+      ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       bool cacheUncompressedCluster;
       typedef std::map<char, entry_index_t> NamespaceCache;
@@ -89,7 +89,6 @@ namespace zim
       entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
       entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
-
       std::pair<bool, entry_index_t> findx(char ns, const std::string& url);
       std::pair<bool, entry_index_t> findx(const std::string& url);
       std::pair<bool, title_index_t> findxByTitle(char ns, const std::string& title);
@@ -116,6 +115,88 @@ namespace zim
   private:
       ClusterHandle readCluster(cluster_index_t idx);
   };
+
+
+  template<typename IMPL>
+  std::pair<bool, entry_index_t> findx(IMPL& impl, char ns, const std::string& url)
+  {
+    entry_index_type l = entry_index_type(impl.getNamespaceBeginOffset(ns));
+    entry_index_type u = entry_index_type(impl.getNamespaceEndOffset(ns));
+
+    if (l == u)
+    {
+      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
+    }
+
+    unsigned itcount = 0;
+    while (u - l > 1)
+    {
+      ++itcount;
+      entry_index_type p = l + (u - l) / 2;
+      auto d = impl.getDirent(entry_index_t(p));
+
+      int c = ns < d->getNamespace() ? -1
+            : ns > d->getNamespace() ? 1
+            : url.compare(d->getUrl());
+
+      if (c < 0)
+        u = p;
+      else if (c > 0)
+        l = p;
+      else
+      {
+        return std::pair<bool, entry_index_t>(true, entry_index_t(p));
+      }
+    }
+
+    auto d = impl.getDirent(entry_index_t(l));
+    int c = url.compare(d->getUrl());
+
+    if (c == 0)
+    {
+      return std::pair<bool, entry_index_t>(true, entry_index_t(l));
+    }
+
+    return std::pair<bool, entry_index_t>(false, entry_index_t(c < 0 ? l : u));
+  }
+
+  template<typename IMPL>
+  entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
+  {
+    entry_index_type lower = 0;
+    entry_index_type upper = entry_index_type(impl.getCountArticles());
+    auto d = impl.getDirent(entry_index_t(0));
+    while (upper - lower > 1)
+    {
+      entry_index_type m = lower + (upper - lower) / 2;
+      auto d = impl.getDirent(entry_index_t(m));
+      if (d->getNamespace() >= ch)
+        upper = m;
+      else
+        lower = m;
+    }
+
+    entry_index_t ret = entry_index_t(d->getNamespace() < ch ? upper : lower);
+    return ret;
+  }
+
+  template<typename IMPL>
+  entry_index_t getNamespaceEndOffset(IMPL& impl, char ch)
+  {
+    entry_index_type lower = 0;
+    entry_index_type upper = entry_index_type(impl.getCountArticles());
+    while (upper - lower > 1)
+    {
+      entry_index_type m = lower + (upper - lower) / 2;
+      auto d = impl.getDirent(entry_index_t(m));
+      if (d->getNamespace() > ch)
+        upper = m;
+      else
+        lower = m;
+    }
+    return entry_index_t(upper);
+  }
+
 
 }
 

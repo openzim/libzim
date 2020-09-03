@@ -1,3 +1,28 @@
+libzim 6.2.2
+============
+
+ * Check blob index before access it in the cluster.
+ * Refactoring of the cluster reading.
+
+libzim 6.2.1 (release process broken)
+=====================================
+
+ * Update readme and add link to repology.org packages list.
+ * Fix compilation on windows.
+
+libzim 6.2.0
+============
+
+ * Fix compilation of libzim on freebsd.
+ * Rewrite unit tests to remove python based test and use gtest all the time.
+ * Make libzstd mandatory.
+ * Support for meson 0.45.
+ * Fix multipart support on macos.
+ * Add a documentation system.
+ * Better cache system implementation (huge speed up).
+ * Various (and numerous) small refactoring.
+
+
 libzim 6.1.8
 ============
 

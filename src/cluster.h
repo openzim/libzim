@@ -29,6 +29,7 @@
 #include <memory>
 
 #include "zim_types.h"
+#include "zim/error.h"
 
 namespace zim
 {
@@ -38,8 +39,11 @@ namespace zim
   class Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<offset_t> Offsets;
 
+    public:
       const CompressionType compression;
       const bool isExtended;
+
+    private:
       std::shared_ptr<const Reader> reader;
 
       // offset of the first blob of this cluster relative to the beginning
@@ -62,13 +66,13 @@ namespace zim
 
       blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
 
-      zsize_t getBlobSize(blob_index_t n) const  { return zsize_t(offsets[blob_index_type(n)+1].v
-                                                                - offsets[blob_index_type(n)].v); }
+      zsize_t getBlobSize(blob_index_t n) const;
+
       offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
-      static zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset);
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
   };
 
 }

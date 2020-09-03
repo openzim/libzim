@@ -171,50 +171,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
   std::pair<bool, entry_index_t> FileImpl::findx(char ns, const std::string& url)
   {
-    log_debug("find article by url " << ns << " \"" << url << "\",  in file \"" << getFilename() << '"');
-
-    entry_index_type l = entry_index_type(getNamespaceBeginOffset(ns));
-    entry_index_type u = entry_index_type(getNamespaceEndOffset(ns));
-
-    if (l == u)
-    {
-      log_debug("namespace " << ns << " not found");
-      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
-    }
-
-    unsigned itcount = 0;
-    while (u - l > 1)
-    {
-      ++itcount;
-      entry_index_type p = l + (u - l) / 2;
-      auto d = getDirent(entry_index_t(p));
-
-      int c = ns < d->getNamespace() ? -1
-            : ns > d->getNamespace() ? 1
-            : url.compare(d->getUrl());
-
-      if (c < 0)
-        u = p;
-      else if (c > 0)
-        l = p;
-      else
-      {
-        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, entry_index_t>(true, entry_index_t(p));
-      }
-    }
-
-    auto d = getDirent(entry_index_t(l));
-    int c = url.compare(d->getUrl());
-
-    if (c == 0)
-    {
-      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, entry_index_t>(true, entry_index_t(l));
-    }
-
-    log_debug("article not found after " << itcount << " iterations (\"" << d.getUrl() << "\" does not match)");
-    return std::pair<bool, entry_index_t>(false, entry_index_t(c < 0 ? l : u));
+    return zim::findx(*this, ns, url);
   }
 
   std::pair<bool, entry_index_t> FileImpl::findx(const std::string& url)
@@ -290,7 +247,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw std::out_of_range("entry index out of range");
 
     pthread_mutex_lock(&direntCacheLock);
-    auto v = direntCache.get(idx);
+    auto v = direntCache.get(idx.v);
     if (v.hit())
     {
       log_debug("dirent " << idx << " found in cache; hits "
@@ -343,7 +300,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
     log_debug("dirent read from " << indexOffset);
     pthread_mutex_lock(&direntCacheLock);
-    direntCache.put(idx, dirent);
+    direntCache.put(idx.v, dirent);
     pthread_mutex_unlock(&direntCacheLock);
 
     return dirent;
@@ -398,10 +355,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
   {
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    CompressionType comp;
-    bool extended;
-    std::shared_ptr<const Reader> reader = zimReader->sub_clusterReader(clusterOffset, &comp, &extended);
-    return std::make_shared<Cluster>(reader, comp, extended);
+    return Cluster::read(*zimReader, clusterOffset);
   }
 
   std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
@@ -409,7 +363,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    return clusterCache.getOrPut(idx, [=](){ return readCluster(idx); });
+    return clusterCache.getOrPut(idx.v, [=](){ return readCluster(idx); });
   }
 
   offset_t FileImpl::getClusterOffset(cluster_index_t idx) const
@@ -438,21 +392,8 @@ offset_t readOffset(const Reader& reader, size_t idx)
       return ret;
     }
     pthread_mutex_unlock(&namespaceBeginLock);
+    auto ret = zim::getNamespaceBeginOffset(*this, ch);
 
-    entry_index_type lower = 0;
-    entry_index_type upper = entry_index_type(getCountArticles());
-    auto d = getDirent(entry_index_t(0));
-    while (upper - lower > 1)
-    {
-      entry_index_type m = lower + (upper - lower) / 2;
-      auto d = getDirent(entry_index_t(m));
-      if (d->getNamespace() >= ch)
-        upper = m;
-      else
-        lower = m;
-    }
-
-    entry_index_t ret = entry_index_t(d->getNamespace() < ch ? upper : lower);
     pthread_mutex_lock(&namespaceBeginLock);
     namespaceBeginCache[ch] = ret;
     pthread_mutex_unlock(&namespaceBeginLock);
@@ -473,26 +414,13 @@ offset_t readOffset(const Reader& reader, size_t idx)
       return ret;
     }
     pthread_mutex_unlock(&namespaceEndLock);
-
-    entry_index_type lower = 0;
-    entry_index_type upper = entry_index_type(getCountArticles());
-    log_debug("namespace " << ch << " lower=" << lower << " upper=" << upper);
-    while (upper - lower > 1)
-    {
-      entry_index_type m = lower + (upper - lower) / 2;
-      auto d = getDirent(entry_index_t(m));
-      if (d->getNamespace() > ch)
-        upper = m;
-      else
-        lower = m;
-      log_debug("namespace " << d->getNamespace() << " m=" << m << " lower=" << lower << " upper=" << upper);
-    }
+    auto ret = zim::getNamespaceEndOffset(*this, ch);
 
     pthread_mutex_lock(&namespaceEndLock);
-    namespaceEndCache[ch] = entry_index_t(upper);
+    namespaceEndCache[ch] = ret;
     pthread_mutex_unlock(&namespaceEndLock);
 
-    return entry_index_t(upper);
+    return ret;
   }
 
   std::string FileImpl::getNamespaces()
