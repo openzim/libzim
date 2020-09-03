@@ -30,20 +30,20 @@ namespace zim
 class ReaderDataStreamWrapper : public IDataStream
 {
 public: // functions
-  explicit ReaderDataStreamWrapper(const zim::Reader* reader)
-    : reader_(*reader)
+  explicit ReaderDataStreamWrapper(std::shared_ptr<const zim::Reader> reader)
+    : reader_(reader)
     , readerPos_(0)
   {}
 
   void readImpl(void* buf, size_t nbytes) override
   {
-    ASSERT(readerPos_.v + nbytes, <=, reader_.size().v);
-    reader_.read(static_cast<char*>(buf), readerPos_, zsize_t(nbytes));
+    ASSERT(readerPos_.v + nbytes, <=, reader_->size().v);
+    reader_->read(static_cast<char*>(buf), readerPos_, zsize_t(nbytes));
     readerPos_ += nbytes;
   }
 
 private: // data
-  const Reader& reader_;
+  std::shared_ptr<const Reader> reader_;
   offset_t readerPos_;
 };
 

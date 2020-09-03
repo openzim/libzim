@@ -113,6 +113,7 @@ namespace zim
       void readBlobs(IDataStream& ds);
 
     private: // data
+      const std::unique_ptr<IDataStream> ds_;
       const CompressionType compression_;
       std::vector<size_t> blobSizes_;
       std::vector<IDataStream::Blob> blobs_;

@@ -44,8 +44,9 @@ TEST(ReaderDataStreamWrapper, shouldJustWork)
   toLittleEndian(uint32_t(1234), data);
   toLittleEndian(int64_t(-987654321), data+18);
 
-  const BufferReader bufReader(memoryViewBuffer(data, sizeof(data)));
-  const Reader* readerPtr = &bufReader;
+  const auto buffer = memoryViewBuffer(data, sizeof(data));
+  const auto bufReader = std::make_shared<BufferReader>(buffer);
+  const std::shared_ptr<const Reader> readerPtr = bufReader;
 
   ReaderDataStreamWrapper rdsw(readerPtr);
 

@@ -23,6 +23,7 @@
 #include "file_reader.h"
 #include "endian_tools.h"
 #include "readerdatastreamwrapper.h"
+#include "decodeddatastream.h"
 #include <algorithm>
 #include <stdlib.h>
 #include <sstream>
@@ -42,56 +43,37 @@ namespace zim
 namespace
 {
 
-std::shared_ptr<const Buffer>
-getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
+template<typename Decoder>
+std::unique_ptr<IDataStream>
+makeDecodedDataStream(std::unique_ptr<IDataStream> data, size_t size)
 {
-  zsize_t uncompressed_size(0);
-  std::unique_ptr<char[]> uncompressed_data;
-  switch (comp) {
+  const auto dds(new DecodedDataStream<Decoder>(std::move(data), size));
+  return std::unique_ptr<IDataStream>(dds);
+}
+
+std::unique_ptr<IDataStream>
+getUncompressedClusterDataStream(std::shared_ptr<const Reader> reader, CompressionType comp)
+{
+  std::unique_ptr<IDataStream> rdsw(new ReaderDataStreamWrapper(reader));
+  const size_t size = reader->size().v;
+  switch (comp)
+  {
     case zimcompLzma:
-      uncompressed_data = uncompress<LZMA_INFO>(&zimReader, offset, &uncompressed_size);
-      break;
+      return makeDecodedDataStream<LZMA_INFO>(std::move(rdsw), size);
+
     case zimcompZip:
 #if defined(ENABLE_ZLIB)
-      uncompressed_data = uncompress<ZIP_INFO>(&zimReader, offset, &uncompressed_size);
+      return makeDecodedDataStream<ZIP_INFO>(std::move(rdsw), size);
 #else
       throw std::runtime_error("zlib not enabled in this library");
 #endif
-      break;
-    case zimcompZstd:
-      uncompressed_data = uncompress<ZSTD_INFO>(&zimReader, offset, &uncompressed_size);
-      break;
-    default:
-      throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
-  }
-  return std::make_shared<MemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
-}
 
-std::unique_ptr<const Reader>
-getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp, bool* extended)
-{
-  uint8_t clusterInfo = zimReader.read(offset);
-  *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
-  *extended = clusterInfo & 0x10;
-
-  switch (*comp) {
-    case zimcompDefault:
-    case zimcompNone:
-      {
-      // No compression, just a sub_reader
-        return zimReader.sub_reader(offset+offset_t(1));
-      }
-      break;
-    case zimcompLzma:
-    case zimcompZip:
     case zimcompZstd:
-      {
-        auto buffer = getClusterBuffer(zimReader, offset+offset_t(1), *comp);
-        return std::unique_ptr<Reader>(new BufferReader(buffer));
-      }
-      break;
+      return makeDecodedDataStream<ZSTD_INFO>(std::move(rdsw), size);
+
     case zimcompBzip2:
       throw std::runtime_error("bzip2 not enabled in this library");
+
     default:
       throw ZimFileFormatError("Invalid compression flag");
   }
@@ -103,16 +85,21 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
 // Cluster
 ////////////////////////////////////////////////////////////////////////////////
 
-  std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset)
-  {
-    CompressionType comp;
-    bool extended;
-    std::shared_ptr<const Reader> reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
-    if (comp == zimcompDefault || comp == zimcompNone)
-      return std::make_shared<NonCompressedCluster>(reader, extended);
+std::shared_ptr<Cluster>
+Cluster::read(const Reader& zimReader, offset_t clusterOffset)
+{
+  const uint8_t clusterInfo = zimReader.read(clusterOffset);
 
-    return std::make_shared<CompressedCluster>(reader, comp, extended);
-  }
+  const CompressionType comp = static_cast<CompressionType>(clusterInfo & 0x0F);
+  const bool extended = clusterInfo & 0x10;
+
+  const std::shared_ptr<const Reader> clusterReader(zimReader.sub_reader(clusterOffset+offset_t(1)));
+
+  if (comp == zimcompDefault || comp == zimcompNone)
+    return std::make_shared<NonCompressedCluster>(clusterReader, extended);
+
+  return std::make_shared<CompressedCluster>(clusterReader, comp, extended);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // NonCompressedCluster
@@ -242,18 +229,17 @@ Blob idsBlob2zimBlob(const IDataStream::Blob& blob, size_t offset, size_t size)
 
 CompressedCluster::CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended)
   : Cluster(isExtended)
+  , ds_(getUncompressedClusterDataStream(reader, comp))
   , compression_(comp)
 {
   ASSERT(compression_, >, zimcompNone);
 
-  ReaderDataStreamWrapper rdsw(reader.get());
-
   if ( isExtended )
-    readHeader<uint64_t>(rdsw);
+    readHeader<uint64_t>(*ds_);
   else
-    readHeader<uint32_t>(rdsw);
+    readHeader<uint32_t>(*ds_);
 
-  readBlobs(rdsw);
+  readBlobs(*ds_);
 }
 
 bool
