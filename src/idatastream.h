@@ -23,6 +23,7 @@
 #include <exception>
 #include <memory>
 
+#include <zim/blob.h>
 #include "endian_tools.h"
 
 namespace zim
@@ -46,22 +47,7 @@ namespace zim
 class IDataStream
 {
 public: // types
-  class Blob
-  {
-  public: // types
-    typedef std::shared_ptr<const char> DataPtr;
-
-  public: // functions
-    Blob() : data_(), size_(0) {}
-    Blob(const DataPtr& data, size_t size) : data_(data) , size_(size) {}
-
-    const char* data() const { return data_.get(); }
-    size_t size() const { return size_; }
-
-  private: // data
-    DataPtr data_;
-    size_t size_;
-  };
+  typedef zim::Blob Blob;
 
 public: // functions
   virtual ~IDataStream() {}
