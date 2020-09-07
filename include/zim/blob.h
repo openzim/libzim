@@ -45,6 +45,7 @@ namespace zim
       const char* data() const  { return _data.get(); }
       const char* end() const   { return data() + _size; }
       size_type size() const     { return _size; }
+      Blob subBlob(size_type offset, size_type size) const;
 
     private: // data
       DataPtr _data;

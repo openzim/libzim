@@ -194,39 +194,6 @@ Blob NonCompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size
 // CompressedCluster
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace
-{
-
-class IDSBlobBuffer : public Buffer
-{
-  Blob blob_;
-  size_t offset_;
-  size_t size_;
-
-public:
-  IDSBlobBuffer(const Blob& blob, size_t offset, size_t size)
-    : Buffer(zsize_t(size))
-    , blob_(blob)
-    , offset_(offset)
-    , size_(size)
-  {
-    ASSERT(offset_, <=, blob_.size());
-    ASSERT(offset_+size_, <=, blob_.size());
-  }
-
-  const char* dataImpl(offset_t offset) const
-  {
-    return blob_.data() + offset_ + offset.v;
-  }
-};
-
-Blob idsBlob2zimBlob(const Blob& blob, size_t offset, size_t size)
-{
-  return Blob(std::make_shared<IDSBlobBuffer>(blob, offset, size));
-}
-
-} // unnamed namespace
-
 CompressedCluster::CompressedCluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended)
   : Cluster(isExtended)
   , ds_(getUncompressedClusterDataStream(reader, comp))
@@ -302,8 +269,7 @@ CompressedCluster::getBlob(blob_index_t n) const
   std::lock_guard<std::mutex> lock(blobAccessMutex_);
   ensureBlobIsDecompressed(n);
   ASSERT(n.v, <, blobs_.size());
-  const Blob& blob = blobs_[n.v];
-  return idsBlob2zimBlob(blob, 0, blob.size());
+  return blobs_[n.v];
 }
 
 Blob
@@ -312,7 +278,7 @@ CompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   std::lock_guard<std::mutex> lock(blobAccessMutex_);
   ensureBlobIsDecompressed(n);
   ASSERT(n.v, <, blobs_.size());
-  return idsBlob2zimBlob(blobs_[n.v], offset.v, size.v);
+  return blobs_[n.v].subBlob(offset.v, size.v);
 }
 
 } // namespace zim

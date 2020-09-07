@@ -52,7 +52,12 @@ Blob::Blob(std::shared_ptr<const Buffer> buffer)
    _size(size_type(buffer->size()))
 {}
 
-
-
+Blob
+Blob::subBlob(size_type offset, size_type size) const
+{
+  ASSERT(offset, <=, _size);
+  ASSERT(offset+size, <=, _size);
+  return Blob(DataPtr(_data, _data.get() + offset), size);
+}
 
 } //zim
