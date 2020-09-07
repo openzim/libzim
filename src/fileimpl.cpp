@@ -33,6 +33,7 @@
 #include "log.h"
 #include "envvalue.h"
 #include "md5.h"
+#include "readerdatastreamwrapper.h"
 
 log_define("zim.file.impl")
 
@@ -78,7 +79,8 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw ZimFileFormatError("zim-file is too small to contain a header");
     }
     try {
-      header.read(zimReader->get_buffer(offset_t(0), zsize_t(Fileheader::size)));
+      ReaderDataStreamWrapper rdsw(zimReader);
+      header.read(rdsw);
     } catch (ZimFileFormatError& e) {
       throw e;
     } catch (...) {

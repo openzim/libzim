@@ -23,7 +23,7 @@
 #include <algorithm>
 #include "log.h"
 #include "endian_tools.h"
-#include "buffer.h"
+#include "idatastream.h"
 #ifdef _WIN32
 # include "io.h"
 #else
@@ -62,9 +62,9 @@ namespace zim
     _write(out_fd, header, Fileheader::size);
   }
 
-  void Fileheader::read(std::shared_ptr<const Buffer> buffer)
+  void Fileheader::read(IDataStream& ds)
   {
-    uint32_t magicNumber = buffer->as<uint32_t>(offset_t(0));
+    uint32_t magicNumber = ds.read<uint32_t>();
     if (magicNumber != Fileheader::zimMagic)
     {
       log_error("invalid magic number " << magicNumber << " found - "
@@ -72,7 +72,7 @@ namespace zim
       throw ZimFileFormatError("Invalid magic number");
     }
 
-    uint16_t major_version = buffer->as<uint16_t>(offset_t(4));
+    uint16_t major_version = ds.read<uint16_t>();
     if (major_version != zimClassicMajorVersion && major_version != zimExtendedMajorVersion)
     {
       log_error("invalid zimfile major version " << major_version << " found - "
@@ -81,21 +81,22 @@ namespace zim
     }
     setMajorVersion(major_version);
 
-    setMinorVersion(buffer->as<uint16_t>(offset_t(6)));
+    setMinorVersion(ds.read<uint16_t>());
 
     Uuid uuid;
-    std::copy(buffer->data(offset_t(8)), buffer->data(offset_t(24)), uuid.data);
+    const Blob uuidBlob = ds.readBlob(sizeof(uuid.data));
+    std::copy(uuidBlob.data(), uuidBlob.end(), uuid.data);
     setUuid(uuid);
 
-    setArticleCount(buffer->as<uint32_t>(offset_t(24)));
-    setClusterCount(buffer->as<uint32_t>(offset_t(28)));
-    setUrlPtrPos(buffer->as<uint64_t>(offset_t(32)));
-    setTitleIdxPos(buffer->as<uint64_t>(offset_t(40)));
-    setClusterPtrPos(buffer->as<uint64_t>(offset_t(48)));
-    setMimeListPos(buffer->as<uint64_t>(offset_t(56)));
-    setMainPage(buffer->as<uint32_t>(offset_t(64)));
-    setLayoutPage(buffer->as<uint32_t>(offset_t(68)));
-    setChecksumPos(buffer->as<uint64_t>(offset_t(72)));
+    setArticleCount(ds.read<uint32_t>());
+    setClusterCount(ds.read<uint32_t>());
+    setUrlPtrPos(ds.read<uint64_t>());
+    setTitleIdxPos(ds.read<uint64_t>());
+    setClusterPtrPos(ds.read<uint64_t>());
+    setMimeListPos(ds.read<uint64_t>());
+    setMainPage(ds.read<uint32_t>());
+    setLayoutPage(ds.read<uint32_t>());
+    setChecksumPos(ds.read<uint64_t>());
 
     sanity_check();
   }

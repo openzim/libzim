@@ -33,7 +33,7 @@
 
 namespace zim
 {
-  class Buffer;
+  class IDataStream;
   class Fileheader
   {
     public:
@@ -72,7 +72,7 @@ namespace zim
       {}
 
       void write(int out_fd) const;
-      void read(std::shared_ptr<const Buffer> buffer);
+      void read(IDataStream& ds);
 
       // Do some sanity check, raise a ZimFileFormateError is
       // something is wrong.

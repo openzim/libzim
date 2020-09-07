@@ -29,12 +29,13 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "gtest/gtest.h"
 
 #include <zim/fileheader.h>
 
-#include "../src/buffer.h"
+#include "../src/bufdatastream.h"
 
 #include "tempfile.h"
 
@@ -43,16 +44,16 @@ namespace
 
 using zim::unittests::TempFile;
 
-std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
+std::vector<char> write_to_buffer(zim::Fileheader &header)
 {
   const TempFile tmpFile("test_header");
   const auto tmp_fd = tmpFile.fd();
   header.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  auto buf = std::make_shared<zim::MemoryBuffer>(zim::zsize_t(size));
+  std::vector<char> buf(size);
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, buf->buf(), size) == -1)
+  if (read(tmp_fd, &buf[0], size) == -1)
     throw std::runtime_error("Cannot read");
   return buf;
 }
@@ -81,8 +82,9 @@ TEST(HeaderTest, read_write_header)
   ASSERT_EQ(header.getMimeListPos(), 72U);
 
   auto buffer = write_to_buffer(header);
+  zim::BufDataStream bds(&buffer[0], buffer.size());
   zim::Fileheader header2;
-  header2.read(buffer);
+  header2.read(bds);
 
   ASSERT_EQ(header2.getUuid(), "1234567890abcdef");
   ASSERT_EQ(header2.getArticleCount(), 4711U);
