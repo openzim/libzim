@@ -121,7 +121,7 @@ class CompressedCluster : public Cluster
     std::vector<size_t> blobSizes_;
 
     mutable std::mutex blobAccessMutex_;
-    mutable std::vector<IDataStream::Blob> blobs_;
+    mutable std::vector<Blob> blobs_;
 };
 
 } // unnamed namespace

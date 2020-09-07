@@ -89,7 +89,7 @@ private: // data
   std::unique_ptr<IDataStream> encodedDataStream_;
   size_t inputBytesLeft_; // count of bytes left in the input stream
   DecoderState decoderState_;
-  IDataStream::Blob encodedDataChunk_;
+  Blob encodedDataChunk_;
 };
 
 } // namespace zim

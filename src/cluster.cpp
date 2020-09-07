@@ -199,12 +199,12 @@ namespace
 
 class IDSBlobBuffer : public Buffer
 {
-  IDataStream::Blob blob_;
+  Blob blob_;
   size_t offset_;
   size_t size_;
 
 public:
-  IDSBlobBuffer(const IDataStream::Blob& blob, size_t offset, size_t size)
+  IDSBlobBuffer(const Blob& blob, size_t offset, size_t size)
     : Buffer(zsize_t(size))
     , blob_(blob)
     , offset_(offset)
@@ -220,7 +220,7 @@ public:
   }
 };
 
-Blob idsBlob2zimBlob(const IDataStream::Blob& blob, size_t offset, size_t size)
+Blob idsBlob2zimBlob(const Blob& blob, size_t offset, size_t size)
 {
   return Blob(std::make_shared<IDSBlobBuffer>(blob, offset, size));
 }
@@ -302,7 +302,7 @@ CompressedCluster::getBlob(blob_index_t n) const
   std::lock_guard<std::mutex> lock(blobAccessMutex_);
   ensureBlobIsDecompressed(n);
   ASSERT(n.v, <, blobs_.size());
-  const IDataStream::Blob& blob = blobs_[n.v];
+  const Blob& blob = blobs_[n.v];
   return idsBlob2zimBlob(blob, 0, blob.size());
 }
 

@@ -33,11 +33,6 @@ std::shared_ptr<Buffer> memoryViewBuffer(const char* str, size_t size)
   return std::make_shared<MemoryViewBuffer>(str, zsize_t(size));
 }
 
-std::string toString(const IDataStream::Blob& blob)
-{
-  return std::string(blob.data(), blob.size());
-}
-
 TEST(ReaderDataStreamWrapper, shouldJustWork)
 {
   char data[] = "abcdefghijklmnopqrstuvwxyz";
@@ -51,8 +46,8 @@ TEST(ReaderDataStreamWrapper, shouldJustWork)
   ReaderDataStreamWrapper rdsw(readerPtr);
 
   ASSERT_EQ(1234,         rdsw.read<uint32_t>());
-  ASSERT_EQ("efgh",       toString(rdsw.readBlob(4)));
-  ASSERT_EQ("ijklmnopqr", toString(rdsw.readBlob(10)));
+  ASSERT_EQ("efgh",       std::string(rdsw.readBlob(4)));
+  ASSERT_EQ("ijklmnopqr", std::string(rdsw.readBlob(10)));
   ASSERT_EQ(-987654321,   rdsw.read<int64_t>());
 }
 

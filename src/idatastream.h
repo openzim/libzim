@@ -39,16 +39,13 @@ namespace zim
 //     for(uint32_t i=0; i < n; ++i)
 //     {
 //        const uint16_t blobSize = s.read<uint16_t>();
-//        IDataStream::Blob blob = s.readBlob(blobSize);
+//        Blob blob = s.readBlob(blobSize);
 //        bar(blob, blobSize);
 //     }
 //   }
 //
 class IDataStream
 {
-public: // types
-  typedef zim::Blob Blob;
-
 public: // functions
   virtual ~IDataStream() {}
 
@@ -92,7 +89,7 @@ IDataStream::read()
 }
 
 inline
-IDataStream::Blob
+Blob
 IDataStream::readBlob(size_t size)
 {
   return readBlobImpl(size);

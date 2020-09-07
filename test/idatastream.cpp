@@ -57,18 +57,13 @@ TEST(IDataStream, readBlob)
   const char zerobuf[N] = {0};
   InfiniteZeroStream izs;
   IDataStream& ids = izs;
-  const IDataStream::Blob blob = ids.readBlob(N);
+  const zim::Blob blob = ids.readBlob(N);
   EXPECT_EQ(0, memcmp(blob.data(), zerobuf, N));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // BufDataStream
 ////////////////////////////////////////////////////////////////////////////////
-
-std::string toString(const IDataStream::Blob& blob)
-{
-  return std::string(blob.data(), blob.size());
-}
 
 TEST(BufDataStream, shouldJustWork)
 {
@@ -82,11 +77,11 @@ TEST(BufDataStream, shouldJustWork)
   ASSERT_EQ(1234,         ids.read<uint32_t>());
 
   const auto blob1 = ids.readBlob(4);
-  ASSERT_EQ("efgh", toString(blob1));
+  ASSERT_EQ("efgh", std::string(blob1));
   ASSERT_EQ(data + 4, blob1.data());
 
   const auto blob2 = ids.readBlob(10);
-  ASSERT_EQ("ijklmnopqr", toString(blob2));
+  ASSERT_EQ("ijklmnopqr", std::string(blob2));
   ASSERT_EQ(data + 8, blob2.data());
 
   ASSERT_EQ(-987654321,   ids.read<int64_t>());

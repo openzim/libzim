@@ -77,11 +77,6 @@ makeBufDataStream(const std::string* s)
   return std::unique_ptr<zim::IDataStream>(new zim::BufDataStream(data, size));
 }
 
-std::string toString(const zim::IDataStream::Blob& blob)
-{
-  return std::string(blob.data(), blob.size());
-}
-
 template<typename T>
 class DecodedDataStreamTest : public testing::Test {
   protected:
@@ -110,7 +105,7 @@ TYPED_TEST(DecodedDataStreamTest, smallCompressedData)
   zim::DecodedDataStream<CompressionInfo> dds(std::move(bds), compData.size());
   for (int i=0; i<N; i++)
   {
-    ASSERT_EQ(s, toString(dds.readBlob(s.size()))) << "i: " << i;
+    ASSERT_EQ(s, std::string(dds.readBlob(s.size()))) << "i: " << i;
   }
 }
 
@@ -124,7 +119,7 @@ TYPED_TEST(DecodedDataStreamTest, largeCompressedData)
 
   std::unique_ptr<zim::IDataStream> bds(makeBufDataStream(&compData));
   zim::DecodedDataStream<CompressionInfo> dds(std::move(bds), compData.size());
-  ASSERT_EQ(text, toString(dds.readBlob(text.size())));
+  ASSERT_EQ(text, std::string(dds.readBlob(text.size())));
 }
 
 TYPED_TEST(DecodedDataStreamTest, compressedDataFollowedByGarbage)
@@ -140,7 +135,7 @@ TYPED_TEST(DecodedDataStreamTest, compressedDataFollowedByGarbage)
   zim::DecodedDataStream<CompressionInfo> dds(std::move(bds), inputData.size());
   for (int i=0; i<N; i++)
   {
-    ASSERT_EQ(s, toString(dds.readBlob(s.size()))) << "i: " << i;
+    ASSERT_EQ(s, std::string(dds.readBlob(s.size()))) << "i: " << i;
   }
 }
 
