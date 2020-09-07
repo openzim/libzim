@@ -49,6 +49,20 @@ offset_t readOffset(const Reader& reader, size_t idx)
   return offset;
 }
 
+std::unique_ptr<const Reader>
+getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
+{
+  if (!zimReader.can_read(offset, size)) {
+    throw ZimFileFormatError("Reading out of zim file.");
+  }
+#ifdef ENABLE_USE_BUFFER_HEADER
+  const auto buf = zimReader.get_buffer(offset, size);
+  return std::unique_ptr<Reader>(new BufferReader(buf));
+#else
+  return zimReader.sub_reader(offset, size);
+#endif
+}
+
 } //unnamed namespace
 
   //////////////////////////////////////////////////////////////////////
@@ -87,41 +101,14 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
-    // urlPtrOffsetReader
     zsize_t size(header.getArticleCount() * 8);
-    if (!zimReader->can_read(offset_t(header.getUrlPtrPos()), size)) {
-      throw ZimFileFormatError("Reading out of zim file.");
-    }
-#ifdef ENABLE_USE_BUFFER_HEADER
-    urlPtrOffsetReader = std::unique_ptr<Reader>(new BufferReader(
-	zimReader->get_buffer(offset_t(header.getUrlPtrPos()), size)));
-#else
-    urlPtrOffsetReader = zimReader->sub_reader(offset_t(header.getUrlPtrPos()), size);
-#endif
+    urlPtrOffsetReader = getHeaderSubReader(*zimReader, offset_t(header.getUrlPtrPos()), size);
 
-    // Create titleIndexBuffer
     size = zsize_t(header.getArticleCount() * 4);
-    if (!zimReader->can_read(offset_t(header.getTitleIdxPos()), size)) {
-      throw ZimFileFormatError("Reading out of zim file.");
-    }
-#ifdef ENABLE_USE_BUFFER_HEADER
-    titleIndexReader = std::unique_ptr<Reader>(new BufferReader(
-        zimReader->get_buffer(offset_t(header.getTitleIdxPos()), size)));
-#else
-    titleIndexReader = zimReader->sub_reader(offset_t(header.getTitleIdxPos()), size);
-#endif
+    titleIndexReader = getHeaderSubReader(*zimReader, offset_t(header.getTitleIdxPos()), size);
 
-    // clusterOffsetBuffer
     size = zsize_t(header.getClusterCount() * 8);
-    if (!zimReader->can_read(offset_t(header.getClusterPtrPos()), size)) {
-      throw ZimFileFormatError("Reading out of zim file.");
-    }
-#ifdef ENABLE_USE_BUFFER_HEADER
-    clusterOffsetReader = std::unique_ptr<Reader>(new BufferReader(
-        zimReader->get_buffer(offset_t(header.getClusterPtrPos()), size)));
-#else
-    clusterOffsetReader = zimReader->sub_reader(offset_t(header.getClusterPtrPos()), size);
-#endif
+    clusterOffsetReader = getHeaderSubReader(*zimReader, offset_t(header.getClusterPtrPos()), size);
 
     if (!getCountClusters())
       log_warn("no clusters found");

@@ -57,7 +57,7 @@ class Reader {
     }
     virtual offset_t offset() const = 0;
 
-    bool can_read(offset_t offset, zsize_t size);
+    bool can_read(offset_t offset, zsize_t size) const;
 };
 
 };

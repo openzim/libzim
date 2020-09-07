@@ -150,7 +150,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
   }
 }
 
-bool Reader::can_read(offset_t offset, zsize_t size)
+bool Reader::can_read(offset_t offset, zsize_t size) const
 {
     return (offset.v <= this->size().v && (offset.v+size.v) <= this->size().v);
 }
