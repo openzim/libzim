@@ -32,18 +32,17 @@ namespace zim
   class Buffer;
   class Blob
   {
-      const char* _data;
+      std::shared_ptr<const char> _data;
       size_type _size;
-      std::shared_ptr<const Buffer> _buffer;
 
     public:
       Blob();
       Blob(const char* data, size_type size);
       Blob(std::shared_ptr<const Buffer> buffer);
 
-      operator std::string() const { return std::string(_data, _size); }
-      const char* data() const  { return _data; }
-      const char* end() const   { return _data + _size; }
+      operator std::string() const { return std::string(data(), _size); }
+      const char* data() const  { return _data.get(); }
+      const char* end() const   { return data() + _size; }
       size_type size() const     { return _size; }
   };
 
