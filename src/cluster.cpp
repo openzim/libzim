@@ -20,9 +20,10 @@
 #include "cluster.h"
 #include <zim/blob.h>
 #include <zim/error.h>
-#include "file_reader.h"
+#include "reader.h"
 #include "endian_tools.h"
 #include "readerdatastreamwrapper.h"
+#include "bufdatastream.h"
 #include "decodeddatastream.h"
 #include <algorithm>
 #include <stdlib.h>
@@ -128,7 +129,8 @@ offset_t NonCompressedCluster::read_header()
   // read first offset, which specifies, how many offsets we need to read
   OFFSET_TYPE offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
 
-  size_t n_offset = offset / sizeof(OFFSET_TYPE);
+  const size_t S = sizeof(OFFSET_TYPE);
+  size_t n_offset = offset / S;
   const offset_t data_address(offset);
 
   // read offsets
@@ -136,17 +138,16 @@ offset_t NonCompressedCluster::read_header()
   offsets.reserve(n_offset);
   offsets.push_back(offset_t(0));
 
-  auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
-  offset_t current = offset_t(sizeof(OFFSET_TYPE));
+  const Blob clusterHeader = reader->read_blob(offset_t(S), zsize_t(offset-S));
+  BufDataStream bds(clusterHeader.data(), clusterHeader.size());
   while (--n_offset)
   {
-    OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
+    OFFSET_TYPE new_offset = bds.read<OFFSET_TYPE>();
     ASSERT(new_offset, >=, offset);
     ASSERT(new_offset, <=, reader->size().v);
 
     offset = new_offset;
     offsets.push_back(offset_t(offset - data_address.v));
-    current += sizeof(OFFSET_TYPE);
   }
   return data_address;
 }
