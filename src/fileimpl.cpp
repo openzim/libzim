@@ -304,7 +304,7 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     while (true) {
         bufferDirentZone.reserve(size_type(bufferSize));
         zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        const MemoryViewBuffer direntBuffer(bufferDirentZone.data(), bufferSize);
+        const Blob direntBuffer(bufferDirentZone.data(), bufferSize.v);
         try {
           dirent = std::make_shared<const Dirent>(direntBuffer);
         } catch (InvalidSize&) {

@@ -30,7 +30,7 @@
 
 namespace zim
 {
-  class Buffer;
+  class Blob;
   class InvalidSize : public std::exception {};
   class Dirent
   {
@@ -64,7 +64,7 @@ namespace zim
           ns('\0')
       {}
 
-      explicit Dirent(const Buffer& buffer);
+      explicit Dirent(const Blob& buffer);
 
       bool isRedirect() const                 { return mimeType == redirectMimeType; }
       bool isLinktarget() const               { return mimeType == linktargetMimeType; }
