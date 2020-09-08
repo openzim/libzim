@@ -47,6 +47,7 @@ namespace zim
       size_type size() const     { return _size; }
       Blob subBlob(size_type offset, size_type size) const;
 
+      static std::shared_ptr<char> makeBuffer(size_t size);
     private: // data
       DataPtr _data;
       size_type _size;

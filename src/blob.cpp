@@ -60,4 +60,10 @@ Blob::subBlob(size_type offset, size_type size) const
   return Blob(DataPtr(_data, _data.get() + offset), size);
 }
 
+std::shared_ptr<char>
+Blob::makeBuffer(size_t size)
+{
+  return std::shared_ptr<char>(new char[size], std::default_delete<char[]>());
+}
+
 } //zim

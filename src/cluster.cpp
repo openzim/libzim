@@ -111,15 +111,12 @@ NonCompressedCluster::NonCompressedCluster(std::shared_ptr<const Reader> reader_
     reader(reader_),
     startOffset(0)
 {
-  auto d = reader->offset();
   if (isExtended) {
     startOffset = read_header<uint64_t>();
   } else {
     startOffset = read_header<uint32_t>();
   }
   reader = reader->sub_reader(startOffset, zsize_t(offsets.back().v));
-  auto d1 = reader->offset();
-  ASSERT(d+startOffset, ==, d1);
 }
 
 /* This return the number of char read */

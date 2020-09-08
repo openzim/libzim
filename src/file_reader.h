@@ -50,25 +50,6 @@ class FileReader : public Reader {
     zsize_t _size;
 };
 
-class BufferReader : public Reader {
-  public:
-    BufferReader(std::shared_ptr<const Buffer> source)
-      : source(source) {}
-    virtual ~BufferReader() {};
-
-    zsize_t size() const;
-    offset_t offset() const;
-
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    char read(offset_t offset) const;
-    Blob read_blob(offset_t offset, zsize_t size) const override;
-    std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const;
-    std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
-
-  private:
-    std::shared_ptr<const Buffer> source;
-};
-
-};
+} // namespace zim
 
 #endif // ZIM_FILE_READER_H_

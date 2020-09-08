@@ -45,12 +45,14 @@
 #include "gtest/gtest.h"
 
 #include <zim/zim.h>
+#include <zim/blob.h>
 
 #include "../src/buffer.h"
 #include "../src/cluster.h"
 #include "../src/file_part.h"
 #include "../src/file_compound.h"
 #include "../src/file_reader.h"
+#include "../src/memory_reader.h"
 #include "../src/writer/cluster.h"
 #include "../src/endian_tools.h"
 #include "../src/config.h"
@@ -62,7 +64,7 @@ namespace
 
 using zim::unittests::TempFile;
 
-std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
+zim::Blob write_to_buffer(zim::writer::Cluster& cluster)
 {
   const TempFile tmpFile("test_cluster");
   cluster.close();
@@ -70,11 +72,11 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   cluster.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  auto buf = std::make_shared<zim::MemoryBuffer>(zim::zsize_t(size));
+  auto buf = zim::Blob::makeBuffer(size);
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, buf->buf(), size) == -1)
+  if (read(tmp_fd, buf.get(), size) == -1)
     throw std::runtime_error("Cannot read");
-  return buf;
+  return zim::Blob(buf, size);
 }
 
 TEST(ClusterTest, create_cluster)
@@ -110,7 +112,7 @@ TEST(ClusterTest, read_write_cluster)
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
   auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MemoryReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.getCompression(), zim::zimcompNone);
   ASSERT_EQ(cluster2.isExtended, false);
@@ -129,7 +131,7 @@ TEST(ClusterTest, read_write_empty)
   cluster.addData(0, zim::zsize_t(0));
 
   auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MemoryReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.getCompression(), zim::zimcompNone);
   ASSERT_EQ(cluster2.isExtended, false);
@@ -153,7 +155,7 @@ TEST(ClusterTest, read_write_clusterZ)
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
   auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MemoryReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 3U);
@@ -181,7 +183,7 @@ TEST(ClusterTest, read_write_clusterLzma)
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
   auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MemoryReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 3U);
@@ -207,7 +209,7 @@ TEST(ClusterTest, read_write_clusterZstd)
   cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
 
   auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MemoryReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 3U);
@@ -239,7 +241,7 @@ TEST(ClusterTest, read_write_extended_cluster)
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
   zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
 
-  std::shared_ptr<zim::Buffer> buffer;
+  zim::Blob buffer;
   {
     char* blob3 = nullptr;
     try {
@@ -271,7 +273,7 @@ TEST(ClusterTest, read_write_extended_cluster)
       buffer = write_to_buffer(cluster);
     }
   }
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MemoryReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, true);
   ASSERT_EQ(cluster2.count().v, 4U);

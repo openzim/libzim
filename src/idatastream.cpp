@@ -30,7 +30,7 @@ namespace zim
 Blob
 IDataStream::readBlobImpl(size_t size)
 {
-  std::shared_ptr<char> buf(new char[size], std::default_delete<char[]>());
+  std::shared_ptr<char> buf(Blob::makeBuffer(size));
   readImpl(buf.get(), size);
   return Blob(buf, size);
 }

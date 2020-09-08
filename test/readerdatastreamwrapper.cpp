@@ -19,7 +19,7 @@
 
 #include "readerdatastreamwrapper.h"
 #include "buffer.h"
-#include "file_reader.h"
+#include "memory_reader.h"
 
 #include "gtest/gtest.h"
 
@@ -28,19 +28,14 @@ namespace
 
 using namespace zim;
 
-std::shared_ptr<Buffer> memoryViewBuffer(const char* str, size_t size)
-{
-  return std::make_shared<MemoryViewBuffer>(str, zsize_t(size));
-}
-
 TEST(ReaderDataStreamWrapper, shouldJustWork)
 {
   char data[] = "abcdefghijklmnopqrstuvwxyz";
   toLittleEndian(uint32_t(1234), data);
   toLittleEndian(int64_t(-987654321), data+18);
 
-  const auto buffer = memoryViewBuffer(data, sizeof(data));
-  const auto bufReader = std::make_shared<BufferReader>(buffer);
+  const Blob buffer(data, sizeof(data));
+  const auto bufReader = std::make_shared<MemoryReader>(buffer);
   const std::shared_ptr<const Reader> readerPtr = bufReader;
 
   ReaderDataStreamWrapper rdsw(readerPtr);
