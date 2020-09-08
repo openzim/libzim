@@ -32,6 +32,16 @@ struct NoDelete
   template<class T> void operator()(T*) {}
 };
 
+// This shared_ptr is used as a source object for the std::shared_ptr
+// aliasing constructor (with the purpose of avoiding the control block
+// allocation) for the case when the referred data must not be deleted.
+const Blob::DataPtr& nonOwnedDataPtr()
+{
+  const char data[] = "";
+  static Blob::DataPtr dataPtr(data, NoDelete());
+  return dataPtr;
+}
+
 } // unnamed namespace
 
 Blob::Blob()
@@ -40,7 +50,7 @@ Blob::Blob()
 {}
 
 Blob::Blob(const char* data, size_type size)
- : _data(data, NoDelete()),
+ : _data(nonOwnedDataPtr(), data),
    _size(size)
 {
   ASSERT(size, <, SIZE_MAX);
