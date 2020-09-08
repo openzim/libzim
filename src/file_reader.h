@@ -34,7 +34,6 @@ class FileReader : public Reader {
     zsize_t size() const { return _size; };
     offset_t offset() const { return _offset; };
 
-    char read(offset_t offset) const;
     void read(char* dest, offset_t offset, zsize_t size) const;
     Blob read_blob(offset_t offset, zsize_t size) const override;
 

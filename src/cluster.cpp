@@ -89,7 +89,7 @@ getUncompressedClusterDataStream(std::shared_ptr<const Reader> reader, Compressi
 std::shared_ptr<Cluster>
 Cluster::read(const Reader& zimReader, offset_t clusterOffset)
 {
-  const uint8_t clusterInfo = zimReader.read(clusterOffset);
+  const uint8_t clusterInfo = zimReader.read_uint<uint8_t>(clusterOffset);
 
   const CompressionType comp = static_cast<CompressionType>(clusterInfo & 0x0F);
   const bool extended = clusterInfo & 0x10;

@@ -55,33 +55,6 @@ FileReader::FileReader(std::shared_ptr<const FileCompound> source, offset_t offs
   ASSERT(offset.v+size.v, <=, source->fsize().v);
 }
 
-char FileReader::read(offset_t offset) const {
-  ASSERT(offset.v, <, _size.v);
-  offset += _offset;
-  auto part_pair = source->locate(offset);
-  auto& fhandle = part_pair->second->fhandle();
-  offset_t local_offset = offset - part_pair->first.min;
-  ASSERT(local_offset, <=, part_pair->first.max);
-  char ret;
-  try {
-    fhandle.readAt(&ret, zsize_t(1), local_offset);
-  } catch (std::runtime_error& e) {
-    //Error while reading.
-    std::ostringstream s;
-    s << "Cannot read a char.\n";
-    s << " - File part is " <<  part_pair->second->filename() << "\n";
-    s << " - File part size is " << part_pair->second->size().v << "\n";
-    s << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - local offset is " << local_offset.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
-  };
-  return ret;
-}
-
-
 void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
   ASSERT(offset.v, <, _size.v);
   ASSERT(offset.v+size.v, <=, _size.v);

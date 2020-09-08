@@ -57,12 +57,4 @@ void MemoryReader::read(char* dest, offset_t offset, zsize_t size) const
   }
 }
 
-
-char MemoryReader::read(offset_t offset) const
-{
-  ASSERT(offset.v, <, data_.size());
-  return data_.data()[offset.v];
-}
-
-
 } // namespace zim

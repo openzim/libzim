@@ -47,7 +47,6 @@ class Reader {
       read(tmp_buf, offset, zsize_t(sizeof(T)));
       return fromLittleEndian<T>(tmp_buf);
     }
-    virtual char read(offset_t offset) const = 0;
 
     virtual Blob read_blob(offset_t offset, zsize_t size) const = 0;
     virtual std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const = 0;
