@@ -50,10 +50,6 @@ class Reader {
     virtual char read(offset_t offset) const = 0;
 
     virtual Blob read_blob(offset_t offset, zsize_t size) const = 0;
-    virtual std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const = 0;
-    std::shared_ptr<const Buffer> get_buffer(offset_t offset) const {
-      return get_buffer(offset, zsize_t(size().v-offset.v));
-    }
     virtual std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const = 0;
     std::unique_ptr<const Reader> sub_reader(offset_t offset) const {
       return sub_reader(offset, zsize_t(size().v-offset.v));

@@ -30,13 +30,6 @@ Blob MemoryReader::read_blob(offset_t offset, zsize_t size) const
   return data_.subBlob(offset.v, size.v);
 }
 
-std::shared_ptr<const Buffer>
-MemoryReader::get_buffer(offset_t offset, zsize_t size) const
-{
-  // must never reach here
-  throw std::logic_error("MemoryReader::get_buffer() must not be called");
-}
-
 std::unique_ptr<const Reader>
 MemoryReader::sub_reader(offset_t offset, zsize_t size) const
 {

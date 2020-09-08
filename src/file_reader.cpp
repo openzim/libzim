@@ -123,10 +123,6 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
 
 Blob FileReader::read_blob(offset_t offset, zsize_t size) const
 {
-  return Blob(get_buffer(offset, size));
-}
-
-std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
   try {
@@ -142,7 +138,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     auto local_offset = offset + _offset - range.min;
     ASSERT(size, <=, part->size());
     int fd = part->fhandle().getNativeHandle();
-    return std::make_shared<MMapBuffer>(fd, local_offset, size);
+    return Blob(std::make_shared<MMapBuffer>(fd, local_offset, size));
   } catch(MMapException& e)
 #endif
   {
@@ -151,7 +147,7 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     // [TODO] Use Windows equivalent for mmap.
     auto ret_buffer = std::make_shared<MemoryBuffer>(size);
     read(ret_buffer->buf(), offset, size);
-    return ret_buffer;
+    return Blob(ret_buffer);
   }
 }
 

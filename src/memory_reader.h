@@ -37,7 +37,6 @@ public:
   void read(char* dest, offset_t offset, zsize_t size) const override;
   char read(offset_t offset) const override;
   Blob read_blob(offset_t offset, zsize_t size) const override;
-  std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const override;
   std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const override;
 
 private:
