@@ -42,6 +42,11 @@ struct NoDelete
   template<class T> void operator()(T*) {}
 };
 
+// This shared_ptr is used as a source object for the std::shared_ptr
+// aliasing constructor (with the purpose of avoiding the control block
+// allocation) for the case when the referred data must not be deleted.
+static Buffer::DataPtr nonOwnedDataPtr((char*)nullptr, NoDelete());
+
 } // unnamed namespace
 
 const Buffer Buffer::sub_buffer(offset_t offset, zsize_t size) const
@@ -59,7 +64,7 @@ const Buffer Buffer::makeBuffer(const DataPtr& data, zsize_t size)
 
 const Buffer Buffer::makeBuffer(const char* data, zsize_t size)
 {
-  return Buffer(DataPtr(data, NoDelete()), size);
+  return Buffer(DataPtr(nonOwnedDataPtr, data), size);
 }
 
 Buffer Buffer::makeBuffer(zsize_t size)
