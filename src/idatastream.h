@@ -59,6 +59,8 @@ public: // functions
   // Reads a blob of the specified size from the stream
   Blob readBlob(size_t size);
 
+  std::string readString(size_t size);
+
 private: // virtual methods
   // Reads exactly 'nbytes' bytes into the provided buffer 'buf'
   // (which must be at least that big). Throws an exception if
@@ -93,6 +95,15 @@ Blob
 IDataStream::readBlob(size_t size)
 {
   return readBlobImpl(size);
+}
+
+inline
+std::string
+IDataStream::readString(size_t size)
+{
+  std::string s(size, '\0');
+  readImpl(&s[0], size);
+  return s;
 }
 
 } // namespace zim
