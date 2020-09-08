@@ -450,9 +450,9 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     if (!header.hasChecksum())
       return std::string();
 
-    std::shared_ptr<const Buffer> chksum;
+    Blob chksum;
     try {
-      chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
+      chksum = zimReader->read_blob(offset_t(header.getChecksumPos()), zsize_t(16));
     } catch (...)
     {
       log_warn("error reading checksum");
@@ -465,7 +465,7 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     char* p = hexdigest;
     for (int i = 0; i < 16; ++i)
     {
-      uint8_t v = chksum->at(offset_t(i));
+      uint8_t v = chksum.data()[i];
       *p++ = hex[v >> 4];
       *p++ = hex[v & 0xf];
     }
@@ -505,10 +505,10 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     }
 
     unsigned char chksumCalc[16];
-    auto chksumFile = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
+    auto chksumFile = zimReader->read_blob(offset_t(header.getChecksumPos()), zsize_t(16));
 
     zim_MD5Final(chksumCalc, &md5ctx);
-    if (std::memcmp(chksumFile->data(), chksumCalc, 16) != 0)
+    if (std::memcmp(chksumFile.data(), chksumCalc, 16) != 0)
     {
       return false;
     }

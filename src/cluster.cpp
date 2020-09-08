@@ -164,8 +164,7 @@ Blob NonCompressedCluster::getBlob(blob_index_t n) const
     if (blobSize.v > SIZE_MAX) {
       return Blob();
     }
-    auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
-    return Blob(buffer);
+    return reader->read_blob(offsets[blob_index_type(n)], blobSize);;
   } else {
     return Blob();
   }
@@ -183,8 +182,7 @@ Blob NonCompressedCluster::getBlob(blob_index_t n, offset_t offset, zsize_t size
       return Blob();
     }
     offset += offsets[blob_index_type(n)];
-    auto buffer = reader->get_buffer(offset, size);
-    return Blob(buffer);
+    return reader->read_blob(offset, size);
   } else {
     return Blob();
   }
