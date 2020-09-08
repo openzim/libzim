@@ -53,7 +53,6 @@ class Reader {
     std::unique_ptr<const Reader> sub_reader(offset_t offset) const {
       return sub_reader(offset, zsize_t(size().v-offset.v));
     }
-    virtual offset_t offset() const = 0;
 
     bool can_read(offset_t offset, zsize_t size) const;
 };

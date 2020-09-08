@@ -41,13 +41,6 @@ zsize_t MemoryReader::size() const
   return zsize_t(data_.size());
 }
 
-offset_t MemoryReader::offset() const
-{
-  // must never reach here
-  throw std::logic_error("MemoryReader::offset() must not be called");
-}
-
-
 void MemoryReader::read(char* dest, offset_t offset, zsize_t size) const
 {
   ASSERT(offset.v, <, data_.size());

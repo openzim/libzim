@@ -32,7 +32,6 @@ public:
   virtual ~MemoryReader() {}
 
   zsize_t size() const override;
-  offset_t offset() const;
 
   void read(char* dest, offset_t offset, zsize_t size) const override;
   Blob read_blob(offset_t offset, zsize_t size) const override;
