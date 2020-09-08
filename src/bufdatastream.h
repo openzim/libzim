@@ -33,8 +33,17 @@ class BufDataStream : public IDataStream
 public: // functions
   explicit BufDataStream(const char* data, size_t size)
     : data_(data)
-    , size_(size)
+    , end_(data+size)
   {}
+
+public:
+  const char* data() const { return data_; }
+  size_t size() const { return end_ - data_; }
+  void skip(size_t nbytes)
+  {
+    ASSERT(data_ + nbytes, <=, end_);
+    data_ += nbytes;
+  }
 
 protected:
   void readImpl(void* buf, size_t nbytes) override;
@@ -43,7 +52,7 @@ protected:
 
 private: // data
   const char* data_;
-  size_t size_;
+  const char* const end_;
 };
 
 } // namespace zim

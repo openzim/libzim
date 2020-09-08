@@ -42,19 +42,17 @@ IDataStream::readBlobImpl(size_t size)
 void
 BufDataStream::readImpl(void* buf, size_t nbytes)
 {
-  ASSERT(nbytes, <=, size_);
+  ASSERT(data_ + nbytes, <=, end_);
   memcpy(buf, data_, nbytes);
-  data_ += nbytes;
-  size_ -= nbytes;
+  skip(nbytes);
 }
 
 Blob
 BufDataStream::readBlobImpl(size_t nbytes)
 {
-  ASSERT(nbytes, <=, size_);
+  ASSERT(data_ + nbytes, <=, end_);
   const Blob blob(data_, nbytes);
-  data_ += nbytes;
-  size_ -= nbytes;
+  skip(nbytes);
   return blob;
 }
 
