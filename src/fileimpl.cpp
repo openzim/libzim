@@ -22,6 +22,7 @@
 #include "_dirent.h"
 #include "file_compound.h"
 #include "file_reader.h"
+#include "memory_reader.h"
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -56,8 +57,8 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     throw ZimFileFormatError("Reading out of zim file.");
   }
 #ifdef ENABLE_USE_BUFFER_HEADER
-  const auto buf = zimReader.get_buffer(offset, size);
-  return std::unique_ptr<Reader>(new BufferReader(buf));
+  const Blob headerSection = zimReader.read_blob(offset, size);
+  return std::unique_ptr<Reader>(new MemoryReader(headerSection));
 #else
   return zimReader.sub_reader(offset, size);
 #endif
