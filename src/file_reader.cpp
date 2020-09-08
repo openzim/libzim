@@ -121,6 +121,11 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
 }
 
 
+Blob FileReader::read_blob(offset_t offset, zsize_t size) const
+{
+  return Blob(get_buffer(offset, size));
+}
+
 std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
@@ -165,6 +170,11 @@ std::unique_ptr<const Reader> FileReader::sub_reader(offset_t offset, zsize_t si
 
 //BufferReader::BufferReader(std::shared_ptr<Buffer> source)
 //  : source(source) {}
+
+Blob BufferReader::read_blob(offset_t offset, zsize_t size) const
+{
+  return Blob(get_buffer(offset, size));
+}
 
 std::shared_ptr<const Buffer> BufferReader::get_buffer(offset_t offset, zsize_t size) const
 {

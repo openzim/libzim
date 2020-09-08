@@ -22,6 +22,8 @@
 
 #include <memory>
 
+#include <zim/blob.h>
+
 #include "zim_types.h"
 #include "endian_tools.h"
 #include "debug.h"
@@ -47,6 +49,7 @@ class Reader {
     }
     virtual char read(offset_t offset) const = 0;
 
+    virtual Blob read_blob(offset_t offset, zsize_t size) const = 0;
     virtual std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const = 0;
     std::shared_ptr<const Buffer> get_buffer(offset_t offset) const {
       return get_buffer(offset, zsize_t(size().v-offset.v));

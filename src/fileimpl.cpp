@@ -136,21 +136,21 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
     auto endMimeList = std::min(header.getUrlPtrPos(), static_cast<zim::offset_type>(1024));
     size = zsize_t(endMimeList - header.getMimeListPos());
-    auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
-    offset_t current = offset_t(0);
-    while (current.v < size.v)
+    const Blob mimeListBlob = zimReader->read_blob(offset_t(header.getMimeListPos()), size);
+    offset_type current = 0;
+    while (current < size.v)
     {
-      offset_type len = strlen(buffer->data(current));
+      offset_type len = strlen(mimeListBlob.data() + current);
 
       if (len == 0) {
         break;
       }
 
-      if (current.v + len >= size.v) {
+      if (current + len >= size.v) {
        throw(ZimFileFormatError("Error getting mimelists."));
       }
 
-      std::string mimeType(buffer->data(current), len);
+      std::string mimeType(mimeListBlob.data() + current, len);
       mimeTypes.push_back(mimeType);
 
       current += (len + 1);

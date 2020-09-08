@@ -36,6 +36,7 @@ class FileReader : public Reader {
 
     char read(offset_t offset) const;
     void read(char* dest, offset_t offset, zsize_t size) const;
+    Blob read_blob(offset_t offset, zsize_t size) const override;
     std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const;
 
     std::unique_ptr<const Reader> sub_reader(offset_t offest, zsize_t size) const;
@@ -60,6 +61,7 @@ class BufferReader : public Reader {
 
     void read(char* dest, offset_t offset, zsize_t size) const;
     char read(offset_t offset) const;
+    Blob read_blob(offset_t offset, zsize_t size) const override;
     std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
