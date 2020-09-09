@@ -144,8 +144,8 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
-    auto ret_buffer = std::make_shared<MemoryBuffer>(size);
-    read(ret_buffer->buf(), offset, size);
+    auto ret_buffer = std::make_shared<SharedBuffer>(size);
+    read(const_cast<char*>(ret_buffer->data()), offset, size);
     return ret_buffer;
   }
 }

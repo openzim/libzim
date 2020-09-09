@@ -77,27 +77,13 @@ class SharedBuffer : public Buffer {
   public: // functions
     SharedBuffer(const char* data, zsize_t size);
     SharedBuffer(const DataPtr& data, zsize_t size);
+    SharedBuffer(zsize_t size);
 
   protected:
     const char* dataImpl(offset_t offset) const;
 
   private: //data
     DataPtr m_data;
-};
-
-
-class MemoryBuffer : public Buffer {
-  public:
-    explicit MemoryBuffer(zsize_t size);
-    MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
-
-    char* buf() { return _data.get(); }
-
-  protected:
-    const char* dataImpl(offset_t offset) const;
-
-  private:
-    const std::unique_ptr<char[]> _data;
 };
 
 

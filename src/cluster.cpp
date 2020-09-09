@@ -80,7 +80,8 @@ getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
     default:
       throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
   }
-  return std::make_shared<MemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
+  auto shared_data = std::shared_ptr<const char>(uncompressed_data.release(), std::default_delete<char[]>());
+  return std::make_shared<SharedBuffer>(shared_data, uncompressed_size);
 }
 
 std::unique_ptr<const Reader>

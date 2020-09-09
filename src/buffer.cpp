@@ -86,30 +86,16 @@ SharedBuffer::SharedBuffer(const DataPtr& data, zsize_t size)
     m_data(data)
 {}
 
+SharedBuffer::SharedBuffer(zsize_t size)
+  : Buffer(size),
+    m_data(new char[size.v], std::default_delete<char[]>())
+{}
+
 const char*
 SharedBuffer::dataImpl(offset_t offset) const {
   return m_data.get() + offset.v;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-// MemoryBuffer
-////////////////////////////////////////////////////////////////////////////////
-
-MemoryBuffer::MemoryBuffer(zsize_t size)
-  : Buffer(size)
-  , _data(new char[size.v])
-{}
-
-MemoryBuffer::MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
-  : Buffer(size)
-  , _data(std::move(buffer))
-{}
-
-const char*
-MemoryBuffer::dataImpl(offset_t offset) const {
-    return _data.get() + offset.v;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // MMapBuffer
