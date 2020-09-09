@@ -32,6 +32,11 @@
 #include <algorithm>
 
 
+#ifndef _WIN32
+#  include <sys/mman.h>
+#  include <unistd.h>
+#endif
+
 #if defined(_MSC_VER)
 # include <io.h>
 # include <BaseTsd.h>
@@ -93,6 +98,56 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const {
   ASSERT(size.v, ==, 0U);
 }
 
+#ifdef ENABLE_USE_MMAP
+namespace
+{
+
+class MMapException : std::exception {};
+
+char*
+mmapReadOnly(int fd, offset_type offset, size_type size)
+{
+#if defined(__APPLE__) || defined(__OpenBSD__)
+  const auto MAP_FLAGS = MAP_PRIVATE;
+#elif defined(__FreeBSD__)
+  const auto MAP_FLAGS = MAP_PRIVATE|MAP_PREFAULT_READ;
+#else
+  const auto MAP_FLAGS = MAP_PRIVATE|MAP_POPULATE;
+#endif
+
+  const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
+  if (p == MAP_FAILED )
+  {
+    std::ostringstream s;
+    s << "Cannot mmap size " << size << " at off " << offset
+      << " : " << strerror(errno);
+    throw std::runtime_error(s.str());
+  }
+  return p;
+}
+
+Blob::DataPtr
+makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
+{
+  const offset_type pageAlignedOffset(offset.v & ~(sysconf(_SC_PAGE_SIZE) - 1));
+  const size_t alignmentAdjustment = offset.v - pageAlignedOffset;
+  size += alignmentAdjustment;
+
+#if !MMAP_SUPPORT_64
+  if(pa_offset.v >= INT32_MAX) {
+    throw MMapException();
+  }
+#endif
+  char* const mmappedAddress = mmapReadOnly(fd, pageAlignedOffset, size.v);
+  const auto munmapDeleter = [mmappedAddress, size](char* ) {
+                               munmap(mmappedAddress, size.v);
+                             };
+
+  return Blob::DataPtr(mmappedAddress+alignmentAdjustment, munmapDeleter);
+}
+
+} // unnamed namespace
+#endif // ENABLE_USE_MMAP
 
 Blob FileReader::read_blob(offset_t offset, zsize_t size) const
 {
@@ -111,7 +166,7 @@ Blob FileReader::read_blob(offset_t offset, zsize_t size) const
     auto local_offset = offset + _offset - range.min;
     ASSERT(size, <=, part->size());
     int fd = part->fhandle().getNativeHandle();
-    return Blob(std::make_shared<MMapBuffer>(fd, local_offset, size));
+    return Blob(makeMmappedBuffer(fd, local_offset, size), size.v);
   } catch(MMapException& e)
 #endif
   {
