@@ -72,8 +72,7 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
   FileImpl::FileImpl(const std::string& fname)
     : zimFile(new FileCompound(fname)),
       zimReader(new FileReader(zimFile)),
-      bufferDirentZone(256),
-      bufferDirentLock(PTHREAD_MUTEX_INITIALIZER),
+      direntReader(zimReader),
       filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
@@ -285,37 +284,8 @@ getHeaderSubReader(const FileReader& zimReader, offset_t offset, zsize_t size)
     pthread_mutex_unlock(&direntCacheLock);
 
     offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
-    // We don't know the size of the dirent because it depends of the size of
-    // the title, url and extra parameters.
-    // This is a pitty but we have no choices.
-    // We cannot take a buffer of the size of the file, it would be really inefficient.
-    // Let's do try, catch and retry while chosing a smart value for the buffer size.
-    // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
-    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
 
-    pthread_mutex_lock(&bufferDirentLock);
-    zsize_t bufferSize = zsize_t(256);
-    // On very small file, the offset + 256 is higher than the size of the file,
-    // even if the file is valid.
-    // So read only to the end of the file.
-    auto totalSize = zimReader->size();
-    if (indexOffset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-indexOffset.v);
-    std::shared_ptr<const Dirent> dirent;
-    while (true) {
-        bufferDirentZone.reserve(size_type(bufferSize));
-        zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        const Blob direntBuffer(bufferDirentZone.data(), bufferSize.v);
-        try {
-          dirent = std::make_shared<const Dirent>(direntBuffer);
-        } catch (InvalidSize&) {
-          // buffer size is not enougth, try again :
-          bufferSize += 256;
-          continue;
-        }
-        // Success !
-        break;
-    }
-    pthread_mutex_unlock(&bufferDirentLock);
+    const auto dirent = direntReader.readDirent(indexOffset);
 
     log_debug("dirent read from " << indexOffset);
     pthread_mutex_lock(&direntCacheLock);

@@ -36,6 +36,8 @@
 #include "file_reader.h"
 #include "file_compound.h"
 #include "zim_types.h"
+#include "direntreader.h"
+
 
 namespace zim
 {
@@ -43,8 +45,7 @@ namespace zim
   {
       std::shared_ptr<FileCompound> zimFile;
       std::shared_ptr<FileReader> zimReader;
-      std::vector<char> bufferDirentZone;
-      pthread_mutex_t bufferDirentLock;
+      DirentReader direntReader;
       Fileheader header;
       std::string filename;
 
