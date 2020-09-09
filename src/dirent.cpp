@@ -114,11 +114,12 @@ std::shared_ptr<const Dirent> DirentReader::readDirent(offset_t offset)
   // for the buffer size. Most dirent will be "Article" entry (header's size
   // == 16) without extra parameters. Let's hope that url + title size will
   // be < 256 and if not try again with a bigger size.
+  const size_type CHUNK_SIZE = 256;
 
-  size_t bufferSize(std::min(256UL, zimReader_->size().v-offset.v));
+  size_type bufferSize(std::min(CHUNK_SIZE, zimReader_->size().v-offset.v));
   auto dirent = std::make_shared<Dirent>();
   std::lock_guard<std::mutex> lock(bufferMutex_);
-  for ( ; ; bufferSize += 256 ) {
+  for ( ; ; bufferSize += CHUNK_SIZE ) {
     buffer_.resize(bufferSize);
     zimReader_->read(buffer_.data(), offset, zsize_t(bufferSize));
     if ( initDirent(*dirent, buffer_) )
