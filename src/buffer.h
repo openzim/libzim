@@ -70,21 +70,6 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 };
 
 
-class MemoryBuffer : public Buffer {
-  public:
-    explicit MemoryBuffer(zsize_t size);
-    MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
-
-    char* buf() { return _data.get(); }
-
-  protected:
-    const char* dataImpl(offset_t offset) const;
-
-  private:
-    const std::unique_ptr<char[]> _data;
-};
-
-
 #ifdef ENABLE_USE_MMAP
 class MMapException : std::exception {};
 

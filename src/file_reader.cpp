@@ -118,9 +118,9 @@ Blob FileReader::read_blob(offset_t offset, zsize_t size) const
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
-    auto ret_buffer = std::make_shared<MemoryBuffer>(size);
-    read(ret_buffer->buf(), offset, size);
-    return Blob(ret_buffer);
+    auto ret_buffer = Blob::makeBuffer(size.v);
+    read(ret_buffer.get(), offset, size);
+    return Blob(ret_buffer, size.v);
   }
 }
 
