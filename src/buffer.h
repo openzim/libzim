@@ -86,23 +86,6 @@ class SharedBuffer : public Buffer {
     DataPtr m_data;
 };
 
-
-#ifdef ENABLE_USE_MMAP
-class MMapException : std::exception {};
-
-class MMapBuffer : public Buffer {
-  public:
-    MMapBuffer(int fd, offset_t offset, zsize_t size);
-    ~MMapBuffer();
-
-    const char* dataImpl(offset_t offset) const;
-
-  private:
-    offset_t _offset;
-    char* _data;
-};
-#endif
-
 };
 
 #endif //ZIM_BUFFER_H_
