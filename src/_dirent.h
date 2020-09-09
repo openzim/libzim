@@ -30,7 +30,6 @@
 
 namespace zim
 {
-  class Blob;
   class InvalidSize : public std::exception {};
   class Dirent
   {

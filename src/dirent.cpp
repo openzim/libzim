@@ -20,7 +20,6 @@
 #include "_dirent.h"
 #include "direntreader.h"
 #include <zim/zim.h>
-#include <zim/blob.h>
 #include "bufdatastream.h"
 #include "log.h"
 #include <algorithm>
@@ -38,7 +37,7 @@ namespace zim
   const uint16_t Dirent::linktargetMimeType;
   const uint16_t Dirent::deletedMimeType;
 
-  bool DirentReader::initDirent(Dirent& dirent, const Blob& direntData) const
+  bool DirentReader::initDirent(Dirent& dirent, const BufType& direntData) const
   {
     BufDataStream bds(direntData.data(), direntData.size());
     uint16_t mimeType = bds.read<uint16_t>();
@@ -121,10 +120,9 @@ namespace zim
     auto dirent = std::make_shared<Dirent>();
     std::lock_guard<std::mutex> lock(bufferMutex_);
     for ( ; ; bufferSize += 256 ) {
-      buffer_.reserve(bufferSize);
+      buffer_.resize(bufferSize);
       zimReader_->read(buffer_.data(), offset, zsize_t(bufferSize));
-      const Blob direntBuffer(buffer_.data(), bufferSize);
-      if ( initDirent(*dirent, Blob(buffer_.data(), bufferSize)) )
+      if ( initDirent(*dirent, buffer_) )
         return dirent;
     }
   }
