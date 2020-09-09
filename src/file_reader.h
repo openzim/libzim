@@ -31,12 +31,12 @@ class FileReader : public Reader {
     FileReader(std::shared_ptr<const FileCompound> source);
     ~FileReader() {};
 
-    zsize_t size() const { return _size; };
+    zsize_t size() const override { return _size; };
 
-    void read(char* dest, offset_t offset, zsize_t size) const;
+    void read(char* dest, offset_t offset, zsize_t size) const override;
     Blob read_blob(offset_t offset, zsize_t size) const override;
 
-    std::unique_ptr<const Reader> sub_reader(offset_t offest, zsize_t size) const;
+    std::unique_ptr<const Reader> sub_reader(offset_t offest, zsize_t size) const override;
 
   private:
     FileReader(std::shared_ptr<const FileCompound> source, offset_t offset);
