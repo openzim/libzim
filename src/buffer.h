@@ -86,17 +86,6 @@ class SharedBuffer : public Buffer {
 };
 
 
-class MemoryViewBuffer : public Buffer {
-  public:
-    MemoryViewBuffer(const char* buffer, zsize_t size);
-
-  protected:
-    const char* dataImpl(offset_t offset) const;
-
-  protected:
-    const char* const _data;
-};
-
 class MemoryBuffer : public Buffer {
   public:
     explicit MemoryBuffer(zsize_t size);
