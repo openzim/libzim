@@ -19,7 +19,6 @@
 
 #include <zim/zim.h>
 #include "memory_reader.h"
-#include "buffer.h"
 #include <string.h>
 
 namespace zim

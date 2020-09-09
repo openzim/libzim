@@ -30,8 +30,6 @@
 
 namespace zim {
 
-class Buffer;
-
 class Reader {
   public:
     Reader() {};

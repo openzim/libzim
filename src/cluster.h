@@ -22,7 +22,6 @@
 #define ZIM_CLUSTER_H
 
 #include <zim/zim.h>
-#include "buffer.h"
 #include "zim_types.h"
 #include "reader.h"
 #include "idatastream.h"

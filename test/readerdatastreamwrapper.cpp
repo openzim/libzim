@@ -18,7 +18,6 @@
  */
 
 #include "readerdatastreamwrapper.h"
-#include "buffer.h"
 #include "memory_reader.h"
 
 #include "gtest/gtest.h"

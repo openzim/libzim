@@ -18,7 +18,6 @@ common_sources = [
     'file_reader.cpp',
     'memory_reader.cpp',
     'blob.cpp',
-    'buffer.cpp',
     'md5.c',
     'search.cpp',
     'search_iterator.cpp',

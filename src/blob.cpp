@@ -20,7 +20,6 @@
 
 #include "zim/blob.h"
 #include "debug.h"
-#include "buffer.h"
 
 namespace zim {
 
@@ -56,11 +55,6 @@ Blob::Blob(const char* data, size_type size)
   ASSERT(size, <, SIZE_MAX);
   ASSERT(data, <, (void*)(SIZE_MAX-size));
 }
-
-Blob::Blob(std::shared_ptr<const Buffer> buffer)
- : _data(buffer, buffer->data()),
-   _size(size_type(buffer->size()))
-{}
 
 Blob
 Blob::subBlob(size_type offset, size_type size) const

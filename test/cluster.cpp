@@ -47,7 +47,6 @@
 #include <zim/zim.h>
 #include <zim/blob.h>
 
-#include "../src/buffer.h"
 #include "../src/cluster.h"
 #include "../src/file_part.h"
 #include "../src/file_compound.h"

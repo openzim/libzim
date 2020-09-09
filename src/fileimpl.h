@@ -32,7 +32,6 @@
 #include "concurrent_cache.h"
 #include "_dirent.h"
 #include "cluster.h"
-#include "buffer.h"
 #include "file_reader.h"
 #include "file_compound.h"
 #include "zim_types.h"
