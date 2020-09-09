@@ -36,15 +36,28 @@
 
 #include "../src/buffer.h"
 #include "../src/_dirent.h"
+#include "../src/direntreader.h"
 #include "../src/writer/_dirent.h"
 
+<<<<<<< HEAD
 #include "tools.h"
+=======
+#include "../src/memory_reader.h"
+
+#include "tempfile.h"
+>>>>>>> bb6fd44... Enter DirentReader
 
 namespace
 {
 
 using zim::unittests::TempFile;
 using zim::unittests::write_to_buffer;
+
+zim::Dirent read_from_buffer(const zim::Blob& buf)
+{
+  zim::DirentReader direntReader(std::make_shared<zim::MemoryReader>(buf));
+  return *direntReader.readDirent(zim::offset_t(0));
+}
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
 {
@@ -95,7 +108,7 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent.getVersion(), 0U);
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(buffer);
+  zim::Dirent dirent2(read_from_buffer(buffer));
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -121,7 +134,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(buffer);
+  zim::Dirent dirent2(read_from_buffer(buffer));
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -147,7 +160,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent.getRedirectIndex().v, 321U);
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(buffer);
+  zim::Dirent dirent2(read_from_buffer(buffer));
 
   ASSERT_TRUE(dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -156,6 +169,55 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent2.getRedirectIndex().v, 321U);
 }
 
+<<<<<<< HEAD
+=======
+TEST(DirentTest, read_write_linktarget_dirent)
+{
+  zim::writer::Dirent dirent;
+  dirent.setUrl(zim::writer::Url('A', "Bar"));
+  dirent.setLinktarget();
+
+  ASSERT_TRUE(!dirent.isRedirect());
+  ASSERT_TRUE(dirent.isLinktarget());
+  ASSERT_TRUE(!dirent.isDeleted());
+  ASSERT_EQ(dirent.getNamespace(), 'A');
+  ASSERT_EQ(dirent.getUrl(), "Bar");
+
+  auto buffer = write_to_buffer(dirent);
+  zim::Dirent dirent2(read_from_buffer(buffer));
+
+  ASSERT_TRUE(!dirent2.isRedirect());
+  ASSERT_TRUE(dirent2.isLinktarget());
+  ASSERT_TRUE(!dirent2.isDeleted());
+  ASSERT_EQ(dirent2.getNamespace(), 'A');
+  ASSERT_EQ(dirent2.getUrl(), "Bar");
+  ASSERT_EQ(dirent2.getTitle(), "Bar");
+}
+
+TEST(DirentTest, read_write_deleted_dirent)
+{
+  zim::writer::Dirent dirent;
+  dirent.setUrl(zim::writer::Url('A', "Bar"));
+  dirent.setDeleted();
+
+  ASSERT_TRUE(!dirent.isRedirect());
+  ASSERT_TRUE(!dirent.isLinktarget());
+  ASSERT_TRUE(dirent.isDeleted());
+  ASSERT_EQ(dirent.getNamespace(), 'A');
+  ASSERT_EQ(dirent.getUrl(), "Bar");
+
+  auto buffer = write_to_buffer(dirent);
+  zim::Dirent dirent2(read_from_buffer(buffer));
+
+  ASSERT_TRUE(!dirent2.isRedirect());
+  ASSERT_TRUE(!dirent2.isLinktarget());
+  ASSERT_TRUE(dirent2.isDeleted());
+  ASSERT_EQ(dirent2.getNamespace(), 'A');
+  ASSERT_EQ(dirent2.getUrl(), "Bar");
+  ASSERT_EQ(dirent2.getTitle(), "Bar");
+}
+
+>>>>>>> bb6fd44... Enter DirentReader
 TEST(DirentTest, dirent_size)
 {
   zim::writer::Dirent dirent;

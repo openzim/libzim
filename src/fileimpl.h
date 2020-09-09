@@ -37,6 +37,8 @@
 #include "file_compound.h"
 #include "fileheader.h"
 #include "zim_types.h"
+#include "direntreader.h"
+
 
 namespace zim
 {
@@ -45,6 +47,10 @@ namespace zim
       std::shared_ptr<FileCompound> zimFile;
       offset_t archiveStartOffset;
       std::shared_ptr<Reader> zimReader;
+<<<<<<< HEAD
+=======
+      DirentReader direntReader;
+>>>>>>> bb6fd44... Enter DirentReader
       Fileheader header;
 
       std::unique_ptr<const Reader> clusterOffsetReader;
