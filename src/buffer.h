@@ -70,6 +70,22 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 };
 
 
+class SharedBuffer : public Buffer {
+  public: // types
+    typedef std::shared_ptr<const char> DataPtr;
+
+  public: // functions
+    SharedBuffer(const char* data, zsize_t size);
+    SharedBuffer(const DataPtr& data, zsize_t size);
+
+  protected:
+    const char* dataImpl(offset_t offset) const;
+
+  private: //data
+    DataPtr m_data;
+};
+
+
 class MemoryViewBuffer : public Buffer {
   public:
     MemoryViewBuffer(const char* buffer, zsize_t size);

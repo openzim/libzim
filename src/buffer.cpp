@@ -62,6 +62,37 @@ std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// SharedBufferBuffer
+////////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+
+struct NoDelete
+{
+  template<class T> void operator()(T*) {}
+};
+
+} // unnamed namespace
+
+
+SharedBuffer::SharedBuffer(const char* data, zsize_t size)
+  : Buffer(size),
+    m_data(data, NoDelete())
+{}
+
+SharedBuffer::SharedBuffer(const DataPtr& data, zsize_t size)
+  : Buffer(size),
+    m_data(data)
+{}
+
+const char*
+SharedBuffer::dataImpl(offset_t offset) const {
+  return m_data.get() + offset.v;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // MemoryViewBuffer
 ////////////////////////////////////////////////////////////////////////////////
 
