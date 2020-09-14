@@ -62,9 +62,9 @@ namespace zim
     _write(out_fd, header, Fileheader::size);
   }
 
-  void Fileheader::read(std::shared_ptr<const Buffer> buffer)
+  void Fileheader::read(const Buffer& buffer)
   {
-    uint32_t magicNumber = buffer->as<uint32_t>(offset_t(0));
+    uint32_t magicNumber = buffer.as<uint32_t>(offset_t(0));
     if (magicNumber != Fileheader::zimMagic)
     {
       log_error("invalid magic number " << magicNumber << " found - "
@@ -72,7 +72,7 @@ namespace zim
       throw ZimFileFormatError("Invalid magic number");
     }
 
-    uint16_t major_version = buffer->as<uint16_t>(offset_t(4));
+    uint16_t major_version = buffer.as<uint16_t>(offset_t(4));
     if (major_version != zimClassicMajorVersion && major_version != zimExtendedMajorVersion)
     {
       log_error("invalid zimfile major version " << major_version << " found - "
@@ -81,21 +81,21 @@ namespace zim
     }
     setMajorVersion(major_version);
 
-    setMinorVersion(buffer->as<uint16_t>(offset_t(6)));
+    setMinorVersion(buffer.as<uint16_t>(offset_t(6)));
 
     Uuid uuid;
-    std::copy(buffer->data(offset_t(8)), buffer->data(offset_t(24)), uuid.data);
+    std::copy(buffer.data(offset_t(8)), buffer.data(offset_t(24)), uuid.data);
     setUuid(uuid);
 
-    setArticleCount(buffer->as<uint32_t>(offset_t(24)));
-    setClusterCount(buffer->as<uint32_t>(offset_t(28)));
-    setUrlPtrPos(buffer->as<uint64_t>(offset_t(32)));
-    setTitleIdxPos(buffer->as<uint64_t>(offset_t(40)));
-    setClusterPtrPos(buffer->as<uint64_t>(offset_t(48)));
-    setMimeListPos(buffer->as<uint64_t>(offset_t(56)));
-    setMainPage(buffer->as<uint32_t>(offset_t(64)));
-    setLayoutPage(buffer->as<uint32_t>(offset_t(68)));
-    setChecksumPos(buffer->as<uint64_t>(offset_t(72)));
+    setArticleCount(buffer.as<uint32_t>(offset_t(24)));
+    setClusterCount(buffer.as<uint32_t>(offset_t(28)));
+    setUrlPtrPos(buffer.as<uint64_t>(offset_t(32)));
+    setTitleIdxPos(buffer.as<uint64_t>(offset_t(40)));
+    setClusterPtrPos(buffer.as<uint64_t>(offset_t(48)));
+    setMimeListPos(buffer.as<uint64_t>(offset_t(56)));
+    setMainPage(buffer.as<uint32_t>(offset_t(64)));
+    setLayoutPage(buffer.as<uint32_t>(offset_t(68)));
+    setChecksumPos(buffer.as<uint64_t>(offset_t(72)));
 
     sanity_check();
   }

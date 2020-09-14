@@ -33,25 +33,23 @@
 
 namespace zim {
 
-class Buffer : public std::enable_shared_from_this<Buffer> {
+class Buffer {
   public: // types
     typedef std::shared_ptr<const char> DataPtr;
 
   public: // functions
-    explicit Buffer(const char* data, zsize_t size);
-    explicit Buffer(const DataPtr& data, zsize_t size);
-    explicit Buffer(zsize_t size);
-
-    Buffer(const Buffer& ) = delete;
-    void operator=(const Buffer& ) = delete;
+    static const Buffer makeBuffer(const char* data, zsize_t size);
+    static const Buffer makeBuffer(const DataPtr& data, zsize_t size);
+    static Buffer makeBuffer(zsize_t size);
 
     const char* data(offset_t offset=offset_t(0)) const;
+    char* data(offset_t offset=offset_t(0));
 
     char at(offset_t offset) const {
       return *(data(offset));
     }
     zsize_t size() const { return m_size; }
-    std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
+    const Buffer sub_buffer(offset_t offset, zsize_t size) const;
 
     template<typename T>
     T as(offset_t offset) const {
@@ -62,8 +60,11 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
 
     operator Blob() const { return Blob(m_data, m_size.v); }
 
-  private: //data
-    const zsize_t m_size;
+  private: // functions
+    Buffer(const DataPtr& data, zsize_t size);
+
+  private: // data
+    zsize_t m_size;
     DataPtr m_data;
 };
 

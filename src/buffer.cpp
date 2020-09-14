@@ -44,12 +44,27 @@ struct NoDelete
 
 } // unnamed namespace
 
-std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) const
+const Buffer Buffer::sub_buffer(offset_t offset, zsize_t size) const
 {
   ASSERT(offset.v, <=, m_size.v);
   ASSERT(offset.v+size.v, <=, m_size.v);
   auto sub_data = DataPtr(m_data, data(offset));
-  return std::make_shared<Buffer>(sub_data, size);
+  return Buffer(sub_data, size);
+}
+
+const Buffer Buffer::makeBuffer(const DataPtr& data, zsize_t size)
+{
+  return Buffer(data, size);
+}
+
+const Buffer Buffer::makeBuffer(const char* data, zsize_t size)
+{
+  return Buffer(DataPtr(data, NoDelete()), size);
+}
+
+Buffer Buffer::makeBuffer(zsize_t size)
+{
+  return Buffer(DataPtr(new char[size.v], std::default_delete<char[]>()), size);
 }
 
 Buffer::Buffer(const DataPtr& data, zsize_t size)
@@ -59,18 +74,19 @@ Buffer::Buffer(const DataPtr& data, zsize_t size)
   ASSERT(m_size.v, <, SIZE_MAX);
 }
 
-Buffer::Buffer(const char* data, zsize_t size)
-  : Buffer(DataPtr(data, NoDelete()), size)
-{}
-
-Buffer::Buffer(zsize_t size)
-  : Buffer(DataPtr(new char[size.v], std::default_delete<char[]>()), size)
-{}
-
 const char*
 Buffer::data(offset_t offset) const {
   ASSERT(offset.v, <=, m_size.v);
   return m_data.get() + offset.v;
 }
+
+char*
+Buffer::data(offset_t offset)  {
+  ASSERT(offset.v, <=, m_size.v);
+  // We know we can do this cast as the only way to get a non const Buffer is
+  // to use the factory allocating the memory for us.
+  return const_cast<char*>(m_data.get() + offset.v);
+}
+
 
 } //zim

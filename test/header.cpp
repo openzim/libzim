@@ -43,16 +43,16 @@ namespace
 
 using zim::unittests::TempFile;
 
-std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
+zim::Buffer write_to_buffer(zim::Fileheader &header)
 {
   const TempFile tmpFile("test_header");
   const auto tmp_fd = tmpFile.fd();
   header.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  auto buf = std::make_shared<zim::Buffer>(zim::zsize_t(size));
+  auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, const_cast<char*>(buf->data()), size) == -1)
+  if (read(tmp_fd, buf.data(), size) == -1)
     throw std::runtime_error("Cannot read");
   return buf;
 }

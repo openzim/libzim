@@ -58,7 +58,7 @@ zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset)
     return _read_size<uint32_t>(reader, offset);
 }
 
-std::shared_ptr<const Buffer>
+const Buffer
 getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
 {
   zsize_t uncompressed_size(0);
@@ -81,7 +81,7 @@ getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
       throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
   }
   auto shared_data = std::shared_ptr<const char>(uncompressed_data.release(), std::default_delete<char[]>());
-  return std::make_shared<Buffer>(shared_data, uncompressed_size);
+  return Buffer::makeBuffer(shared_data, uncompressed_size);
 }
 
 std::unique_ptr<const Reader>
@@ -162,7 +162,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
     offset_t current = offset_t(sizeof(OFFSET_TYPE));
     while (--n_offset)
     {
-      OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
+      OFFSET_TYPE new_offset = buffer.as<OFFSET_TYPE>(current);
       ASSERT(new_offset, >=, offset);
       ASSERT(new_offset, <=, reader->size().v);
 
@@ -188,7 +188,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
         return Blob();
       }
       auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
-      return *buffer;
+      return buffer;
     } else {
       return Blob();
     }
@@ -207,7 +207,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
       }
       offset += offsets[blob_index_type(n)];
       auto buffer = reader->get_buffer(offset, size);
-      return *buffer;
+      return buffer;
     } else {
       return Blob();
     }

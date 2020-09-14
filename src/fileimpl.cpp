@@ -151,7 +151,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     offset_t current = offset_t(0);
     while (current.v < size.v)
     {
-      offset_type len = strlen(buffer->data(current));
+      offset_type len = strlen(buffer.data(current));
 
       if (len == 0) {
         break;
@@ -161,7 +161,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
        throw(ZimFileFormatError("Error getting mimelists."));
       }
 
-      std::string mimeType(buffer->data(current), len);
+      std::string mimeType(buffer.data(current), len);
       mimeTypes.push_back(mimeType);
 
       current += (len + 1);
@@ -314,7 +314,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     while (true) {
         bufferDirentZone.reserve(size_type(bufferSize));
         zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        const Buffer direntBuffer(bufferDirentZone.data(), bufferSize);
+        auto direntBuffer = Buffer::makeBuffer(bufferDirentZone.data(), bufferSize);
         try {
           dirent = std::make_shared<const Dirent>(direntBuffer);
         } catch (InvalidSize&) {
@@ -461,27 +461,27 @@ offset_t readOffset(const Reader& reader, size_t idx)
     if (!header.hasChecksum())
       return std::string();
 
-    std::shared_ptr<const Buffer> chksum;
     try {
-      chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
+      auto chksum = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
+
+      char hexdigest[33];
+      hexdigest[32] = '\0';
+      static const char hex[] = "0123456789abcdef";
+      char* p = hexdigest;
+      for (int i = 0; i < 16; ++i)
+      {
+        uint8_t v = chksum.at(offset_t(i));
+        *p++ = hex[v >> 4];
+        *p++ = hex[v & 0xf];
+      }
+      log_debug("chksum=" << hexdigest);
+      return hexdigest;
     } catch (...)
     {
       log_warn("error reading checksum");
       return std::string();
     }
 
-    char hexdigest[33];
-    hexdigest[32] = '\0';
-    static const char hex[] = "0123456789abcdef";
-    char* p = hexdigest;
-    for (int i = 0; i < 16; ++i)
-    {
-      uint8_t v = chksum->at(offset_t(i));
-      *p++ = hex[v >> 4];
-      *p++ = hex[v & 0xf];
-    }
-    log_debug("chksum=" << hexdigest);
-    return hexdigest;
   }
 
   bool FileImpl::verify()
@@ -519,7 +519,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     auto chksumFile = zimReader->get_buffer(offset_t(header.getChecksumPos()), zsize_t(16));
 
     zim_MD5Final(chksumCalc, &md5ctx);
-    if (std::memcmp(chksumFile->data(), chksumCalc, 16) != 0)
+    if (std::memcmp(chksumFile.data(), chksumCalc, 16) != 0)
     {
       return false;
     }

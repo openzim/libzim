@@ -176,7 +176,7 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 } // unnamed namespace
 #endif // ENABLE_USE_MMAP
 
-std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t size) const {
+const Buffer FileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
   try {
@@ -192,15 +192,15 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     auto local_offset = offset + _offset - range.min;
     ASSERT(size, <=, part->size());
     int fd = part->fhandle().getNativeHandle();
-    return std::make_shared<Buffer>(makeMmappedBuffer(fd, local_offset, size), size);
+    return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
   } catch(MMapException& e)
 #endif
   {
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
-    auto ret_buffer = std::make_shared<Buffer>(size);
-    read(const_cast<char*>(ret_buffer->data()), offset, size);
+    auto ret_buffer = Buffer::makeBuffer(size);
+    read(const_cast<char*>(ret_buffer.data()), offset, size);
     return ret_buffer;
   }
 }
@@ -221,45 +221,43 @@ std::unique_ptr<const Reader> FileReader::sub_reader(offset_t offset, zsize_t si
 //BufferReader::BufferReader(std::shared_ptr<Buffer> source)
 //  : source(source) {}
 
-std::shared_ptr<const Buffer> BufferReader::get_buffer(offset_t offset, zsize_t size) const
+const Buffer BufferReader::get_buffer(offset_t offset, zsize_t size) const
 {
-  return source->sub_buffer(offset, size);
+  return source.sub_buffer(offset, size);
 }
 
 std::unique_ptr<const Reader> BufferReader::sub_reader(offset_t offset, zsize_t size) const
 {
-  //auto source_addr = source->data(0);
   auto sub_buff = get_buffer(offset, size);
-  //auto buff_addr = sub_buff->data(0);
   std::unique_ptr<const Reader> sub_read(new BufferReader(sub_buff));
   return sub_read;
 }
 
 zsize_t BufferReader::size() const
 {
-  return source->size();
+  return source.size();
 }
 
 offset_t BufferReader::offset() const
 {
-  return offset_t((offset_type)(static_cast<const void*>(source->data(offset_t(0)))));
+  return offset_t((offset_type)(static_cast<const void*>(source.data(offset_t(0)))));
 }
 
 
 void BufferReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <, source->size().v);
-  ASSERT(offset+offset_t(size.v), <=, offset_t(source->size().v));
+  ASSERT(offset.v, <, source.size().v);
+  ASSERT(offset+offset_t(size.v), <=, offset_t(source.size().v));
   if (! size ) {
     return;
   }
-  memcpy(dest, source->data(offset), size.v);
+  memcpy(dest, source.data(offset), size.v);
 }
 
 
 char BufferReader::read(offset_t offset) const {
-  ASSERT(offset.v, <, source->size().v);
+  ASSERT(offset.v, <, source.size().v);
   char dest;
-  dest = *source->data(offset);
+  dest = *source.data(offset);
   return dest;
 }
 

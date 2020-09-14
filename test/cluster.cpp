@@ -62,7 +62,7 @@ namespace
 
 using zim::unittests::TempFile;
 
-std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
+zim::Buffer write_to_buffer(zim::writer::Cluster& cluster)
 {
   const TempFile tmpFile("test_cluster");
   cluster.close();
@@ -70,9 +70,9 @@ std::shared_ptr<zim::Buffer> write_to_buffer(zim::writer::Cluster& cluster)
   cluster.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);
 
-  auto buf = std::make_shared<zim::Buffer>(zim::zsize_t(size));
+  auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, const_cast<char*>(buf->data()), size) == -1)
+  if (read(tmp_fd, buf.data(), size) == -1)
     throw std::runtime_error("Cannot read");
   return buf;
 }
@@ -239,7 +239,7 @@ TEST(ClusterTest, read_write_extended_cluster)
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
   zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
 
-  std::shared_ptr<zim::Buffer> buffer;
+  auto buffer = zim::Buffer::makeBuffer(nullptr, zim::zsize_t(0));
   {
     char* blob3 = nullptr;
     try {
