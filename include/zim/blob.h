@@ -29,22 +29,25 @@
 
 namespace zim
 {
-  class Buffer;
   class Blob
   {
-      const char* _data;
-      size_type _size;
-      std::shared_ptr<const Buffer> _buffer;
+    public: // types
+      using DataPtr = std::shared_ptr<const char>;
 
-    public:
+    public: // functions
       Blob();
       Blob(const char* data, size_type size);
-      Blob(std::shared_ptr<const Buffer> buffer);
+      Blob(const DataPtr& buffer, size_type size);
 
-      operator std::string() const { return std::string(_data, _size); }
-      const char* data() const  { return _data; }
-      const char* end() const   { return _data + _size; }
+      operator std::string() const { return std::string(_data.get(), _size); }
+      const char* data() const  { return _data.get(); }
+      const char* end() const   { return _data.get() + _size; }
       size_type size() const     { return _size; }
+
+   private:
+     DataPtr _data;
+     size_type _size;
+
   };
 
   inline std::ostream& operator<< (std::ostream& out, const Blob& blob)

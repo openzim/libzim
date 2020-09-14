@@ -188,7 +188,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
         return Blob();
       }
       auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
-      return Blob(buffer);
+      return *buffer;
     } else {
       return Blob();
     }
@@ -207,7 +207,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
       }
       offset += offsets[blob_index_type(n)];
       auto buffer = reader->get_buffer(offset, size);
-      return Blob(buffer);
+      return *buffer;
     } else {
       return Blob();
     }

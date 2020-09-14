@@ -29,6 +29,7 @@
 #include "zim_types.h"
 #include "endian_tools.h"
 #include "debug.h"
+#include <zim/blob.h>
 
 namespace zim {
 
@@ -58,6 +59,8 @@ class Buffer : public std::enable_shared_from_this<Buffer> {
       ASSERT(offset.v+sizeof(T), <=, m_size.v);
       return fromLittleEndian<T>(data(offset));
     }
+
+    operator Blob() const { return Blob(m_data, m_size.v); }
 
   private: //data
     const zsize_t m_size;
