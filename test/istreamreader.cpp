@@ -17,27 +17,27 @@
  *
  */
 
-#include "idatastream.h"
+#include "istreamreader.h"
 
 #include "gtest/gtest.h"
 
 namespace
 {
 
-using zim::IDataStream;
+using zim::IStreamReader;
 
-// Implement the IDataStream interface in the simplest way
-class InfiniteZeroStream : public IDataStream
+// Implement the IStreamReader interface in the simplest way
+class InfiniteZeroStream : public IStreamReader
 {
-  void readImpl(void* buf, size_t nbytes) { memset(buf, 0, nbytes); }
+  void readImpl(char* buf, zim::zsize_t nbytes) { memset(buf, 0, nbytes.v); }
 };
 
 // ... and test that it compiles and works as intended
 
-TEST(IDataStream, read)
+TEST(IStreamReader, read)
 {
   InfiniteZeroStream izs;
-  IDataStream& ids = izs;
+  IStreamReader& ids = izs;
   EXPECT_EQ(0, ids.read<int>());
   EXPECT_EQ(0L, ids.read<long>());
 
@@ -45,14 +45,17 @@ TEST(IDataStream, read)
   // EXPECT_EQ(0.0, ids.read<double>());
 }
 
-TEST(IDataStream, readBlob)
+TEST(IStreamReader, sub_reader)
 {
   const size_t N = 16;
   const char zerobuf[N] = {0};
   InfiniteZeroStream izs;
-  IDataStream& ids = izs;
-  const IDataStream::Blob blob = ids.readBlob(N);
-  EXPECT_EQ(0, memcmp(blob.data(), zerobuf, N));
+  IStreamReader& ids = izs;
+  auto subReader = ids.sub_reader(zim::zsize_t(N));
+  EXPECT_EQ(subReader->size().v, N);
+  auto buffer = subReader->get_buffer(zim::offset_t(0), zim::zsize_t(N));
+  EXPECT_EQ(buffer.size().v, N);
+  EXPECT_EQ(0, memcmp(buffer.data(), zerobuf, N));
 }
 
 } // unnamed namespace

@@ -17,17 +17,18 @@
  *
  */
 
-#include "idatastream.h"
+#include "istreamreader.h"
+#include "file_reader.h"
 
 namespace zim
 {
 
-IDataStream::Blob
-IDataStream::readBlobImpl(size_t size)
+std::unique_ptr<const Reader>
+IStreamReader::sub_reader(zsize_t size)
 {
-  std::shared_ptr<char> buf(new char[size], std::default_delete<char[]>());
-  readImpl(buf.get(), size);
-  return Blob(buf, size);
+  auto buffer = Buffer::makeBuffer(size);
+  readImpl(buffer.data(), size);
+  return std::unique_ptr<Reader>(new BufferReader(buffer));
 }
 
 } // namespace zim

@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "endian_tools.h"
+#include "reader.h"
 
 namespace zim
 {
@@ -43,27 +44,10 @@ namespace zim
 //     }
 //   }
 //
-class IDataStream
+class IStreamReader
 {
-public: // types
-  class Blob
-  {
-  private: // types
-    typedef std::shared_ptr<const char> DataPtr;
-
-  public: // functions
-    Blob(const DataPtr& data, size_t size) : data_(data) , size_(size) {}
-
-    const char* data() const { return data_.get(); }
-    size_t size() const { return size_; }
-
-  private: // data
-    DataPtr data_;
-    size_t size_;
-  };
-
 public: // functions
-  virtual ~IDataStream() {}
+  virtual ~IStreamReader() = default;
 
   // Reads a value of the said type from the stream
   //
@@ -73,19 +57,13 @@ public: // functions
   template<typename T> T read();
 
   // Reads a blob of the specified size from the stream
-  Blob readBlob(size_t size);
+  virtual std::unique_ptr<const Reader> sub_reader(zsize_t size);
 
 private: // virtual methods
   // Reads exactly 'nbytes' bytes into the provided buffer 'buf'
   // (which must be at least that big). Throws an exception if
   // more bytes are requested than can be retrieved.
-  virtual void readImpl(void* buf, size_t nbytes) = 0;
-
-  // By default a blob is returned as an independent object owning
-  // its own buffer. However, the function readBlobImpl() can be
-  // overriden so that it returns a blob referring to arbitrary
-  // pre-existing memory.
-  virtual Blob readBlobImpl(size_t size);
+  virtual void readImpl(char* buf, zsize_t nbytes) = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,19 +74,12 @@ private: // virtual methods
 // XXX: is encoded in little-endian form.
 template<typename T>
 inline T
-IDataStream::read()
+IStreamReader::read()
 {
-  const size_t N = sizeof(T);
-  char buf[N];
-  readImpl(&buf, N);
+  const zsize_t N(sizeof(T));
+  char buf[N.v];
+  readImpl(buf, N);
   return fromLittleEndian<T>(buf); // XXX: This handles only integral types
-}
-
-inline
-IDataStream::Blob
-IDataStream::readBlob(size_t size)
-{
-  return readBlobImpl(size);
 }
 
 } // namespace zim
