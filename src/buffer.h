@@ -33,59 +33,37 @@
 namespace zim {
 
 class Buffer : public std::enable_shared_from_this<Buffer> {
-  public:
-    explicit Buffer(zsize_t size)
-      : size_(size)
-    {
-      ASSERT(size_.v, <, SIZE_MAX);
-    };
-
-    Buffer(const Buffer& ) = delete;
-    void operator=(const Buffer& ) = delete;
-
-    virtual ~Buffer() {};
-    const char* data(offset_t offset=offset_t(0)) const {
-      ASSERT(offset.v, <=, size_.v);
-      return dataImpl(offset);
-    }
-
-    char at(offset_t offset) const {
-        return *(data(offset));
-    }
-    zsize_t size() const { return size_; }
-    std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
-
-    template<typename T>
-    T as(offset_t offset) const {
-      ASSERT(offset.v, <, size_.v);
-      ASSERT(offset.v+sizeof(T), <=, size_.v);
-      return fromLittleEndian<T>(data(offset));
-    }
-
-  protected:
-    virtual const char* dataImpl(offset_t offset) const = 0;
-
-  protected:
-    const zsize_t size_;
-};
-
-
-class SharedBuffer : public Buffer {
   public: // types
     typedef std::shared_ptr<const char> DataPtr;
 
   public: // functions
-    SharedBuffer(const char* data, zsize_t size);
-    SharedBuffer(const DataPtr& data, zsize_t size);
-    SharedBuffer(zsize_t size);
+    explicit Buffer(const char* data, zsize_t size);
+    explicit Buffer(const DataPtr& data, zsize_t size);
+    explicit Buffer(zsize_t size);
 
-  protected:
-    const char* dataImpl(offset_t offset) const;
+    Buffer(const Buffer& ) = delete;
+    void operator=(const Buffer& ) = delete;
+
+    const char* data(offset_t offset=offset_t(0)) const;
+
+    char at(offset_t offset) const {
+      return *(data(offset));
+    }
+    zsize_t size() const { return m_size; }
+    std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
+
+    template<typename T>
+    T as(offset_t offset) const {
+      ASSERT(offset.v, <, m_size.v);
+      ASSERT(offset.v+sizeof(T), <=, m_size.v);
+      return fromLittleEndian<T>(data(offset));
+    }
 
   private: //data
+    const zsize_t m_size;
     DataPtr m_data;
 };
 
-};
+} // zim namespace
 
 #endif //ZIM_BUFFER_H_

@@ -153,7 +153,7 @@ mmapReadOnly(int fd, offset_type offset, size_type size)
   return p;
 }
 
-SharedBuffer::DataPtr
+Buffer::DataPtr
 makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 {
   const offset_type pageAlignedOffset(offset.v & ~(sysconf(_SC_PAGE_SIZE) - 1));
@@ -170,7 +170,7 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
                                munmap(mmappedAddress, size.v);
                              };
 
-  return SharedBuffer::DataPtr(mmappedAddress+alignmentAdjustment, munmapDeleter);
+  return Buffer::DataPtr(mmappedAddress+alignmentAdjustment, munmapDeleter);
 }
 
 } // unnamed namespace
@@ -192,14 +192,14 @@ std::shared_ptr<const Buffer> FileReader::get_buffer(offset_t offset, zsize_t si
     auto local_offset = offset + _offset - range.min;
     ASSERT(size, <=, part->size());
     int fd = part->fhandle().getNativeHandle();
-    return std::make_shared<SharedBuffer>(makeMmappedBuffer(fd, local_offset, size), size);
+    return std::make_shared<Buffer>(makeMmappedBuffer(fd, local_offset, size), size);
   } catch(MMapException& e)
 #endif
   {
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
-    auto ret_buffer = std::make_shared<SharedBuffer>(size);
+    auto ret_buffer = std::make_shared<Buffer>(size);
     read(const_cast<char*>(ret_buffer->data()), offset, size);
     return ret_buffer;
   }

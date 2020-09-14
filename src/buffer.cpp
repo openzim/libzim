@@ -34,37 +34,6 @@
 
 namespace zim {
 
-namespace {
-
-class SubBuffer : public Buffer {
-  public:
-    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
-      : Buffer(size),
-        _data(src, src->data(offset))
-    {
-      ASSERT(offset.v, <=, src->size().v);
-      ASSERT(offset.v+size.v, <=, src->size().v);
-    }
-
-  const char* dataImpl(offset_t offset) const {
-        return _data.get() + offset.v;
-    }
-
-  private:
-    const std::shared_ptr<const char> _data;
-};
-
-} // unnamed namespace
-
-std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) const
-{
-  return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// SharedBufferBuffer
-////////////////////////////////////////////////////////////////////////////////
-
 namespace
 {
 
@@ -75,24 +44,32 @@ struct NoDelete
 
 } // unnamed namespace
 
+std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) const
+{
+  ASSERT(offset.v, <=, m_size.v);
+  ASSERT(offset.v+size.v, <=, m_size.v);
+  auto sub_data = DataPtr(m_data, data(offset));
+  return std::make_shared<Buffer>(sub_data, size);
+}
 
-SharedBuffer::SharedBuffer(const char* data, zsize_t size)
-  : Buffer(size),
-    m_data(data, NoDelete())
-{}
-
-SharedBuffer::SharedBuffer(const DataPtr& data, zsize_t size)
-  : Buffer(size),
+Buffer::Buffer(const DataPtr& data, zsize_t size)
+  : m_size(size),
     m_data(data)
+{
+  ASSERT(m_size.v, <, SIZE_MAX);
+}
+
+Buffer::Buffer(const char* data, zsize_t size)
+  : Buffer(DataPtr(data, NoDelete()), size)
 {}
 
-SharedBuffer::SharedBuffer(zsize_t size)
-  : Buffer(size),
-    m_data(new char[size.v], std::default_delete<char[]>())
+Buffer::Buffer(zsize_t size)
+  : Buffer(DataPtr(new char[size.v], std::default_delete<char[]>()), size)
 {}
 
 const char*
-SharedBuffer::dataImpl(offset_t offset) const {
+Buffer::data(offset_t offset) const {
+  ASSERT(offset.v, <=, m_size.v);
   return m_data.get() + offset.v;
 }
 

@@ -314,7 +314,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     while (true) {
         bufferDirentZone.reserve(size_type(bufferSize));
         zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        const SharedBuffer direntBuffer(bufferDirentZone.data(), bufferSize);
+        const Buffer direntBuffer(bufferDirentZone.data(), bufferSize);
         try {
           dirent = std::make_shared<const Dirent>(direntBuffer);
         } catch (InvalidSize&) {
