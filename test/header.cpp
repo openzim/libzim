@@ -35,6 +35,7 @@
 #include <zim/fileheader.h>
 
 #include "../src/buffer.h"
+#include "../src/file_reader.h"
 
 #include "tempfile.h"
 
@@ -82,7 +83,7 @@ TEST(HeaderTest, read_write_header)
 
   auto buffer = write_to_buffer(header);
   zim::Fileheader header2;
-  header2.read(buffer);
+  header2.read(zim::BufferReader(buffer));
 
   ASSERT_EQ(header2.getUuid(), "1234567890abcdef");
   ASSERT_EQ(header2.getArticleCount(), 4711U);

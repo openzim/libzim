@@ -33,7 +33,7 @@
 
 namespace zim
 {
-  class Buffer;
+  class Reader;
   class Fileheader
   {
     public:
@@ -72,7 +72,7 @@ namespace zim
       {}
 
       void write(int out_fd) const;
-      void read(const Buffer& buffer);
+      void read(const Reader& reader);
 
       // Do some sanity check, raise a ZimFileFormateError is
       // something is wrong.
