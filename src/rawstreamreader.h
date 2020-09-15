@@ -17,34 +17,41 @@
  *
  */
 
-#ifndef ZIM_READERDATASTREAMWRAPPER_H
-#define ZIM_READERDATASTREAMWRAPPER_H
+#ifndef ZIM_RAWSTREAMREADER_H
+#define ZIM_RAWSTREAMREADER_H
 
-#include "idatastream.h"
+#include "istreamreader.h"
 #include "reader.h"
 #include "debug.h"
 
 namespace zim
 {
 
-class ReaderDataStreamWrapper : public IDataStream
+class RawStreamReader : public IStreamReader
 {
 public: // functions
-  explicit ReaderDataStreamWrapper(const zim::Reader* reader)
-    : reader_(*reader)
-    , readerPos_(0)
+  explicit RawStreamReader(std::shared_ptr<const zim::Reader> reader)
+    : m_reader(reader),
+      m_readerPos(0)
   {}
 
-  void readImpl(void* buf, size_t nbytes) override
+  void readImpl(char* buf, zsize_t nbytes) override
   {
-    ASSERT(readerPos_.v + nbytes, <=, reader_.size().v);
-    reader_.read(static_cast<char*>(buf), readerPos_, zsize_t(nbytes));
-    readerPos_ += nbytes;
+    m_reader->read(static_cast<char*>(buf), m_readerPos, zsize_t(nbytes));
+    m_readerPos += nbytes;
   }
 
+  std::unique_ptr<const Reader> sub_reader(zsize_t nbytes) override
+  {
+    auto reader = m_reader->sub_reader(m_readerPos, nbytes);
+    m_readerPos += nbytes;
+    return reader;
+  }
+
+
 private: // data
-  const Reader& reader_;
-  offset_t readerPos_;
+  std::shared_ptr<const Reader> m_reader;
+  offset_t m_readerPos;
 };
 
 } // namespace zim

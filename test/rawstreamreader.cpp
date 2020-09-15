@@ -17,7 +17,7 @@
  *
  */
 
-#include "readerdatastreamwrapper.h"
+#include "rawstreamreader.h"
 #include "buffer.h"
 #include "file_reader.h"
 
@@ -28,14 +28,9 @@ namespace
 
 using namespace zim;
 
-std::shared_ptr<Buffer> memoryViewBuffer(const char* str, size_t size)
+std::string toString(const Buffer& buffer)
 {
-  return std::make_shared<MemoryViewBuffer>(str, zsize_t(size));
-}
-
-std::string toString(const IDataStream::Blob& blob)
-{
-  return std::string(blob.data(), blob.size());
+  return std::string(buffer.data(), buffer.size().v);
 }
 
 TEST(ReaderDataStreamWrapper, shouldJustWork)
@@ -44,15 +39,16 @@ TEST(ReaderDataStreamWrapper, shouldJustWork)
   toLittleEndian(uint32_t(1234), data);
   toLittleEndian(int64_t(-987654321), data+18);
 
-  const BufferReader bufReader(memoryViewBuffer(data, sizeof(data)));
-  const Reader* readerPtr = &bufReader;
+  auto  reader = std::make_shared<BufferReader>(Buffer::makeBuffer(data, zsize_t(sizeof(data))));
 
-  ReaderDataStreamWrapper rdsw(readerPtr);
+  RawStreamReader rdr(reader);
 
-  ASSERT_EQ(1234,         rdsw.read<uint32_t>());
-  ASSERT_EQ("efgh",       toString(rdsw.readBlob(4)));
-  ASSERT_EQ("ijklmnopqr", toString(rdsw.readBlob(10)));
-  ASSERT_EQ(-987654321,   rdsw.read<int64_t>());
+  ASSERT_EQ(1234,         rdr.read<uint32_t>());
+  auto subbuffer = rdr.sub_reader(zsize_t(4))->get_buffer(offset_t(0), zsize_t(4));
+  ASSERT_EQ("efgh",       toString(subbuffer));
+  subbuffer = rdr.sub_reader(zsize_t(10))->get_buffer(offset_t(0), zsize_t(10));
+  ASSERT_EQ("ijklmnopqr", toString(subbuffer));
+  ASSERT_EQ(-987654321,   rdr.read<int64_t>());
 }
 
 } // unnamed namespace
