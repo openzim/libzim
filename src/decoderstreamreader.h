@@ -21,62 +21,64 @@
 #define ZIM_DECODECDATASTREAM_H
 
 #include "compression.h"
-#include "idatastream.h"
+#include "istreamreader.h"
 
 namespace zim
 {
 
 template<typename Decoder>
-class DecodedDataStream : public IDataStream
+class DecoderStreamReader : public IStreamReader
 {
 private: // constants
   enum { CHUNK_SIZE = 1024 };
 
 public: // functions
-  DecodedDataStream(std::unique_ptr<IDataStream> inputData, size_t inputSize)
-    : encodedDataStream_(std::move(inputData))
-    , inputBytesLeft_(inputSize)
-    , encodedDataChunk_()
+  DecoderStreamReader(std::shared_ptr<const Reader> inputReader)
+    : m_encodedDataReader(inputReader),
+      m_currentInputOffset(0),
+      m_inputBytesLeft(inputReader->size()),
+      m_encodedDataChunk(Buffer::makeBuffer(zsize_t(CHUNK_SIZE)))
   {
-    Decoder::init_stream_decoder(&decoderState_, nullptr);
+    Decoder::init_stream_decoder(&m_decoderState, nullptr);
     readNextChunk();
   }
 
-  ~DecodedDataStream()
+  ~DecoderStreamReader()
   {
-    Decoder::stream_end_decode(&decoderState_);
+    Decoder::stream_end_decode(&m_decoderState);
   }
 
 private: // functions
   void readNextChunk()
   {
-    const size_t n = std::min(size_t(CHUNK_SIZE), inputBytesLeft_);
-    encodedDataChunk_ = encodedDataStream_->readBlob(n);
-    inputBytesLeft_ -= n;
+    const auto n = std::min(zsize_t(CHUNK_SIZE), m_inputBytesLeft);
+    m_encodedDataChunk = m_encodedDataReader->get_buffer(m_currentInputOffset, n);
+    m_currentInputOffset += n;
+    m_inputBytesLeft -= n;
     // XXX: ugly C-style cast (casting away constness) on the next line
-    decoderState_.next_in  = (unsigned char*)encodedDataChunk_.data();
-    decoderState_.avail_in = encodedDataChunk_.size();
+    m_decoderState.next_in  = (unsigned char*)m_encodedDataChunk.data();
+    m_decoderState.avail_in = m_encodedDataChunk.size().v;
   }
 
   CompStatus decodeMoreBytes()
   {
     CompStep step = CompStep::STEP;
-    if ( decoderState_.avail_in == 0 )
+    if ( m_decoderState.avail_in == 0 )
     {
-      if ( inputBytesLeft_ == 0 )
+      if ( m_inputBytesLeft.v == 0 )
         step = CompStep::FINISH;
       else
         readNextChunk();
     }
 
-    return Decoder::stream_run_decode(&decoderState_, step);
+    return Decoder::stream_run_decode(&m_decoderState, step);
   }
 
-  void readImpl(void* buf, size_t nbytes) override
+  void readImpl(char* buf, zsize_t nbytes) override
   {
-    decoderState_.next_out = (unsigned char*)buf;
-    decoderState_.avail_out = nbytes;
-    while ( decoderState_.avail_out != 0 )
+    m_decoderState.next_out = (unsigned char*)buf;
+    m_decoderState.avail_out = nbytes.v;
+    while ( m_decoderState.avail_out != 0 )
     {
       decodeMoreBytes();
     }
@@ -86,10 +88,11 @@ private: // types
   typedef typename Decoder::stream_t DecoderState;
 
 private: // data
-  std::unique_ptr<IDataStream> encodedDataStream_;
-  size_t inputBytesLeft_; // count of bytes left in the input stream
-  DecoderState decoderState_;
-  IDataStream::Blob encodedDataChunk_;
+  std::shared_ptr<const Reader> m_encodedDataReader;
+  offset_t m_currentInputOffset;
+  zsize_t m_inputBytesLeft; // count of bytes left in the input stream
+  DecoderState m_decoderState;
+  Buffer m_encodedDataChunk;
 };
 
 } // namespace zim

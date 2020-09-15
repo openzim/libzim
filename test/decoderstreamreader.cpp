@@ -17,8 +17,7 @@
  *
  */
 
-#include "decodeddatastream.h"
-#include "bufdatastream.h"
+#include "decoderstreamreader.h"
 
 #include "gtest/gtest.h"
 
@@ -45,13 +44,13 @@ std::string operator*(const std::string& s, unsigned N)
   return result;
 }
 
-std::string toString(const zim::IDataStream::Blob& blob)
+std::string toString(const zim::Buffer& buffer)
 {
-  return std::string(blob.data(), blob.size());
+  return std::string(buffer.data(), buffer.size().v);
 }
 
 template<typename T>
-class DecodedDataStreamTest : public testing::Test {
+class DecoderStreamReaderTest : public testing::Test {
   protected:
     typedef T CompressionInfo;
 };
@@ -64,36 +63,41 @@ using CompressionTypes = ::testing::Types<
 #endif
 >;
 
-TYPED_TEST_CASE(DecodedDataStreamTest, CompressionTypes);
+TYPED_TEST_CASE(DecoderStreamReaderTest, CompressionTypes);
 
-TYPED_TEST(DecodedDataStreamTest, justCompressedData) {
+TYPED_TEST(DecoderStreamReaderTest, justCompressedData) {
   typedef typename TestFixture::CompressionInfo CompressionInfo;
 
   const int N = 10;
-  const std::string s("DecodedDataStream should work correctly");
-  const std::string compData = compress<CompressionInfo>(s*N);
+  const std::string s("DecoderStreamReader should work correctly");
+  const std::string compDataStr = compress<CompressionInfo>(s*N);
+  auto compData = zim::Buffer::makeBuffer(compDataStr.data(), zim::zsize_t(compDataStr.size()));
 
-  std::unique_ptr<zim::IDataStream> bds(new zim::BufDataStream(compData.data(), compData.size()));
-  zim::DecodedDataStream<CompressionInfo> dds(std::move(bds), compData.size());
+  auto compReader = std::make_shared<zim::BufferReader>(compData);
+  zim::DecoderStreamReader<CompressionInfo> dds(compReader);
   for (int i=0; i<N; i++)
   {
-    ASSERT_EQ(s, toString(dds.readBlob(s.size()))) << "i: " << i;
+    auto decompReader = dds.sub_reader(zim::zsize_t(s.size()));
+    ASSERT_EQ(s, toString(decompReader->get_buffer(zim::offset_t(0), zim::zsize_t(s.size())))) << "i: " << i;
   }
 }
 
-TYPED_TEST(DecodedDataStreamTest, compressedDataFollowedByGarbage) {
+TYPED_TEST(DecoderStreamReaderTest, compressedDataFollowedByGarbage) {
   typedef typename TestFixture::CompressionInfo CompressionInfo;
 
   const int N = 10;
-  const std::string s("DecodedDataStream should work correctly");
-  const std::string compData = compress<CompressionInfo>(s*N);
-  const std::string inputData = compData + std::string(10, '\0');
+  const std::string s("DecoderStreamReader should work correctly");
+  std::string compDataStr = compress<CompressionInfo>(s*N);
+  compDataStr += std::string(10, '\0');
 
-  std::unique_ptr<zim::IDataStream> bds(new zim::BufDataStream(inputData.data(), inputData.size()));
-  zim::DecodedDataStream<CompressionInfo> dds(std::move(bds), inputData.size());
+  auto compData = zim::Buffer::makeBuffer(compDataStr.data(), zim::zsize_t(compDataStr.size()));
+  auto compReader = std::make_shared<zim::BufferReader>(compData);
+
+  zim::DecoderStreamReader<CompressionInfo> dds(compReader);
   for (int i=0; i<N; i++)
   {
-    ASSERT_EQ(s, toString(dds.readBlob(s.size()))) << "i: " << i;
+    auto decompReader = dds.sub_reader(zim::zsize_t(s.size()));
+    ASSERT_EQ(s, toString(decompReader->get_buffer(zim::offset_t(0), zim::zsize_t(s.size())))) << "i: " << i;
   }
 }
 
