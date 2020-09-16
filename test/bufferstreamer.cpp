@@ -17,7 +17,8 @@
  *
  */
 
-#include "istreamreader.h"
+#include "buffer.h"
+#include "bufferstreamer.h"
 #include "endian_tools.h"
 
 #include "gtest/gtest.h"
@@ -28,39 +29,36 @@ namespace
 using namespace zim;
 
 ////////////////////////////////////////////////////////////////////////////////
-// IDataStream
+// BufferStreamer
 ////////////////////////////////////////////////////////////////////////////////
 
-// Implement the IStreamReader interface in the simplest way
-class InfiniteZeroStream : public IStreamReader
+std::string toString(const Buffer& buffer)
 {
-  void readImpl(char* buf, zim::zsize_t nbytes) { memset(buf, 0, nbytes.v); }
-};
-
-// ... and test that it compiles and works as intended
-
-TEST(IStreamReader, read)
-{
-  InfiniteZeroStream izs;
-  IStreamReader& ids = izs;
-  EXPECT_EQ(0, ids.read<int>());
-  EXPECT_EQ(0L, ids.read<long>());
-
-  // zim::fromLittleEndian() handles only integer types
-  // EXPECT_EQ(0.0, ids.read<double>());
+  return std::string(buffer.data(), buffer.size().v);
 }
 
-TEST(IStreamReader, sub_reader)
+TEST(BufferStreamer, shouldJustWork)
 {
-  const size_t N = 16;
-  const char zerobuf[N] = {0};
-  InfiniteZeroStream izs;
-  IStreamReader& ids = izs;
-  auto subReader = ids.sub_reader(zim::zsize_t(N));
-  EXPECT_EQ(subReader->size().v, N);
-  auto buffer = subReader->get_buffer(zim::offset_t(0), zim::zsize_t(N));
-  EXPECT_EQ(buffer.size().v, N);
-  EXPECT_EQ(0, memcmp(buffer.data(), zerobuf, N));
+  char data[] = "abcdefghijklmnopqrstuvwxyz";
+  zim::toLittleEndian(uint32_t(1234), data);
+  zim::toLittleEndian(int64_t(-987654321), data+18);
+
+  auto buffer = Buffer::makeBuffer(data, zsize_t(sizeof(data)));
+  zim::BufferStreamer bds(buffer, zsize_t(sizeof(data)));
+
+  ASSERT_EQ(1234, bds.read<uint32_t>());
+
+  ASSERT_EQ(data + 4, bds.current());
+  const auto blob1 = std::string(bds.current(), 4);
+  bds.skip(zsize_t(4));
+  ASSERT_EQ("efgh", blob1);
+
+  ASSERT_EQ(data + 8, bds.current());
+  const auto blob2 = std::string(bds.current(), 10);
+  bds.skip(zsize_t(10));
+  ASSERT_EQ("ijklmnopqr", blob2);
+
+  ASSERT_EQ(-987654321,   bds.read<int64_t>());
 }
 
 } // unnamed namespace

@@ -14,7 +14,8 @@ tests = [
     'impl_find',
     'istreamreader',
     'decoderstreamreader',
-    'rawstreamreader'
+    'rawstreamreader',
+    'bufferstreamer'
 ]
 
 if gtest_dep.found() and not meson.is_cross_build()
