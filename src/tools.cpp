@@ -103,25 +103,13 @@ void zim::microsleep(int microseconds) {
 
 std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
 {
-  /* Offset to visit the url */
-  unsigned int pathLength = longPath.size();
-  unsigned int offset = 0;
-
-  /* Ignore the first '/' */
-  if (longPath[offset] == '/')
-    offset++;
-
-  if (longPath[offset] == '/' || offset >= pathLength)
+  /* Index of the namespace char; discard '/' from absolute paths */
+  const unsigned int i = (longPath[0] == '/') ? 1 : 0;
+  if (i + 2 >= longPath.size() || longPath[i] == '/' || longPath[i+1] != '/')
     throw std::runtime_error("Cannot parse path");
 
-  /* Get namespace */
-  auto ns = longPath[offset++];
-
-  if (longPath[offset] != '/' || ++offset >= pathLength)
-    throw std::runtime_error("Cannot parse path");
-
-  /* Get content title */
-  auto shortPath = longPath.substr(offset, std::string::npos);
+  auto ns = longPath[i];
+  auto shortPath = longPath.substr(i+2, std::string::npos);
 
   return std::make_tuple(ns, shortPath);
 }

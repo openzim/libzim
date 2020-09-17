@@ -33,11 +33,15 @@ TEST(ParseLongPathTest, invalid)
 {
   ASSERT_THROW(parseLongPath(""), std::runtime_error);
   ASSERT_THROW(parseLongPath("A"), std::runtime_error);
+  ASSERT_THROW(parseLongPath("A/"), std::runtime_error);
+  ASSERT_THROW(parseLongPath("AB"), std::runtime_error);
+  ASSERT_THROW(parseLongPath("AB/path"), std::runtime_error);
   ASSERT_THROW(parseLongPath("/"), std::runtime_error);
   ASSERT_THROW(parseLongPath("//"), std::runtime_error);
   ASSERT_THROW(parseLongPath("/A"), std::runtime_error);
   ASSERT_THROW(parseLongPath("/A/"), std::runtime_error);
   ASSERT_THROW(parseLongPath("/AB"), std::runtime_error);
+  ASSERT_THROW(parseLongPath("/AB/path"), std::runtime_error);
   ASSERT_THROW(parseLongPath("//A/path"), std::runtime_error);
 }
 
@@ -50,16 +54,33 @@ TEST(ParseLongPathTest, valid)
   ASSERT_EQ(ns, 'A');
   ASSERT_EQ(path, "path");
 
-  std::tie(ns, path) = parseLongPath("/A/path");
+  std::tie(ns, path) = parseLongPath("A/p");
   ASSERT_EQ(ns, 'A');
+  ASSERT_EQ(path, "p");
+
+  std::tie(ns, path) = parseLongPath("/B/path");
+  ASSERT_EQ(ns, 'B');
   ASSERT_EQ(path, "path");
 
-  std::tie(ns, path) = parseLongPath("A//path");
-  ASSERT_EQ(ns, 'A');
+  std::tie(ns, path) = parseLongPath("/B/p");
+  ASSERT_EQ(ns, 'B');
+  ASSERT_EQ(path, "p");
+
+  std::tie(ns, path) = parseLongPath("C//path");
+  ASSERT_EQ(ns, 'C');
   ASSERT_EQ(path, "/path");
 
-  std::tie(ns, path) = parseLongPath("/A//path");
-  ASSERT_EQ(ns, 'A');
+  std::tie(ns, path) = parseLongPath("/C//path");
+  ASSERT_EQ(ns, 'C');
   ASSERT_EQ(path, "/path");
-}
+
+  std::tie(ns, path) = parseLongPath("L/path/with/separator");
+  ASSERT_EQ(ns, 'L');
+  ASSERT_EQ(path, "path/with/separator");
+
+   std::tie(ns, path) = parseLongPath("L//path/with/separator");
+  ASSERT_EQ(ns, 'L');
+  ASSERT_EQ(path, "/path/with/separator");
+
+ }
 };
