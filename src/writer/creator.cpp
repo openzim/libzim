@@ -74,7 +74,7 @@ log_define("zim.writer.creator")
     if (m_verbose ) { \
         double seconds = difftime(time(NULL),data->start_time);  \
         std::cout << "T:" << (int)seconds \
-                  << "; A:" << data->nbItems \
+                  << "; A:" << data->dirents.size() \
                   << "; RA:" << data->nbRedirectItems \
                   << "; CA:" << data->nbCompItems \
                   << "; UA:" << data->nbUnCompItems \
@@ -159,7 +159,6 @@ namespace zim
 
       data->addDirent(dirent);
       data->addItemData(dirent, item->getContentProvider(), compressContent);
-      data->nbItems++;
       if (compressContent) {
         data->nbCompItems++;
       } else {
@@ -176,7 +175,7 @@ namespace zim
       }
 #endif
 
-      if (data->nbItems%1000 == 0) {
+      if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
       }
 
@@ -194,7 +193,6 @@ namespace zim
       auto compressContent = isCompressibleMimetype(mimetype);
       data->addDirent(dirent);
       data->addItemData(dirent, std::move(provider), compressContent);
-      data->nbItems++;
       if (compressContent) {
         data->nbCompItems++;
       } else {
@@ -206,9 +204,8 @@ namespace zim
     {
       auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
       data->addDirent(dirent);
-      data->nbItems++;
       data->nbRedirectItems++;
-      if (data->nbItems%1000 == 0){
+      if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
 
@@ -225,7 +222,6 @@ namespace zim
       if (!m_faviconPath.empty()) {
         auto dirent = data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
         data->addDirent(dirent);
-        data->nbItems++;
         data->nbRedirectItems++;
       }
 
@@ -235,7 +231,6 @@ namespace zim
       if (!m_mainPath.empty()) {
         data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
         data->addDirent(data->mainPageDirent);
-        data->nbItems++;
         data->nbRedirectItems++;
       }
 
@@ -445,7 +440,6 @@ namespace zim
         titleIndexer(language, IndexingMode::TITLE, true),
 #endif
         verbose(verbose),
-        nbItems(0),
         nbRedirectItems(0),
         nbCompItems(0),
         nbUnCompItems(0),
