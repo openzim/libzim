@@ -30,7 +30,7 @@ namespace zim
 class BufferStreamer
 {
 public: // functions
-  explicit BufferStreamer(const Buffer& buffer, zsize_t size)
+  BufferStreamer(const Buffer& buffer, zsize_t size)
     : m_buffer(buffer),
       m_current(buffer.data()),
       m_size(size)
