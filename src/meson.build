@@ -9,6 +9,7 @@ common_sources = [
 #    'config.h',
     'article.cpp',
     'cluster.cpp',
+    'buffer_reader.cpp',
     'dirent.cpp',
     'envvalue.cpp',
     'file.cpp',

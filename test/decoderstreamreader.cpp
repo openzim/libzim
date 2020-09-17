@@ -18,6 +18,7 @@
  */
 
 #include "decoderstreamreader.h"
+#include "buffer_reader.h"
 
 #include "gtest/gtest.h"
 

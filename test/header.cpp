@@ -35,7 +35,7 @@
 #include <zim/fileheader.h>
 
 #include "../src/buffer.h"
-#include "../src/file_reader.h"
+#include "../src/buffer_reader.h"
 
 #include "tempfile.h"
 

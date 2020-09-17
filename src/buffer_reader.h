@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Veloman Yunkan
+ * Copyright (C) 2017 Matthieu Gautier <mgautier@kymeria.fr>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,22 +17,31 @@
  *
  */
 
-#include "istreamreader.h"
-#include "buffer_reader.h"
+#ifndef ZIM_BUFFER_READER_H_
+#define ZIM_BUFFER_READER_H_
 
-namespace zim
-{
+#include "reader.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// IDataStream
-////////////////////////////////////////////////////////////////////////////////
+namespace zim {
 
-std::unique_ptr<const Reader>
-IStreamReader::sub_reader(zsize_t size)
-{
-  auto buffer = Buffer::makeBuffer(size);
-  readImpl(buffer.data(), size);
-  return std::unique_ptr<Reader>(new BufferReader(buffer));
-}
+class BufferReader : public Reader {
+  public:
+    BufferReader(const Buffer& source)
+      : source(source) {}
+    virtual ~BufferReader() {};
 
-} // namespace zim
+    zsize_t size() const;
+    offset_t offset() const;
+
+    void read(char* dest, offset_t offset, zsize_t size) const;
+    char read(offset_t offset) const;
+    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+    std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
+
+  private:
+    const Buffer source;
+};
+
+};
+
+#endif // ZIM_BUFFER_READER_H_

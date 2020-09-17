@@ -19,7 +19,7 @@
 
 #include "rawstreamreader.h"
 #include "buffer.h"
-#include "file_reader.h"
+#include "buffer_reader.h"
 
 #include "gtest/gtest.h"
 

@@ -21,7 +21,7 @@
 #include <zim/error.h>
 #include "_dirent.h"
 #include "file_compound.h"
-#include "file_reader.h"
+#include "buffer_reader.h"
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>

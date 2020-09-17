@@ -20,7 +20,7 @@
 #include "cluster.h"
 #include <zim/blob.h>
 #include <zim/error.h>
-#include "file_reader.h"
+#include "buffer_reader.h"
 #include "endian_tools.h"
 #include "bufferstreamer.h"
 #include "decoderstreamreader.h"
