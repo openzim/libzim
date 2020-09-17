@@ -204,7 +204,6 @@ namespace zim
     {
       auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
       data->addDirent(dirent);
-      data->nbRedirectItems++;
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
@@ -222,7 +221,6 @@ namespace zim
       if (!m_faviconPath.empty()) {
         auto dirent = data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
         data->addDirent(dirent);
-        data->nbRedirectItems++;
       }
 
       // Create a redirection for the mainPage.
@@ -231,7 +229,6 @@ namespace zim
       if (!m_mainPath.empty()) {
         data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
         data->addDirent(data->mainPageDirent);
-        data->nbRedirectItems++;
       }
 
       TPROGRESS();
@@ -523,6 +520,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       if (dirent->isRedirect())
       {
         unresolvedRedirectDirents.insert(dirent);
+        nbRedirectItems++;
         return;
       }
     }
