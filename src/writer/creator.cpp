@@ -183,8 +183,7 @@ namespace zim
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
       auto compressContent = isCompressibleMimetype(mimetype);
-      auto dirent = data->createDirent('M', name, mimetype, "");
-      data->addItemData(dirent, std::move(provider), compressContent);
+      data->addData('M', name, mimetype, std::move(provider), compressContent);
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
@@ -228,9 +227,8 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
-        auto dirent = data->createDirent('X', "title/xapian", "application/octet-stream+xapian", "");
-        data->addItemData(
-          dirent,
+        data->addData(
+          'X', "title/xapian", "application/octet-stream+xapian",
           std::unique_ptr<ContentProvider>(new FileProvider(data->titleIndexer.getIndexPath())),
           false
         );
@@ -244,9 +242,8 @@ namespace zim
 
         data->indexer->indexingPostlude();
         microsleep(100);
-        auto dirent = data->createDirent('X', "fulltext/xapian", "application/octet-stream+xapian", "");
-        data->addItemData(
-          dirent,
+        data->addData(
+          'X', "fulltext/xapian", "application/octet-stream+xapian",
           std::unique_ptr<ContentProvider>(new FileProvider(data->indexer->getIndexPath())),
           false
         );
@@ -539,6 +536,11 @@ int mode =  _S_IREAD | _S_IWRITE;
         nbUnCompItems++;
       }
 
+    }
+
+    void CreatorData::addData(char ns, const std::string& path, const std::string& mimetype, std::unique_ptr<ContentProvider> provider, bool compressContent) {
+      auto dirent = createDirent(ns, path, mimetype, "");
+      addItemData(dirent, std::move(provider), compressContent);
     }
 
     Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
