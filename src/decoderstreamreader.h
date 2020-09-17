@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_DECODECDATASTREAM_H
-#define ZIM_DECODECDATASTREAM_H
+#ifndef ZIM_DECODERSTREAMREADER_H
+#define ZIM_DECODERSTREAMREADER_H
 
 #include "compression.h"
 #include "istreamreader.h"
@@ -97,4 +97,4 @@ private: // data
 
 } // namespace zim
 
-#endif // ZIM_DECODECDATASTREAM_H
+#endif // ZIM_DECODERSTREAMREADER_H
