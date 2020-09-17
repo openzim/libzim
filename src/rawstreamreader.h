@@ -37,7 +37,7 @@ public: // functions
 
   void readImpl(char* buf, zsize_t nbytes) override
   {
-    m_reader->read(static_cast<char*>(buf), m_readerPos, zsize_t(nbytes));
+    m_reader->read(buf, m_readerPos, zsize_t(nbytes));
     m_readerPos += nbytes;
   }
 
