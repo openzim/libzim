@@ -50,14 +50,6 @@ class Buffer {
     }
     zsize_t size() const { return m_size; }
     const Buffer sub_buffer(offset_t offset, zsize_t size) const;
-
-    template<typename T>
-    T as(offset_t offset) const {
-      ASSERT(offset.v, <, m_size.v);
-      ASSERT(offset.v+sizeof(T), <=, m_size.v);
-      return fromLittleEndian<T>(data(offset));
-    }
-
     operator Blob() const { return Blob(m_data, m_size.v); }
 
   private: // functions
