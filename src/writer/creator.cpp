@@ -157,11 +157,6 @@ namespace zim
 
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
-      if (compressContent) {
-        data->nbCompItems++;
-      } else {
-        data->nbUnCompItems++;
-      }
 
 #if defined(ENABLE_XAPIAN)
       if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
@@ -190,11 +185,6 @@ namespace zim
       auto compressContent = isCompressibleMimetype(mimetype);
       auto dirent = data->createDirent('M', name, mimetype, "");
       data->addItemData(dirent, std::move(provider), compressContent);
-      if (compressContent) {
-        data->nbCompItems++;
-      } else {
-        data->nbUnCompItems++;
-      }
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
@@ -542,6 +532,13 @@ int mode =  _S_IREAD | _S_IWRITE;
 
       dirent->setCluster(cluster);
       cluster->addContent(std::move(provider));
+
+      if (compressContent) {
+        nbCompItems++;
+      } else {
+        nbUnCompItems++;
+      }
+
     }
 
     Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
