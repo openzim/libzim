@@ -37,7 +37,7 @@
 #include "../src/buffer.h"
 #include "../src/buffer_reader.h"
 
-#include "tempfile.h"
+#include "tools.h"
 
 namespace
 {

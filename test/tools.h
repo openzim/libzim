@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ZIM_TEST_TEMPFILE_H
-#define ZIM_TEST_TEMPFILE_H
+#ifndef ZIM_TEST_TOOLS_H
+#define ZIM_TEST_TOOLS_H
 
 #include <string>
 
@@ -72,4 +72,4 @@ public:
 
 } // namespace zim
 
-#endif // ZIM_TEST_TEMPFILE_H
+#endif // ZIM_TEST_TOOLS_H

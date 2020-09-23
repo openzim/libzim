@@ -55,7 +55,7 @@
 #include "../src/endian_tools.h"
 #include "../src/config.h"
 
-#include "tempfile.h"
+#include "tools.h"
 
 namespace
 {
