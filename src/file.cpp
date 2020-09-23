@@ -310,3 +310,16 @@ namespace zim
     return ret;
   }
 }
+
+bool validate(const std::string& zimPath)
+{
+    try {
+        zim::File f(zimPath);
+    } catch(zim::ZimFileFormatError &exception) {
+        return false;
+    }
+
+    // - Index in TitlePtrList are valid (< articleNumber)
+
+    return false;
+}

@@ -95,7 +95,7 @@ namespace zim
   };
 
   std::string urldecode(const std::string& url);
-
+  bool validate(const std::string& zimPath);
 }
 
 #endif // ZIM_FILE_H
