@@ -31,7 +31,7 @@ std::unique_ptr<const Reader>
 IStreamReader::sub_reader(zsize_t size)
 {
   auto buffer = Buffer::makeBuffer(size);
-  readImpl(buffer.data(), size);
+  readImpl(const_cast<char*>(buffer.data()), size);
   return std::unique_ptr<Reader>(new BufferReader(buffer));
 }
 

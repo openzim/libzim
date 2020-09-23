@@ -85,13 +85,4 @@ Buffer::data(offset_t offset) const {
   return m_data.get() + offset.v;
 }
 
-char*
-Buffer::data(offset_t offset)  {
-  ASSERT(offset.v, <=, m_size.v);
-  // We know we can do this cast as the only way to get a non const Buffer is
-  // to use the factory allocating the memory for us.
-  return const_cast<char*>(m_data.get() + offset.v);
-}
-
-
 } //zim

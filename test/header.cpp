@@ -53,7 +53,7 @@ zim::Buffer write_to_buffer(zim::Fileheader &header)
 
   auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
   lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, buf.data(), size) == -1)
+  if (read(tmp_fd, const_cast<char*>(buf.data()), size) == -1)
     throw std::runtime_error("Cannot read");
   return buf;
 }

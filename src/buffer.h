@@ -43,7 +43,6 @@ class Buffer {
     static Buffer makeBuffer(zsize_t size);
 
     const char* data(offset_t offset=offset_t(0)) const;
-    char* data(offset_t offset=offset_t(0));
 
     char at(offset_t offset) const {
       return *(data(offset));
