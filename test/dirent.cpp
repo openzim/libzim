@@ -44,21 +44,7 @@ namespace
 {
 
 using zim::unittests::TempFile;
-
-const zim::Buffer write_to_buffer(zim::writer::Dirent& dirent)
-{
-  const TempFile tmpFile("test_dirent");
-  const auto tmp_fd = tmpFile.fd();
-  dirent.write(tmp_fd);
-  auto size = lseek(tmp_fd, 0, SEEK_END);
-
-  auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
-  lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, const_cast<char*>(buf.data()), size) == -1)
-    throw std::runtime_error("Cannot read");
-
-  return buf;
-}
+using zim::unittests::write_to_buffer;
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
 {
