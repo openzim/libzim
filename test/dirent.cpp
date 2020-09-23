@@ -38,28 +38,13 @@
 #include "../src/_dirent.h"
 #include "../src/writer/_dirent.h"
 
-#include "tempfile.h"
+#include "tools.h"
 
 namespace
 {
 
 using zim::unittests::TempFile;
-
-std::unique_ptr<zim::Buffer> write_to_buffer(zim::writer::Dirent& dirent)
-{
-  const TempFile tmpFile("test_dirent");
-  const auto tmp_fd = tmpFile.fd();
-  dirent.write(tmp_fd);
-  auto size = lseek(tmp_fd, 0, SEEK_END);
-
-  typedef zim::MemoryBuffer BufType;
-  std::unique_ptr<BufType> buf(new BufType(zim::zsize_t(size)));
-  lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, buf->buf(), size) == -1)
-    throw std::runtime_error("Cannot read");
-
-  return buf;
-}
+using zim::unittests::write_to_buffer;
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
 {
@@ -109,7 +94,7 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent.getVersion(), 0U);
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
+  zim::Dirent dirent2(buffer);
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -134,7 +119,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
+  zim::Dirent dirent2(buffer);
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -159,7 +144,7 @@ TEST(DirentTest, read_write_redirect_dirent)
   ASSERT_EQ(dirent.getRedirectIndex().v, 321U);
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
+  zim::Dirent dirent2(buffer);
 
   ASSERT_TRUE(dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'A');
@@ -181,7 +166,7 @@ TEST(DirentTest, read_write_linktarget_dirent)
   ASSERT_EQ(dirent.getUrl(), "Bar");
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
+  zim::Dirent dirent2(buffer);
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_TRUE(dirent2.isLinktarget());
@@ -204,7 +189,7 @@ TEST(DirentTest, read_write_deleted_dirent)
   ASSERT_EQ(dirent.getUrl(), "Bar");
 
   auto buffer = write_to_buffer(dirent);
-  zim::Dirent dirent2(*buffer);
+  zim::Dirent dirent2(buffer);
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_TRUE(!dirent2.isLinktarget());

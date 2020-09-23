@@ -17,10 +17,14 @@
  *
  */
 
-#ifndef ZIM_TEST_TEMPFILE_H
-#define ZIM_TEST_TEMPFILE_H
+#ifndef ZIM_TEST_TOOLS_H
+#define ZIM_TEST_TOOLS_H
+
+#include "../src/buffer.h"
 
 #include <string>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace zim
 {
@@ -68,8 +72,23 @@ public:
   std::string path() const { return path_; }
 };
 
+template<typename T>
+zim::Buffer write_to_buffer(const T& object)
+{
+  const TempFile tmpFile("test_temp_file");
+  const auto tmp_fd = tmpFile.fd();
+  object.write(tmp_fd);
+  auto size = lseek(tmp_fd, 0, SEEK_END);
+
+  auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
+  lseek(tmp_fd, 0, SEEK_SET);
+  if (read(tmp_fd, const_cast<char*>(buf.data()), size) == -1)
+    throw std::runtime_error("Cannot read");
+  return buf;
+}
+
 } // namespace unittests
 
 } // namespace zim
 
-#endif // ZIM_TEST_TEMPFILE_H
+#endif // ZIM_TEST_TOOLS_H

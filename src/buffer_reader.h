@@ -17,48 +17,31 @@
  *
  */
 
+#ifndef ZIM_BUFFER_READER_H_
+#define ZIM_BUFFER_READER_H_
 
-#include "zim/blob.h"
-#include "debug.h"
-#include "buffer.h"
+#include "reader.h"
 
 namespace zim {
 
-namespace
-{
+class BufferReader : public Reader {
+  public:
+    BufferReader(const Buffer& source)
+      : source(source) {}
+    virtual ~BufferReader() {};
 
-struct NoDelete
-{
-  template<class T> void operator()(T*) {}
+    zsize_t size() const;
+    offset_t offset() const;
+
+    void read(char* dest, offset_t offset, zsize_t size) const;
+    char read(offset_t offset) const;
+    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+    std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
+
+  private:
+    const Buffer source;
 };
 
-// This shared_ptr is used as a source object for the std::shared_ptr
-// aliasing constructor (with the purpose of avoiding the control block
-// allocation) for the case when the referred data must not be deleted.
-static Blob::DataPtr nonOwnedDataPtr((char*)nullptr, NoDelete());
+};
 
-} // unnamed namespace
-
-
-Blob::Blob()
- : _data(nonOwnedDataPtr),
-   _size(0)
-{}
-
-Blob::Blob(const char* data, size_type size)
- : _data(nonOwnedDataPtr, data),
-   _size(size)
-{
-  ASSERT(size, <, SIZE_MAX);
-  ASSERT(data, <, (void*)(SIZE_MAX-size));
-}
-
-Blob::Blob(const DataPtr& buffer, size_type size)
- : _data(buffer),
-   _size(size)
-{}
-
-
-
-
-} //zim
+#endif // ZIM_BUFFER_READER_H_

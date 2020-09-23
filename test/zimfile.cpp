@@ -20,7 +20,7 @@
 #include <zim/zim.h>
 #include <zim/file.h>
 
-#include "tempfile.h"
+#include "tools.h"
 #include "../src/fs.h"
 
 #include "gtest/gtest.h"
