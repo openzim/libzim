@@ -42,7 +42,7 @@ libraries need to be available:
 * [LZMA](https://tukaani.org/lzma/) (package `liblzma-dev` on Ubuntu)
 * [ICU](http://site.icu-project.org/) (package `libicu-dev` on Ubuntu)
 * [Zstd](https://facebook.github.io/zstd/) (package `libzstd-dev` on Ubuntu)
-* [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
+* [Xapian](https://xapian.org/) (package `libxapian-dev` on Ubuntu)
 * [UUID](http://e2fsprogs.sourceforge.net/) (package `uuid-dev` on Ubuntu)
 * [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
 
