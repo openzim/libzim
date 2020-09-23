@@ -481,7 +481,6 @@ offset_t readOffset(const Reader& reader, size_t idx)
       log_warn("error reading checksum");
       return std::string();
     }
-
   }
 
   bool FileImpl::verify()

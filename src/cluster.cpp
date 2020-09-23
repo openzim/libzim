@@ -159,7 +159,6 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
   Blob Cluster::getBlob(blob_index_t n, offset_t offset, zsize_t size) const
   {
     if (n < count()) {
-
       const auto blobSize = getBlobSize(n);
       if ( offset.v > blobSize.v ) {
         return Blob();

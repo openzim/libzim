@@ -47,7 +47,6 @@ namespace zim
    private:
      DataPtr _data;
      size_type _size;
-
   };
 
   inline std::ostream& operator<< (std::ostream& out, const Blob& blob)
