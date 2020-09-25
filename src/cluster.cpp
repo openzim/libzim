@@ -150,6 +150,9 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
   {
     if (n < count()) {
       const auto blobSize = getBlobSize(n);
+      if (blobSize.v > SIZE_MAX) {
+        return Blob();
+      }
       return getReader(n).get_buffer(offset_t(0), blobSize);
     } else {
       return Blob();
