@@ -11,7 +11,7 @@ tests = [
     'iterator',
     'find',
     'compression',
-    'impl_find',
+    'dirent_lookup',
     'istreamreader',
     'decoderstreamreader',
     'rawstreamreader',
