@@ -17,7 +17,7 @@
  *
  */
 
-#include "../src/fileimpl.h"
+#include "../src/dirent_lookup.h"
 #include "../src/_dirent.h"
 #include <zim/zim.h>
 
