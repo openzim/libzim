@@ -32,11 +32,6 @@ using namespace zim;
 // BufferStreamer
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string toString(const Buffer& buffer)
-{
-  return std::string(buffer.data(), buffer.size().v);
-}
-
 TEST(BufferStreamer, shouldJustWork)
 {
   char data[] = "abcdefghijklmnopqrstuvwxyz";
