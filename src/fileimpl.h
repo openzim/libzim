@@ -39,6 +39,18 @@
 
 namespace zim
 {
+  template<class Impl>
+  class DirentLookup
+  {
+  public: // functions
+    explicit DirentLookup(Impl* _impl) : impl(*_impl) {}
+
+    std::pair<bool, article_index_t> find(char ns, const std::string& url);
+
+  private: // data
+    Impl& impl;
+  };
+
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
@@ -70,6 +82,8 @@ namespace zim
       using pair_type = std::pair<cluster_index_type, article_index_type>;
       std::vector<pair_type> articleListByCluster;
       std::once_flag orderOnceFlag;
+
+      DirentLookup<FileImpl> m_direntLookup;
 
     public:
       explicit FileImpl(const std::string& fname);
@@ -116,7 +130,7 @@ namespace zim
 
 
   template<typename IMPL>
-  std::pair<bool, article_index_t> findx(IMPL& impl, char ns, const std::string& url)
+  std::pair<bool, article_index_t> DirentLookup<IMPL>::find(char ns, const std::string& url)
   {
     article_index_type l = article_index_type(impl.getNamespaceBeginOffset(ns));
     article_index_type u = article_index_type(impl.getNamespaceEndOffset(ns));

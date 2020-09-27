@@ -63,7 +63,8 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
-      namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER)
+      namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
+      m_direntLookup(this)
   {
     log_trace("read file \"" << fname << '"');
 
@@ -170,7 +171,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
-    return zim::findx(*this, ns, url);
+    return m_direntLookup.find(ns, url);
   }
 
   std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)
