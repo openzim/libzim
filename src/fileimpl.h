@@ -63,8 +63,6 @@ namespace zim
 
       NamespaceCache namespaceBeginCache;
       pthread_mutex_t namespaceBeginLock;
-      NamespaceCache namespaceEndCache;
-      pthread_mutex_t namespaceEndLock;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
@@ -163,6 +161,9 @@ namespace zim
   template<typename IMPL>
   article_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
   {
+    ASSERT(ch, >=, 32);
+    ASSERT(ch, <=, 127);
+
     article_index_type lower = 0;
     article_index_type upper = article_index_type(impl.getCountArticles());
     auto d = impl.getDirent(article_index_t(0));
@@ -183,18 +184,9 @@ namespace zim
   template<typename IMPL>
   article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
   {
-    article_index_type lower = 0;
-    article_index_type upper = article_index_type(impl.getCountArticles());
-    while (upper - lower > 1)
-    {
-      article_index_type m = lower + (upper - lower) / 2;
-      auto d = impl.getDirent(article_index_t(m));
-      if (d->getNamespace() > ch)
-        upper = m;
-      else
-        lower = m;
-    }
-    return article_index_t(upper);
+    ASSERT(ch, >=, 32);
+    ASSERT(ch, <, 127);
+    return getNamespaceBeginOffset(impl, ch+1);
   }
 
 
