@@ -30,10 +30,17 @@ template<class Impl>
 class DirentLookup
 {
 public: // types
+  struct DirentRange
+  {
+    article_index_t begin, end;
+  };
+
   typedef std::pair<bool, article_index_t> Result;
 
 public: // functions
   explicit DirentLookup(Impl* _impl) : impl(*_impl) {}
+
+  DirentRange getDirentRange(char ns, const std::string& url) const;
 
   Result find(char ns, const std::string& url);
 
@@ -41,12 +48,23 @@ private: // data
   Impl& impl;
 };
 
+template<class Impl>
+typename DirentLookup<Impl>::DirentRange
+DirentLookup<Impl>::getDirentRange(char ns, const std::string& /*url*/) const
+{
+  DirentRange r;
+  r.begin = impl.getNamespaceBeginOffset(ns);
+  r.end   = impl.getNamespaceEndOffset(ns);
+  return r;
+}
+
 template<typename Impl>
 typename DirentLookup<Impl>::Result
 DirentLookup<Impl>::find(char ns, const std::string& url)
 {
-  article_index_type l = article_index_type(impl.getNamespaceBeginOffset(ns));
-  article_index_type u = article_index_type(impl.getNamespaceEndOffset(ns));
+  const DirentRange r = getDirentRange(ns, url);
+  article_index_type l(r.begin);
+  article_index_type u(r.end);
 
   if (l == u)
   {
