@@ -48,13 +48,16 @@ private: // data
   Impl& impl;
 };
 
+template<typename IMPL>
+article_index_t getNamespaceBeginOffset(IMPL& impl, char ch);
+
 template<class Impl>
 typename DirentLookup<Impl>::DirentRange
 DirentLookup<Impl>::getDirentRange(char ns, const std::string& /*url*/) const
 {
   DirentRange r;
-  r.begin = impl.getNamespaceBeginOffset(ns);
-  r.end   = impl.getNamespaceEndOffset(ns);
+  r.begin = getNamespaceBeginOffset(impl, ns);
+  r.end   = getNamespaceBeginOffset(impl, ns+1);
   return r;
 }
 

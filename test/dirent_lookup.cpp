@@ -46,7 +46,7 @@ const std::vector<std::pair<char, std::string>> articleurl = {
   {'b', "aa"}        //12
 };
 
-struct MockNamespace
+struct GetDirentMock
 {
   zim::article_index_t getCountArticles() const {
     return zim::article_index_t(articleurl.size());
@@ -63,7 +63,7 @@ struct MockNamespace
 class NamespaceTest : public :: testing::Test
 {
   protected:
-    MockNamespace impl;
+    GetDirentMock impl;
 };
 
 TEST_F(NamespaceTest, BeginOffset)
@@ -123,44 +123,15 @@ TEST_F(NamespaceTest, EndEqualStartPlus1)
 }
 
 
-struct MockFindx
-{
-  zim::article_index_t getNamespaceBeginOffset(char ns) const {
-    switch (ns) {
-      case 'a': return zim::article_index_t(10);
-      case 'A': return zim::article_index_t(0);
-      case 'M': return zim::article_index_t(9);
-      default: return zim::article_index_t(0);
-    }
-  }
-
-  zim::article_index_t getNamespaceEndOffset(char ns) const {
-    switch (ns) {
-      case 'a': return zim::article_index_t(11);
-      case 'A': return zim::article_index_t(9);
-      case 'M': return zim::article_index_t(10);
-      default: return zim::article_index_t(0);
-    }
-  }
-
-  std::shared_ptr<const zim::Dirent> getDirent(zim::article_index_t idx) const {
-    auto info = articleurl.at(idx.v);
-    auto ret = std::make_shared<zim::Dirent>();
-    ret->setUrl(info.first, info.second);
-    return ret;
-  }
-};
-
-
 class FindxTest : public :: testing::Test
 {
   protected:
-    MockFindx impl;
+    GetDirentMock impl;
 };
 
 TEST_F(FindxTest, ExactMatch)
 {
-  zim::DirentLookup<MockFindx> dl(&impl);
+  zim::DirentLookup<GetDirentMock> dl(&impl);
   auto result = dl.find('A', "aa");
   ASSERT_EQ(result.first, true);
   ASSERT_EQ(result.second.v, 0);
@@ -177,7 +148,7 @@ TEST_F(FindxTest, ExactMatch)
 
 TEST_F(FindxTest, NoExactMatch)
 {
-  zim::DirentLookup<MockFindx> dl(&impl);
+  zim::DirentLookup<GetDirentMock> dl(&impl);
   auto result = dl.find('U', "aa"); // No U namespace => return 0
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 0);
