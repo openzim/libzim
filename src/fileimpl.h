@@ -60,10 +60,6 @@ namespace zim
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       bool cacheUncompressedCluster;
-      typedef std::map<char, article_index_t> NamespaceCache;
-
-      NamespaceCache namespaceBeginCache;
-      pthread_mutex_t namespaceBeginLock;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;

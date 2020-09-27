@@ -23,6 +23,9 @@
 #include "zim_types.h"
 #include "debug.h"
 
+#include <map>
+#include <mutex>
+
 namespace zim
 {
 
@@ -40,24 +43,61 @@ public: // types
 public: // functions
   explicit DirentLookup(Impl* _impl) : impl(*_impl) {}
 
+  article_index_t getNamespaceRangeBegin(char ns) const;
+  article_index_t getNamespaceRangeEnd(char ns) const;
+
   DirentRange getDirentRange(char ns, const std::string& url) const;
 
   Result find(char ns, const std::string& url);
 
+private: // types
+  typedef std::map<char, article_index_t> NamespaceBoundaryCache;
+
 private: // data
   Impl& impl;
+
+  mutable NamespaceBoundaryCache namespaceBoundaryCache;
+  mutable std::mutex cacheAccessMutex;
 };
 
 template<typename IMPL>
 article_index_t getNamespaceBeginOffset(IMPL& impl, char ch);
 
 template<class Impl>
+article_index_t
+DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
+{
+  ASSERT(ch, >=, 32);
+  ASSERT(ch, <=, 127);
+
+  {
+    std::lock_guard<std::mutex> lock(cacheAccessMutex);
+    const auto it = namespaceBoundaryCache.find(ch);
+    if (it != namespaceBoundaryCache.end())
+      return it->second;
+  }
+
+  auto ret = getNamespaceBeginOffset(impl, ch);
+
+  std::lock_guard<std::mutex> lock(cacheAccessMutex);
+  namespaceBoundaryCache[ch] = ret;
+  return ret;
+}
+
+template<class Impl>
+article_index_t
+DirentLookup<Impl>::getNamespaceRangeEnd(char ns) const
+{
+  return getNamespaceRangeBegin(ns+1);
+}
+
+template<class Impl>
 typename DirentLookup<Impl>::DirentRange
 DirentLookup<Impl>::getDirentRange(char ns, const std::string& /*url*/) const
 {
   DirentRange r;
-  r.begin = getNamespaceBeginOffset(impl, ns);
-  r.end   = getNamespaceBeginOffset(impl, ns+1);
+  r.begin = getNamespaceRangeBegin(ns);
+  r.end   = getNamespaceRangeEnd(ns);
   return r;
 }
 
