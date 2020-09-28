@@ -41,7 +41,7 @@ public: // types
   typedef std::pair<bool, article_index_t> Result;
 
 public: // functions
-  explicit DirentLookup(Impl* _impl) : impl(*_impl) {}
+  void init(Impl* _impl, article_index_type cacheEntryCount);
 
   article_index_t getNamespaceRangeBegin(char ns) const;
   article_index_t getNamespaceRangeEnd(char ns) const;
@@ -52,13 +52,33 @@ public: // functions
 
 private: // types
   typedef std::map<char, article_index_t> NamespaceBoundaryCache;
+  typedef std::map<std::string, article_index_type> LookupGrid;
 
 private: // data
-  Impl& impl;
+  Impl* impl = nullptr;
 
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
+
+  article_index_type articleCount = 0;
+  LookupGrid lookupGrid;
 };
+
+template<class Impl>
+void
+DirentLookup<Impl>::init(Impl* _impl, article_index_type cacheEntryCount)
+{
+  ASSERT(impl == nullptr, ==, true);
+  impl = _impl;
+  articleCount = article_index_type(impl->getCountArticles());
+  const article_index_type step = std::max(1u, articleCount/cacheEntryCount);
+  for ( article_index_type i = 0; i < articleCount; i += step )
+  {
+      auto d = impl->getDirent(article_index_t(i));
+      const std::string fullUrl = d->getNamespace() + d->getUrl();
+      lookupGrid[fullUrl] = i;
+  }
+}
 
 template<typename IMPL>
 article_index_t getNamespaceBeginOffset(IMPL& impl, char ch);
@@ -77,7 +97,7 @@ DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
       return it->second;
   }
 
-  auto ret = getNamespaceBeginOffset(impl, ch);
+  auto ret = getNamespaceBeginOffset(*impl, ch);
 
   std::lock_guard<std::mutex> lock(cacheAccessMutex);
   namespaceBoundaryCache[ch] = ret;
@@ -93,11 +113,14 @@ DirentLookup<Impl>::getNamespaceRangeEnd(char ns) const
 
 template<class Impl>
 typename DirentLookup<Impl>::DirentRange
-DirentLookup<Impl>::getDirentRange(char ns, const std::string& /*url*/) const
+DirentLookup<Impl>::getDirentRange(char ns, const std::string& url) const
 {
+  auto it = lookupGrid.upper_bound(ns + url);
   DirentRange r;
-  r.begin = getNamespaceRangeBegin(ns);
-  r.end   = getNamespaceRangeEnd(ns);
+  r.end   = article_index_t(it == lookupGrid.end() ? articleCount : it->second);
+  if ( it != lookupGrid.begin() )
+    --it;
+  r.begin = article_index_t(it->second);
   return r;
 }
 
@@ -110,40 +133,28 @@ DirentLookup<Impl>::find(char ns, const std::string& url)
   article_index_type u(r.end);
 
   if (l == u)
-  {
-    return std::pair<bool, article_index_t>(false, article_index_t(0));
-  }
+    return {false, article_index_t(0)};
 
-  unsigned itcount = 0;
-  while (u - l > 1)
+  while (true)
   {
-    ++itcount;
     article_index_type p = l + (u - l) / 2;
-    auto d = impl.getDirent(article_index_t(p));
+    const auto d = impl->getDirent(article_index_t(p));
 
-    int c = ns < d->getNamespace() ? -1
-          : ns > d->getNamespace() ? 1
-          : url.compare(d->getUrl());
+    const int c = ns < d->getNamespace() ? -1
+                : ns > d->getNamespace() ? 1
+                : url.compare(d->getUrl());
 
     if (c < 0)
       u = p;
     else if (c > 0)
-      l = p;
-    else
     {
-      return std::pair<bool, article_index_t>(true, article_index_t(p));
+      if ( l == p )
+        return {false, article_index_t(u)};
+      l = p;
     }
+    else
+      return {true, article_index_t(p)};
   }
-
-  auto d = impl.getDirent(article_index_t(l));
-  int c = url.compare(d->getUrl());
-
-  if (c == 0)
-  {
-    return std::pair<bool, article_index_t>(true, article_index_t(l));
-  }
-
-  return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
 }
 
 template<typename IMPL>

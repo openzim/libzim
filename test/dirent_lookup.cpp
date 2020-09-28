@@ -131,7 +131,7 @@ class FindxTest : public :: testing::Test
 
 TEST_F(FindxTest, ExactMatch)
 {
-  zim::DirentLookup<GetDirentMock> dl(&impl);
+  zim::DirentLookup<GetDirentMock> dl; dl.init(&impl, 4);
   auto result = dl.find('A', "aa");
   ASSERT_EQ(result.first, true);
   ASSERT_EQ(result.second.v, 0);
@@ -148,10 +148,10 @@ TEST_F(FindxTest, ExactMatch)
 
 TEST_F(FindxTest, NoExactMatch)
 {
-  zim::DirentLookup<GetDirentMock> dl(&impl);
-  auto result = dl.find('U', "aa"); // No U namespace => return 0
+  zim::DirentLookup<GetDirentMock> dl; dl.init(&impl, 4);
+  auto result = dl.find('U', "aa"); // No U namespace => return 10 (the index of the first item from the next namespace)
   ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 0);
+  ASSERT_EQ(result.second.v, 10);
 
   result = dl.find('A', "aabb"); // aabb is between aaaacc (4) and aabbaa (5) => 5
   ASSERT_EQ(result.first, false);
