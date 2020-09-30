@@ -69,6 +69,9 @@ const Buffer Buffer::makeBuffer(const char* data, zsize_t size)
 
 Buffer Buffer::makeBuffer(zsize_t size)
 {
+  if (0 == size.v) {
+    return Buffer(DataPtr(nonOwnedDataPtr, nullptr), size);
+  }
   return Buffer(DataPtr(new char[size.v], std::default_delete<char[]>()), size);
 }
 
