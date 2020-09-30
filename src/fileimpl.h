@@ -31,6 +31,7 @@
 #include "lrucache.h"
 #include "concurrent_cache.h"
 #include "_dirent.h"
+#include "dirent_lookup.h"
 #include "cluster.h"
 #include "buffer.h"
 #include "file_reader.h"
@@ -59,10 +60,6 @@ namespace zim
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       bool cacheUncompressedCluster;
-      typedef std::map<char, article_index_t> NamespaceCache;
-
-      NamespaceCache namespaceBeginCache;
-      pthread_mutex_t namespaceBeginLock;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
@@ -70,6 +67,8 @@ namespace zim
       using pair_type = std::pair<cluster_index_type, article_index_type>;
       std::vector<pair_type> articleListByCluster;
       std::once_flag orderOnceFlag;
+
+      DirentLookup<FileImpl> m_direntLookup;
 
     public:
       explicit FileImpl(const std::string& fname);
@@ -113,82 +112,6 @@ namespace zim
   private:
       ClusterHandle readCluster(cluster_index_t idx);
   };
-
-
-  template<typename IMPL>
-  std::pair<bool, article_index_t> findx(IMPL& impl, char ns, const std::string& url)
-  {
-    article_index_type l = article_index_type(impl.getNamespaceBeginOffset(ns));
-    article_index_type u = article_index_type(impl.getNamespaceEndOffset(ns));
-
-    if (l == u)
-    {
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
-    }
-
-    unsigned itcount = 0;
-    while (u - l > 1)
-    {
-      ++itcount;
-      article_index_type p = l + (u - l) / 2;
-      auto d = impl.getDirent(article_index_t(p));
-
-      int c = ns < d->getNamespace() ? -1
-            : ns > d->getNamespace() ? 1
-            : url.compare(d->getUrl());
-
-      if (c < 0)
-        u = p;
-      else if (c > 0)
-        l = p;
-      else
-      {
-        return std::pair<bool, article_index_t>(true, article_index_t(p));
-      }
-    }
-
-    auto d = impl.getDirent(article_index_t(l));
-    int c = url.compare(d->getUrl());
-
-    if (c == 0)
-    {
-      return std::pair<bool, article_index_t>(true, article_index_t(l));
-    }
-
-    return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
-  }
-
-  template<typename IMPL>
-  article_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
-  {
-    ASSERT(ch, >=, 32);
-    ASSERT(ch, <=, 127);
-
-    article_index_type lower = 0;
-    article_index_type upper = article_index_type(impl.getCountArticles());
-    auto d = impl.getDirent(article_index_t(0));
-    while (upper - lower > 1)
-    {
-      article_index_type m = lower + (upper - lower) / 2;
-      auto d = impl.getDirent(article_index_t(m));
-      if (d->getNamespace() >= ch)
-        upper = m;
-      else
-        lower = m;
-    }
-
-    article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
-    return ret;
-  }
-
-  template<typename IMPL>
-  article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
-  {
-    ASSERT(ch, >=, 32);
-    ASSERT(ch, <, 127);
-    return getNamespaceBeginOffset(impl, ch+1);
-  }
-
 
 }
 

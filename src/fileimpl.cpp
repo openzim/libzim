@@ -63,7 +63,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
-      namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER)
+      m_direntLookup(this)
   {
     log_trace("read file \"" << fname << '"');
 
@@ -170,7 +170,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
-    return zim::findx(*this, ns, url);
+    return m_direntLookup.find(ns, url);
   }
 
   std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)
@@ -383,35 +383,13 @@ offset_t readOffset(const Reader& reader, size_t idx)
   article_index_t FileImpl::getNamespaceBeginOffset(char ch)
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
-    ASSERT(ch, >=, 32);
-    ASSERT(ch, <=, 127);
-
-    pthread_mutex_lock(&namespaceBeginLock);
-    NamespaceCache::const_iterator it = namespaceBeginCache.find(ch);
-    if (it != namespaceBeginCache.end())
-    {
-      article_index_t ret(it->second);
-      pthread_mutex_unlock(&namespaceBeginLock);
-      return ret;
-    }
-    pthread_mutex_unlock(&namespaceBeginLock);
-
-    auto ret = zim::getNamespaceBeginOffset(*this, ch);
-
-    pthread_mutex_lock(&namespaceBeginLock);
-    namespaceBeginCache[ch] = ret;
-    pthread_mutex_unlock(&namespaceBeginLock);
-
-    return ret;
+    return m_direntLookup.getNamespaceRangeBegin(ch);
   }
 
   article_index_t FileImpl::getNamespaceEndOffset(char ch)
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
-    ASSERT(ch, >=, 32);
-    ASSERT(ch, <, 127);
-
-    return getNamespaceBeginOffset(ch+1);
+    return m_direntLookup.getNamespaceRangeEnd(ch);
   }
 
   std::string FileImpl::getNamespaces()
