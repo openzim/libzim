@@ -42,6 +42,8 @@ const std::vector<std::pair<char, std::string>> articleurl = {
   {'A', "cccccc"},   //8
   {'M', "foo"},      //9
   {'a', "aa"},       //10
+  {'a', "bb"},       //11
+  {'b', "aa"}        //12
 };
 
 struct MockNamespace
@@ -69,6 +71,15 @@ TEST_F(NamespaceTest, BeginOffset)
   auto result = zim::getNamespaceBeginOffset(impl, 'a');
   ASSERT_EQ(result.v, 10);
 
+  result = zim::getNamespaceBeginOffset(impl, 'b');
+  ASSERT_EQ(result.v, 12);
+
+  result = zim::getNamespaceBeginOffset(impl, 'c');
+  ASSERT_EQ(result.v, 13);
+
+  result = zim::getNamespaceBeginOffset(impl, 'A'-1);
+  ASSERT_EQ(result.v, 0);
+
   result = zim::getNamespaceBeginOffset(impl, 'A');
   ASSERT_EQ(result.v, 0);
 
@@ -82,7 +93,16 @@ TEST_F(NamespaceTest, BeginOffset)
 TEST_F(NamespaceTest, EndOffset)
 {
   auto result = zim::getNamespaceEndOffset(impl, 'a');
-  ASSERT_EQ(result.v, 11);
+  ASSERT_EQ(result.v, 12);
+
+  result = zim::getNamespaceEndOffset(impl, 'b');
+  ASSERT_EQ(result.v, 13);
+
+  result = zim::getNamespaceEndOffset(impl, 'c');
+  ASSERT_EQ(result.v, 13);
+
+  result = zim::getNamespaceEndOffset(impl, 'A'-1);
+  ASSERT_EQ(result.v, 0);
 
   result = zim::getNamespaceEndOffset(impl, 'A');
   ASSERT_EQ(result.v, 9);
@@ -92,6 +112,14 @@ TEST_F(NamespaceTest, EndOffset)
 
   result = zim::getNamespaceEndOffset(impl, 'U');
   ASSERT_EQ(result.v, 10);
+}
+
+TEST_F(NamespaceTest, EndEqualStartPlus1)
+{
+  for (char ns=32; ns<127; ns++){
+    std::cout << "ns: " << ns << "|" << (int)ns << std::endl;
+    ASSERT_EQ(zim::getNamespaceEndOffset(impl, ns).v, zim::getNamespaceBeginOffset(impl, ns+1).v);
+  }
 }
 
 
