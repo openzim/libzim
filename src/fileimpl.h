@@ -58,6 +58,10 @@ namespace zim
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
+      const bool m_newNamespaceScheme;
+      const entry_index_t m_startUserEntry;
+      const entry_index_t m_endUserEntry;
+
       bool cacheUncompressedCluster;
       typedef std::map<char, entry_index_t> NamespaceCache;
 
@@ -81,6 +85,7 @@ namespace zim
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
+      bool isNewNamespaceScheme() const { return m_newNamespaceScheme; }
 
       FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(entry_index_t idx);
@@ -102,6 +107,10 @@ namespace zim
       entry_index_t getNamespaceEndOffset(char ch);
       entry_index_t getNamespaceCount(char ns)
         { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
+
+      entry_index_t getStartUserEntry() const { return m_startUserEntry; }
+      entry_index_t getEndUserEntry() const { return m_endUserEntry; }
+      entry_index_t getUserEntryCount() const { return m_endUserEntry - m_startUserEntry; }
 
       std::string getNamespaces();
       bool hasNamespace(char ch) const;

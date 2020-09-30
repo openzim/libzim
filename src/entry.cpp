@@ -44,7 +44,11 @@ std::string Entry::getTitle() const
 
 std::string Entry::getPath() const
 {
-  return m_dirent->getLongUrl();
+  if (m_file->isNewNamespaceScheme()) {
+    return m_dirent->getUrl();
+  } else {
+    return m_dirent->getLongUrl();
+  }
 }
 
 bool Entry::isRedirect() const

@@ -33,6 +33,7 @@
 #include "log.h"
 #include "envvalue.h"
 #include "md5.h"
+#include "tools.h"
 
 log_define("zim.file.impl")
 
@@ -62,6 +63,9 @@ offset_t readOffset(const Reader& reader, size_t idx)
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      m_newNamespaceScheme(false),
+      m_startUserEntry(0),
+      m_endUserEntry(0),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false)),
       namespaceBeginLock(PTHREAD_MUTEX_INITIALIZER),
       namespaceEndLock(PTHREAD_MUTEX_INITIALIZER)
@@ -166,6 +170,16 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
       current += (len + 1);
     }
+
+    const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
+    if (m_newNamespaceScheme) {
+      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
+    } else {
+      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
+    }
+
+
   }
 
 
@@ -176,13 +190,13 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
   std::pair<bool, entry_index_t> FileImpl::findx(const std::string& url)
   {
-    size_t start = 0;
-    if (url[0] == '/') {
-      start = 1;
-    }
-    if (url.size() < (2+start) || url[1+start] != '/')
-      return std::pair<bool, entry_index_t>(false, entry_index_t(0));
-    return findx(url[start], url.substr(2+start));
+    char ns;
+    std::string path;
+    try {
+      std::tie(ns, path) = parseLongPath(url);
+      return findx(ns, path);
+    } catch (...) {}
+    return { false, entry_index_t(0) };
   }
 
   std::pair<bool, title_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
@@ -326,10 +340,10 @@ offset_t readOffset(const Reader& reader, size_t idx)
   {
       std::call_once(orderOnceFlag, [this]
       {
-          auto nb_articles = this->getCountArticles().v;
-          articleListByCluster.reserve(nb_articles);
+          articleListByCluster.reserve(getUserEntryCount().v);
 
-          for(zim::entry_index_type i = 0; i < nb_articles; i++)
+          auto endIdx = getEndUserEntry().v;
+          for(auto i = getStartUserEntry().v; i < endIdx; i++)
           {
               // This is the offset of the dirent in the zimFile
               auto indexOffset = readOffset(*urlPtrOffsetReader, i);

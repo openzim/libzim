@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <memory>
+#include <stdexcept>
 #include <errno.h>
 
 #include <unicode/translit.h>
@@ -97,4 +98,18 @@ void zim::microsleep(int microseconds) {
 #else
    std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
 #endif
+}
+
+
+std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
+{
+  /* Index of the namespace char; discard '/' from absolute paths */
+  const unsigned int i = (longPath[0] == '/') ? 1 : 0;
+  if (i + 2 >= longPath.size() || longPath[i] == '/' || longPath[i+1] != '/')
+    throw std::runtime_error("Cannot parse path");
+
+  auto ns = longPath[i];
+  auto shortPath = longPath.substr(i+2, std::string::npos);
+
+  return std::make_tuple(ns, shortPath);
 }

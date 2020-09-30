@@ -74,7 +74,7 @@ log_define("zim.writer.creator")
     if (m_verbose ) { \
         double seconds = difftime(time(NULL),data->start_time);  \
         std::cout << "T:" << (int)seconds \
-                  << "; A:" << data->nbItems \
+                  << "; A:" << data->dirents.size() \
                   << "; RA:" << data->nbRedirectItems \
                   << "; CA:" << data->nbCompItems \
                   << "; UA:" << data->nbUnCompItems \
@@ -148,8 +148,6 @@ namespace zim
     {
       auto hints = item->getHints();
 
-      auto dirent = data->createItemDirent(item.get());
-
       bool compressContent;
       try {
         compressContent = bool(hints.at(COMPRESS));
@@ -157,14 +155,8 @@ namespace zim
         compressContent = isCompressibleMimetype(item->getMimeType());
       }
 
-      data->addDirent(dirent);
+      auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
-      data->nbItems++;
-      if (compressContent) {
-        data->nbCompItems++;
-      } else {
-        data->nbUnCompItems++;
-      }
 
 #if defined(ENABLE_XAPIAN)
       if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
@@ -176,7 +168,7 @@ namespace zim
       }
 #endif
 
-      if (data->nbItems%1000 == 0) {
+      if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
       }
 
@@ -190,25 +182,14 @@ namespace zim
 
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
-      auto dirent = data->createDirent('M', name, mimetype, "");
       auto compressContent = isCompressibleMimetype(mimetype);
-      data->addDirent(dirent);
-      data->addItemData(dirent, std::move(provider), compressContent);
-      data->nbItems++;
-      if (compressContent) {
-        data->nbCompItems++;
-      } else {
-        data->nbUnCompItems++;
-      }
+      data->addData('M', name, mimetype, std::move(provider), compressContent);
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
     {
-      auto dirent = data->createRedirectDirent(path, title, targetPath);
-      data->addDirent(dirent);
-      data->nbItems++;
-      data->nbRedirectItems++;
-      if (data->nbItems%1000 == 0){
+      data->createRedirectDirent('C', path, title, 'C', targetPath);
+      if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
 
@@ -223,19 +204,14 @@ namespace zim
     {
       // Create mandatory entries
       if (!m_faviconPath.empty()) {
-        addRedirection("-/favicon", "", m_faviconPath);
+        data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
       }
 
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
-      // pool.getDirent() return a dirent on a pool allocated memory.
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
-        addRedirection("-/mainPage", "", m_mainPath);
-        auto tmpDirent = data->pool.getDirent();
-        tmpDirent->setNamespace('-');
-        tmpDirent->setPath("mainPage");
-        data->mainPageDirent = *data->dirents.find(tmpDirent);
+        data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
       }
 
       TPROGRESS();
@@ -251,10 +227,8 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
-        auto dirent = data->createDirent('X', "title/xapian", "application/octet-stream+xapian", "");
-        data->addDirent(dirent);
-        data->addItemData(
-          dirent,
+        data->addData(
+          'X', "title/xapian", "application/octet-stream+xapian",
           std::unique_ptr<ContentProvider>(new FileProvider(data->titleIndexer.getIndexPath())),
           false
         );
@@ -268,10 +242,8 @@ namespace zim
 
         data->indexer->indexingPostlude();
         microsleep(100);
-        auto dirent = data->createDirent('X', "fulltext/xapian", "application/octet-stream+xapian", "");
-        data->addDirent(dirent);
-        data->addItemData(
-          dirent,
+        data->addData(
+          'X', "fulltext/xapian", "application/octet-stream+xapian",
           std::unique_ptr<ContentProvider>(new FileProvider(data->indexer->getIndexPath())),
           false
         );
@@ -444,7 +416,6 @@ namespace zim
         titleIndexer(language, IndexingMode::TITLE, true),
 #endif
         verbose(verbose),
-        nbItems(0),
         nbRedirectItems(0),
         nbCompItems(0),
         nbUnCompItems(0),
@@ -528,6 +499,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       if (dirent->isRedirect())
       {
         unresolvedRedirectDirents.insert(dirent);
+        nbRedirectItems++;
         return;
       }
     }
@@ -557,6 +529,18 @@ int mode =  _S_IREAD | _S_IWRITE;
 
       dirent->setCluster(cluster);
       cluster->addContent(std::move(provider));
+
+      if (compressContent) {
+        nbCompItems++;
+      } else {
+        nbUnCompItems++;
+      }
+
+    }
+
+    void CreatorData::addData(char ns, const std::string& path, const std::string& mimetype, std::unique_ptr<ContentProvider> provider, bool compressContent) {
+      auto dirent = createDirent(ns, path, mimetype, "");
+      addItemData(dirent, std::move(provider), compressContent);
     }
 
     Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
@@ -566,6 +550,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       dirent->setPath(path);
       dirent->setMimeType(getMimeTypeIdx(mimetype));
       dirent->setTitle(title);
+      addDirent(dirent);
       return dirent;
     }
 
@@ -577,14 +562,14 @@ int mode =  _S_IREAD | _S_IWRITE;
         std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
         mimetype = "application/octet-stream";
       }
-      return createDirent(path[0], path.substr(2, std::string::npos), mimetype, item->getTitle());
+      return createDirent('C', item->getPath(), mimetype, item->getTitle());
     }
 
-    Dirent* CreatorData::createRedirectDirent(const std::string& path, const std::string& title, const std::string& targetPath)
+    Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
     {
-      auto dirent = createDirent(path[0], path.substr(2, std::string::npos), "", title);
-      dirent->setRedirectNs(targetPath[0]);
-      dirent->setRedirectPath(targetPath.substr(2, std::string::npos));
+      auto dirent = createDirent(ns, path, "", title);
+      dirent->setRedirectNs(targetNs);
+      dirent->setRedirectPath(targetPath);
       dirent->setRedirect(nullptr);
       return dirent;
     }
@@ -637,8 +622,14 @@ int mode =  _S_IREAD | _S_IWRITE;
         Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
-          INFO("Invalid redirection " << dirent->getNamespace() << '/' << dirent->getPath() << " redirecting to (missing) " << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
+          INFO("Invalid redirection "
+              << dirent->getNamespace() << '/' << dirent->getPath()
+              << " redirecting to (missing) "
+              << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
+          if (dirent == mainPageDirent) {
+            mainPageDirent = nullptr;
+          }
         } else  {
           dirent->setRedirect(*target_pos);
         }

@@ -63,7 +63,7 @@ namespace zim
         /**
          * The path of the item.
          *
-         * The path must be absolute and contain the namespace.
+         * The path must be absolute.
          * Path must be unique.
          *
          * @return the path of the item.

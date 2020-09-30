@@ -23,6 +23,7 @@
 #include <zim/item.h>
 #include <zim/error.h>
 #include "fileimpl.h"
+#include "tools.h"
 #include "log.h"
 
 log_define("zim.archive")
@@ -45,7 +46,7 @@ namespace zim
 
   entry_index_type Archive::getEntryCount() const
   {
-    return entry_index_type(m_impl->getCountArticles());
+    return m_impl->getUserEntryCount().v;
   }
 
   Uuid Archive::getUuid() const
@@ -84,18 +85,36 @@ namespace zim
 
   Entry Archive::getEntryByPath(const std::string& path) const
   {
-    log_trace("File::getArticle('" << path << ')');
-    auto r = m_impl->findx(path);
-    if (r.first) {
-      return Entry(m_impl, entry_index_type(r.second));
-    }
-    for (auto ns:{'A', 'I', 'J', '-'}) {
-      auto fallback_path = std::string(1, ns) + "/" + path;
-      r = m_impl->findx(fallback_path);
+    if (m_impl->isNewNamespaceScheme()) {
+      // Get path in user content.
+      auto r = m_impl->findx('C', path);
       if (r.first) {
         return Entry(m_impl, entry_index_type(r.second));
       }
+      try {
+        // Path may come from a already stored from a old zim archive (bookmark),
+        // and so contains a namespace.
+        // We have to adapt the path to use the C namespace.
+        r = m_impl->findx('C', std::get<1>(parseLongPath(path)));
+        if (r.first) {
+          return Entry(m_impl, entry_index_type(r.second));
+        }
+      } catch (std::runtime_error&) {}
+    } else {
+      // Path should contains the namespace.
+      auto r = m_impl->findx(path);
+      if (r.first) {
+        return Entry(m_impl, entry_index_type(r.second));
+      }
+      // If not (bookmark) from a recent zim archive.
+      for (auto ns:{'A', 'I', 'J', '-'}) {
+        r = m_impl->findx(ns, path);
+        if (r.first) {
+          return Entry(m_impl, entry_index_type(r.second));
+        }
+      }
     }
+
     throw EntryNotFound("Cannot find entry");
   }
 
@@ -106,7 +125,7 @@ namespace zim
 
   Entry Archive::getEntryByTitle(const std::string& title) const
   {
-    for (auto ns:{'A', 'I', 'J', '-'}) {
+    for (auto ns:{'C', 'A', 'I', 'J', '-'}) {
       log_trace("File::getArticleByTitle('" << ns << "', \"" << title << ')');
       auto r = m_impl->findxByTitle(ns, title);
       if (r.first)
@@ -134,12 +153,12 @@ namespace zim
 
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
   {
-    return EntryRange<EntryOrder::pathOrder>(m_impl, 0, getEntryCount());
+    return EntryRange<EntryOrder::pathOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
   }
 
   Archive::EntryRange<EntryOrder::titleOrder> Archive::iterByTitle() const
   {
-    return EntryRange<EntryOrder::titleOrder>(m_impl, 0, getEntryCount());
+    return EntryRange<EntryOrder::titleOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
   }
 
   Archive::EntryRange<EntryOrder::efficientOrder> Archive::iterEfficient() const
@@ -194,9 +213,16 @@ namespace zim
     // If we search for prefix a, we must return 0/4
     // A findx with a will return 0
     // A find with b will return 4
-    auto begin_idx = m_impl->findx(path).second;
-    path.back()++;
-    auto end_idx = m_impl->findx(path).second;
+    entry_index_t begin_idx, end_idx;
+    if (m_impl->isNewNamespaceScheme()) {
+      begin_idx = m_impl->findx('C', path).second;
+      path.back()++;
+      end_idx = m_impl->findx('C', path).second;
+    } else {
+      begin_idx = m_impl->findx(path).second;
+      path.back()++;
+      end_idx = m_impl->findx(path).second;
+    }
     return Archive::EntryRange<EntryOrder::pathOrder>(m_impl, begin_idx.v, end_idx.v);
   }
 
@@ -214,9 +240,10 @@ namespace zim
     // only in it.
 
     // See `Archive::findByPath` for the rational.
-    auto begin_idx = m_impl->findxByTitle('A', title).second;
+    auto ns = m_impl->isNewNamespaceScheme() ? 'C' : 'A';
+    auto begin_idx = m_impl->findxByTitle(ns, title).second;
     title.back()++;
-    auto end_idx = m_impl->findxByTitle('A', title).second;
+    auto end_idx = m_impl->findxByTitle(ns, title).second;
     return Archive::EntryRange<EntryOrder::titleOrder>(m_impl, begin_idx.v, end_idx.v);
   }
 
