@@ -100,13 +100,18 @@ jobs:
       run: |
         from subprocess import check_call
         from os import environ
-        command = [
+        config_command = [
+          'git', 'config', '--global',
+          'http.postBuffer', '1048576000'
+        ]
+        check_call(config_command, cwd=environ['HOME'])
+        clone_command = [
           'git', 'clone',
           'https://github.com/${{github.repository}}',
           '--depth=1',
           '--branch', '${{steps.extract_branch.outputs.branch}}'
         ]
-        check_call(command, cwd=environ['HOME'])
+        check_call(clone_command, cwd=environ['HOME'])
     - name: Install deps
       shell: bash
       run: |
