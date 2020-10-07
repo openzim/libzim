@@ -19,21 +19,15 @@
 
 #include "tools.h"
 
-#include <string>
-
 #ifdef _WIN32
+#include <locale>
 #include <codecvt>
 #include <windows.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <io.h>
 #include <fileapi.h>
-#undef min
-#undef max
-#else
-#include <unistd.h>
+#include <fcntl.h>
 #endif
+
+#include <sys/stat.h>
 
 namespace zim
 {
