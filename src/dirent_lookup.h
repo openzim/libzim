@@ -81,7 +81,37 @@ DirentLookup<Impl>::init(Impl* _impl, article_index_type cacheEntryCount)
 }
 
 template<typename IMPL>
-article_index_t getNamespaceBeginOffset(IMPL& impl, char ch);
+article_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
+{
+  ASSERT(ch, >=, 32);
+  ASSERT(ch, <=, 127);
+
+  article_index_type lower = 0;
+  article_index_type upper = article_index_type(impl.getCountArticles());
+  auto d = impl.getDirent(article_index_t(0));
+  while (upper - lower > 1)
+  {
+    article_index_type m = lower + (upper - lower) / 2;
+    auto d = impl.getDirent(article_index_t(m));
+    if (d->getNamespace() >= ch)
+      upper = m;
+    else
+      lower = m;
+  }
+
+  article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
+  return ret;
+}
+
+template<typename IMPL>
+article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
+{
+  ASSERT(ch, >=, 32);
+  ASSERT(ch, <, 127);
+  return getNamespaceBeginOffset(impl, ch+1);
+}
+
+
 
 template<class Impl>
 article_index_t
@@ -156,38 +186,6 @@ DirentLookup<Impl>::find(char ns, const std::string& url)
       return {true, article_index_t(p)};
   }
 }
-
-template<typename IMPL>
-article_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
-{
-  ASSERT(ch, >=, 32);
-  ASSERT(ch, <=, 127);
-
-  article_index_type lower = 0;
-  article_index_type upper = article_index_type(impl.getCountArticles());
-  auto d = impl.getDirent(article_index_t(0));
-  while (upper - lower > 1)
-  {
-    article_index_type m = lower + (upper - lower) / 2;
-    auto d = impl.getDirent(article_index_t(m));
-    if (d->getNamespace() >= ch)
-      upper = m;
-    else
-      lower = m;
-  }
-
-  article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
-  return ret;
-}
-
-template<typename IMPL>
-article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
-{
-  ASSERT(ch, >=, 32);
-  ASSERT(ch, <, 127);
-  return getNamespaceBeginOffset(impl, ch+1);
-}
-
 
 } // namespace zim
 
