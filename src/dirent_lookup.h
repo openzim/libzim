@@ -23,8 +23,10 @@
 #include "zim_types.h"
 #include "debug.h"
 
+#include <algorithm>
 #include <map>
 #include <mutex>
+#include <vector>
 
 namespace zim
 {
@@ -52,7 +54,22 @@ public: // functions
 
 private: // types
   typedef std::map<char, article_index_t> NamespaceBoundaryCache;
-  typedef std::map<std::string, article_index_type> LookupGrid;
+
+  struct LookupGridEntry
+  {
+    std::string furlPrefix;
+    article_index_type itemIndex;
+  };
+
+  struct LookupPred
+  {
+    bool operator()(const std::string& furl, const LookupGridEntry& entry) const
+    {
+      return furl < entry.furlPrefix;
+    }
+  };
+
+  typedef std::vector<LookupGridEntry> LookupGrid;
 
 private: // data
   Impl* impl = nullptr;
@@ -76,7 +93,7 @@ DirentLookup<Impl>::init(Impl* _impl, article_index_type cacheEntryCount)
   {
       auto d = impl->getDirent(article_index_t(i));
       const std::string fullUrl = d->getNamespace() + d->getUrl();
-      lookupGrid[fullUrl] = i;
+      lookupGrid.push_back({fullUrl, i});
   }
 }
 
@@ -145,12 +162,12 @@ template<class Impl>
 typename DirentLookup<Impl>::DirentRange
 DirentLookup<Impl>::getDirentRange(char ns, const std::string& url) const
 {
-  auto it = lookupGrid.upper_bound(ns + url);
+  auto it = std::upper_bound(lookupGrid.begin(), lookupGrid.end(), ns + url, LookupPred());
   DirentRange r;
-  r.end   = article_index_t(it == lookupGrid.end() ? articleCount : it->second);
+  r.end   = article_index_t(it == lookupGrid.end() ? articleCount : it->itemIndex);
   if ( it != lookupGrid.begin() )
     --it;
-  r.begin = article_index_t(it->second);
+  r.begin = article_index_t(it->itemIndex);
   return r;
 }
 
