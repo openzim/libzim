@@ -76,9 +76,9 @@ template<typename T>
 inline T
 IStreamReader::read()
 {
-  const zsize_t N(sizeof(T));
-  char buf[N.v];
-  readImpl(buf, N);
+  constexpr size_type N(sizeof(T));
+  char buf[N];
+  readImpl(buf, zsize_t(N));
   return fromLittleEndian<T>(buf); // XXX: This handles only integral types
 }
 

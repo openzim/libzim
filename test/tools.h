@@ -20,11 +20,17 @@
 #ifndef ZIM_TEST_TOOLS_H
 #define ZIM_TEST_TOOLS_H
 
-#include "../src/buffer.h"
 
 #include <string>
 #include <sys/types.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
+
+#include "../src/buffer.h"
 
 namespace zim
 {
