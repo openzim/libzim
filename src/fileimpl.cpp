@@ -164,7 +164,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
 
       current += (len + 1);
     }
-    m_direntLookup.init(this, 1024);
+    m_direntLookup.init(this, envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE));
   }
 
 
