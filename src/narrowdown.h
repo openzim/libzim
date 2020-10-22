@@ -57,6 +57,29 @@ namespace zim
 //  1. Perform the binary search on the index, yielding a narrower range
 //  2. Perform the binary search on the external list starting from that
 //     narrower range.
+//
+// The denser the in-memory index the more the performance improvement.
+// Therefore the implementation focus of NarrowDown is on small memory
+// footprint. If the item keys are long strings with a lot of "garbage" at the
+// end the following trick helps. Suppose that we have the following pair of
+// adjacent keys in our full (external) list:
+//
+// Item # | Key
+// ---------------------------------
+// ...    | ...
+// 1234   | "We Are The Champions"
+// 1235   | "We Will Rock You"
+// ...    | ...
+//
+// If we were to include the item #1234 in our index the naive approach would
+// be to store its key as is. However, let's imagine that the list also
+// contains an item with key "We W". Then it would have to reside between "We
+// Are The Champions" and "We Will Rock You". So we can pretend that such an
+// item exists and store in our index the fictitious entry {"We W", 1234.5}.
+// When we arrive at that entry during the range narrow-down step we must round
+// the item index downward if it is going to be used as the lower bound of
+// the range, and round it upward if it is going to be used as the upper bound
+// of the range.
 class NarrowDown
 {
   typedef article_index_type index_type;
@@ -68,7 +91,26 @@ public: // types
   };
 
 public: // functions
-  void add(const std::string& key, index_type i)
+  // Add another entry to the search index. The key of the next item is used
+  // to derive and store a shorter pseudo-key as explained in the long comment
+  // above the class.
+  void add(const std::string& key, index_type i, const std::string& nextKey)
+  {
+    if ( entries.empty() )
+    {
+      ASSERT(key, <, nextKey);
+      entries.push_back({key, i});
+    }
+    else
+    {
+      const std::string pseudoKey = shortestStringInBetween(key, nextKey);
+      ASSERT(entries.back().pseudoKey, <, pseudoKey);
+      ASSERT(entries.back().lindex, <, i);
+      entries.push_back({pseudoKey, i});
+    }
+  }
+
+  void close(const std::string& key, index_type i)
   {
     ASSERT(entries.empty() || entries.back().pseudoKey < key, ==, true);
     ASSERT(entries.empty() || entries.back().lindex < i, ==, true);
@@ -86,17 +128,33 @@ public: // functions
     if ( it == entries.end() )
       return {prevEntryLindex+1, prevEntryLindex+1};
 
-    return {prevEntryLindex, it->lindex};
+    return {prevEntryLindex, it->lindex+1};
+  }
+
+  static std::string shortestStringInBetween(const std::string& a, const std::string& b)
+  {
+    ASSERT(a, <, b);
+    const auto m = std::mismatch(a.begin(), a.end(), b.begin());
+    return std::string(b.begin(), m.second+1);
   }
 
 private: // types
-
-  // pseudoKey is known to belong to the range [lindex, lindex+1)
-  // In other words, if were to insert pseudoKey in our sequence of keys
-  // it might be placed right after lindex.
   struct Entry
   {
+    // This is mostly a truncated version of a key from the input sequence.
+    // The exceptions are
+    //   - the first item
+    //   - the last item
+    //   - keys that differ from their preceding key only in the last character
     std::string pseudoKey;
+
+    // This represents the index of the item in the input sequence right
+    // after which pseudoKey might be inserted without breaking the sequence
+    // order. In other words, the condition
+    //
+    //    sequence[lindex] <= pseudoKey <= sequence[lindex+1]
+    //
+    // must be true.
     index_type  lindex;
   };
 

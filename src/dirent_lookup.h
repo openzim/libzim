@@ -82,9 +82,9 @@ DirentLookup<Impl>::init(Impl* _impl, article_index_type cacheEntryCount)
     const article_index_type step = std::max(1u, articleCount/cacheEntryCount);
     for ( article_index_type i = 0; i < articleCount-1; i += step )
     {
-        lookupGrid.add(getDirentKey(i), i);
+        lookupGrid.add(getDirentKey(i), i, getDirentKey(i+1));
     }
-    lookupGrid.add(getDirentKey(articleCount - 1), articleCount - 1);
+    lookupGrid.close(getDirentKey(articleCount - 1), articleCount - 1);
   }
 }
 
