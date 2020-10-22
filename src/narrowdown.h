@@ -133,9 +133,9 @@ public: // functions
 
   static std::string shortestStringInBetween(const std::string& a, const std::string& b)
   {
-    ASSERT(a, <, b);
+    ASSERT(a, <=, b);
     const auto m = std::mismatch(a.begin(), a.end(), b.begin());
-    return std::string(b.begin(), m.second+1);
+    return std::string(b.begin(), std::min(b.end(), m.second+1));
   }
 
 private: // types
