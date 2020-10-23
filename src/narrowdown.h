@@ -91,6 +91,10 @@ public: // types
   };
 
 public: // functions
+  NarrowDown()
+    : pred(&keyContentArea)
+  {}
+
   // Add another entry to the search index. The key of the next item is used
   // to derive and store a shorter pseudo-key as explained in the long comment
   // above the class.
@@ -99,27 +103,27 @@ public: // functions
     if ( entries.empty() )
     {
       ASSERT(key, <, nextKey);
-      entries.push_back({key, i});
+      addEntry(key, i);
     }
     else
     {
       const std::string pseudoKey = shortestStringInBetween(key, nextKey);
-      ASSERT(entries.back().pseudoKey, <, pseudoKey);
+      ASSERT(pred(entries.back(), pseudoKey), ==, true);
       ASSERT(entries.back().lindex, <, i);
-      entries.push_back({pseudoKey, i});
+      addEntry(pseudoKey, i);
     }
   }
 
   void close(const std::string& key, index_type i)
   {
-    ASSERT(entries.empty() || entries.back().pseudoKey < key, ==, true);
+    ASSERT(entries.empty() || pred(entries.back(), key), ==, true);
     ASSERT(entries.empty() || entries.back().lindex < i, ==, true);
-    entries.push_back({key, i});
+    addEntry(key, i);
   }
 
   Range getRange(const std::string& key) const
   {
-    auto it = std::upper_bound(entries.begin(), entries.end(), key, LookupPred());
+    auto it = std::upper_bound(entries.begin(), entries.end(), key, pred);
     if ( it == entries.begin() )
       return {0, 0};
 
@@ -138,7 +142,17 @@ public: // functions
     return std::string(b.begin(), std::min(b.end(), m.second+1));
   }
 
+private: // functions
+  void addEntry(const std::string& s, index_type i)
+  {
+    entries.push_back({uint32_t(keyContentArea.size()), i});
+    keyContentArea.insert(keyContentArea.end(), s.begin(), s.end());
+    keyContentArea.push_back('\0');
+  }
+
 private: // types
+  typedef std::vector<char> KeyContentArea;
+
   struct Entry
   {
     // This is mostly a truncated version of a key from the input sequence.
@@ -146,7 +160,11 @@ private: // types
     //   - the first item
     //   - the last item
     //   - keys that differ from their preceding key only in the last character
-    std::string pseudoKey;
+    //
+    // std::string pseudoKey; // std::string has too much memory overhead.
+    uint32_t pseudoKeyOffset; // Instead we densely pack the key contents
+                              // into keyContentArea and store in the entry
+                              // the offset into that container.
 
     // This represents the index of the item in the input sequence right
     // after which pseudoKey might be inserted without breaking the sequence
@@ -160,15 +178,36 @@ private: // types
 
   struct LookupPred
   {
+    const KeyContentArea& keyContentArea;
+
+    explicit LookupPred(const KeyContentArea* kca)
+      : keyContentArea(*kca)
+    {}
+
+    const char* getKeyContent(const Entry& entry) const
+    {
+      return &keyContentArea[entry.pseudoKeyOffset];
+    }
+
+    bool operator()(const Entry& entry, const std::string& key) const
+    {
+      return key.compare(getKeyContent(entry)) > 0;
+    }
+
     bool operator()(const std::string& key, const Entry& entry) const
     {
-      return key < entry.pseudoKey;
+      return key.compare(getKeyContent(entry)) < 0;
     }
   };
 
   typedef std::vector<Entry> EntryCollection;
 
 private: // data
+  // Used to store the (shortened) keys as densely packed C-style strings
+  KeyContentArea keyContentArea;
+
+  LookupPred pred;
+
   EntryCollection entries;
 };
 
