@@ -143,6 +143,10 @@ TEST_F(FindxTest, ExactMatch)
   result = dl.find('A', "aabbbb");
   ASSERT_EQ(result.first, true);
   ASSERT_EQ(result.second.v, 6);
+
+  result = dl.find('b', "aa");
+  ASSERT_EQ(result.first, true);
+  ASSERT_EQ(result.second.v, 12);
 }
 
 
