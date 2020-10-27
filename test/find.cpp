@@ -46,7 +46,7 @@ TEST(FindTests, NotFoundByURL)
 
     auto article1 = file.find('U', "unkwonUrl");
     auto article2 = file.find('A', "unkwonUrl");
-    ASSERT_EQ(article1->getIndex(), 0);
+    ASSERT_EQ(article1.getIndex(), file.getCountArticles());
     ASSERT_EQ(article2->getIndex(), 7);
 }
 
@@ -59,7 +59,7 @@ TEST(FindTests, NotFoundByURLDefaultNS)
     auto article1 = file.find("U/unkwonUrl");
     auto article2 = file.find("A/unkwonUrl");
     ASSERT_EQ(article0->getIndex(), 0);
-    ASSERT_EQ(article1->getIndex(), 0);
+    ASSERT_EQ(article1.getIndex(), file.getCountArticles());
     ASSERT_EQ(article2->getIndex(), 7);
 }
 
