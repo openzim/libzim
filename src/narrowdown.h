@@ -130,7 +130,7 @@ public: // functions
     const index_type prevEntryLindex = (it-1)->lindex;
 
     if ( it == entries.end() )
-      return {prevEntryLindex+1, prevEntryLindex+1};
+      return {prevEntryLindex, prevEntryLindex+1};
 
     return {prevEntryLindex, it->lindex+1};
   }
