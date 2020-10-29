@@ -44,7 +44,7 @@ libraries need to be available:
 * [Zstd](https://facebook.github.io/zstd/) (package `libzstd-dev` on Ubuntu)
 * [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
 * [UUID](http://e2fsprogs.sourceforge.net/) (package `uuid-dev` on Ubuntu)
-* [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
+* [Google Test](https://github.com/google/googletest) - optional (package `libgtest-dev` on Ubuntu)
 
 To build the documentations you need the packages :
 
