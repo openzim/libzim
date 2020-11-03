@@ -22,15 +22,15 @@
 
 #define MAX_QUEUE_SIZE 10
 
-#include <pthread.h>
+#include <mutex>
 #include <queue>
 #include "../tools.h"
 
 template<typename T>
 class Queue {
     public:
-        Queue() {pthread_mutex_init(&m_queueMutex,NULL);};
-        virtual ~Queue() {pthread_mutex_destroy(&m_queueMutex);};
+        Queue() = default;
+        virtual ~Queue() = default;
         virtual bool isEmpty();
         virtual size_t size();
         virtual void pushToQueue(const T& element);
@@ -39,7 +39,7 @@ class Queue {
 
     protected:
         std::queue<T>   m_realQueue;
-        pthread_mutex_t m_queueMutex;
+        std::mutex      m_queueMutex;
 
     private:
         // Make this queue non copyable
@@ -49,18 +49,14 @@ class Queue {
 
 template<typename T>
 bool Queue<T>::isEmpty() {
-    pthread_mutex_lock(&m_queueMutex);
-    bool retVal = m_realQueue.empty();
-    pthread_mutex_unlock(&m_queueMutex);
-    return retVal;
+    std::lock_guard<std::mutex> l(m_queueMutex);
+    return m_realQueue.empty();
 }
 
 template<typename T>
 size_t Queue<T>::size() {
-    pthread_mutex_lock(&m_queueMutex);
-    size_t retVal = m_realQueue.size();
-    pthread_mutex_unlock(&m_queueMutex);
-    return retVal;
+    std::lock_guard<std::mutex> l(m_queueMutex);
+    return m_realQueue.size();
 }
 
 template<typename T>
@@ -70,40 +66,33 @@ void Queue<T>::pushToQueue(const T &element) {
 
     do {
         zim::microsleep(wait);
-        pthread_mutex_lock(&m_queueMutex);
-        queueSize = m_realQueue.size();
-        pthread_mutex_unlock(&m_queueMutex);
+        queueSize = size();
         wait += 10;
     } while (queueSize > MAX_QUEUE_SIZE);
 
-    pthread_mutex_lock(&m_queueMutex);
+    std::lock_guard<std::mutex> l(m_queueMutex);
     m_realQueue.push(element);
-    pthread_mutex_unlock(&m_queueMutex);
 }
 
 template<typename T>
 bool Queue<T>::getHead(T &element) {
-  pthread_mutex_lock(&m_queueMutex);
-  if (m_realQueue.empty()) {
-    pthread_mutex_unlock(&m_queueMutex);
-    return false;
-  }
-  element = m_realQueue.front();
-  pthread_mutex_unlock(&m_queueMutex);
-  return true;
+    std::lock_guard<std::mutex> l(m_queueMutex);
+    if (m_realQueue.empty()) {
+        return false;
+    }
+    element = m_realQueue.front();
+    return true;
 }
 
 template<typename T>
 bool Queue<T>::popFromQueue(T &element) {
-    pthread_mutex_lock(&m_queueMutex);
+    std::lock_guard<std::mutex> l(m_queueMutex);
     if (m_realQueue.empty()) {
-        pthread_mutex_unlock(&m_queueMutex);
         return false;
     }
 
     element = m_realQueue.front();
     m_realQueue.pop();
-    pthread_mutex_unlock(&m_queueMutex);
 
   return true;
 }

@@ -41,11 +41,12 @@
 #include <limits>
 #include <stdexcept>
 #include <sstream>
+#include <mutex>
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"
 
-static pthread_mutex_t s_dbaccessLock = PTHREAD_MUTEX_INITIALIZER;
+static std::mutex s_dbaccessLock;
 std::atomic<unsigned long> zim::writer::ClusterTask::waiting_task(0);
 std::atomic<unsigned long> zim::writer::IndexTask::waiting_task(0);
 
@@ -140,9 +141,8 @@ namespace zim
         indexer.index_text_without_positions(content);
       }
 
-      pthread_mutex_lock(&s_dbaccessLock);
+      std::lock_guard<std::mutex> l(s_dbaccessLock);
       data->indexer->writableDatabase.add_document(document);
-      pthread_mutex_unlock(&s_dbaccessLock);
     }
 #endif
 

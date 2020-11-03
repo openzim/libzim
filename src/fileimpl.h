@@ -24,7 +24,6 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <pthread.h>
 #include <zim/zim.h>
 #include <zim/fileheader.h>
 #include <mutex>
@@ -45,7 +44,7 @@ namespace zim
       std::shared_ptr<FileCompound> zimFile;
       std::shared_ptr<FileReader> zimReader;
       std::vector<char> bufferDirentZone;
-      pthread_mutex_t bufferDirentLock;
+      std::mutex bufferDirentLock;
       Fileheader header;
       std::string filename;
 
@@ -54,7 +53,7 @@ namespace zim
       std::unique_ptr<const Reader> clusterOffsetReader;
 
       lru_cache<article_index_type, std::shared_ptr<const Dirent>> direntCache;
-      pthread_mutex_t direntCacheLock;
+      std::mutex direntCacheLock;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
