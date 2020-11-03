@@ -42,14 +42,19 @@ conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
 pkg_requires = ['liblzma', 'libzstd']
 if build_machine.system() == 'windows'
-    thread_dep = dependency('libpthreadVC2')
-    pkg_requires += ['libpthreadVC2']
     extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin']
     extra_cpp_args = ['-DSORTPP_PASS']
 else
-    thread_dep = dependency('threads')
     extra_link_args = []
     extra_cpp_args = []
+endif
+
+compiler = meson.get_compiler('cpp')
+if compiler.get_id() == 'gcc' and build_machine.system() == 'linux'
+  # C++ std::thread is implemented using pthread on linux by gcc
+  thread_dep = dependency('threads')
+else
+  thread_dep = dependency('', required:false)
 endif
 
 if xapian_dep.found()
