@@ -29,6 +29,7 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <thread>
 #include "config.h"
 
 #include "direntPool.h"
@@ -67,7 +68,7 @@ namespace zim
         typedef std::vector<Cluster*> ClusterList;
         typedef Queue<Cluster*> ClusterQueue;
         typedef Queue<Task*> TaskQueue;
-        typedef std::vector<pthread_t> ThreadList;
+        typedef std::vector<std::thread> ThreadList;
 
         CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language,
@@ -103,7 +104,7 @@ namespace zim
         ClusterQueue clusterToWrite;
         TaskQueue taskList;
         ThreadList workerThreads;
-        pthread_t  writerThread;
+        std::thread  writerThread;
         const CompressionType compression;
         std::string basename;
         bool isEmpty = true;

@@ -26,7 +26,6 @@
 #include <string.h>
 #include <cstring>
 #include <fcntl.h>
-#include <pthread.h>
 #include <sstream>
 #include <system_error>
 #include <algorithm>
