@@ -85,6 +85,15 @@ public:
 };
 
 template<typename T>
+std::string to_string(const T& value)
+{
+  std::ostringstream ss;
+  ss << value;
+  return ss.str();
+}
+
+
+template<typename T>
 zim::Buffer write_to_buffer(const T& object)
 {
   TempFile tmpFile("test_temp_file");
