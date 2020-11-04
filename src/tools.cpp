@@ -19,6 +19,7 @@
  */
 
 #include "tools.h"
+#include "config.h"
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -29,8 +30,7 @@
 #include <memory>
 #include <errno.h>
 
-#include <unicode/translit.h>
-#include <unicode/ucnv.h>
+
 
 #ifdef _WIN32
 # include <windows.h>
@@ -50,7 +50,10 @@
 # include <chrono>
 #endif
 
+#if defined(ENABLE_XAPIAN)
 
+#include <unicode/translit.h>
+#include <unicode/ucnv.h>
 std::string zim::removeAccents(const std::string& text)
 {
   ucnv_setDefaultName("UTF-8");
@@ -63,6 +66,7 @@ std::string zim::removeAccents(const std::string& text)
   ustring.toUTF8String(unaccentedText);
   return unaccentedText;
 }
+#endif
 
 
 void zim::microsleep(int microseconds) {
