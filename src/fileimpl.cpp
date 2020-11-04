@@ -502,4 +502,12 @@ offset_t readOffset(const Reader& reader, size_t idx)
   bool FileImpl::is_multiPart() const {
     return zimFile->is_multiPart();
   }
+
+  bool FileImpl::checkIntegrity(IntegrityCheck checkType) {
+    switch(checkType) {
+      case IntegrityCheck::CHECKSUM: return FileImpl::verify();
+      case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
+    }
+    return false;
+  }
 }

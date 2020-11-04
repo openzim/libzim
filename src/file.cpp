@@ -309,17 +309,29 @@ namespace zim
 
     return ret;
   }
-}
 
-bool validate(const std::string& zimPath)
-{
-    try {
-        zim::File f(zimPath);
-    } catch(zim::ZimFileFormatError &exception) {
+  bool File::checkIntegrity(IntegrityCheck checkType)
+  {
+    return impl->checkIntegrity(checkType);
+  }
+
+  bool validate(const std::string& zimPath, IntegrityCheckList checksToRun)
+  {
+    try
+    {
+      File f(zimPath);
+      for ( size_t i = 0; i < checksToRun.size(); ++i )
+      {
+        if ( checksToRun.test(i) && !f.checkIntegrity(IntegrityCheck(i)) )
+          return false;
+      }
+    }
+    catch(ZimFileFormatError &exception)
+    {
         return false;
     }
 
-    // - Index in TitlePtrList are valid (< articleNumber)
+    return true;
+  }
 
-    return false;
-}
+} // namespace zim

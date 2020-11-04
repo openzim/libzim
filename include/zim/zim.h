@@ -60,6 +60,14 @@ namespace zim
   };
 
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";
+
+  enum class IntegrityCheck
+  {
+    CHECKSUM,
+
+    // This must be the last one and denotes the count of all checks
+    COUNT
+  };
 }
 
 #endif // ZIM_ZIM_H

@@ -109,6 +109,7 @@ namespace zim
       bool verify();
       bool is_multiPart() const;
 
+      bool checkIntegrity(IntegrityCheck checkType);
   private:
       ClusterHandle readCluster(cluster_index_t idx);
   };
