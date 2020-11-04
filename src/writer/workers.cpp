@@ -54,7 +54,7 @@ namespace zim
   namespace writer
   {
 
-    inline unsigned int countWords(const string& text)
+    inline unsigned int countWords(const std::string& text)
     {
       unsigned int numWords = 1;
       unsigned int length = text.size();
