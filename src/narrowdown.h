@@ -138,7 +138,12 @@ public: // functions
   static std::string shortestStringInBetween(const std::string& a, const std::string& b)
   {
     ASSERT(a, <=, b);
-    const auto m = std::mismatch(a.begin(), a.end(), b.begin());
+
+    // msvc version of `std::mismatch(begin1, end1, begin2)`
+    // need `begin2 + (end1-begin1)` to be valid.
+    // So we cannot simply pass `a.end()` as `end1`.
+    const auto minlen = std::min(a.size(), b.size());
+    const auto m = std::mismatch(a.begin(), a.begin()+minlen, b.begin());
     return std::string(b.begin(), std::min(b.end(), m.second+1));
   }
 
