@@ -158,6 +158,48 @@ TEST(ZimFile, openRealZimFile)
   }
 }
 
+class CapturedStderr
+{
+  std::ostringstream buffer;
+  std::streambuf* const sbuf;
+public:
+  CapturedStderr()
+    : sbuf(std::cerr.rdbuf())
+  {
+    std::cerr.rdbuf(buffer.rdbuf());
+  }
+
+  CapturedStderr(const CapturedStderr&) = delete;
+
+  ~CapturedStderr()
+  {
+    std::cerr.rdbuf(sbuf);
+  }
+
+  operator std::string() const { return buffer.str(); }
+};
+
+#define EXPECT_STDERR(x) EXPECT_EQ(x, std::string(stderror))
+#define EXPECT_BROKEN_ZIMFILE(zimpath, expected_stderror_text)    \
+  {                                                               \
+    CapturedStderr stderror;                                      \
+    EXPECT_FALSE(zim::validate(zimpath, all));                    \
+    EXPECT_EQ(expected_stderror_text, std::string(stderror));     \
+  }
+
+TEST(ZimFile, validate)
+{
+  zim::IntegrityCheckList all;
+  all.set();
+
+  ASSERT_TRUE(zim::validate("./data/small.zim", all));
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.smaller_than_header.zim",
+    "zim-file is too small to contain a header\n"
+  );
+}
+
 TEST(ZimFile, multipart)
 {
   const zim::File zimfile1("./data/wikibooks_be_all_nopic_2017-02.zim");

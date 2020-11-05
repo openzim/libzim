@@ -1,5 +1,6 @@
 data_files = [
   'small.zim',
+  'invalid.smaller_than_header.zim',
   'wikibooks_be_all_nopic_2017-02.zim',
   'wikibooks_be_all_nopic_2017-02_splitted.zimaa',
   'wikibooks_be_all_nopic_2017-02_splitted.zimab',

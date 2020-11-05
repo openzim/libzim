@@ -328,7 +328,8 @@ namespace zim
     }
     catch(ZimFileFormatError &exception)
     {
-        return false;
+      std::cerr << exception.what() << std::endl;
+      return false;
     }
 
     return true;

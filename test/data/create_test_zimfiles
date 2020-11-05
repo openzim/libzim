@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+die()
+{
+  echo >&2 '!!! ERROR: $*'
+  exit 1
+}
+
 cd "$(dirname "$0")"
 rm -f small.zim
 zimwriterfs -w main.html \
@@ -12,4 +18,7 @@ zimwriterfs -w main.html \
             small_zimfile_data \
             small.zim \
 && echo 'small.zim was successfully created' \
-|| echo '!!! Failed to create small.zim !!!' >&2
+|| die 'Failed to create small.zim'
+
+head -c40 small.zim > invalid.smaller_than_header.zim \
+  || die 'Failed to create invalid.smaller_than_header.zim'
