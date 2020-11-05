@@ -141,6 +141,7 @@ TEST(ZimFile, wrongChecksumInEmptyZimFile)
 TEST(ZimFile, openRealZimFile)
 {
   const char* const zimfiles[] = {
+    "small.zim",
     "wikibooks_be_all_nopic_2017-02.zim",
     "wikibooks_be_all_nopic_2017-02_splitted.zim",
     "wikipedia_en_climate_change_nopic_2020-01.zim"

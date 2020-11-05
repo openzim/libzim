@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")"
+rm -f small.zim
+zimwriterfs -w main.html \
+            -f favicon.png \
+            -l=en \
+            -t="Test ZIM file" \
+            -d="" \
+            -c="" \
+            -p="" \
+            small_zimfile_data \
+            small.zim \
+&& echo 'small.zim was successfully created' \
+|| echo '!!! Failed to create small.zim !!!' >&2
