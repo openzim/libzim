@@ -198,6 +198,21 @@ TEST(ZimFile, validate)
     "./data/invalid.smaller_than_header.zim",
     "zim-file is too small to contain a header\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_urlptrpos.zim",
+    "Dirent pointer table outside (or not fully inside) ZIM file.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_titleptrpos.zim",
+    "Title index table outside (or not fully inside) ZIM file.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_clusterptrpos.zim",
+    "Cluster pointer table outside (or not fully inside) ZIM file.\n"
+  );
 }
 
 TEST(ZimFile, multipart)

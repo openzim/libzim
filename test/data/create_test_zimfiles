@@ -20,5 +20,41 @@ zimwriterfs -w main.html \
 && echo 'small.zim was successfully created' \
 || die 'Failed to create small.zim'
 
-head -c40 small.zim > invalid.smaller_than_header.zim \
-  || die 'Failed to create invalid.smaller_than_header.zim'
+overwrite_bytes_in_file()
+{
+  local fname=$1
+  local bytes=$2
+  local offset=$3
+  local nbytes=$(printf "$bytes"|wc -c)
+  printf "$bytes" |
+    dd of="$fname" bs=1 seek=$offset count=$nbytes conv=notrunc &> /dev/null
+}
+
+create_broken_zim_file()
+{
+  local broken_zimfile_name=$1
+  local bytes=$2
+  local offset=$3
+
+  cp small.zim "$broken_zimfile_name" \
+  && overwrite_bytes_in_file "$broken_zimfile_name" "$bytes" "$offset" \
+  && echo "$broken_zimfile_name was successfully created" \
+  || die "Failed to create $broken_zimfile_name"
+}
+
+broken_zimfile_name=invalid.smaller_than_header.zim
+head -c40 small.zim > "$broken_zimfile_name" \
+  && echo "$broken_zimfile_name was successfully created" \
+  || die "Failed to create $broken_zimfile_name"
+
+create_broken_zim_file invalid.outofbounds_urlptrpos.zim   \
+                       '\xee\xee\xee\xee\xee\xee\xee\xee'  \
+                       32
+
+create_broken_zim_file invalid.outofbounds_titleptrpos.zim   \
+                       '\xee\xee\xee\xee\xee\xee\xee\xee'  \
+                       40
+
+create_broken_zim_file invalid.outofbounds_clusterptrpos.zim   \
+                       '\xee\xee\xee\xee\xee\xee\xee\xee'  \
+                       48

@@ -86,7 +86,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     // urlPtrOffsetReader
     zsize_t size(header.getArticleCount() * 8);
     if (!zimReader->can_read(offset_t(header.getUrlPtrPos()), size)) {
-      throw ZimFileFormatError("Reading out of zim file.");
+      throw ZimFileFormatError("Dirent pointer table outside (or not fully inside) ZIM file.");
     }
 #ifdef ENABLE_USE_BUFFER_HEADER
     urlPtrOffsetReader = std::unique_ptr<Reader>(new BufferReader(
@@ -98,7 +98,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     // Create titleIndexBuffer
     size = zsize_t(header.getArticleCount() * 4);
     if (!zimReader->can_read(offset_t(header.getTitleIdxPos()), size)) {
-      throw ZimFileFormatError("Reading out of zim file.");
+      throw ZimFileFormatError("Title index table outside (or not fully inside) ZIM file.");
     }
 #ifdef ENABLE_USE_BUFFER_HEADER
     titleIndexReader = std::unique_ptr<Reader>(new BufferReader(
@@ -110,7 +110,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     // clusterOffsetBuffer
     size = zsize_t(header.getClusterCount() * 8);
     if (!zimReader->can_read(offset_t(header.getClusterPtrPos()), size)) {
-      throw ZimFileFormatError("Reading out of zim file.");
+      throw ZimFileFormatError("Cluster pointer table outside (or not fully inside) ZIM file.");
     }
 #ifdef ENABLE_USE_BUFFER_HEADER
     clusterOffsetReader = std::unique_ptr<Reader>(new BufferReader(
