@@ -213,6 +213,11 @@ TEST(ZimFile, validate)
     "./data/invalid.outofbounds_clusterptrpos.zim",
     "Cluster pointer table outside (or not fully inside) ZIM file.\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.invalid_checksumpos.zim",
+    "Checksum position is not valid\n"
+  );
 }
 
 TEST(ZimFile, multipart)
