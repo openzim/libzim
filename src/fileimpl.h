@@ -113,6 +113,7 @@ namespace zim
   private:
       ClusterHandle readCluster(cluster_index_t idx);
       void readMimeTypes();
+      void quickCheckForCorruptFile();
   };
 
 }

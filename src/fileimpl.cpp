@@ -113,6 +113,15 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
                                            offset_t(header.getClusterPtrPos()),
                                            zsize_t(8*header.getClusterCount()));
 
+    quickCheckForCorruptFile();
+
+    readMimeTypes();
+
+    m_direntLookup.init(this, envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE));
+  }
+
+  void FileImpl::quickCheckForCorruptFile()
+  {
     if (!getCountClusters())
       log_warn("no clusters found");
     else
@@ -129,10 +138,6 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
       throw ZimFileFormatError("Checksum position is not valid");
     }
-
-    readMimeTypes();
-
-    m_direntLookup.init(this, envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE));
   }
 
   void FileImpl::readMimeTypes()
