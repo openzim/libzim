@@ -84,8 +84,6 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     if (zimFile->fail())
       throw ZimFileFormatError(std::string("can't open zim-file \"") + fname + '"');
 
-    filename = fname;
-
     // read header
     if (size_type(zimReader->size()) < Fileheader::size) {
       throw ZimFileFormatError("zim-file is too small to contain a header");
