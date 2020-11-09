@@ -64,6 +64,7 @@ namespace zim
   enum class IntegrityCheck
   {
     CHECKSUM,
+    DIRENT_PTRS, // Checks that offsets in UrlPtrList are valid
 
     // This must be the last one and denotes the count of all checks
     COUNT

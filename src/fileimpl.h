@@ -114,6 +114,8 @@ namespace zim
       ClusterHandle readCluster(cluster_index_t idx);
       void readMimeTypes();
       void quickCheckForCorruptFile();
+
+      bool checkDirentPtrs();
   };
 
 }

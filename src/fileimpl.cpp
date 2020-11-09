@@ -42,7 +42,7 @@ namespace zim
 namespace
 {
 
-offset_t readOffset(const Reader& reader, size_t idx)
+offset_t readOffset(const Reader& reader, article_index_type idx)
 {
   offset_t offset(reader.read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
   return offset;
@@ -508,8 +508,28 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   bool FileImpl::checkIntegrity(IntegrityCheck checkType) {
     switch(checkType) {
       case IntegrityCheck::CHECKSUM: return FileImpl::verify();
+      case IntegrityCheck::DIRENT_PTRS: return FileImpl::checkDirentPtrs();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
     return false;
+  }
+
+  bool FileImpl::checkDirentPtrs() {
+    const article_index_type articleCount = getCountArticles().v;
+    const offset_t validDirentRangeStart(80);
+    const offset_t validDirentRangeEnd = header.hasChecksum()
+                                       ? offset_t(header.getChecksumPos())
+                                       : offset_t(zimReader->size().v);
+    const zsize_t direntMinSize(11);
+    for ( article_index_type i = 0; i < articleCount; ++i )
+    {
+      const auto offset = readOffset(*urlPtrOffsetReader, i);
+      if ( offset < validDirentRangeStart ||
+           offset + direntMinSize > validDirentRangeEnd ) {
+        std::cerr << "Invalid dirent pointer" << std::endl;
+        return false;
+      }
+    }
+    return true;
   }
 }

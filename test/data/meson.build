@@ -6,6 +6,8 @@ data_files = [
   'invalid.outofbounds_clusterptrpos.zim',
   'invalid.invalid_mimelistpos.zim',
   'invalid.invalid_checksumpos.zim',
+  'invalid.outofbounds_first_direntptr.zim',
+  'invalid.outofbounds_last_direntptr.zim',
   'wikibooks_be_all_nopic_2017-02.zim',
   'wikibooks_be_all_nopic_2017-02_splitted.zimaa',
   'wikibooks_be_all_nopic_2017-02_splitted.zimab',

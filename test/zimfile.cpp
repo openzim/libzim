@@ -223,6 +223,16 @@ TEST(ZimFile, validate)
     "./data/invalid.invalid_checksumpos.zim",
     "Checksum position is not valid\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_first_direntptr.zim",
+    "Invalid dirent pointer\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_last_direntptr.zim",
+    "Invalid dirent pointer\n"
+  );
 }
 
 TEST(ZimFile, multipart)

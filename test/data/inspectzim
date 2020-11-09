@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+
+myname=$(basename "$0")
+
+die()
+{
+  echo 1>&2 "ERROR: $*"
+  exit 1
+}
+
+declare -A options=()
+while [[ "$1" == --* ]]
+do
+  options["${1#--}"]=1
+  shift
+done
+
+if [ "$#" -ne 1 ]
+then
+  cat 1>&2 <<END
+Usage:
+
+  $myname [options] <zimfile>
+
+Options:
+
+  --header
+  --dirent_ptr_table
+  --title_index
+  --cluster_table
+END
+  exit 1
+fi
+
+zimfile=$1
+
+test -r "$zimfile" || die "cannot read '$zimfile'"
+
+read_magic_number()
+{
+  hexdump -n4 -e '1/4 "%i"' "$zimfile"
+}
+
+restore_64bit_integers()
+{
+  sed -e 's/0x\([[:xdigit:]]\{8\}\)+0x\([[:xdigit:]]\{8\}\)00000000$/0x\2\1/'
+}
+
+dump_header()
+{
+  local header_format='
+    "major_version:   " 1/2 "%i"                            "\n"
+    "minor_version:   " 1/2 "%i"                            "\n"
+    "uuid:            " 16/1 "%x"                           "\n"
+    "article_count:   " 1/4 "%i"                            "\n"
+    "cluster_count:   " 1/4 "%i"                            "\n"
+    "url_ptr_pos:     " 1/4 "0x%08x+" 1/4 "0x%08x00000000"  "\n"
+    "title_ptr_pos:   " 1/4 "0x%08x+" 1/4 "0x%08x00000000"  "\n"
+    "cluster_ptr_pos: " 1/4 "0x%08x+" 1/4 "0x%08x00000000"  "\n"
+    "mime_list_pos:   " 1/4 "0x%08x+" 1/4 "0x%08x00000000"  "\n"
+    "main_page:       " 1/4 "%i"                            "\n"
+    "layout_page:     " 1/4 "%i"                            "\n"
+    "checksum_pos:    " 1/4 "0x%08x+" 1/4 "0x%08x00000000"  "\n"
+'
+  hexdump -s4 -n76 -e "$header_format" "$zimfile"|restore_64bit_integers
+}
+
+dump_cluser_table()
+{
+  printf "# CLUSTER PTR TABLE\n"
+  hexdump -s$((cluster_ptr_pos)) \
+          -n$((8*cluster_count)) \
+          -e '1/4 "0x%08x+" 1/4 "0x%08x00000000" "\n"' \
+          "$zimfile"|restore_64bit_integers
+  printf "\n"
+}
+
+dump_dirent_ptr_table()
+{
+  printf "# DIRENT PTR TABLE\n"
+  hexdump -s$((url_ptr_pos)) \
+          -n$((8*article_count)) \
+          -e '1/4 "0x%08x+" 1/4 "0x%08x00000000" "\n"' \
+          "$zimfile"|restore_64bit_integers
+  printf "\n"
+}
+
+dump_title_index()
+{
+  printf "# TITLE INDEX\n"
+  hexdump -s$((title_ptr_pos)) \
+          -n$((4*article_count)) \
+          -e '1/4 "%u" "\n"' \
+          "$zimfile"
+  printf "\n"
+}
+
+magic_number=$(read_magic_number)
+test "$magic_number" == 72173914 || \
+  die "invalid magic number (must be 72173914)"
+
+header=$(dump_header)
+eval "$(echo "$header"|sed 's/: */=/')"
+
+if [ "${options['header']}" == 1 ]
+then
+  printf "# HEADER\n"
+  printf "magic_number:    $magic_number\n"
+  printf "%s\n\n" "$header"
+fi
+
+
+if [ "${options['cluster_table']}" == 1 ]
+then
+  dump_cluser_table
+fi
+if [ "${options['dirent_ptr_table']}" == 1 ]
+then
+  dump_dirent_ptr_table
+fi
+if [ "${options['title_index']}" == 1 ]
+then
+  dump_title_index
+fi
