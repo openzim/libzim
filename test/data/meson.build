@@ -4,6 +4,7 @@ data_files = [
   'invalid.outofbounds_urlptrpos.zim',
   'invalid.outofbounds_titleptrpos.zim',
   'invalid.outofbounds_clusterptrpos.zim',
+  'invalid.invalid_mimelistpos.zim',
   'invalid.invalid_checksumpos.zim',
   'wikibooks_be_all_nopic_2017-02.zim',
   'wikibooks_be_all_nopic_2017-02_splitted.zimaa',

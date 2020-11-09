@@ -59,6 +59,10 @@ create_broken_zim_file invalid.outofbounds_clusterptrpos.zim   \
                        '\xee\xee\xee\xee\xee\xee\xee\xee'  \
                        48
 
+create_broken_zim_file invalid.invalid_mimelistpos.zim   \
+                       '\x00\x00\x00\x00\x00\x00\x00\x00'  \
+                       56
+
 create_broken_zim_file invalid.invalid_checksumpos.zim   \
                        '\x00\x00\x00\x00\x00\x00\x00\x00'  \
                        72

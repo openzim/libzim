@@ -215,6 +215,11 @@ TEST(ZimFile, validate)
   );
 
   EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.invalid_mimelistpos.zim",
+    "mimelistPos must be 80.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
     "./data/invalid.invalid_checksumpos.zim",
     "Checksum position is not valid\n"
   );
