@@ -48,6 +48,21 @@ offset_t readOffset(const Reader& reader, size_t idx)
   return offset;
 }
 
+std::unique_ptr<const Reader>
+sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
+                 offset_t offset, zsize_t size)
+{
+  if (!zimReader.can_read(offset, size)) {
+    throw ZimFileFormatError(sectionName + " outside (or not fully inside) ZIM file.");
+  }
+#ifdef ENABLE_USE_BUFFER_HEADER
+  const auto buf = zimReader.get_buffer(offset, size);
+  return std::unique_ptr<Reader>(new BufferReader(buf));
+#else
+  return zimReader.sub_reader(offset, size);
+#endif
+}
+
 } //unnamed namespace
 
   //////////////////////////////////////////////////////////////////////
@@ -83,41 +98,20 @@ offset_t readOffset(const Reader& reader, size_t idx)
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
-    // urlPtrOffsetReader
-    zsize_t size(header.getArticleCount() * 8);
-    if (!zimReader->can_read(offset_t(header.getUrlPtrPos()), size)) {
-      throw ZimFileFormatError("Dirent pointer table outside (or not fully inside) ZIM file.");
-    }
-#ifdef ENABLE_USE_BUFFER_HEADER
-    urlPtrOffsetReader = std::unique_ptr<Reader>(new BufferReader(
-	zimReader->get_buffer(offset_t(header.getUrlPtrPos()), size)));
-#else
-    urlPtrOffsetReader = zimReader->sub_reader(offset_t(header.getUrlPtrPos()), size);
-#endif
+    urlPtrOffsetReader = sectionSubReader(*zimReader,
+                                          "Dirent pointer table",
+                                          offset_t(header.getUrlPtrPos()),
+                                          zsize_t(8*header.getArticleCount()));
 
-    // Create titleIndexBuffer
-    size = zsize_t(header.getArticleCount() * 4);
-    if (!zimReader->can_read(offset_t(header.getTitleIdxPos()), size)) {
-      throw ZimFileFormatError("Title index table outside (or not fully inside) ZIM file.");
-    }
-#ifdef ENABLE_USE_BUFFER_HEADER
-    titleIndexReader = std::unique_ptr<Reader>(new BufferReader(
-        zimReader->get_buffer(offset_t(header.getTitleIdxPos()), size)));
-#else
-    titleIndexReader = zimReader->sub_reader(offset_t(header.getTitleIdxPos()), size);
-#endif
+    titleIndexReader = sectionSubReader(*zimReader,
+                                        "Title index table",
+                                        offset_t(header.getTitleIdxPos()),
+                                        zsize_t(4*header.getArticleCount()));
 
-    // clusterOffsetBuffer
-    size = zsize_t(header.getClusterCount() * 8);
-    if (!zimReader->can_read(offset_t(header.getClusterPtrPos()), size)) {
-      throw ZimFileFormatError("Cluster pointer table outside (or not fully inside) ZIM file.");
-    }
-#ifdef ENABLE_USE_BUFFER_HEADER
-    clusterOffsetReader = std::unique_ptr<Reader>(new BufferReader(
-        zimReader->get_buffer(offset_t(header.getClusterPtrPos()), size)));
-#else
-    clusterOffsetReader = zimReader->sub_reader(offset_t(header.getClusterPtrPos()), size);
-#endif
+    clusterOffsetReader = sectionSubReader(*zimReader,
+                                           "Cluster pointer table",
+                                           offset_t(header.getClusterPtrPos()),
+                                           zsize_t(8*header.getClusterCount()));
 
     if (!getCountClusters())
       log_warn("no clusters found");
@@ -144,7 +138,7 @@ offset_t readOffset(const Reader& reader, size_t idx)
     //   mimetype list is before this.
     // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
     auto endMimeList = std::min(header.getUrlPtrPos(), static_cast<zim::offset_type>(1024));
-    size = zsize_t(endMimeList - header.getMimeListPos());
+    const zsize_t size(endMimeList - header.getMimeListPos());
     auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
     offset_t current = offset_t(0);
     while (current.v < size.v)
