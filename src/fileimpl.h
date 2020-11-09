@@ -117,6 +117,7 @@ namespace zim
       void readMimeTypes();
       void quickCheckForCorruptFile();
 
+      bool checkChecksum();
       bool checkDirentPtrs();
   };
 

@@ -515,11 +515,19 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
   bool FileImpl::checkIntegrity(IntegrityCheck checkType) {
     switch(checkType) {
-      case IntegrityCheck::CHECKSUM: return FileImpl::verify();
+      case IntegrityCheck::CHECKSUM: return FileImpl::checkChecksum();
       case IntegrityCheck::DIRENT_PTRS: return FileImpl::checkDirentPtrs();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
     return false;
+  }
+
+  bool FileImpl::checkChecksum() {
+    if ( ! verify() ) {
+        std::cerr << "Checksum doesn't match" << std::endl;
+        return false;
+    }
+    return true;
   }
 
   bool FileImpl::checkDirentPtrs() {
