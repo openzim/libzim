@@ -130,6 +130,13 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       throw ZimFileFormatError("Checksum position is not valid");
     }
 
+    readMimeTypes();
+
+    m_direntLookup.init(this, envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE));
+  }
+
+  void FileImpl::readMimeTypes()
+  {
     // read mime types
     // libzim write zims files two ways :
     // - The old way by putting the urlPtrPos just after the mimetype.
@@ -158,9 +165,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
       current += (len + 1);
     }
-    m_direntLookup.init(this, envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE));
   }
-
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
