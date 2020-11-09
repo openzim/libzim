@@ -68,7 +68,8 @@ namespace zim
       std::vector<pair_type> articleListByCluster;
       std::once_flag orderOnceFlag;
 
-      DirentLookup<FileImpl> m_direntLookup;
+      using DirentLookup = zim::DirentLookup<FileImpl>;
+      mutable std::unique_ptr<DirentLookup> m_direntLookup;
 
     public:
       explicit FileImpl(const std::string& fname);
@@ -111,6 +112,7 @@ namespace zim
 
       bool checkIntegrity(IntegrityCheck checkType);
   private:
+      DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
       void readMimeTypes();
       void quickCheckForCorruptFile();

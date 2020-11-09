@@ -39,7 +39,7 @@ public: // types
   typedef std::pair<bool, article_index_t> Result;
 
 public: // functions
-  void init(Impl* _impl, article_index_type cacheEntryCount);
+  DirentLookup(Impl* _impl, article_index_type cacheEntryCount);
 
   article_index_t getNamespaceRangeBegin(char ns) const;
   article_index_t getNamespaceRangeEnd(char ns) const;
@@ -71,8 +71,7 @@ DirentLookup<Impl>::getDirentKey(article_index_type i) const
 }
 
 template<class Impl>
-void
-DirentLookup<Impl>::init(Impl* _impl, article_index_type cacheEntryCount)
+DirentLookup<Impl>::DirentLookup(Impl* _impl, article_index_type cacheEntryCount)
 {
   ASSERT(impl == nullptr, ==, true);
   impl = _impl;

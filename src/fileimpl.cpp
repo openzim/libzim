@@ -114,8 +114,16 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     quickCheckForCorruptFile();
 
     readMimeTypes();
+  }
 
-    m_direntLookup.init(this, envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE));
+
+  FileImpl::DirentLookup& FileImpl::direntLookup()
+  {
+    if ( ! m_direntLookup ) {
+      const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
+      m_direntLookup.reset(new DirentLookup(this, cacheSize));
+    }
+    return *m_direntLookup;
   }
 
   void FileImpl::quickCheckForCorruptFile()
@@ -172,7 +180,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
   std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
   {
-    return m_direntLookup.find(ns, url);
+    return direntLookup().find(ns, url);
   }
 
   std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)
@@ -385,13 +393,13 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   article_index_t FileImpl::getNamespaceBeginOffset(char ch)
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
-    return m_direntLookup.getNamespaceRangeBegin(ch);
+    return direntLookup().getNamespaceRangeBegin(ch);
   }
 
   article_index_t FileImpl::getNamespaceEndOffset(char ch)
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
-    return m_direntLookup.getNamespaceRangeEnd(ch);
+    return direntLookup().getNamespaceRangeEnd(ch);
   }
 
   std::string FileImpl::getNamespaces()
