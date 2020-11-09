@@ -182,8 +182,11 @@ public:
 #define EXPECT_STDERR(x) EXPECT_EQ(x, std::string(stderror))
 #define EXPECT_BROKEN_ZIMFILE(zimpath, expected_stderror_text)    \
   {                                                               \
+    zim::IntegrityCheckList checksToRun;                          \
+    checksToRun.set();                                            \
+    checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));     \
     CapturedStderr stderror;                                      \
-    EXPECT_FALSE(zim::validate(zimpath, all));                    \
+    EXPECT_FALSE(zim::validate(zimpath, checksToRun));            \
     EXPECT_EQ(expected_stderror_text, std::string(stderror));     \
   }
 
