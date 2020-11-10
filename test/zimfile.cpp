@@ -179,7 +179,6 @@ public:
   operator std::string() const { return buffer.str(); }
 };
 
-#define EXPECT_STDERR(x) EXPECT_EQ(x, std::string(stderror))
 #define EXPECT_BROKEN_ZIMFILE(zimpath, expected_stderror_text)    \
   {                                                               \
     zim::IntegrityCheckList checksToRun;                          \
