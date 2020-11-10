@@ -91,6 +91,7 @@ create_broken_zim_file invalid.invalid_checksumpos.zim   \
 article_count=$(get_header_field article_count)
 url_ptr_pos=$(get_header_field url_ptr_pos)
 title_ptr_pos=$(get_header_field title_ptr_pos)
+cluster_ptr_pos=$(get_header_field cluster_ptr_pos)
 bad_article_index=$(encode_integer_as_printf_fmt_string $((article_count)))
 create_broken_zim_file invalid.outofbounds_first_direntptr.zim   \
                        "$outofzimfile" \
@@ -107,3 +108,7 @@ create_broken_zim_file invalid.outofbounds_first_title_entry.zim   \
 create_broken_zim_file invalid.outofbounds_last_title_entry.zim   \
                        "$bad_article_index" \
                        $((title_ptr_pos+4*(article_count-1)))
+
+create_broken_zim_file invalid.outofbounds_first_clusterptr.zim   \
+                       "$outofzimfile" \
+                       $((cluster_ptr_pos))

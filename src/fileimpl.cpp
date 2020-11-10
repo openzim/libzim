@@ -518,6 +518,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       case IntegrityCheck::CHECKSUM: return FileImpl::checkChecksum();
       case IntegrityCheck::DIRENT_PTRS: return FileImpl::checkDirentPtrs();
       case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
+      case IntegrityCheck::CLUSTER_PTRS: return FileImpl::checkClusterPtrs();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
     return false;
@@ -533,7 +534,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
   bool FileImpl::checkDirentPtrs() {
     const article_index_type articleCount = getCountArticles().v;
-    const offset_t validDirentRangeStart(80);
+    const offset_t validDirentRangeStart(80); // XXX: really???
     const offset_t validDirentRangeEnd = header.hasChecksum()
                                        ? offset_t(header.getChecksumPos())
                                        : offset_t(zimReader->size().v);
@@ -544,6 +545,25 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       if ( offset < validDirentRangeStart ||
            offset + direntMinSize > validDirentRangeEnd ) {
         std::cerr << "Invalid dirent pointer" << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool FileImpl::checkClusterPtrs() {
+    const cluster_index_type clusterCount = getCountClusters().v;
+    const offset_t validClusterRangeStart(80); // XXX: really???
+    const offset_t validClusterRangeEnd = header.hasChecksum()
+                                       ? offset_t(header.getChecksumPos())
+                                       : offset_t(zimReader->size().v);
+    const zsize_t clusterMinSize(1); // XXX
+    for ( cluster_index_type i = 0; i < clusterCount; ++i )
+    {
+      const auto offset = readOffset(*clusterOffsetReader, i);
+      if ( offset < validClusterRangeStart ||
+           offset + clusterMinSize > validClusterRangeEnd ) {
+        std::cerr << "Invalid cluster pointer" << std::endl;
         return false;
       }
     }

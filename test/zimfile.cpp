@@ -245,6 +245,11 @@ TEST(ZimFile, validate)
     "./data/invalid.outofbounds_last_title_entry.zim",
     "Invalid title index entry\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_first_clusterptr.zim",
+    "Invalid cluster pointer\n"
+  );
 }
 
 TEST(ZimFile, multipart)
