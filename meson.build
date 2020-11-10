@@ -28,6 +28,9 @@ static_linkage = get_option('static-linkage')
 static_linkage = static_linkage or get_option('default_library')=='static'
 
 lzma_dep = dependency('liblzma', static:static_linkage)
+if static_linkage
+  add_project_arguments('-DLZMA_API_STATIC', language: 'cpp')
+endif
 
 zstd_dep = dependency('libzstd', static:static_linkage)
 
