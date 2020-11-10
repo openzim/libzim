@@ -517,6 +517,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     switch(checkType) {
       case IntegrityCheck::CHECKSUM: return FileImpl::checkChecksum();
       case IntegrityCheck::DIRENT_PTRS: return FileImpl::checkDirentPtrs();
+      case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
     return false;
@@ -543,6 +544,20 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       if ( offset < validDirentRangeStart ||
            offset + direntMinSize > validDirentRangeEnd ) {
         std::cerr << "Invalid dirent pointer" << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool FileImpl::checkTitleIndex() {
+    const article_index_type articleCount = getCountArticles().v;
+    for ( article_index_type i = 0; i < articleCount; ++i )
+    {
+      const offset_t offset(i*sizeof(article_index_t));
+      const auto a = titleIndexReader->read_uint<article_index_type>(offset);
+      if ( a >= articleCount ) {
+        std::cerr << "Invalid title index entry" << std::endl;
         return false;
       }
     }

@@ -65,6 +65,7 @@ namespace zim
   {
     CHECKSUM,
     DIRENT_PTRS, // Checks that offsets in UrlPtrList are valid
+    TITLE_INDEX, // Checks that entries in the title index are valid
 
     // This must be the last one and denotes the count of all checks
     COUNT

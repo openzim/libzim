@@ -235,6 +235,16 @@ TEST(ZimFile, validate)
     "./data/invalid.outofbounds_last_direntptr.zim",
     "Invalid dirent pointer\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_first_title_entry.zim",
+    "Invalid title index entry\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_last_title_entry.zim",
+    "Invalid title index entry\n"
+  );
 }
 
 TEST(ZimFile, multipart)

@@ -119,6 +119,7 @@ namespace zim
 
       bool checkChecksum();
       bool checkDirentPtrs();
+      bool checkTitleIndex();
   };
 
 }
