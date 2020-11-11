@@ -23,6 +23,7 @@
 #include <string>
 #include <iterator>
 #include <memory>
+#include <bitset>
 #include "zim.h"
 #include "article.h"
 #include "blob.h"
@@ -92,10 +93,14 @@ namespace zim
       bool verify();
 
       bool is_multiPart() const;
+
+      bool checkIntegrity(IntegrityCheck checkType);
   };
 
   std::string urldecode(const std::string& url);
 
+  typedef std::bitset<size_t(IntegrityCheck::COUNT)> IntegrityCheckList;
+  bool validate(const std::string& zimPath, IntegrityCheckList checksToRun);
 }
 
 #endif // ZIM_FILE_H

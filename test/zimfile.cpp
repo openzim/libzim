@@ -141,6 +141,7 @@ TEST(ZimFile, wrongChecksumInEmptyZimFile)
 TEST(ZimFile, openRealZimFile)
 {
   const char* const zimfiles[] = {
+    "small.zim",
     "wikibooks_be_all_nopic_2017-02.zim",
     "wikibooks_be_all_nopic_2017-02_splitted.zim",
     "wikipedia_en_climate_change_nopic_2020-01.zim"
@@ -155,6 +156,100 @@ TEST(ZimFile, openRealZimFile)
       EXPECT_TRUE( zimfile->verify() ) << ctx;
     }
   }
+}
+
+class CapturedStderr
+{
+  std::ostringstream buffer;
+  std::streambuf* const sbuf;
+public:
+  CapturedStderr()
+    : sbuf(std::cerr.rdbuf())
+  {
+    std::cerr.rdbuf(buffer.rdbuf());
+  }
+
+  CapturedStderr(const CapturedStderr&) = delete;
+
+  ~CapturedStderr()
+  {
+    std::cerr.rdbuf(sbuf);
+  }
+
+  operator std::string() const { return buffer.str(); }
+};
+
+#define EXPECT_BROKEN_ZIMFILE(zimpath, expected_stderror_text)    \
+  {                                                               \
+    zim::IntegrityCheckList checksToRun;                          \
+    checksToRun.set();                                            \
+    checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));     \
+    CapturedStderr stderror;                                      \
+    EXPECT_FALSE(zim::validate(zimpath, checksToRun));            \
+    EXPECT_EQ(expected_stderror_text, std::string(stderror));     \
+  }
+
+TEST(ZimFile, validate)
+{
+  zim::IntegrityCheckList all;
+  all.set();
+
+  ASSERT_TRUE(zim::validate("./data/small.zim", all));
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.smaller_than_header.zim",
+    "zim-file is too small to contain a header\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_urlptrpos.zim",
+    "Dirent pointer table outside (or not fully inside) ZIM file.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_titleptrpos.zim",
+    "Title index table outside (or not fully inside) ZIM file.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_clusterptrpos.zim",
+    "Cluster pointer table outside (or not fully inside) ZIM file.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.invalid_mimelistpos.zim",
+    "mimelistPos must be 80.\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.invalid_checksumpos.zim",
+    "Checksum position is not valid\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_first_direntptr.zim",
+    "Invalid dirent pointer\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_last_direntptr.zim",
+    "Invalid dirent pointer\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_first_title_entry.zim",
+    "Invalid title index entry\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_last_title_entry.zim",
+    "Invalid title index entry\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.outofbounds_first_clusterptr.zim",
+    "Invalid cluster pointer\n"
+  );
 }
 
 TEST(ZimFile, multipart)
