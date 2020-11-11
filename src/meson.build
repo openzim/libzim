@@ -48,11 +48,7 @@ xapian_sources = [
 ]
 
 sources = common_sources
-deps = [thread_dep, lzma_dep]
-
-if zstd_dep.found()
-    deps += [zstd_dep]
-endif
+deps = [thread_dep, lzma_dep, zstd_dep]
 
 if target_machine.system() == 'freebsd'
     deps += [execinfo_dep]
