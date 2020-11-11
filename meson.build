@@ -27,9 +27,6 @@ conf.set('ENABLE_USE_BUFFER_HEADER', get_option('USE_BUFFER_HEADER'))
 static_linkage = get_option('static-linkage')
 static_linkage = static_linkage or get_option('default_library')=='static'
 
-zlib_dep = dependency('zlib', required:false, static:static_linkage)
-conf.set('ENABLE_ZLIB', zlib_dep.found())
-
 lzma_dep = dependency('liblzma', static:static_linkage)
 
 zstd_dep = dependency('libzstd', static:static_linkage)
@@ -53,9 +50,6 @@ else
     thread_dep = dependency('threads')
     extra_link_args = []
     extra_cpp_args = []
-endif
-if zlib_dep.found()
-    pkg_requires += ['zlib']
 endif
 
 if xapian_dep.found()

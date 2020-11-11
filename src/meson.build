@@ -50,10 +50,6 @@ xapian_sources = [
 sources = common_sources
 deps = [thread_dep, lzma_dep]
 
-if zlib_dep.found()
-    deps += [zlib_dep]
-endif
-
 if zstd_dep.found()
     deps += [zstd_dep]
 endif

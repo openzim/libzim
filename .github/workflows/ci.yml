@@ -37,7 +37,7 @@ jobs:
           MESON_OPTION="--default-library=shared"
           MESON_CROSSFILE="$HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
           if [[ ! "${{matrix.target}}" =~ native_.* ]]; then
-            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE"
+            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
             cat $MESON_CROSSFILE
           fi
           export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig
