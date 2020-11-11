@@ -11,9 +11,6 @@
 
 #include <lzma.h>
 #include <zstd.h>
-#if defined(ENABLE_ZLIB)
-#include <zlib.h>
-#endif
 
 #include "zim_types.h"
 
@@ -50,19 +47,6 @@ struct LZMA_INFO {
   static void stream_end_decode(stream_t* stream);
 };
 
-
-#if defined(ENABLE_ZLIB)
-struct ZIP_INFO {
-  typedef z_stream stream_t;
-  static const std::string name;
-  static void init_stream_decoder(stream_t* stream, char* raw_data);
-  static void init_stream_encoder(stream_t* stream, char* raw_data);
-  static CompStatus stream_run_encode(stream_t* stream, CompStep step);
-  static CompStatus stream_run_decode(stream_t* stream, CompStep step);
-  static void stream_end_encode(stream_t* stream);
-  static void stream_end_decode(stream_t* stream);
-};
-#endif
 
 struct ZSTD_INFO {
   struct stream_t

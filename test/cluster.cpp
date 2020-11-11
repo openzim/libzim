@@ -127,36 +127,6 @@ TEST(ClusterTest, read_write_empty)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, 0U);
 }
 
-#if defined(ENABLE_ZLIB)
-TEST(ClusterTest, read_write_clusterZ)
-{
-  zim::writer::Cluster cluster(zim::zimcompZip);
-
-  std::string blob0("123456789012345678901234567890");
-  std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  std::string blob2("abcdefghijklmnopqrstuvwxyz");
-
-  cluster.addData(blob0.data(), zim::zsize_t(blob0.size()));
-  cluster.addData(blob1.data(), zim::zsize_t(blob1.size()));
-  cluster.addData(blob2.data(), zim::zsize_t(blob2.size()));
-
-  cluster.close();
-  auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
-  zim::Cluster& cluster2 = *cluster2shptr;
-  ASSERT_EQ(cluster2.isExtended, false);
-  ASSERT_EQ(cluster2.count().v, 3U);
-  ASSERT_EQ(cluster2.getCompression(), zim::zimcompZip);
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
-  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
-  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
-}
-
-#endif
-
 TEST(ClusterTest, read_write_clusterLzma)
 {
   zim::writer::Cluster cluster(zim::zimcompLzma);

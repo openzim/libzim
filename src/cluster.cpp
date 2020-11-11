@@ -61,11 +61,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
     case zimcompZstd:
       return std::unique_ptr<IStreamReader>(new DecoderStreamReader<ZSTD_INFO>(subReader));
     case zimcompZip:
-#if defined(ENABLE_ZLIB)
-      return std::unique_ptr<IStreamReader>(new DecoderStreamReader<ZIP_INFO>(subReader));
-#else
       throw std::runtime_error("zlib not enabled in this library");
-#endif
     case zimcompBzip2:
       throw std::runtime_error("bzip2 not enabled in this library");
     default:

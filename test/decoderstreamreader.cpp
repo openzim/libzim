@@ -59,9 +59,6 @@ class DecoderStreamReaderTest : public testing::Test {
 using CompressionTypes = ::testing::Types<
   LZMA_INFO,
   ZSTD_INFO
-#if defined(ENABLE_ZLIB)
-  ,ZIP_INFO
-#endif
 >;
 
 TYPED_TEST_CASE(DecoderStreamReaderTest, CompressionTypes);
