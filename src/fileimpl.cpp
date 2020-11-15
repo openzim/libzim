@@ -520,6 +520,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     switch(checkType) {
       case IntegrityCheck::CHECKSUM: return FileImpl::checkChecksum();
       case IntegrityCheck::DIRENT_PTRS: return FileImpl::checkDirentPtrs();
+      case IntegrityCheck::DIRENT_ORDER: return FileImpl::checkDirentOrder();
       case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
       case IntegrityCheck::CLUSTER_PTRS: return FileImpl::checkClusterPtrs();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
@@ -550,6 +551,25 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
         std::cerr << "Invalid dirent pointer" << std::endl;
         return false;
       }
+    }
+    return true;
+  }
+
+  bool FileImpl::checkDirentOrder() {
+    const article_index_type articleCount = getCountArticles().v;
+    std::shared_ptr<const Dirent> prevDirent;
+    for ( article_index_type i = 0; i < articleCount; ++i )
+    {
+      const auto offset = readOffset(*urlPtrOffsetReader, i);
+      const std::shared_ptr<const Dirent> dirent = readDirent(offset);
+      if ( prevDirent && !(prevDirent->getLongUrl() < dirent->getLongUrl()) )
+      {
+        std::cerr << "Dirent table is not properly sorted:\n"
+                  << "  #" << i-1 << ": " << prevDirent->getLongUrl() << "\n"
+                  << "  #" << i   << ": " << dirent->getLongUrl() << std::endl;
+        return false;
+      }
+      prevDirent = dirent;
     }
     return true;
   }

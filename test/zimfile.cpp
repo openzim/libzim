@@ -251,6 +251,13 @@ TEST(ZimFile, validate)
     "./data/invalid.outofbounds_first_clusterptr.zim",
     "Invalid cluster pointer\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.nonsorted_dirent_table.zim",
+    "Dirent table is not properly sorted:\n"
+    "  #0: A/main.html\n"
+    "  #1: -/favicon\n"
+  );
 }
 
 TEST(ZimFile, multipart)

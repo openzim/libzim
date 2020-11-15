@@ -11,6 +11,7 @@ data_files = [
   'invalid.outofbounds_first_title_entry.zim',
   'invalid.outofbounds_last_title_entry.zim',
   'invalid.outofbounds_first_clusterptr.zim',
+  'invalid.nonsorted_dirent_table.zim',
   'wikibooks_be_all_nopic_2017-02.zim',
   'wikibooks_be_all_nopic_2017-02_splitted.zimaa',
   'wikibooks_be_all_nopic_2017-02_splitted.zimab',
