@@ -258,6 +258,13 @@ TEST(ZimFile, validate)
     "  #0: A/main.html\n"
     "  #1: -/favicon\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.nonsorted_title_index.zim",
+    "Title index is not properly sorted:\n"
+    "  #0: A/Test ZIM file\n"
+    "  #1: -/favicon\n"
+  );
 }
 
 TEST(ZimFile, multipart)

@@ -593,8 +593,19 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return true;
   }
 
+namespace
+{
+
+std::string pseudoTitle(const Dirent& d)
+{
+  return std::string(1, d.getNamespace()) + '/' + d.getTitle();
+}
+
+} // unnamed namespace
+
   bool FileImpl::checkTitleIndex() {
     const article_index_type articleCount = getCountArticles().v;
+    std::shared_ptr<const Dirent> prevDirent;
     for ( article_index_type i = 0; i < articleCount; ++i )
     {
       const offset_t offset(i*sizeof(article_index_t));
@@ -603,6 +614,16 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
         std::cerr << "Invalid title index entry" << std::endl;
         return false;
       }
+      const auto direntOffset = readOffset(*urlPtrOffsetReader, a);
+      const std::shared_ptr<const Dirent> dirent = readDirent(direntOffset);
+      if ( prevDirent && !(pseudoTitle(*prevDirent) < pseudoTitle(*dirent)) )
+      {
+        std::cerr << "Title index is not properly sorted:\n"
+                  << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
+                  << "  #" << i   << ": " << pseudoTitle(*dirent) << std::endl;
+        return false;
+      }
+      prevDirent = dirent;
     }
     return true;
   }
