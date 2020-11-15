@@ -301,6 +301,15 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     }
 
     offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
+    const auto dirent = readDirent(indexOffset);
+    std::lock_guard<std::mutex> l(direntCacheLock);
+    direntCache.put(idx.v, dirent);
+
+    return dirent;
+  }
+
+  std::shared_ptr<const Dirent> FileImpl::readDirent(offset_t indexOffset)
+  {
     // We don't know the size of the dirent because it depends of the size of
     // the title, url and extra parameters.
     // This is a pitty but we have no choices.
@@ -334,9 +343,6 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     }
 
     log_debug("dirent read from " << indexOffset);
-    std::lock_guard<std::mutex> l(direntCacheLock);
-    direntCache.put(idx.v, dirent);
-
     return dirent;
   }
 
