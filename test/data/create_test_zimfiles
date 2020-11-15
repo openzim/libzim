@@ -26,15 +26,25 @@ zimheader=$(./inspectzim --header small.zim|tail -n +2)
 
 encode_integer_as_printf_fmt_string()
 {
-  local i n=$1
-  for (( i=0; i<8; ++i ))
+  local i n=$1 size=$2
+  for (( i=0; i<size; ++i ))
   do
-    printf '\\x%02x' $((n%16))
-    let n=$((n/16))
+    printf '\\x%02x' $((n%256))
+    let n=$((n/256))
   done
 }
 
-outofzimfile=$(encode_integer_as_printf_fmt_string $((zimfilesize+10)))
+encode_uint64()
+{
+  encode_integer_as_printf_fmt_string "$1" 8
+}
+
+encode_uint32()
+{
+  encode_integer_as_printf_fmt_string "$1" 4
+}
+
+outofzimfile=$(encode_uint64 $((zimfilesize+10)))
 
 get_header_field()
 {
@@ -92,7 +102,7 @@ article_count=$(get_header_field article_count)
 url_ptr_pos=$(get_header_field url_ptr_pos)
 title_ptr_pos=$(get_header_field title_ptr_pos)
 cluster_ptr_pos=$(get_header_field cluster_ptr_pos)
-bad_article_index=$(encode_integer_as_printf_fmt_string $((article_count)))
+bad_article_index=$(encode_uint32 $((article_count)))
 create_broken_zim_file invalid.outofbounds_first_direntptr.zim   \
                        "$outofzimfile" \
                        $((url_ptr_pos))
