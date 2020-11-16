@@ -322,7 +322,7 @@ TEST(ClusterTest, read_extended_cluster)
 
   auto filePart = new zim::FilePart<>(fileno(tmpfile));
   auto fileCompound = std::shared_ptr<zim::FileCompound>(new zim::FileCompound(filePart));
-  const auto cluster2shptr = zim::Cluster::read(zim::FileReader(fileCompound), zim::offset_t(0));
+  const auto cluster2shptr = zim::Cluster::read(zim::MultiPartFileReader(fileCompound), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, true);
   ASSERT_EQ(cluster2.count().v, 4U);
