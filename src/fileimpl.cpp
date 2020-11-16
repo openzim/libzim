@@ -77,8 +77,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
       m_startUserEntry(0),
-      m_endUserEntry(0),
-      cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
+      m_endUserEntry(0)
   {
     log_trace("read file \"" << fname << '"');
 

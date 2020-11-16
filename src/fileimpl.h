@@ -62,8 +62,6 @@ namespace zim
       const entry_index_t m_startUserEntry;
       const entry_index_t m_endUserEntry;
 
-      bool cacheUncompressedCluster;
-
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
