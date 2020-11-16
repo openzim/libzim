@@ -41,7 +41,6 @@ class MultiPartFileReader : public Reader {
     std::unique_ptr<const Reader> sub_reader(offset_t offest, zsize_t size) const;
 
   private:
-    MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset);
     MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size);
 
     std::shared_ptr<const FileCompound> source;
