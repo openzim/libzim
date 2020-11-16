@@ -63,6 +63,19 @@ sectionSubReader(const Reader& zimReader, const std::string& sectionName,
 #endif
 }
 
+std::shared_ptr<Reader>
+makeFileReader(std::shared_ptr<const FileCompound> zimFile)
+{
+  if (zimFile->fail())
+    return nullptr;
+  else if ( zimFile->is_multiPart() )
+    return std::make_shared<MultiPartFileReader>(zimFile);
+  else {
+    const auto& firstAndOnlyPart = zimFile->begin()->second;
+    return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle());
+  }
+}
+
 } //unnamed namespace
 
   //////////////////////////////////////////////////////////////////////
@@ -70,7 +83,7 @@ sectionSubReader(const Reader& zimReader, const std::string& sectionName,
   //
   FileImpl::FileImpl(const std::string& fname)
     : zimFile(new FileCompound(fname)),
-      zimReader(new MultiPartFileReader(zimFile)),
+      zimReader(makeFileReader(zimFile)),
       bufferDirentZone(256),
       filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
