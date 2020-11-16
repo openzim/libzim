@@ -47,9 +47,6 @@ namespace zim {
 MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> source)
   : MultiPartFileReader(source, offset_t(0), source->fsize()) {}
 
-MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset)
-  : MultiPartFileReader(source, offset, zsize_t(source->fsize().v-offset.v)) {}
-
 MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size)
   : source(source),
     _offset(offset),
