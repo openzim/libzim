@@ -26,10 +26,10 @@ namespace zim {
 
 class FileCompound;
 
-class FileReader : public Reader {
+class MultiPartFileReader : public Reader {
   public:
-    FileReader(std::shared_ptr<const FileCompound> source);
-    ~FileReader() {};
+    MultiPartFileReader(std::shared_ptr<const FileCompound> source);
+    ~MultiPartFileReader() {};
 
     zsize_t size() const { return _size; };
     offset_t offset() const { return _offset; };
@@ -41,8 +41,8 @@ class FileReader : public Reader {
     std::unique_ptr<const Reader> sub_reader(offset_t offest, zsize_t size) const;
 
   private:
-    FileReader(std::shared_ptr<const FileCompound> source, offset_t offset);
-    FileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size);
+    MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset);
+    MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size);
 
     std::shared_ptr<const FileCompound> source;
     offset_t _offset;

@@ -29,8 +29,6 @@
 
 namespace zim {
 
-class FileReader;
-
 struct Range {
   Range(const offset_t  min, const offset_t max)
     : min(min), max(max)
