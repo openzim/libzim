@@ -42,7 +42,7 @@ namespace zim
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
-      std::shared_ptr<FileReader> zimReader;
+      std::shared_ptr<Reader> zimReader;
       std::vector<char> bufferDirentZone;
       std::mutex bufferDirentLock;
       Fileheader header;

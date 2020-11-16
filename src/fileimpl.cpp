@@ -49,7 +49,7 @@ offset_t readOffset(const Reader& reader, entry_index_type idx)
 }
 
 std::unique_ptr<const Reader>
-sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
+sectionSubReader(const Reader& zimReader, const std::string& sectionName,
                  offset_t offset, zsize_t size)
 {
   if (!zimReader.can_read(offset, size)) {
