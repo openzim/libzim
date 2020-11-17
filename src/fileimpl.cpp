@@ -471,7 +471,8 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     for(auto part = zimFile->begin();
         part != zimFile->end();
         part++) {
-      std::ifstream stream(part->second->filename());
+      std::ifstream stream(part->second->filename(), std::ios_base::in|std::ios_base::binary);
+
       char ch;
       for(/*NOTHING*/ ; currentPos < checksumPos && stream.get(ch).good(); currentPos++) {
         zim_MD5Update(&md5ctx, reinterpret_cast<const uint8_t*>(&ch), 1);

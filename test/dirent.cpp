@@ -48,7 +48,7 @@ using zim::unittests::write_to_buffer;
 
 size_t writenDirentSize(const zim::writer::Dirent& dirent)
 {
-  const TempFile tmpFile("test_dirent");
+  TempFile tmpFile("test_dirent");
   const auto tmp_fd = tmpFile.fd();
   dirent.write(tmp_fd);
   auto size = lseek(tmp_fd, 0, SEEK_END);

@@ -25,6 +25,7 @@
 #include "queue.h"
 #include "_dirent.h"
 #include "workers.h"
+#include <set>
 #include <vector>
 #include <map>
 #include <fstream>
