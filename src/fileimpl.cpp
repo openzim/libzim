@@ -85,17 +85,16 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile)
     : zimFile(new FileCompound(fname)),
       zimReader(makeFileReader(zimFile)),
       bufferDirentZone(256),
-      filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
       m_startUserEntry(0),
       m_endUserEntry(0)
   {
-    log_trace("read file \"" << fname << '"');
+    log_trace("read file \"" << zimFile->filename() << '"');
 
     if (zimFile->fail())
-      throw ZimFileFormatError(std::string("can't open zim-file \"") + fname + '"');
+      throw ZimFileFormatError(std::string("can't open zim-file \"") + zimFile->filename() + '"');
 
     // read header
     if (size_type(zimReader->size()) < Fileheader::size) {
