@@ -222,15 +222,8 @@ std::unique_ptr<const Reader> MultiPartFileReader::sub_reader(offset_t offset, z
 // FileReader
 ////////////////////////////////////////////////////////////////////////////////
 
-FileReader::FileReader(FileHandle fh)
+FileReader::FileReader(FileHandle fh, offset_t offset, zsize_t size)
   : _fhandle(fh)
-  , _offset(0)
-  , _size(_fhandle->getSize())
-{
-}
-
-FileReader::FileReader(const FileReader& freader, offset_t offset, zsize_t size)
-  : _fhandle(freader._fhandle)
   , _offset(offset)
   , _size(size)
 {
@@ -294,7 +287,7 @@ std::unique_ptr<const Reader>
 FileReader::sub_reader(offset_t offset, zsize_t size) const
 {
   ASSERT(offset.v+size.v, <=, _size.v);
-  return std::unique_ptr<const Reader>(new FileReader(*this, _offset + offset, size));
+  return std::unique_ptr<const Reader>(new FileReader(_fhandle, _offset + offset, size));
 }
 
 } // zim

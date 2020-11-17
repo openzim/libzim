@@ -75,6 +75,19 @@ namespace zim
        */
       explicit Archive(int fd);
 
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *
+       *  @param fd The descriptor of a seekable file with a continuous segment
+       *  representing a complete ZIM archive.
+       *  @param offset The offset of the ZIM archive relative to the beginning
+       *  of the file (rather than the current position associated with fd).
+       *  @param size The size of the ZIM archive.
+       */
+      Archive(int fd, offset_type offset, size_type size);
+
       /** Return the filename of the zim file.
        *
        *  Return the filename as passed to the constructor

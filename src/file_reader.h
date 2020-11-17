@@ -32,7 +32,7 @@ class FileReader : public Reader {
     typedef std::shared_ptr<const DEFAULTFS::FD> FileHandle;
 
   public: // functions
-    explicit FileReader(FileHandle fh);
+    explicit FileReader(FileHandle fh, offset_t offset, zsize_t size);
     ~FileReader() = default;
 
     zsize_t size() const { return _size; };
@@ -43,9 +43,6 @@ class FileReader : public Reader {
     const Buffer get_buffer(offset_t offset, zsize_t size) const;
 
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
-
-  private: // functions
-    FileReader(const FileReader& fr, offset_t offset, zsize_t size);
 
   private: // data
     // The file handle is stored via a shared pointer so that it can be shared
