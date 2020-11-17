@@ -120,6 +120,8 @@ namespace zim
 
       bool checkIntegrity(IntegrityCheck checkType);
   private:
+      explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
+
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
       std::shared_ptr<const Dirent> readDirent(offset_t offset);
