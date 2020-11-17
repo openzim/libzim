@@ -275,26 +275,21 @@ TEST(ZimArchive, validate)
   );
 }
 
-TEST(ZimArchive, multipart)
+void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2)
 {
-  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
-  const zim::Archive archive2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
-  ASSERT_FALSE(archive1.is_multiPart());
-  ASSERT_TRUE (archive2.is_multiPart());
-
   EXPECT_EQ(archive1.getFilesize(), archive2.getFilesize());
   EXPECT_EQ(archive1.getClusterCount(), archive2.getClusterCount());
 
   ASSERT_EQ(archive1.getEntryCount(), archive2.getEntryCount());
 
-  ASSERT_EQ(118, archive1.getEntryCount()); // ==> below loop is not a noop
+  ASSERT_NE(0, archive1.getEntryCount()); // ==> below loop is not a noop
   {
     auto range1 = archive1.iterEfficient();
     auto range2 = archive2.iterEfficient();
     for ( auto it1=range1.begin(), it2=range2.begin(); it1!=range1.end() && it2!=range2.end(); ++it1, ++it2 ) {
       auto& entry1 = *it1;
       auto& entry2 = *it2;
-ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
+      ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
       ASSERT_EQ(entry1.getPath(), entry2.getPath());
       ASSERT_EQ(entry1.getTitle(), entry2.getTitle());
       ASSERT_EQ(entry1.isRedirect(), entry2.isRedirect());
@@ -329,6 +324,37 @@ ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
       ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
     }
   }
+}
+
+TEST(ZimArchive, multipart)
+{
+  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const zim::Archive archive2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
+  ASSERT_FALSE(archive1.is_multiPart());
+  ASSERT_TRUE (archive2.is_multiPart());
+
+  checkEquivalence(archive1, archive2);
+}
+
+#ifdef _WIN32
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+#undef min
+#undef max
+# define OPEN_READ_ONLY(path) _open(path, _O_RDONLY)
+#else
+# define OPEN_READ_ONLY(path) open(path, O_RDONLY)
+#endif
+
+TEST(ZimArchive, openByFD)
+{
+  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const int fd = OPEN_READ_ONLY("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const zim::Archive archive2(fd);
+
+  checkEquivalence(archive1, archive2);
 }
 
 } // unnamed namespace
