@@ -62,6 +62,7 @@ class FileCompound : private std::map<Range, FilePart<>*, less_range> {
     using ImplType::begin;
     using ImplType::end;
 
+    const std::string& filename() const { return _filename; }
     zsize_t fsize() const { return _fsize; };
     time_t getMTime() const;
     bool fail() const { return empty(); };
@@ -94,6 +95,7 @@ class FileCompound : private std::map<Range, FilePart<>*, less_range> {
     void addPart(FilePart<>* fpart);
 
   private: // data
+    std::string _filename;
     zsize_t _fsize;
     mutable time_t mtime;
 };
