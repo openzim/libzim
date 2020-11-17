@@ -76,6 +76,7 @@ namespace zim
       using FindxTitleResult = std::pair<bool, title_index_t>;
 
       explicit FileImpl(const std::string& fname);
+      explicit FileImpl(int fd);
 
       time_t getMTime() const;
 
