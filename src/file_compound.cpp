@@ -68,10 +68,10 @@ FileCompound::FileCompound(const std::string& filename):
   }
 }
 
-FileCompound::FileCompound(FilePart<>* filePart):
+FileCompound::FileCompound(int fd):
   _fsize(0)
 {
-  addPart(filePart);
+  addPart(new FilePart<>(fd));
 }
 
 FileCompound::~FileCompound() {

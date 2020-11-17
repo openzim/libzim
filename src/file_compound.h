@@ -55,8 +55,8 @@ class FileCompound : private std::map<Range, FilePart<>*, less_range> {
     typedef std::pair<PartIterator, PartIterator> PartRange;
 
   public: // functions
-    FileCompound(const std::string& filename);
-    FileCompound(FilePart<>* fpart);
+    explicit FileCompound(const std::string& filename);
+    explicit FileCompound(int fd);
     ~FileCompound();
 
     using ImplType::begin;
