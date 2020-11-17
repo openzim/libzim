@@ -357,4 +357,13 @@ TEST(ZimArchive, openByFD)
   checkEquivalence(archive1, archive2);
 }
 
+TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
+{
+  const zim::Archive archive1("./data/small.zim");
+  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
+  const zim::Archive archive2(fd, 8, archive1.getFilesize());
+
+  checkEquivalence(archive1, archive2);
+}
+
 } // unnamed namespace

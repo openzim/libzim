@@ -64,15 +64,17 @@ sectionSubReader(const Reader& zimReader, const std::string& sectionName,
 }
 
 std::shared_ptr<Reader>
-makeFileReader(std::shared_ptr<const FileCompound> zimFile)
+makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsize_t size)
 {
-  if (zimFile->fail())
+  if (zimFile->fail()) {
     return nullptr;
-  else if ( zimFile->is_multiPart() )
+  } else if ( zimFile->is_multiPart() ) {
+    ASSERT(offset.v, ==, 0u);
+    ASSERT(size, ==, zimFile->fsize());
     return std::make_shared<MultiPartFileReader>(zimFile);
-  else {
+  } else {
     const auto& firstAndOnlyPart = zimFile->begin()->second;
-    return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle());
+    return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle(), offset, size);
   }
 }
 
@@ -89,9 +91,17 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile)
     : FileImpl(std::make_shared<FileCompound>(fd))
   {}
 
+  FileImpl::FileImpl(int fd, offset_t offset, zsize_t size)
+    : FileImpl(std::make_shared<FileCompound>(fd), offset, size)
+  {}
+
   FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)
+    : FileImpl(_zimFile, offset_t(0), _zimFile->fsize())
+  {}
+
+  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile, offset_t offset, zsize_t size)
     : zimFile(_zimFile),
-      zimReader(makeFileReader(zimFile)),
+      zimReader(makeFileReader(zimFile, offset, size)),
       bufferDirentZone(256),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
@@ -153,15 +163,15 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile)
     else
     {
       offset_t lastOffset = getClusterOffset(cluster_index_t(cluster_index_type(getCountClusters()) - 1));
-      log_debug("last offset=" << lastOffset.v << " file size=" << zimFile->fsize().v);
-      if (lastOffset.v > zimFile->fsize().v)
+      log_debug("last offset=" << lastOffset.v << " file size=" << getFilesize().v);
+      if (lastOffset.v > getFilesize().v)
       {
-        log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
+        log_fatal("last offset (" << lastOffset << ") larger than file size (" << getFilesize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
     }
 
-    if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
+    if (header.hasChecksum() && header.getChecksumPos() != (getFilesize().v-16) ) {
       throw ZimFileFormatError("Checksum position is not valid");
     }
   }
@@ -558,7 +568,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile)
   }
 
   zim::zsize_t FileImpl::getFilesize() const {
-    return zimFile->fsize();
+    return zimReader->size();
   }
 
   bool FileImpl::is_multiPart() const {

@@ -1,5 +1,6 @@
 data_files = [
   'small.zim',
+  'small.zim.embedded',
   'invalid.smaller_than_header.zim',
   'invalid.outofbounds_urlptrpos.zim',
   'invalid.outofbounds_titleptrpos.zim',

@@ -13,20 +13,20 @@ prompt_usage()
   cat<<END
 Usage:
 
-  $myname --all|--only-broken-zimfiles
+  $myname --all|--only-derived-zimfiles
 
 '$myname --all' creates/re-generates all ZIM files, including small.zim. Due
 to some non-determinism in zimwriterfs the produced small.zim most likely will
-vary on each invocation. Since the other (broken) ZIM files are derived from
-small.zim they will vary too. This creates unnecessary pressure on git.
-Therefore use the --all option only if the source data, or ZIM file generation
-parameters change (or a serious bug is fixed in zimwriterfs). Otherwise use
-the --only-broken-zimfiles option.
+vary on each invocation. Since the other (broken and embedded) ZIM files are
+derived from small.zim they will vary too. This creates unnecessary pressure on
+git. Therefore use the --all option only if the source data, or ZIM file
+generation parameters change (or a serious bug is fixed in zimwriterfs).
+Otherwise use the --only-derived-zimfiles option.
 END
   exit 1
 }
 
-if [[ $# -ne 1 || ( "$1" != '--all' && "$1" != '--only-broken-zimfiles' ) ]]
+if [[ $# -ne 1 || ( "$1" != '--all' && "$1" != '--only-derived-zimfiles' ) ]]
 then
   prompt_usage
 fi
@@ -51,6 +51,12 @@ then
   && echo 'small.zim was successfully created' \
   || die 'Failed to create small.zim'
 fi
+
+printf "BEGINZIM" > small.zim.embedded \
+&& cat small.zim >> small.zim.embedded \
+&& printf "ENDZIM" >> small.zim.embedded \
+&& echo 'small.zim.embedded was successfully created' \
+|| die 'Failed to create small.zim.embedded'
 
 zimfilesize=$(wc -c < small.zim)
 
