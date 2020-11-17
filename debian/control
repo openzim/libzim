@@ -3,7 +3,6 @@ Section: libs
 Priority: optional
 Build-Depends: debhelper-compat (= 13),
  liblzma-dev,
- zlib1g-dev,
  libicu-dev,
  libxapian-dev,
  libzstd-dev,
@@ -50,7 +49,6 @@ Architecture: any
 Depends: ${misc:Depends},
  libzim6 (= ${binary:Version}),
  liblzma-dev,
- zlib1g-dev,
  libxapian-dev,
  libicu-dev,
  libzstd-dev
