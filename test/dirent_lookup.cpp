@@ -17,7 +17,7 @@
  *
  */
 
-#include "../src/fileimpl.h"
+#include "../src/dirent_lookup.h"
 #include "../src/_dirent.h"
 #include <zim/zim.h>
 
@@ -42,9 +42,11 @@ const std::vector<std::pair<char, std::string>> articleurl = {
   {'A', "cccccc"},   //8
   {'M', "foo"},      //9
   {'a', "aa"},       //10
+  {'a', "bb"},       //11
+  {'b', "aa"}        //12
 };
 
-struct MockNamespace
+struct GetDirentMock
 {
   zim::entry_index_t getCountArticles() const {
     return zim::entry_index_t(articleurl.size());
@@ -61,13 +63,22 @@ struct MockNamespace
 class NamespaceTest : public :: testing::Test
 {
   protected:
-    MockNamespace impl;
+    GetDirentMock impl;
 };
 
 TEST_F(NamespaceTest, BeginOffset)
 {
   auto result = zim::getNamespaceBeginOffset(impl, 'a');
   ASSERT_EQ(result.v, 10);
+
+  result = zim::getNamespaceBeginOffset(impl, 'b');
+  ASSERT_EQ(result.v, 12);
+
+  result = zim::getNamespaceBeginOffset(impl, 'c');
+  ASSERT_EQ(result.v, 13);
+
+  result = zim::getNamespaceBeginOffset(impl, 'A'-1);
+  ASSERT_EQ(result.v, 0);
 
   result = zim::getNamespaceBeginOffset(impl, 'A');
   ASSERT_EQ(result.v, 0);
@@ -82,7 +93,16 @@ TEST_F(NamespaceTest, BeginOffset)
 TEST_F(NamespaceTest, EndOffset)
 {
   auto result = zim::getNamespaceEndOffset(impl, 'a');
-  ASSERT_EQ(result.v, 11);
+  ASSERT_EQ(result.v, 12);
+
+  result = zim::getNamespaceEndOffset(impl, 'b');
+  ASSERT_EQ(result.v, 13);
+
+  result = zim::getNamespaceEndOffset(impl, 'c');
+  ASSERT_EQ(result.v, 13);
+
+  result = zim::getNamespaceEndOffset(impl, 'A'-1);
+  ASSERT_EQ(result.v, 0);
 
   result = zim::getNamespaceEndOffset(impl, 'A');
   ASSERT_EQ(result.v, 9);
@@ -94,93 +114,78 @@ TEST_F(NamespaceTest, EndOffset)
   ASSERT_EQ(result.v, 10);
 }
 
-
-struct MockFindx
+TEST_F(NamespaceTest, EndEqualStartPlus1)
 {
-  zim::entry_index_t getNamespaceBeginOffset(char ns) const {
-    switch (ns) {
-      case 'a': return zim::entry_index_t(10);
-      case 'A': return zim::entry_index_t(0);
-      case 'M': return zim::entry_index_t(9);
-      default: return zim::entry_index_t(0);
-    }
+  for (char ns=32; ns<127; ns++){
+    std::cout << "ns: " << ns << "|" << (int)ns << std::endl;
+    ASSERT_EQ(zim::getNamespaceEndOffset(impl, ns).v, zim::getNamespaceBeginOffset(impl, ns+1).v);
   }
-
-  zim::entry_index_t getNamespaceEndOffset(char ns) const {
-    switch (ns) {
-      case 'a': return zim::entry_index_t(11);
-      case 'A': return zim::entry_index_t(9);
-      case 'M': return zim::entry_index_t(10);
-      default: return zim::entry_index_t(0);
-    }
-  }
-
-  std::shared_ptr<const zim::Dirent> getDirent(zim::entry_index_t idx) const {
-    auto info = articleurl.at(idx.v);
-    auto ret = std::make_shared<zim::Dirent>();
-    ret->setUrl(info.first, info.second);
-    return ret;
-  }
-};
+}
 
 
 class FindxTest : public :: testing::Test
 {
   protected:
-    MockFindx impl;
+    GetDirentMock impl;
 };
 
 TEST_F(FindxTest, ExactMatch)
 {
-  auto result = zim::findx(impl, 'A', "aa");
+  zim::DirentLookup<GetDirentMock> dl(&impl, 4);
+  auto result = dl.find('A', "aa");
   ASSERT_EQ(result.first, true);
   ASSERT_EQ(result.second.v, 0);
 
-  result = zim::findx(impl, 'a', "aa");
+  result = dl.find('a', "aa");
   ASSERT_EQ(result.first, true);
   ASSERT_EQ(result.second.v, 10);
 
-  result = zim::findx(impl, 'A', "aabbbb");
+  result = dl.find('A', "aabbbb");
   ASSERT_EQ(result.first, true);
   ASSERT_EQ(result.second.v, 6);
+
+  result = dl.find('b', "aa");
+  ASSERT_EQ(result.first, true);
+  ASSERT_EQ(result.second.v, 12);
 }
 
 
 TEST_F(FindxTest, NoExactMatch)
 {
-  auto result = zim::findx(impl, 'U', "aa"); // No U namespace => return 0
+  zim::DirentLookup<GetDirentMock> dl(&impl, 4);
+  auto result = dl.find('U', "aa"); // No U namespace => return 10 (the index of the first item from the next namespace)
   ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 0);
+  ASSERT_EQ(result.second.v, 10);
 
-  result = zim::findx(impl, 'A', "aabb"); // aabb is between aaaacc (4) and aabbaa (5) => 5
+  result = dl.find('A', "aabb"); // aabb is between aaaacc (4) and aabbaa (5) => 5
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 5);
 
-  result = zim::findx(impl, 'A', "aabbb"); // aabbb is between aabbaa (5) and aabbbb (6) => 6
+  result = dl.find('A', "aabbb"); // aabbb is between aabbaa (5) and aabbbb (6) => 6
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 6);
 
-  result = zim::findx(impl, 'A', "aabbbc"); // aabbbc is between aabbbb (6) and aabbcc (7) => 7
+  result = dl.find('A', "aabbbc"); // aabbbc is between aabbbb (6) and aabbcc (7) => 7
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 7);
 
-  result = zim::findx(impl, 'A', "bb"); // bb is between aabbcc (7) and cccccc (8) => 8
+  result = dl.find('A', "bb"); // bb is between aabbcc (7) and cccccc (8) => 8
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 8);
 
-  result = zim::findx(impl, 'A', "dd"); // dd is after cccccc (8) => 9
+  result = dl.find('A', "dd"); // dd is after cccccc (8) => 9
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 9);
 
-  result = zim::findx(impl, 'M', "f"); // f is before foo (9) => 9
+  result = dl.find('M', "f"); // f is before foo (9) => 9
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 9);
 
-  result = zim::findx(impl, 'M', "bar"); // bar is before foo (9) => 9
+  result = dl.find('M', "bar"); // bar is before foo (9) => 9
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 9);
 
-  result = zim::findx(impl, 'M', "foo1"); // foo1 is after foo (9) => 10
+  result = dl.find('M', "foo1"); // foo1 is after foo (9) => 10
   ASSERT_EQ(result.first, false);
   ASSERT_EQ(result.second.v, 10);
 }

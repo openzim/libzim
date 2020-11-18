@@ -29,89 +29,36 @@
 #include "zim_types.h"
 #include "endian_tools.h"
 #include "debug.h"
+#include <zim/blob.h>
 
 namespace zim {
 
-class Buffer : public std::enable_shared_from_this<Buffer> {
-  public:
-    explicit Buffer(zsize_t size)
-      : size_(size)
-    {
-      ASSERT(size_.v, <, SIZE_MAX);
-    };
+class Buffer {
+  public: // types
+    typedef std::shared_ptr<const char> DataPtr;
 
-    Buffer(const Buffer& ) = delete;
-    void operator=(const Buffer& ) = delete;
+  public: // functions
+    static const Buffer makeBuffer(const char* data, zsize_t size);
+    static const Buffer makeBuffer(const DataPtr& data, zsize_t size);
+    static Buffer makeBuffer(zsize_t size);
 
-    virtual ~Buffer() {};
-    const char* data(offset_t offset=offset_t(0)) const {
-      ASSERT(offset.v, <=, size_.v);
-      return dataImpl(offset);
-    }
+    const char* data(offset_t offset=offset_t(0)) const;
 
     char at(offset_t offset) const {
-        return *(data(offset));
+      return *(data(offset));
     }
-    zsize_t size() const { return size_; }
-    std::shared_ptr<const Buffer> sub_buffer(offset_t offset, zsize_t size) const;
+    zsize_t size() const { return m_size; }
+    const Buffer sub_buffer(offset_t offset, zsize_t size) const;
+    operator Blob() const { return Blob(m_data, m_size.v); }
 
-    template<typename T>
-    T as(offset_t offset) const {
-      ASSERT(offset.v, <, size_.v);
-      ASSERT(offset.v+sizeof(T), <=, size_.v);
-      return fromLittleEndian<T>(data(offset));
-    }
+  private: // functions
+    Buffer(const DataPtr& data, zsize_t size);
 
-  protected:
-    virtual const char* dataImpl(offset_t offset) const = 0;
-
-  protected:
-    const zsize_t size_;
+  private: // data
+    zsize_t m_size;
+    DataPtr m_data;
 };
 
-
-class MemoryViewBuffer : public Buffer {
-  public:
-    MemoryViewBuffer(const char* buffer, zsize_t size);
-
-  protected:
-    const char* dataImpl(offset_t offset) const;
-
-  protected:
-    const char* const _data;
-};
-
-class MemoryBuffer : public Buffer {
-  public:
-    explicit MemoryBuffer(zsize_t size);
-    MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size);
-
-    char* buf() { return _data.get(); }
-
-  protected:
-    const char* dataImpl(offset_t offset) const;
-
-  private:
-    const std::unique_ptr<char[]> _data;
-};
-
-
-#ifdef ENABLE_USE_MMAP
-class MMapException : std::exception {};
-
-class MMapBuffer : public Buffer {
-  public:
-    MMapBuffer(int fd, offset_t offset, zsize_t size);
-    ~MMapBuffer();
-
-    const char* dataImpl(offset_t offset) const;
-
-  private:
-    offset_t _offset;
-    char* _data;
-};
-#endif
-
-};
+} // zim namespace
 
 #endif //ZIM_BUFFER_H_

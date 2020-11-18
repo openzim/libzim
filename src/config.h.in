@@ -3,11 +3,11 @@
 
 #mesondefine DIRENT_CACHE_SIZE
 
+#mesondefine DIRENT_LOOKUP_CACHE_SIZE
+
 #mesondefine CLUSTER_CACHE_SIZE
 
 #mesondefine LZMA_MEMORY_SIZE
-
-#mesondefine ENABLE_ZLIB
 
 #mesondefine ENABLE_XAPIAN
 

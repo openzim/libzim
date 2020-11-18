@@ -24,7 +24,7 @@
 #include "queue.h"
 #include "_dirent.h"
 #include "workers.h"
-#include "xapianIndexer.h"
+#include <set>
 #include <vector>
 #include <map>
 #include <fstream>
@@ -34,6 +34,7 @@
 #include "direntPool.h"
 
 #if defined(ENABLE_XAPIAN)
+  #include "xapianIndexer.h"
   class XapianIndexer;
 #endif
 

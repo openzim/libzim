@@ -17,10 +17,20 @@
  *
  */
 
-#ifndef ZIM_TEST_TEMPFILE_H
-#define ZIM_TEST_TEMPFILE_H
+#ifndef ZIM_TEST_TOOLS_H
+#define ZIM_TEST_TOOLS_H
+
 
 #include <string>
+#include <sys/types.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
+#include "../src/buffer.h"
 
 namespace zim
 {
@@ -49,6 +59,9 @@ class TempFile
 {
   int fd_;
   std::string path_;
+#ifdef _WIN32
+  wchar_t wpath_[MAX_PATH];
+#endif
 public:
   // Creates an empty file in the temporary directory (under Linux and friends
   // its path is read from the TMPDIR environment variable or defaults to /tmp)
@@ -60,16 +73,34 @@ public:
   // Closes and removes the file
   ~TempFile();
 
+  // Close the file descriptor if opened
+  void close();
+
   // File descriptor
   // Important! It must NOT be close()-ed
-  int fd() const { return fd_; }
+  int fd();
 
   // Absolute path of the file
   std::string path() const { return path_; }
 };
 
+template<typename T>
+zim::Buffer write_to_buffer(const T& object)
+{
+  TempFile tmpFile("test_temp_file");
+  const auto tmp_fd = tmpFile.fd();
+  object.write(tmp_fd);
+  auto size = lseek(tmp_fd, 0, SEEK_END);
+
+  auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
+  lseek(tmp_fd, 0, SEEK_SET);
+  if (read(tmp_fd, const_cast<char*>(buf.data()), size) == -1)
+    throw std::runtime_error("Cannot read");
+  return buf;
+}
+
 } // namespace unittests
 
 } // namespace zim
 
-#endif // ZIM_TEST_TEMPFILE_H
+#endif // ZIM_TEST_TOOLS_H

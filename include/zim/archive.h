@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <bitset>
 
 
 namespace zim
@@ -296,6 +297,16 @@ namespace zim
        */
       bool check() const;
 
+      /** Check the integrity of the zim file.
+       *
+       * Run different type of checks to verify the zim file is valid
+       * (in regard to the zim format).
+       * This may be time consuming.
+       *
+       * @return True if the file is valid.
+       */
+      bool checkIntegrity(IntegrityCheck checkType);
+
       /** Check if the file is split in the filesystem.
        *
        *  @return True if the archive is split in different file (foo.zimaa, foo.zimbb).
@@ -418,6 +429,8 @@ private:
       mutable std::unique_ptr<Entry> m_entry;
   };
 
+  typedef std::bitset<size_t(IntegrityCheck::COUNT)> IntegrityCheckList;
+  bool validate(const std::string& zimPath, IntegrityCheckList checksToRun);
 }
 
 #endif // ZIM_ARCHIVE_H

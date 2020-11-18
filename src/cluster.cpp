@@ -20,8 +20,11 @@
 #include "cluster.h"
 #include <zim/blob.h>
 #include <zim/error.h>
-#include "file_reader.h"
+#include "buffer_reader.h"
 #include "endian_tools.h"
+#include "bufferstreamer.h"
+#include "decoderstreamreader.h"
+#include "rawstreamreader.h"
 #include <algorithm>
 #include <stdlib.h>
 #include <sstream>
@@ -41,72 +44,24 @@ namespace zim
 namespace
 {
 
-template<typename OFFSET_TYPE>
-zsize_t _read_size(const Reader* reader, offset_t offset)
-{
-  OFFSET_TYPE blob_offset = reader->read_uint<OFFSET_TYPE>(offset);
-  auto off = offset+offset_t(blob_offset-sizeof(OFFSET_TYPE));
-  auto s = reader->read_uint<OFFSET_TYPE>(off);
-  return zsize_t(s);
-}
-
-zsize_t read_size(const Reader* reader, bool isExtended, offset_t offset)
-{
-  if (isExtended)
-    return _read_size<uint64_t>(reader, offset);
-  else
-    return _read_size<uint32_t>(reader, offset);
-}
-
-std::shared_ptr<const Buffer>
-getClusterBuffer(const Reader& zimReader, offset_t offset, CompressionType comp)
-{
-  zsize_t uncompressed_size(0);
-  std::unique_ptr<char[]> uncompressed_data;
-  switch (comp) {
-    case zimcompLzma:
-      uncompressed_data = uncompress<LZMA_INFO>(&zimReader, offset, &uncompressed_size);
-      break;
-    case zimcompZip:
-#if defined(ENABLE_ZLIB)
-      uncompressed_data = uncompress<ZIP_INFO>(&zimReader, offset, &uncompressed_size);
-#else
-      throw std::runtime_error("zlib not enabled in this library");
-#endif
-      break;
-    case zimcompZstd:
-      uncompressed_data = uncompress<ZSTD_INFO>(&zimReader, offset, &uncompressed_size);
-      break;
-    default:
-      throw std::logic_error("compressions should not be something else than zimcompLzma, zimComZip or zimcompZstd.");
-  }
-  return std::make_shared<MemoryBuffer>(std::move(uncompressed_data), uncompressed_size);
-}
-
-std::unique_ptr<const Reader>
+std::unique_ptr<IStreamReader>
 getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp, bool* extended)
 {
   uint8_t clusterInfo = zimReader.read(offset);
   *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
   *extended = clusterInfo & 0x10;
+  auto subReader = std::shared_ptr<const Reader>(zimReader.sub_reader(offset+offset_t(1)));
 
   switch (*comp) {
     case zimcompDefault:
     case zimcompNone:
-      {
-        auto size = read_size(&zimReader, *extended, offset + offset_t(1));
-      // No compression, just a sub_reader
-        return zimReader.sub_reader(offset+offset_t(1), size);
-      }
-      break;
+      return std::unique_ptr<IStreamReader>(new RawStreamReader(subReader));
     case zimcompLzma:
-    case zimcompZip:
+      return std::unique_ptr<IStreamReader>(new DecoderStreamReader<LZMA_INFO>(subReader));
     case zimcompZstd:
-      {
-        auto buffer = getClusterBuffer(zimReader, offset+offset_t(1), *comp);
-        return std::unique_ptr<Reader>(new BufferReader(buffer));
-      }
-      break;
+      return std::unique_ptr<IStreamReader>(new DecoderStreamReader<ZSTD_INFO>(subReader));
+    case zimcompZip:
+      throw std::runtime_error("zlib not enabled in this library");
     case zimcompBzip2:
       throw std::runtime_error("bzip2 not enabled in this library");
     default:
@@ -120,74 +75,81 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
   {
     CompressionType comp;
     bool extended;
-    std::shared_ptr<const Reader> reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
-    return std::make_shared<Cluster>(reader, comp, extended);
+    auto reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
+    return std::make_shared<Cluster>(std::move(reader), comp, extended);
   }
 
-  Cluster::Cluster(std::shared_ptr<const Reader> reader_, CompressionType comp, bool isExtended)
+  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, CompressionType comp, bool isExtended)
     : compression(comp),
       isExtended(isExtended),
-      reader(reader_),
-      startOffset(0)
+      m_reader(std::move(reader_))
   {
-    auto d = reader->offset();
     if (isExtended) {
-      startOffset = read_header<uint64_t>();
+      read_header<uint64_t>();
     } else {
-      startOffset = read_header<uint32_t>();
+      read_header<uint32_t>();
     }
-    reader = reader->sub_reader(startOffset);
-    auto d1 = reader->offset();
-    ASSERT(d+startOffset, ==, d1);
   }
 
   /* This return the number of char read */
   template<typename OFFSET_TYPE>
-  offset_t Cluster::read_header()
+  void Cluster::read_header()
   {
     // read first offset, which specifies, how many offsets we need to read
-    OFFSET_TYPE offset;
-    offset = reader->read_uint<OFFSET_TYPE>(offset_t(0));
+    OFFSET_TYPE offset = m_reader->read<OFFSET_TYPE>();
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
     const offset_t data_address(offset);
 
     // read offsets
-    offsets.clear();
-    offsets.reserve(n_offset);
-    offsets.push_back(offset_t(0));
+    m_blobOffsets.clear();
+    m_blobOffsets.reserve(n_offset);
+    m_blobOffsets.push_back(offset_t(offset));
 
-    auto buffer = reader->get_buffer(offset_t(0), zsize_t(offset));
-    offset_t current = offset_t(sizeof(OFFSET_TYPE));
+    // Get the whole offsets data to avoid to many (system) call.
+    auto bufferSize = zsize_t(offset-sizeof(OFFSET_TYPE));
+    auto buffer = m_reader->sub_reader(bufferSize)->get_buffer(offset_t(0), bufferSize);
+    auto seqReader = BufferStreamer(buffer, bufferSize);
     while (--n_offset)
     {
-      OFFSET_TYPE new_offset = buffer->as<OFFSET_TYPE>(current);
+      OFFSET_TYPE new_offset = seqReader.read<OFFSET_TYPE>();
       ASSERT(new_offset, >=, offset);
-      ASSERT(new_offset, <=, reader->size().v);
 
+      m_blobOffsets.push_back(offset_t(new_offset));
       offset = new_offset;
-      offsets.push_back(offset_t(offset - data_address.v));
-      current += sizeof(OFFSET_TYPE);
     }
-    ASSERT(offset, ==, reader->size().v);
-    return data_address;
   }
 
   zsize_t Cluster::getBlobSize(blob_index_t n) const
   {
-      if (blob_index_type(n)+1 >= offsets.size()) throw ZimFileFormatError("blob index out of range");
-      return zsize_t(offsets[blob_index_type(n)+1].v - offsets[blob_index_type(n)].v);
+      if (blob_index_type(n)+1 >= m_blobOffsets.size()) {
+        throw ZimFileFormatError("blob index out of range");
+      }
+      return zsize_t(m_blobOffsets[blob_index_type(n)+1].v - m_blobOffsets[blob_index_type(n)].v);
+  }
+
+  const Reader& Cluster::getReader(blob_index_t n) const
+  {
+    std::lock_guard<std::mutex> lock(m_readerAccessMutex);
+    for(blob_index_type current(m_blobReaders.size()); current<=n.v; ++current) {
+      auto blobSize = getBlobSize(blob_index_t(current));
+      if (blobSize.v > SIZE_MAX) {
+        m_blobReaders.push_back(std::unique_ptr<Reader>(new BufferReader(Buffer::makeBuffer(zsize_t(0)))));
+      } else {
+        m_blobReaders.push_back(m_reader->sub_reader(blobSize));
+      }
+    }
+    return *m_blobReaders[blob_index_type(n)];
   }
 
   Blob Cluster::getBlob(blob_index_t n) const
   {
     if (n < count()) {
-      auto blobSize = getBlobSize(n);
+      const auto blobSize = getBlobSize(n);
       if (blobSize.v > SIZE_MAX) {
         return Blob();
       }
-      auto buffer = reader->get_buffer(offsets[blob_index_type(n)], blobSize);
-      return Blob(buffer);
+      return getReader(n).get_buffer(offset_t(0), blobSize);
     } else {
       return Blob();
     }
@@ -204,9 +166,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
       if (size.v > SIZE_MAX) {
         return Blob();
       }
-      offset += offsets[blob_index_type(n)];
-      auto buffer = reader->get_buffer(offset, size);
-      return Blob(buffer);
+      return getReader(n).get_buffer(offset, size);
     } else {
       return Blob();
     }

@@ -36,7 +36,7 @@ class FileReader : public Reader {
 
     char read(offset_t offset) const;
     void read(char* dest, offset_t offset, zsize_t size) const;
-    std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const;
+    const Buffer get_buffer(offset_t offset, zsize_t size) const;
 
     std::unique_ptr<const Reader> sub_reader(offset_t offest, zsize_t size) const;
 
@@ -47,24 +47,6 @@ class FileReader : public Reader {
     std::shared_ptr<const FileCompound> source;
     offset_t _offset;
     zsize_t _size;
-};
-
-class BufferReader : public Reader {
-  public:
-    BufferReader(std::shared_ptr<const Buffer> source)
-      : source(source) {}
-    virtual ~BufferReader() {};
-
-    zsize_t size() const;
-    offset_t offset() const;
-
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    char read(offset_t offset) const;
-    std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const;
-    std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
-
-  private:
-    std::shared_ptr<const Buffer> source;
 };
 
 };

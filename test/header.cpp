@@ -34,27 +34,15 @@
 
 #include "../src/fileheader.h"
 #include "../src/buffer.h"
+#include "../src/buffer_reader.h"
 
-#include "tempfile.h"
+#include "tools.h"
 
 namespace
 {
 
 using zim::unittests::TempFile;
-
-std::shared_ptr<zim::Buffer> write_to_buffer(zim::Fileheader &header)
-{
-  const TempFile tmpFile("test_header");
-  const auto tmp_fd = tmpFile.fd();
-  header.write(tmp_fd);
-  auto size = lseek(tmp_fd, 0, SEEK_END);
-
-  auto buf = std::make_shared<zim::MemoryBuffer>(zim::zsize_t(size));
-  lseek(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, buf->buf(), size) == -1)
-    throw std::runtime_error("Cannot read");
-  return buf;
-}
+using zim::unittests::write_to_buffer;
 
 TEST(HeaderTest, read_write_header)
 {
@@ -81,7 +69,7 @@ TEST(HeaderTest, read_write_header)
 
   auto buffer = write_to_buffer(header);
   zim::Fileheader header2;
-  header2.read(buffer);
+  header2.read(zim::BufferReader(buffer));
 
   ASSERT_EQ(header2.getUuid(), "1234567890abcdef");
   ASSERT_EQ(header2.getArticleCount(), 4711U);

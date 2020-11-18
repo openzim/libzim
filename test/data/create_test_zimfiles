@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+die()
+{
+  echo >&2 '!!! ERROR: $*'
+  exit 1
+}
+
+cd "$(dirname "$0")"
+rm -f small.zim
+zimwriterfs -w main.html \
+            -f favicon.png \
+            -l=en \
+            -t="Test ZIM file" \
+            -d="" \
+            -c="" \
+            -p="" \
+            small_zimfile_data \
+            small.zim \
+&& echo 'small.zim was successfully created' \
+|| die 'Failed to create small.zim'
+
+zimfilesize=$(wc -c < small.zim)
+
+zimheader=$(./inspectzim --header small.zim|tail -n +2)
+
+encode_integer_as_printf_fmt_string()
+{
+  local i n=$1
+  for (( i=0; i<8; ++i ))
+  do
+    printf '\\x%02x' $((n%16))
+    let n=$((n/16))
+  done
+}
+
+outofzimfile=$(encode_integer_as_printf_fmt_string $((zimfilesize+10)))
+
+get_header_field()
+{
+  sed -n "/^$1:/ {s/$1: *//;p;}" <<<"$zimheader"
+}
+
+overwrite_bytes_in_file()
+{
+  local fname=$1
+  local bytes=$2
+  local offset=$3
+  local nbytes=$(printf "$bytes"|wc -c)
+  printf "$bytes" |
+    dd of="$fname" bs=1 seek=$offset count=$nbytes conv=notrunc &> /dev/null
+}
+
+create_broken_zim_file()
+{
+  local broken_zimfile_name=$1
+  local bytes=$2
+  local offset=$3
+
+  cp small.zim "$broken_zimfile_name" \
+  && overwrite_bytes_in_file "$broken_zimfile_name" "$bytes" "$offset" \
+  && echo "$broken_zimfile_name was successfully created" \
+  || die "Failed to create $broken_zimfile_name"
+}
+
+broken_zimfile_name=invalid.smaller_than_header.zim
+head -c40 small.zim > "$broken_zimfile_name" \
+  && echo "$broken_zimfile_name was successfully created" \
+  || die "Failed to create $broken_zimfile_name"
+
+create_broken_zim_file invalid.outofbounds_urlptrpos.zim   \
+                       "$outofzimfile" \
+                       32
+
+create_broken_zim_file invalid.outofbounds_titleptrpos.zim   \
+                       "$outofzimfile" \
+                       40
+
+create_broken_zim_file invalid.outofbounds_clusterptrpos.zim   \
+                       "$outofzimfile" \
+                       48
+
+create_broken_zim_file invalid.invalid_mimelistpos.zim   \
+                       '\x00\x00\x00\x00\x00\x00\x00\x00'  \
+                       56
+
+create_broken_zim_file invalid.invalid_checksumpos.zim   \
+                       '\x00\x00\x00\x00\x00\x00\x00\x00'  \
+                       72
+
+article_count=$(get_header_field article_count)
+url_ptr_pos=$(get_header_field url_ptr_pos)
+title_ptr_pos=$(get_header_field title_ptr_pos)
+cluster_ptr_pos=$(get_header_field cluster_ptr_pos)
+bad_article_index=$(encode_integer_as_printf_fmt_string $((article_count)))
+create_broken_zim_file invalid.outofbounds_first_direntptr.zim   \
+                       "$outofzimfile" \
+                       $((url_ptr_pos))
+
+create_broken_zim_file invalid.outofbounds_last_direntptr.zim   \
+                       "$outofzimfile" \
+                       $((url_ptr_pos+8*(article_count-1)))
+
+create_broken_zim_file invalid.outofbounds_first_title_entry.zim   \
+                       "$bad_article_index" \
+                       $((title_ptr_pos))
+
+create_broken_zim_file invalid.outofbounds_last_title_entry.zim   \
+                       "$bad_article_index" \
+                       $((title_ptr_pos+4*(article_count-1)))
+
+create_broken_zim_file invalid.outofbounds_first_clusterptr.zim   \
+                       "$outofzimfile" \
+                       $((cluster_ptr_pos))

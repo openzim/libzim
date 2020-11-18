@@ -34,111 +34,58 @@
 
 namespace zim {
 
-namespace {
+namespace
+{
 
-class SubBuffer : public Buffer {
-  public:
-    SubBuffer(const std::shared_ptr<const Buffer> src, offset_t offset, zsize_t size)
-      : Buffer(size),
-        _data(src, src->data(offset))
-    {
-      ASSERT(offset.v, <=, src->size().v);
-      ASSERT(offset.v+size.v, <=, src->size().v);
-    }
-
-  const char* dataImpl(offset_t offset) const {
-        return _data.get() + offset.v;
-    }
-
-  private:
-    const std::shared_ptr<const char> _data;
+struct NoDelete
+{
+  template<class T> void operator()(T*) {}
 };
+
+// This shared_ptr is used as a source object for the std::shared_ptr
+// aliasing constructor (with the purpose of avoiding the control block
+// allocation) for the case when the referred data must not be deleted.
+static Buffer::DataPtr nonOwnedDataPtr((char*)nullptr, NoDelete());
 
 } // unnamed namespace
 
-std::shared_ptr<const Buffer> Buffer::sub_buffer(offset_t offset, zsize_t size) const
+const Buffer Buffer::sub_buffer(offset_t offset, zsize_t size) const
 {
-  return std::make_shared<SubBuffer>(shared_from_this(), offset, size);
+  ASSERT(offset.v, <=, m_size.v);
+  ASSERT(offset.v+size.v, <=, m_size.v);
+  auto sub_data = DataPtr(m_data, data(offset));
+  return Buffer(sub_data, size);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// MemoryViewBuffer
-////////////////////////////////////////////////////////////////////////////////
-
-MemoryViewBuffer::MemoryViewBuffer(const char* buffer, zsize_t size)
-  : Buffer(size)
-  , _data(buffer)
-{}
-
-const char*
-MemoryViewBuffer::dataImpl(offset_t offset) const {
-    return _data + offset.v;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// MemoryBuffer
-////////////////////////////////////////////////////////////////////////////////
-
-MemoryBuffer::MemoryBuffer(zsize_t size)
-  : Buffer(size)
-  , _data(new char[size.v])
-{}
-
-MemoryBuffer::MemoryBuffer(std::unique_ptr<char[]> buffer, zsize_t size)
-  : Buffer(size)
-  , _data(std::move(buffer))
-{}
-
-const char*
-MemoryBuffer::dataImpl(offset_t offset) const {
-    return _data.get() + offset.v;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// MMapBuffer
-////////////////////////////////////////////////////////////////////////////////
-
-#ifdef ENABLE_USE_MMAP
-MMapBuffer::MMapBuffer(int fd, offset_t offset, zsize_t size):
-  Buffer(size),
-  _offset(0)
+const Buffer Buffer::makeBuffer(const DataPtr& data, zsize_t size)
 {
-  offset_t pa_offset(offset.v & ~(sysconf(_SC_PAGE_SIZE) - 1));
-  _offset = offset-pa_offset;
-#if defined(__APPLE__) || defined(__OpenBSD__)
-  #define MAP_FLAGS MAP_PRIVATE
-#elif defined(__FreeBSD__)
-  #define MAP_FLAGS MAP_PRIVATE|MAP_PREFAULT_READ
-#else
-  #define MAP_FLAGS MAP_PRIVATE|MAP_POPULATE
-#endif
-#if !MMAP_SUPPORT_64
-  if(pa_offset.v >= INT32_MAX) {
-    throw MMapException();
+  return Buffer(data, size);
+}
+
+const Buffer Buffer::makeBuffer(const char* data, zsize_t size)
+{
+  return Buffer(DataPtr(nonOwnedDataPtr, data), size);
+}
+
+Buffer Buffer::makeBuffer(zsize_t size)
+{
+  if (0 == size.v) {
+    return Buffer(DataPtr(nonOwnedDataPtr, nullptr), size);
   }
-#endif
-  _data = (char*)mmap(NULL, size.v + _offset.v, PROT_READ, MAP_FLAGS, fd, pa_offset.v);
-  if (_data == MAP_FAILED )
-  {
-    std::ostringstream s;
-    s << "Cannot mmap size " << size.v << " at off " << offset.v << " : " << strerror(errno);
-    throw std::runtime_error(s.str());
-  }
-#undef MAP_FLAGS
+  return Buffer(DataPtr(new char[size.v], std::default_delete<char[]>()), size);
 }
 
-MMapBuffer::~MMapBuffer()
+Buffer::Buffer(const DataPtr& data, zsize_t size)
+  : m_size(size),
+    m_data(data)
 {
-  munmap(_data, size_.v + _offset.v);
+  ASSERT(m_size.v, <, SIZE_MAX);
 }
 
 const char*
-MMapBuffer::dataImpl(offset_t offset) const
-{
-  offset += _offset;
-  return _data + offset.v;
+Buffer::data(offset_t offset) const {
+  ASSERT(offset.v, <=, m_size.v);
+  return m_data.get() + offset.v;
 }
-
-#endif // ENABLE_USE_MMAP
 
 } //zim

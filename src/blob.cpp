@@ -24,23 +24,38 @@
 
 namespace zim {
 
+namespace
+{
+
+struct NoDelete
+{
+  template<class T> void operator()(T*) {}
+};
+
+// This shared_ptr is used as a source object for the std::shared_ptr
+// aliasing constructor (with the purpose of avoiding the control block
+// allocation) for the case when the referred data must not be deleted.
+static Blob::DataPtr nonOwnedDataPtr((char*)nullptr, NoDelete());
+
+} // unnamed namespace
+
+
 Blob::Blob()
- : _data(0),
+ : _data(nonOwnedDataPtr),
    _size(0)
 {}
 
 Blob::Blob(const char* data, size_type size)
- : _data(data),
+ : _data(nonOwnedDataPtr, data),
    _size(size)
 {
   ASSERT(size, <, SIZE_MAX);
   ASSERT(data, <, (void*)(SIZE_MAX-size));
 }
 
-Blob::Blob(std::shared_ptr<const Buffer> buffer)
- : _data(buffer->data()),
-   _size(size_type(buffer->size())),
-   _buffer(buffer)
+Blob::Blob(const DataPtr& buffer, size_type size)
+ : _data(buffer),
+   _size(size)
 {}
 
 

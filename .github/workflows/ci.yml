@@ -22,9 +22,8 @@ jobs:
         with:
           python-version: '3.6'
       - name: Install packages
-        uses: mstksg/get-package@v1
-        with:
-          brew: gcovr pkg-config ninja
+        run:
+          brew install gcovr pkg-config ninja
       - name: Install python modules
         run: pip3 install meson==0.52.1 pytest
       - name: Install deps
@@ -38,7 +37,7 @@ jobs:
           MESON_OPTION="--default-library=shared"
           MESON_CROSSFILE="$HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
           if [[ ! "${{matrix.target}}" =~ native_.* ]]; then
-            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE"
+            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
             cat $MESON_CROSSFILE
           fi
           export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig
@@ -100,13 +99,18 @@ jobs:
       run: |
         from subprocess import check_call
         from os import environ
-        command = [
+        config_command = [
+          'git', 'config', '--global',
+          'http.postBuffer', '1048576000'
+        ]
+        check_call(config_command, cwd=environ['HOME'])
+        clone_command = [
           'git', 'clone',
           'https://github.com/${{github.repository}}',
           '--depth=1',
           '--branch', '${{steps.extract_branch.outputs.branch}}'
         ]
-        check_call(command, cwd=environ['HOME'])
+        check_call(clone_command, cwd=environ['HOME'])
     - name: Install deps
       shell: bash
       run: |

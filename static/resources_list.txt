@@ -18,6 +18,7 @@ stopwords/fi
 stopwords/fr
 stopwords/ga
 stopwords/gl
+stopwords/gu
 stopwords/ha
 stopwords/he
 stopwords/hi

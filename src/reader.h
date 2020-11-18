@@ -26,9 +26,9 @@
 #include "endian_tools.h"
 #include "debug.h"
 
-namespace zim {
+#include "buffer.h"
 
-class Buffer;
+namespace zim {
 
 class Reader {
   public:
@@ -47,8 +47,8 @@ class Reader {
     }
     virtual char read(offset_t offset) const = 0;
 
-    virtual std::shared_ptr<const Buffer> get_buffer(offset_t offset, zsize_t size) const = 0;
-    std::shared_ptr<const Buffer> get_buffer(offset_t offset) const {
+    virtual const Buffer get_buffer(offset_t offset, zsize_t size) const = 0;
+    const Buffer get_buffer(offset_t offset) const {
       return get_buffer(offset, zsize_t(size().v-offset.v));
     }
     virtual std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const = 0;
@@ -57,7 +57,7 @@ class Reader {
     }
     virtual offset_t offset() const = 0;
 
-    bool can_read(offset_t offset, zsize_t size);
+    bool can_read(offset_t offset, zsize_t size) const;
 };
 
 };

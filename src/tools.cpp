@@ -19,9 +19,9 @@
  */
 
 #include "tools.h"
+#include "config.h"
 
 #include <sys/types.h>
-#include <dirent.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -29,9 +29,6 @@
 #include <memory>
 #include <stdexcept>
 #include <errno.h>
-
-#include <unicode/translit.h>
-#include <unicode/ucnv.h>
 
 #ifdef _WIN32
 # include <windows.h>
@@ -60,6 +57,10 @@ bool zim::isCompressibleMimetype(const std::string& mimetype)
       || mimetype == "application/json";
 }
 
+#if defined(ENABLE_XAPIAN)
+
+#include <unicode/translit.h>
+#include <unicode/ucnv.h>
 std::string zim::removeAccents(const std::string& text)
 {
   ucnv_setDefaultName("UTF-8");
@@ -72,6 +73,7 @@ std::string zim::removeAccents(const std::string& text)
   ustring.toUTF8String(unaccentedText);
   return unaccentedText;
 }
+#endif
 
 uint32_t zim::countWords(const std::string& text)
 {

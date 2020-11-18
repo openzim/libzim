@@ -38,9 +38,6 @@ class CompressionTest : public testing::Test {
 using CompressionAlgo = ::testing::Types<
   LZMA_INFO,
   ZSTD_INFO
-#if defined(ENABLE_ZLIB)
-  ,ZIP_INFO
-#endif
 >;
 
 TYPED_TEST_CASE(CompressionTest, CompressionAlgo);

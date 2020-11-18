@@ -20,6 +20,7 @@
 #include "_dirent.h"
 #include <zim/zim.h>
 #include "buffer.h"
+#include "bufferstreamer.h"
 #include "endian_tools.h"
 #include "log.h"
 #include <algorithm>
@@ -40,22 +41,20 @@ namespace zim
   Dirent::Dirent(const Buffer& bufferRef)
     : Dirent()
   {
-    const Buffer* const buffer = &bufferRef;
-    uint16_t mimeType = buffer->as<uint16_t>(offset_t(0));
+    BufferStreamer reader(bufferRef);
+    uint16_t mimeType = reader.read<uint16_t>();
     bool redirect = (mimeType == Dirent::redirectMimeType);
     bool linktarget = (mimeType == Dirent::linktargetMimeType);
     bool deleted = (mimeType == Dirent::deletedMimeType);
-    uint8_t extraLen = buffer->data()[2];
-    char ns = buffer->data()[3];
-    uint32_t version = buffer->as<uint32_t>(offset_t(4));
+    uint8_t extraLen = reader.read<uint8_t>();
+    char ns = reader.read<char>();
+    uint32_t version = reader.read<uint32_t>();
     setVersion(version);
 
-    offset_t current = offset_t(8);
 
     if (redirect)
     {
-      entry_index_t redirectIndex(buffer->as<entry_index_type>(current));
-      current += sizeof(entry_index_t);
+      entry_index_type redirectIndex(reader.read<entry_index_type>());
 
       log_debug("redirectIndex=" << redirectIndex);
 
@@ -70,10 +69,8 @@ namespace zim
     {
       log_debug("read article entry");
 
-      uint32_t clusterNumber = buffer->as<uint32_t>(current);
-      current += sizeof(uint32_t);
-      uint32_t blobNumber = buffer->as<uint32_t>(current);
-      current += sizeof(uint32_t);
+      uint32_t clusterNumber = reader.read<uint32_t>();
+      uint32_t blobNumber = reader.read<uint32_t>();
 
       log_debug("mimeType=" << mimeType << " clusterNumber=" << clusterNumber << " blobNumber=" << blobNumber);
 
@@ -86,30 +83,30 @@ namespace zim
 
     log_debug("read url, title and parameters");
 
-    offset_type url_size = strnlen(
-      buffer->data(current),
-      buffer->size().v - current.v - extraLen
+    size_type url_size = strnlen(
+      reader.current(),
+      reader.left().v - extraLen
     );
-    if (current.v + url_size >= buffer->size().v) {
+    if (url_size >= reader.left().v) {
       throw(InvalidSize());
     }
-    url = std::string(buffer->data(current), url_size);
-    current += url_size + 1;
+    url = std::string(reader.current(), url_size);
+    reader.skip(zsize_t(url_size+1));
 
-    offset_type title_size = strnlen(
-      buffer->data(current),
-      buffer->size().v - current.v - extraLen
+    size_type title_size = strnlen(
+      reader.current(),
+      reader.left().v - extraLen
     );
-    if (current.v + title_size >= buffer->size().v) {
+    if (title_size >= reader.left().v) {
       throw(InvalidSize());
     }
-    title = std::string(buffer->data(current), title_size);
-    current += title_size + 1;
+    title = std::string(reader.current(), title_size);
+    reader.skip(zsize_t(title_size+1));
 
-    if (current.v + extraLen > buffer->size().v) {
+    if (extraLen > reader.left().v) {
        throw(InvalidSize());
     }
-    parameter = std::string(buffer->data(current), extraLen);
+    parameter = std::string(reader.current(), extraLen);
 
     setUrl(ns, url);
     setTitle(title);

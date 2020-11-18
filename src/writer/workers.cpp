@@ -65,6 +65,7 @@ namespace zim
       cluster->close();
     };
 
+#if defined(ENABLE_XAPIAN)
     void IndexTask::run(CreatorData* data) {
       Xapian::Stem stemmer;
       Xapian::TermGenerator indexer;
@@ -124,6 +125,8 @@ namespace zim
       data->indexer->writableDatabase.add_document(document);
       pthread_mutex_unlock(&s_dbaccessLock);
     }
+#endif
+
 
     void* taskRunner(void* arg) {
       auto creatorData = static_cast<zim::writer::CreatorData*>(arg);

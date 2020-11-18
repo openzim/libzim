@@ -9,6 +9,7 @@ common_sources = [
 #    'config.h',
     'archive.cpp',
     'cluster.cpp',
+    'buffer_reader.cpp',
     'dirent.cpp',
     'entry.cpp',
     'envvalue.cpp',
@@ -27,13 +28,13 @@ common_sources = [
     'levenshtein.cpp',
     'tools.cpp',
     'compression.cpp',
+    'istreamreader.cpp',
     'writer/contentProvider.cpp',
     'writer/creator.cpp',
     'writer/item.cpp',
     'writer/cluster.cpp',
     'writer/dirent.cpp',
-    'writer/workers.cpp',
-    'writer/xapianIndexer.cpp'
+    'writer/workers.cpp'
 ]
 
 if host_machine.system() == 'windows'
@@ -44,19 +45,12 @@ endif
 
 xapian_sources = [
     'xapian/htmlparse.cc',
-    'xapian/myhtmlparse.cc'
+    'xapian/myhtmlparse.cc',
+    'writer/xapianIndexer.cpp'
 ]
 
 sources = common_sources
-deps = [thread_dep, lzma_dep]
-
-if zlib_dep.found()
-    deps += [zlib_dep]
-endif
-
-if zstd_dep.found()
-    deps += [zstd_dep]
-endif
+deps = [thread_dep, lzma_dep, zstd_dep]
 
 if target_machine.system() == 'freebsd'
     deps += [execinfo_dep]

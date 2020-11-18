@@ -27,6 +27,7 @@
 #include <iosfwd>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 #include "zim_types.h"
 #include "zim/error.h"
@@ -35,40 +36,43 @@ namespace zim
 {
   class Blob;
   class Reader;
+  class IStreamReader;
 
   class Cluster : public std::enable_shared_from_this<Cluster> {
-      typedef std::vector<offset_t> Offsets;
+      typedef std::vector<offset_t> BlobOffsets;
+      typedef std::vector<std::unique_ptr<const Reader>> BlobReaders;
 
     public:
       const CompressionType compression;
       const bool isExtended;
 
     private:
-      std::shared_ptr<const Reader> reader;
+      std::unique_ptr<IStreamReader> m_reader;
 
-      // offset of the first blob of this cluster relative to the beginning
-      // of the (uncompressed) cluster data
-      offset_t startOffset;
+      // offsets of the blob boundaries relative to the start of the cluster data
+      // (*after* the first byte (clusterInfo))
+      // For a cluster with N blobs, this collection contains N+1 entries.
+      // The start of the first blob and the end of the last blob are included.
+      BlobOffsets m_blobOffsets;
 
-      // offsets of the blob boundaries relative to the start of the first
-      // blob in this cluster. For a cluster with N blobs, this collection
-      // contains N+1 entries - the start of the first blob (which is always
-      // 0) and the end of the last blob are also included.
-      Offsets offsets;
+      mutable std::mutex m_readerAccessMutex;
+      mutable BlobReaders m_blobReaders;
+
 
       template<typename OFFSET_TYPE>
-      offset_t read_header();
+      void read_header();
+      const Reader& getReader(blob_index_t n) const;
 
     public:
-      Cluster(std::shared_ptr<const Reader> reader, CompressionType comp, bool isExtended);
+      Cluster(std::unique_ptr<IStreamReader> reader, CompressionType comp, bool isExtended);
       CompressionType getCompression() const   { return compression; }
       bool isCompressed() const                { return compression != zimcompDefault && compression != zimcompNone; }
 
-      blob_index_t count() const               { return blob_index_t(offsets.size() - 1); }
+      blob_index_t count() const               { return blob_index_t(m_blobOffsets.size() - 1); }
 
       zsize_t getBlobSize(blob_index_t n) const;
 
-      offset_t getBlobOffset(blob_index_t n) const { return startOffset + offsets[blob_index_type(n)]; }
+      offset_t getBlobOffset(blob_index_t n) const { return m_blobOffsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 

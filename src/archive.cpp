@@ -303,4 +303,29 @@ namespace zim
     return impl.getIndexByClusterOrder(entry_index_t(idx)).v;
   }
 
-}
+  bool Archive::checkIntegrity(IntegrityCheck checkType)
+  {
+    return m_impl->checkIntegrity(checkType);
+  }
+
+  bool validate(const std::string& zimPath, IntegrityCheckList checksToRun)
+  {
+    try
+    {
+      Archive a(zimPath);
+      for ( size_t i = 0; i < checksToRun.size(); ++i )
+      {
+        if ( checksToRun.test(i) && !a.checkIntegrity(IntegrityCheck(i)) )
+          return false;
+      }
+    }
+    catch(ZimFileFormatError &exception)
+    {
+      std::cerr << exception.what() << std::endl;
+      return false;
+    }
+
+    return true;
+  }
+
+} // namespace zim
