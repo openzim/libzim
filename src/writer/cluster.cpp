@@ -78,12 +78,10 @@ void Cluster::close() {
     compress();
     clear_raw_data();
   }
-  std::lock_guard<std::mutex> l(m_closedMutex);
   closed = true;
 }
 
 bool Cluster::isClosed() const{
-  std::lock_guard<std::mutex> l(m_closedMutex);
   return closed;
 }
 
