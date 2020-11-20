@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <stdlib.h>
 
 #if defined (NDEBUG)

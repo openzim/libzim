@@ -22,7 +22,6 @@
 #include "_dirent.h"
 #include "file_compound.h"
 #include "buffer_reader.h"
-#include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
@@ -72,10 +71,8 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     : zimFile(new FileCompound(fname)),
       zimReader(new FileReader(zimFile)),
       bufferDirentZone(256),
-      bufferDirentLock(PTHREAD_MUTEX_INITIALIZER),
       filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
-      direntCacheLock(PTHREAD_MUTEX_INITIALIZER),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
   {
@@ -284,24 +281,24 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     if (idx >= getCountArticles())
       throw ZimFileFormatError("article index out of range");
 
-    pthread_mutex_lock(&direntCacheLock);
-    auto v = direntCache.get(idx.v);
-    if (v.hit())
     {
-      log_debug("dirent " << idx << " found in cache; hits "
-                << direntCache.getHits() << " misses "
-                << direntCache.getMisses() << " ratio "
-                << direntCache.hitRatio() * 100 << "% fillfactor "
-                << direntCache.fillfactor());
-      pthread_mutex_unlock(&direntCacheLock);
-      return v.value();
-    }
+      std::lock_guard<std::mutex> l(direntCacheLock);
+      auto v = direntCache.get(idx.v);
+      if (v.hit())
+      {
+        log_debug("dirent " << idx << " found in cache; hits "
+                  << direntCache.getHits() << " misses "
+                  << direntCache.getMisses() << " ratio "
+                  << direntCache.hitRatio() * 100 << "% fillfactor "
+                  << direntCache.fillfactor());
+        return v.value();
+      }
 
-    log_debug("dirent " << idx << " not found in cache; hits "
-              << direntCache.getHits() << " misses " << direntCache.getMisses()
-              << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor "
-              << direntCache.fillfactor());
-    pthread_mutex_unlock(&direntCacheLock);
+      log_debug("dirent " << idx << " not found in cache; hits "
+                << direntCache.getHits() << " misses " << direntCache.getMisses()
+                << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor "
+                << direntCache.fillfactor());
+    }
 
     offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
     // We don't know the size of the dirent because it depends of the size of
@@ -311,35 +308,34 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     // Let's do try, catch and retry while chosing a smart value for the buffer size.
     // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
     // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
-
-    pthread_mutex_lock(&bufferDirentLock);
-    zsize_t bufferSize = zsize_t(256);
-    // On very small file, the offset + 256 is higher than the size of the file,
-    // even if the file is valid.
-    // So read only to the end of the file.
-    auto totalSize = zimReader->size();
-    if (indexOffset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-indexOffset.v);
     std::shared_ptr<const Dirent> dirent;
-    while (true) {
-        bufferDirentZone.reserve(size_type(bufferSize));
-        zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-        auto direntBuffer = Buffer::makeBuffer(bufferDirentZone.data(), bufferSize);
-        try {
-          dirent = std::make_shared<const Dirent>(direntBuffer);
-        } catch (InvalidSize&) {
-          // buffer size is not enougth, try again :
-          bufferSize += 256;
-          continue;
-        }
-        // Success !
-        break;
+    {
+      std::lock_guard<std::mutex> l(bufferDirentLock);
+      zsize_t bufferSize = zsize_t(256);
+      // On very small file, the offset + 256 is higher than the size of the file,
+      // even if the file is valid.
+      // So read only to the end of the file.
+      auto totalSize = zimReader->size();
+      if (indexOffset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-indexOffset.v);
+      while (true) {
+          bufferDirentZone.reserve(size_type(bufferSize));
+          zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
+          auto direntBuffer = Buffer::makeBuffer(bufferDirentZone.data(), bufferSize);
+          try {
+            dirent = std::make_shared<const Dirent>(direntBuffer);
+          } catch (InvalidSize&) {
+            // buffer size is not enougth, try again :
+            bufferSize += 256;
+            continue;
+          }
+          // Success !
+          break;
+      }
     }
-    pthread_mutex_unlock(&bufferDirentLock);
 
     log_debug("dirent read from " << indexOffset);
-    pthread_mutex_lock(&direntCacheLock);
+    std::lock_guard<std::mutex> l(direntCacheLock);
     direntCache.put(idx.v, dirent);
-    pthread_mutex_unlock(&direntCacheLock);
 
     return dirent;
   }

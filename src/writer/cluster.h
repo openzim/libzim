@@ -24,8 +24,8 @@
 #include <zim/blob.h>
 #include <iostream>
 #include <vector>
-#include <pthread.h>
 #include <functional>
+#include <atomic>
 
 #include <zim/writer/article.h>
 #include "../zim_types.h"
@@ -88,8 +88,7 @@ class Cluster {
     ClusterData _data;
     mutable Blob compressed_data;
     std::string tmp_filename;
-    mutable pthread_mutex_t m_closedMutex;
-    bool closed = false;
+    std::atomic<bool> closed { false };
 
   private:
     void write_content(writer_t writer) const;

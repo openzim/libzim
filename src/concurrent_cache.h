@@ -23,7 +23,7 @@
 #include "lrucache.h"
 
 #include <future>
-#include <pthread.h>
+#include <mutex>
 
 namespace zim
 {
@@ -47,7 +47,6 @@ private: // types
 public: // types
   explicit ConcurrentCache(size_t maxEntries)
     : impl_(maxEntries)
-    , lock_(PTHREAD_MUTEX_INITIALIZER)
   {}
 
   // Gets the entry corresponding to the given key. If the entry is not in the
@@ -63,9 +62,9 @@ public: // types
   Value getOrPut(const Key& key, F f)
   {
     std::promise<Value> valuePromise;
-    pthread_mutex_lock(&lock_);
+    std::unique_lock<std::mutex> l(lock_);
     const auto x = impl_.getOrPut(key, valuePromise.get_future().share());
-    pthread_mutex_unlock(&lock_);
+    l.unlock();
     if ( x.miss() ) {
       valuePromise.set_value(f());
     }
@@ -75,7 +74,7 @@ public: // types
 
 private: // data
   Impl impl_;
-  pthread_mutex_t lock_;
+  std::mutex lock_;
 };
 
 } // namespace zim
