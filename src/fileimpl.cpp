@@ -301,6 +301,15 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     }
 
     offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
+    const auto dirent = readDirent(indexOffset);
+    std::lock_guard<std::mutex> l(direntCacheLock);
+    direntCache.put(idx.v, dirent);
+
+    return dirent;
+  }
+
+  std::shared_ptr<const Dirent> FileImpl::readDirent(offset_t indexOffset)
+  {
     // We don't know the size of the dirent because it depends of the size of
     // the title, url and extra parameters.
     // This is a pitty but we have no choices.
@@ -334,9 +343,6 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     }
 
     log_debug("dirent read from " << indexOffset);
-    std::lock_guard<std::mutex> l(direntCacheLock);
-    direntCache.put(idx.v, dirent);
-
     return dirent;
   }
 
@@ -514,6 +520,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     switch(checkType) {
       case IntegrityCheck::CHECKSUM: return FileImpl::checkChecksum();
       case IntegrityCheck::DIRENT_PTRS: return FileImpl::checkDirentPtrs();
+      case IntegrityCheck::DIRENT_ORDER: return FileImpl::checkDirentOrder();
       case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
       case IntegrityCheck::CLUSTER_PTRS: return FileImpl::checkClusterPtrs();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
@@ -548,6 +555,25 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return true;
   }
 
+  bool FileImpl::checkDirentOrder() {
+    const article_index_type articleCount = getCountArticles().v;
+    std::shared_ptr<const Dirent> prevDirent;
+    for ( article_index_type i = 0; i < articleCount; ++i )
+    {
+      const auto offset = readOffset(*urlPtrOffsetReader, i);
+      const std::shared_ptr<const Dirent> dirent = readDirent(offset);
+      if ( prevDirent && !(prevDirent->getLongUrl() < dirent->getLongUrl()) )
+      {
+        std::cerr << "Dirent table is not properly sorted:\n"
+                  << "  #" << i-1 << ": " << prevDirent->getLongUrl() << "\n"
+                  << "  #" << i   << ": " << dirent->getLongUrl() << std::endl;
+        return false;
+      }
+      prevDirent = dirent;
+    }
+    return true;
+  }
+
   bool FileImpl::checkClusterPtrs() {
     const cluster_index_type clusterCount = getCountClusters().v;
     const offset_t validClusterRangeStart(80); // XXX: really???
@@ -567,8 +593,19 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return true;
   }
 
+namespace
+{
+
+std::string pseudoTitle(const Dirent& d)
+{
+  return std::string(1, d.getNamespace()) + '/' + d.getTitle();
+}
+
+} // unnamed namespace
+
   bool FileImpl::checkTitleIndex() {
     const article_index_type articleCount = getCountArticles().v;
+    std::shared_ptr<const Dirent> prevDirent;
     for ( article_index_type i = 0; i < articleCount; ++i )
     {
       const offset_t offset(i*sizeof(article_index_t));
@@ -577,6 +614,16 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
         std::cerr << "Invalid title index entry" << std::endl;
         return false;
       }
+      const auto direntOffset = readOffset(*urlPtrOffsetReader, a);
+      const std::shared_ptr<const Dirent> dirent = readDirent(direntOffset);
+      if ( prevDirent && !(pseudoTitle(*prevDirent) < pseudoTitle(*dirent)) )
+      {
+        std::cerr << "Title index is not properly sorted:\n"
+                  << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
+                  << "  #" << i   << ": " << pseudoTitle(*dirent) << std::endl;
+        return false;
+      }
+      prevDirent = dirent;
     }
     return true;
   }

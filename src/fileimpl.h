@@ -113,11 +113,13 @@ namespace zim
   private:
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
+      std::shared_ptr<const Dirent> readDirent(offset_t offset);
       void readMimeTypes();
       void quickCheckForCorruptFile();
 
       bool checkChecksum();
       bool checkDirentPtrs();
+      bool checkDirentOrder();
       bool checkTitleIndex();
       bool checkClusterPtrs();
   };
