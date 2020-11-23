@@ -567,9 +567,9 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   }
 
   bool FileImpl::checkDirentOrder() {
-    const article_index_type articleCount = getCountArticles().v;
+    const entry_index_type articleCount = getCountArticles().v;
     std::shared_ptr<const Dirent> prevDirent;
-    for ( article_index_type i = 0; i < articleCount; ++i )
+    for ( entry_index_type i = 0; i < articleCount; ++i )
     {
       const auto offset = readOffset(*urlPtrOffsetReader, i);
       const std::shared_ptr<const Dirent> dirent = readDirent(offset);
@@ -615,14 +615,9 @@ std::string pseudoTitle(const Dirent& d)
 } // unnamed namespace
 
   bool FileImpl::checkTitleIndex() {
-<<<<<<< HEAD
     const entry_index_type articleCount = getCountArticles().v;
-    for ( entry_index_type i = 0; i < articleCount; ++i )
-=======
-    const article_index_type articleCount = getCountArticles().v;
     std::shared_ptr<const Dirent> prevDirent;
-    for ( article_index_type i = 0; i < articleCount; ++i )
->>>>>>> origin/master
+    for ( entry_index_type i = 0; i < articleCount; ++i )
     {
       const offset_t offset(i*sizeof(entry_index_t));
       const auto a = titleIndexReader->read_uint<entry_index_type>(offset);
