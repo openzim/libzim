@@ -136,12 +136,11 @@ namespace zim
 
       for(unsigned i=0; i<m_nbWorkers; i++)
       {
-        pthread_t thread;
-        pthread_create(&thread, NULL, taskRunner, this->data.get());
-        data->workerThreads.push_back(thread);
+        std::thread thread(taskRunner, this->data.get());
+        data->workerThreads.push_back(std::move(thread));
       }
 
-      pthread_create(&data->writerThread, NULL, clusterWriter, this->data.get());
+      data->writerThread = std::thread(clusterWriter, this->data.get());
     }
 
     void Creator::addItem(std::shared_ptr<Item> item)
@@ -270,12 +269,12 @@ namespace zim
         data->taskList.pushToQueue(nullptr);
       }
       for(auto& thread: data->workerThreads) {
-        pthread_join(thread, nullptr);
+        thread.join();
       }
 
       // Wait for writerThread to finish.
       data->clusterToWrite.pushToQueue(nullptr);
-      pthread_join(data->writerThread, nullptr);
+      data->writerThread.join();
 
       TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();

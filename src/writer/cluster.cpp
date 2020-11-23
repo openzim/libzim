@@ -47,11 +47,9 @@ Cluster::Cluster(CompressionType compression)
     _size(0)
 {
   blobOffsets.push_back(offset_t(0));
-  pthread_mutex_init(&m_closedMutex,NULL);
 }
 
 Cluster::~Cluster() {
-  pthread_mutex_destroy(&m_closedMutex);
   if (compressed_data.data()) {
     delete[] compressed_data.data();
   }
@@ -82,17 +80,11 @@ void Cluster::close() {
     compress();
     clear_raw_data();
   }
-  pthread_mutex_lock(&m_closedMutex);
   closed = true;
-  pthread_mutex_unlock(&m_closedMutex);
 }
 
 bool Cluster::isClosed() const{
-  bool v;
-  pthread_mutex_lock(&m_closedMutex);
-  v = closed;
-  pthread_mutex_unlock(&m_closedMutex);
-  return v;
+  return closed;
 }
 
 zsize_t Cluster::size() const

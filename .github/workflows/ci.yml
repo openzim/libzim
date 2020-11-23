@@ -54,6 +54,29 @@ jobs:
         env:
           SKIP_BIG_MEMORY_TEST: 1
 
+  Windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Setup python 3.6
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Install packages
+        run:
+          choco install ninja
+      - name: Install python modules
+        run: pip3 install meson
+      - name: Compile
+        shell: cmd
+        run: .github\script\build_libzim.cmd
+      - name: Test
+        shell: cmd
+        run: |
+          cd build
+          meson test --verbose
+
   Linux:
     strategy:
       fail-fast: false

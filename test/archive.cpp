@@ -87,8 +87,8 @@ TEST(ZimArchive, openingAnInvalidZimArchiveFails)
       for ( int count = 0; count < 100; count += 10 ) {
         const TestContext ctx{
                 {"prefix",  prefix.size() ? "yes" : "no" },
-                {"byte", std::to_string(byte) },
-                {"count", std::to_string(count) }
+                {"byte", zim::unittests::to_string(byte) },
+                {"count", zim::unittests::to_string(count) }
         };
         const std::string zimfileContent = prefix + std::string(count, byte);
         const auto tmpfile = makeTempFile("invalid_zim_file", zimfileContent);
@@ -122,7 +122,7 @@ TEST(ZimArchive, nastyEmptyZimArchive)
   const std::string correctContent = emptyZimArchiveContent();
   for ( int offset = 0; offset < 80; ++offset ) {
     if ( isNastyOffset(offset) ) {
-      const TestContext ctx{ {"offset", std::to_string(offset) } };
+      const TestContext ctx{ {"offset", zim::unittests::to_string(offset) } };
       std::string nastyContent(correctContent);
       nastyContent[offset] = '\xff';
       const auto tmpfile = makeTempFile("wrong_checksum_empty_zim_file", nastyContent);
@@ -252,6 +252,20 @@ TEST(ZimArchive, validate)
   EXPECT_BROKEN_ZIMFILE(
     "./data/invalid.outofbounds_first_clusterptr.zim",
     "Invalid cluster pointer\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.nonsorted_dirent_table.zim",
+    "Dirent table is not properly sorted:\n"
+    "  #0: A/main.html\n"
+    "  #1: -/favicon\n"
+  );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.nonsorted_title_index.zim",
+    "Title index is not properly sorted:\n"
+    "  #0: A/Test ZIM file\n"
+    "  #1: -/favicon\n"
   );
 }
 

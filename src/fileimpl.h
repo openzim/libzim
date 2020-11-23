@@ -24,7 +24,6 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <pthread.h>
 #include <zim/zim.h>
 #include <mutex>
 #include "lrucache.h"
@@ -45,7 +44,7 @@ namespace zim
       std::shared_ptr<FileCompound> zimFile;
       std::shared_ptr<FileReader> zimReader;
       std::vector<char> bufferDirentZone;
-      pthread_mutex_t bufferDirentLock;
+      std::mutex bufferDirentLock;
       Fileheader header;
       std::string filename;
 
@@ -53,8 +52,13 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
+<<<<<<< HEAD
       lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
       pthread_mutex_t direntCacheLock;
+=======
+      lru_cache<article_index_type, std::shared_ptr<const Dirent>> direntCache;
+      std::mutex direntCacheLock;
+>>>>>>> origin/master
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
@@ -123,11 +127,13 @@ namespace zim
   private:
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
+      std::shared_ptr<const Dirent> readDirent(offset_t offset);
       void readMimeTypes();
       void quickCheckForCorruptFile();
 
       bool checkChecksum();
       bool checkDirentPtrs();
+      bool checkDirentOrder();
       bool checkTitleIndex();
       bool checkClusterPtrs();
   };
