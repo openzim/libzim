@@ -27,6 +27,15 @@
 
 namespace zim
 {
+#ifdef _WIN32
+  #define DEFAULTFD zim::windows::FD
+  namespace windows {
+#else
+  #define DEFAULTFD zim::unix::FD
+  namespace unix {
+#endif
+    class FD;
+  }
   namespace writer
   {
     /**
@@ -136,12 +145,18 @@ namespace zim
         Blob feed();
 
       protected:
-        int fd;
+        std::string filepath;
         zim::size_type size;
+
+      private:
         std::unique_ptr<char[]> buffer;
+        std::unique_ptr<DEFAULTFD> fd;
+        zim::offset_type offset;
     };
 
   }
 }
+
+#undef DEFAULTFD
 
 #endif // ZIM_WRITER_CONTENTPROVIDER_H

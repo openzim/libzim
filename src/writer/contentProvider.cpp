@@ -19,9 +19,9 @@
 
 #include <zim/writer/contentProvider.h>
 
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "../fs.h"
+
+const zim::size_type BUFFER_SIZE(1024*1024);
 
 namespace zim
 {
@@ -46,27 +46,28 @@ namespace zim
     }
 
     FileProvider::FileProvider(const std::string& filepath)
-      : buffer(new char[1024*1024])
+      : filepath(filepath),
+        buffer(new char[BUFFER_SIZE]),
+        fd(new DEFAULTFS::FD(DEFAULTFS::openFile(filepath))),
+        offset(0)
     {
-      fd = open(filepath.c_str(), O_RDONLY);
-      if (fd == -1) {
-        throw std::runtime_error(std::string("cannot open ") + filepath);
-      }
-      size = lseek(fd, 0, SEEK_END);
-      lseek(fd, 0, SEEK_SET);
+      size = fd->getSize().v;
     }
 
-    FileProvider::~FileProvider()
-    {
-      if(fd != -1) {
-        close(fd);
-      }
-    }
+    FileProvider::~FileProvider() = default;
 
     Blob FileProvider::feed()
     {
-      auto outSize = read(fd, buffer.get(), 1024*1024UL);
-      return Blob(buffer.get(), outSize);
+      auto sizeToRead = std::min(BUFFER_SIZE, size-offset);
+      if (!sizeToRead) {
+        return Blob(nullptr, 0);
+      }
+
+      if(fd->readAt(buffer.get(), zim::zsize_t(sizeToRead), zim::offset_t(offset)).v == -1UL) {
+        throw std::runtime_error("Error reading file " + filepath);
+      }
+      offset += sizeToRead;
+      return Blob(buffer.get(), sizeToRead);
     }
   }
 }
