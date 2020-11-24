@@ -23,10 +23,13 @@
 
 #include <string>
 #include <tuple>
+#include "config.h"
 
 namespace zim {
   bool isCompressibleMimetype(const std::string& mimetype);
+#if defined(ENABLE_XAPIAN)
   std::string removeAccents(const std::string& text);
+#endif
   uint32_t countWords(const std::string& text);
   void microsleep(int microseconds);
 

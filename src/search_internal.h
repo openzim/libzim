@@ -47,13 +47,12 @@ struct search_iterator::InternalData {
 #endif
     std::unique_ptr<Entry> _entry;
 
-    InternalData(const InternalData& other) :
 #if defined(ENABLE_XAPIAN)
+    InternalData(const InternalData& other) :
       search(other.search),
       iterator(other.iterator),
       _document(other._document),
       document_fetched(other.document_fetched),
-#endif
       _entry(other._entry ? new Entry(*other._entry) : nullptr )
     {
     }
@@ -70,8 +69,6 @@ struct search_iterator::InternalData {
       return *this;
     }
 
-
-#if defined(ENABLE_XAPIAN)
     InternalData(const Search* search, Xapian::MSetIterator iterator) :
         search(search),
         iterator(iterator),

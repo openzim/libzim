@@ -41,13 +41,19 @@ search_iterator::search_iterator(InternalData* internal_data)
 search_iterator::search_iterator(const search_iterator& it)
     : internal(nullptr)
 {
+#if defined(ENABLE_XAPIAN)
+    // Without xapian, internal is allways null
     if (it.internal) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
+#endif
 }
 
 search_iterator & search_iterator::operator=(const search_iterator& it) {
+#if defined(ENABLE_XAPIAN)
+    // Without xapian, internal is allways null
     if ( ! it.internal ) internal.reset();
     else if ( ! internal ) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
     else *internal = *it.internal;
+#endif
 
     return *this;
 }
