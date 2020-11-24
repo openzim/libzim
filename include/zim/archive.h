@@ -313,6 +313,22 @@ namespace zim
        */
       bool is_multiPart() const;
 
+      /** Get if the zim archive uses the new namespace scheme.
+       *
+       * Recent zim file use the new namespace scheme.
+       *
+       * On user perspective, it means that :
+       * - On old namespace scheme :
+       *  . All entries are accessible, either using `getEntryByPath` with a specific namespace
+       *    or simply iterating over the entries (with `iter*` methods).
+       *  . Entry's path has namespace included ("A/foo.html")
+       * - On new namespace scheme :
+       *  . Only the "user" entries are accessible with `getEntryByPath` and `iter*` methods.
+       *    To access metadatas, use `getMetadata` method.
+       *  . Entry's path do not contains namespace ("foo.html")
+       */
+      bool hasNewNamespaceScheme() const;
+
       /** Get a shared ptr on the FileImpl
        *
        *  @internal

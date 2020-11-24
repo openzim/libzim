@@ -82,7 +82,7 @@ namespace zim
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
-      bool isNewNamespaceScheme() const { return m_newNamespaceScheme; }
+      bool hasNewNamespaceScheme() const { return m_newNamespaceScheme; }
 
       FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
       std::shared_ptr<const Dirent> getDirent(entry_index_t idx);

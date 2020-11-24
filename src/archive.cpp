@@ -85,7 +85,7 @@ namespace zim
 
   Entry Archive::getEntryByPath(const std::string& path) const
   {
-    if (m_impl->isNewNamespaceScheme()) {
+    if (m_impl->hasNewNamespaceScheme()) {
       // Get path in user content.
       auto r = m_impl->findx('C', path);
       if (r.first) {
@@ -214,7 +214,7 @@ namespace zim
     // A findx with a will return 0
     // A find with b will return 4
     entry_index_t begin_idx, end_idx;
-    if (m_impl->isNewNamespaceScheme()) {
+    if (m_impl->hasNewNamespaceScheme()) {
       begin_idx = m_impl->findx('C', path).second;
       path.back()++;
       end_idx = m_impl->findx('C', path).second;
@@ -240,7 +240,7 @@ namespace zim
     // only in it.
 
     // See `Archive::findByPath` for the rational.
-    auto ns = m_impl->isNewNamespaceScheme() ? 'C' : 'A';
+    auto ns = m_impl->hasNewNamespaceScheme() ? 'C' : 'A';
     auto begin_idx = m_impl->findxByTitle(ns, title).second;
     title.back()++;
     auto end_idx = m_impl->findxByTitle(ns, title).second;
@@ -265,6 +265,11 @@ namespace zim
   bool Archive::is_multiPart() const
   {
     return m_impl->is_multiPart();
+  }
+
+  bool Archive::hasNewNamespaceScheme() const
+  {
+    return m_impl->hasNewNamespaceScheme();
   }
 
   cluster_index_type Archive::getClusterCount() const
