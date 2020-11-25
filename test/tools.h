@@ -26,8 +26,10 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
+#define LSEEK _lseeki64
 #else
 #include <unistd.h>
+#define LSEEK lseek
 #endif
 
 #include "../src/buffer.h"
@@ -99,10 +101,10 @@ zim::Buffer write_to_buffer(const T& object)
   TempFile tmpFile("test_temp_file");
   const auto tmp_fd = tmpFile.fd();
   object.write(tmp_fd);
-  auto size = lseek(tmp_fd, 0, SEEK_END);
+  auto size = LSEEK(tmp_fd, 0, SEEK_END);
 
   auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
-  lseek(tmp_fd, 0, SEEK_SET);
+  LSEEK(tmp_fd, 0, SEEK_SET);
   if (read(tmp_fd, const_cast<char*>(buf.data()), size) == -1)
     throw std::runtime_error("Cannot read");
   return buf;
