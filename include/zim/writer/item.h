@@ -157,28 +157,38 @@ namespace zim
     /**
      * A `StringItem` is a full implemented item where the content is stored in a string.
      */
-    class StringItem : public BasicItem, std::enable_shared_from_this<StringItem>
+    class StringItem : public BasicItem, public std::enable_shared_from_this<StringItem>
     {
       public:
         /**
          * Create a StringItem with the given path, mimetype, title and content.
+         *
+         * The parameters are the ones of the private constructor.
          *
          * @param path the path of the item.
          * @param mimetype the mimetype of the item.
          * @param title the title of the item.
          * @param content the content of the item.
          */
-        StringItem(const std::string& path, const std::string& mimetype,
-                   const std::string& title, const std::string& content)
-          : BasicItem(path, mimetype, title),
-            content(content)
-        {}
+        template<typename... Ts>
+        static std::shared_ptr<StringItem> create(Ts&&... params) {
+          return std::shared_ptr<StringItem>(new StringItem(std::forward<Ts>(params)...));
+        }
 
         std::unique_ptr<ContentProvider> getContentProvider() const;
         std::unique_ptr<IndexData> getIndexData() const;
 
       protected:
         std::string content;
+
+      private:
+        StringItem(const std::string& path, const std::string& mimetype,
+                   const std::string& title, const std::string& content)
+          : BasicItem(path, mimetype, title),
+            content(content)
+        {}
+
+
 
     };
 
