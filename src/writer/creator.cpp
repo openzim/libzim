@@ -566,10 +566,14 @@ int mode =  _S_IREAD | _S_IWRITE;
 
     Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
     {
-      auto dirent = createDirent(ns, path, "", title);
+      auto dirent = pool.getDirent();
+      dirent->setNamespace(ns);
+      dirent->setPath(path);
+      dirent->setTitle(title);
       dirent->setRedirectNs(targetNs);
       dirent->setRedirectPath(targetPath);
       dirent->setRedirect(nullptr);
+      addDirent(dirent);
       return dirent;
     }
 
