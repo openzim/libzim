@@ -34,6 +34,10 @@ namespace zim
     : m_impl(new FileImpl(fname))
     { }
 
+  Archive::Archive(int fd)
+    : m_impl(new FileImpl(fd))
+    { }
+
   const std::string& Archive::getFilename() const
   {
     return m_impl->getFilename();
