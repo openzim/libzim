@@ -21,8 +21,8 @@
 #define ZIM_FILEHEADER_H
 
 #include <memory>
-#include "zim.h"
-#include "uuid.h"
+#include <zim/zim.h>
+#include <zim/uuid.h>
 #include <iosfwd>
 #include <limits>
 
@@ -47,14 +47,14 @@ namespace zim
       uint16_t majorVersion;
       uint16_t minorVersion;
       Uuid uuid;
-      article_index_type articleCount;
+      entry_index_type articleCount;
       offset_type titleIdxPos;
       offset_type urlPtrPos;
       offset_type mimeListPos;
       cluster_index_type clusterCount;
       offset_type clusterPtrPos;
-      article_index_type mainPage;
-      article_index_type layoutPage;
+      entry_index_type mainPage;
+      entry_index_type layoutPage;
       offset_type checksumPos;
 
     public:
@@ -66,8 +66,8 @@ namespace zim
           urlPtrPos(0),
           clusterCount(0),
           clusterPtrPos(0),
-          mainPage(std::numeric_limits<article_index_type>::max()),
-          layoutPage(std::numeric_limits<article_index_type>::max()),
+          mainPage(std::numeric_limits<entry_index_type>::max()),
+          layoutPage(std::numeric_limits<entry_index_type>::max()),
           checksumPos(std::numeric_limits<offset_type>::max())
       {}
 
@@ -87,8 +87,8 @@ namespace zim
       const Uuid& getUuid() const                  { return uuid; }
       void setUuid(const Uuid& uuid_)              { uuid = uuid_; }
 
-      article_index_type getArticleCount() const            { return articleCount; }
-      void      setArticleCount(article_index_type s)       { articleCount = s; }
+      entry_index_type getArticleCount() const            { return articleCount; }
+      void      setArticleCount(entry_index_type s)       { articleCount = s; }
 
       offset_type getTitleIdxPos() const           { return titleIdxPos; }
       void        setTitleIdxPos(offset_type p)    { titleIdxPos = p; }
@@ -105,13 +105,13 @@ namespace zim
       offset_type getClusterPtrPos() const         { return clusterPtrPos; }
       void        setClusterPtrPos(offset_type p)  { clusterPtrPos = p; }
 
-      bool        hasMainPage() const              { return mainPage != std::numeric_limits<article_index_type>::max(); }
-      article_index_type   getMainPage() const     { return mainPage; }
-      void        setMainPage(article_index_type s){ mainPage = s; }
+      bool        hasMainPage() const              { return mainPage != std::numeric_limits<entry_index_type>::max(); }
+      entry_index_type   getMainPage() const     { return mainPage; }
+      void        setMainPage(entry_index_type s){ mainPage = s; }
 
-      bool        hasLayoutPage() const            { return layoutPage != std::numeric_limits<article_index_type>::max(); }
-      article_index_type   getLayoutPage() const   { return layoutPage; }
-      void        setLayoutPage(article_index_type s)       { layoutPage = s; }
+      bool        hasLayoutPage() const            { return layoutPage != std::numeric_limits<entry_index_type>::max(); }
+      entry_index_type   getLayoutPage() const   { return layoutPage; }
+      void        setLayoutPage(entry_index_type s)       { layoutPage = s; }
 
       bool        hasChecksum() const              { return getMimeListPos() >= 80; }
       offset_type getChecksumPos() const           { return hasChecksum() ? checksumPos : 0; }

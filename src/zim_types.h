@@ -18,6 +18,13 @@ struct REAL_TYPEDEF{
 
   inline bool operator==(const REAL_TYPEDEF<B>& rhs) const
   { return v == rhs.v; }
+
+  inline REAL_TYPEDEF<B>& operator++()
+  { v++; return *this; }
+
+  inline REAL_TYPEDEF<B> operator++(int)
+  { return REAL_TYPEDEF<B>(v++); }
+
 };
 
 template<typename T> inline T& operator+= (T& lhs, const T& rhs)
@@ -79,7 +86,8 @@ namespace zim {
 explicit NAME(TYPE v=0) : REAL_TYPEDEF<TYPE>(v) {}; }; \
 static_assert(sizeof(NAME) == sizeof(TYPE), "");
 
-TYPEDEF(article_index_t, article_index_type)
+TYPEDEF(entry_index_t, entry_index_type)
+TYPEDEF(title_index_t, entry_index_type)
 TYPEDEF(cluster_index_t, cluster_index_type)
 TYPEDEF(blob_index_t, blob_index_type)
 

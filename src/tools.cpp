@@ -19,7 +19,6 @@
  */
 
 #include "tools.h"
-#include "config.h"
 
 #include <sys/types.h>
 #include <string.h>
@@ -27,9 +26,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <memory>
+#include <stdexcept>
 #include <errno.h>
-
-
 
 #ifdef _WIN32
 # include <windows.h>
@@ -49,6 +47,15 @@
 # include <chrono>
 #endif
 
+bool zim::isCompressibleMimetype(const std::string& mimetype)
+{
+  return mimetype.find("text") == 0
+      || mimetype.find("+xml") != std::string::npos
+      || mimetype.find("+json") != std::string::npos
+      || mimetype == "application/javascript"
+      || mimetype == "application/json";
+}
+
 #if defined(ENABLE_XAPIAN)
 
 #include <unicode/translit.h>
@@ -67,6 +74,21 @@ std::string zim::removeAccents(const std::string& text)
 }
 #endif
 
+uint32_t zim::countWords(const std::string& text)
+{
+  unsigned int numWords = 1;
+  unsigned int length = text.size();
+
+  for (unsigned int i = 0; i < length;) {
+    while (i < length && text[i] != ' ') {
+      i++;
+    }
+    numWords++;
+      i++;
+    }
+  return numWords;
+}
+
 
 void zim::microsleep(int microseconds) {
 #ifdef __MINGW32__
@@ -77,4 +99,18 @@ void zim::microsleep(int microseconds) {
 #else
    std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
 #endif
+}
+
+
+std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
+{
+  /* Index of the namespace char; discard '/' from absolute paths */
+  const unsigned int i = (longPath[0] == '/') ? 1 : 0;
+  if (i + 2 >= longPath.size() || longPath[i] == '/' || longPath[i+1] != '/')
+    throw std::runtime_error("Cannot parse path");
+
+  auto ns = longPath[i];
+  auto shortPath = longPath.substr(i+2, std::string::npos);
+
+  return std::make_tuple(ns, shortPath);
 }

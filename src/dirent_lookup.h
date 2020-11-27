@@ -36,21 +36,21 @@ template<class Impl>
 class DirentLookup
 {
 public: // types
-  typedef std::pair<bool, article_index_t> Result;
+  typedef std::pair<bool, entry_index_t> Result;
 
 public: // functions
-  DirentLookup(Impl* _impl, article_index_type cacheEntryCount);
+  DirentLookup(Impl* _impl, entry_index_type cacheEntryCount);
 
-  article_index_t getNamespaceRangeBegin(char ns) const;
-  article_index_t getNamespaceRangeEnd(char ns) const;
+  entry_index_t getNamespaceRangeBegin(char ns) const;
+  entry_index_t getNamespaceRangeEnd(char ns) const;
 
   Result find(char ns, const std::string& url);
 
 private: // functions
-  std::string getDirentKey(article_index_type i) const;
+  std::string getDirentKey(entry_index_type i) const;
 
 private: // types
-  typedef std::map<char, article_index_t> NamespaceBoundaryCache;
+  typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
 
 private: // data
   Impl* impl = nullptr;
@@ -58,28 +58,28 @@ private: // data
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
 
-  article_index_type articleCount = 0;
+  entry_index_type articleCount = 0;
   NarrowDown lookupGrid;
 };
 
 template<class Impl>
 std::string
-DirentLookup<Impl>::getDirentKey(article_index_type i) const
+DirentLookup<Impl>::getDirentKey(entry_index_type i) const
 {
-  const auto d = impl->getDirent(article_index_t(i));
+  const auto d = impl->getDirent(entry_index_t(i));
   return d->getNamespace() + d->getUrl();
 }
 
 template<class Impl>
-DirentLookup<Impl>::DirentLookup(Impl* _impl, article_index_type cacheEntryCount)
+DirentLookup<Impl>::DirentLookup(Impl* _impl, entry_index_type cacheEntryCount)
 {
   ASSERT(impl == nullptr, ==, true);
   impl = _impl;
-  articleCount = article_index_type(impl->getCountArticles());
+  articleCount = entry_index_type(impl->getCountArticles());
   if ( articleCount )
   {
-    const article_index_type step = std::max(1u, articleCount/cacheEntryCount);
-    for ( article_index_type i = 0; i < articleCount-1; i += step )
+    const entry_index_type step = std::max(1u, articleCount/cacheEntryCount);
+    for ( entry_index_type i = 0; i < articleCount-1; i += step )
     {
         lookupGrid.add(getDirentKey(i), i, getDirentKey(i+1));
     }
@@ -88,30 +88,30 @@ DirentLookup<Impl>::DirentLookup(Impl* _impl, article_index_type cacheEntryCount
 }
 
 template<typename IMPL>
-article_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
+entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
 
-  article_index_type lower = 0;
-  article_index_type upper = article_index_type(impl.getCountArticles());
-  auto d = impl.getDirent(article_index_t(0));
+  entry_index_type lower = 0;
+  entry_index_type upper = entry_index_type(impl.getCountArticles());
+  auto d = impl.getDirent(entry_index_t(0));
   while (upper - lower > 1)
   {
-    article_index_type m = lower + (upper - lower) / 2;
-    auto d = impl.getDirent(article_index_t(m));
+    entry_index_type m = lower + (upper - lower) / 2;
+    auto d = impl.getDirent(entry_index_t(m));
     if (d->getNamespace() >= ch)
       upper = m;
     else
       lower = m;
   }
 
-  article_index_t ret = article_index_t(d->getNamespace() < ch ? upper : lower);
+  entry_index_t ret = entry_index_t(d->getNamespace() < ch ? upper : lower);
   return ret;
 }
 
 template<typename IMPL>
-article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
+entry_index_t getNamespaceEndOffset(IMPL& impl, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <, 127);
@@ -121,7 +121,7 @@ article_index_t getNamespaceEndOffset(IMPL& impl, char ch)
 
 
 template<class Impl>
-article_index_t
+entry_index_t
 DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
 {
   ASSERT(ch, >=, 32);
@@ -142,7 +142,7 @@ DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
 }
 
 template<class Impl>
-article_index_t
+entry_index_t
 DirentLookup<Impl>::getNamespaceRangeEnd(char ns) const
 {
   return getNamespaceRangeBegin(ns+1);
@@ -153,16 +153,16 @@ typename DirentLookup<Impl>::Result
 DirentLookup<Impl>::find(char ns, const std::string& url)
 {
   const auto r = lookupGrid.getRange(ns + url);
-  article_index_type l(r.begin);
-  article_index_type u(r.end);
+  entry_index_type l(r.begin);
+  entry_index_type u(r.end);
 
   if (l == u)
-    return {false, article_index_t(l)};
+    return {false, entry_index_t(l)};
 
   while (true)
   {
-    article_index_type p = l + (u - l) / 2;
-    const auto d = impl->getDirent(article_index_t(p));
+    entry_index_type p = l + (u - l) / 2;
+    const auto d = impl->getDirent(entry_index_t(p));
 
     const int c = ns < d->getNamespace() ? -1
                 : ns > d->getNamespace() ? 1
@@ -173,11 +173,11 @@ DirentLookup<Impl>::find(char ns, const std::string& url)
     else if (c > 0)
     {
       if ( l == p )
-        return {false, article_index_t(u)};
+        return {false, entry_index_t(u)};
       l = p;
     }
     else
-      return {true, article_index_t(p)};
+      return {true, entry_index_t(p)};
   }
 }
 

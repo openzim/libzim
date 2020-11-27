@@ -18,9 +18,8 @@
  */
 
 #include <zim/zim.h>
-#include <zim/file.h>
+#include <zim/archive.h>
 #include <zim/error.h>
-#include <zim/fileiterator.h>
 
 #include "gtest/gtest.h"
 
@@ -31,36 +30,25 @@ namespace
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.findByTitle('U', "unkownTitle");
-    auto article2 = file.findByTitle('A', "unkownTitle");
-    ASSERT_EQ(article1->getIndex(), 0);
-    ASSERT_EQ(article2->getIndex(), 7);
+    auto range0 = archive.findByTitle("unkownTitle");
+    auto range1 = archive.findByTitle("j/body.js");
+    ASSERT_EQ(range0.begin(), range0.end());
+    ASSERT_EQ(range1.begin(), range1.end());
 }
 
-// By URL
-TEST(FindTests, NotFoundByURL)
+// By Path
+TEST(FindTests, NotFoundByPath)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.find('U', "unkwonUrl");
-    auto article2 = file.find('A', "unkwonUrl");
-    ASSERT_EQ(article1.getIndex(), file.getCountArticles());
-    ASSERT_EQ(article2->getIndex(), 7);
-}
-
-// By URL (no ns)
-TEST(FindTests, NotFoundByURLDefaultNS)
-{
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
-
-    auto article0 = file.find("unkwonUrl");
-    auto article1 = file.find("U/unkwonUrl");
-    auto article2 = file.find("A/unkwonUrl");
-    ASSERT_EQ(article0->getIndex(), 0);
-    ASSERT_EQ(article1.getIndex(), file.getCountArticles());
-    ASSERT_EQ(article2->getIndex(), 7);
+    auto range0 = archive.findByPath("unkwonUrl");
+    auto range1 = archive.findByPath("U/unkwonUrl");
+    auto range2 = archive.findByPath("A/unkwonUrl");
+    ASSERT_EQ(range0.begin(), range0.end());
+    ASSERT_EQ(range1.begin(), range1.end());
+    ASSERT_EQ(range2.begin(), range2.end());
 }
 
 // Found cases
@@ -68,36 +56,78 @@ TEST(FindTests, NotFoundByURLDefaultNS)
 // ByTitle
 TEST(FindTests, ByTitle)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.findByTitle('-', "j/body.js");
-    auto article2 = file.findByTitle('A', "index.html");
-    ASSERT_EQ(article1.getIndex(), 1);
-    ASSERT_EQ(article2->getIndex(), 7);
+    auto range0 = archive.findByTitle("Main Page");
+    ASSERT_EQ(range0.begin()->getIndex(), 5);
+    ASSERT_EQ(range0.end()->getIndex(), 7); // getIndex of an entry is always the path order.
+                                            // It happens that the 6th in title order is the 7th in path order.
+
+    auto count = 0;
+    for(auto& entry: range0) {
+      count++;
+      ASSERT_EQ(entry.getTitle().find("Main Page"), 0);
+    }
+    ASSERT_EQ(count, 1);
+
+    auto range1 = archive.findByTitle("Украінская");
+    ASSERT_EQ(range1.begin()->getIndex(), 53);
+    ASSERT_EQ(range1.end()->getIndex(), 58);
+
+    count = 0;
+    for(auto& entry: range1) {
+      count++;
+      ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+    }
+    ASSERT_EQ(count, 5);
 }
 
-// By URL
-TEST(FindTests, ByURL)
+#if 0
+// By Path (compatibility)
+TEST(FindTests, ByPathNoNS)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article1 = file.find('-', "j/body.js");
-    auto article2 = file.find('I', "m/115a35549794e50dcd03e60ef1a1ae24.png");
-    ASSERT_EQ(article1->getIndex(), 1);
-    ASSERT_EQ(article2->getIndex(), 76);
+    auto it1 = archive.findByPath("j/body.js");
+    auto it2 = archive.findByPath("m/115a35549794e50dcd03e60ef1a1ae24.png");
+    ASSERT_EQ(it1->getIndex(), 1);
+    ASSERT_EQ(it2->getIndex(), 76);
 }
+#endif
 
-// By URL (no ns)
-TEST(FindTests, ByURLDefaultNS)
+// By Path
+TEST(FindTests, ByPath)
 {
-    zim::File file ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
 
-    auto article0 = file.find("A/Main_Page.html");
-    auto article1 = file.find("I/s/ajax-loader.gif");
-    auto article2 = file.find("-/j/head.js");
-    ASSERT_EQ(article0->getIndex(), 5);
-    ASSERT_EQ(article1->getIndex(), 80);
-    ASSERT_EQ(article2->getIndex(), 2);
+    auto range0 = archive.findByPath("A/Main_Page.html");
+    auto range1 = archive.findByPath("I/s/");
+    auto range2 = archive.findByPath("-/j/head.js");
+
+    ASSERT_EQ(range0.begin()->getIndex(), 5);
+    auto count = 0;
+    for(auto& entry: range0) {
+      count++;
+      ASSERT_EQ(entry.getPath().find("A/Main_Page.html"), 0);
+    }
+    ASSERT_EQ(count, 1);
+
+    ASSERT_EQ(range1.begin()->getIndex(), 78);
+    count = 0;
+    for(auto& entry: range1) {
+      count++;
+      std::cout << entry.getPath() << std::endl;
+      ASSERT_EQ(entry.getPath().find("I/s/"), 0);
+    }
+    ASSERT_EQ(count, 31);
+
+    ASSERT_EQ(range2.begin()->getIndex(), 2);
+     count = 0;
+    for(auto& entry: range2) {
+      count++;
+      ASSERT_EQ(entry.getPath().find("-/j/head.js"), 0);
+    }
+    ASSERT_EQ(count, 1);
 }
 
 } // namespace

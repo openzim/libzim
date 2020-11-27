@@ -17,7 +17,7 @@
  *
  */
 
-#include <zim/fileheader.h>
+#include "fileheader.h"
 #include <zim/error.h>
 #include <iostream>
 #include <algorithm>
@@ -41,7 +41,7 @@ namespace zim
   const uint32_t Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
   const uint16_t Fileheader::zimClassicMajorVersion = 5;
   const uint16_t Fileheader::zimExtendedMajorVersion = 6;
-  const uint16_t Fileheader::zimMinorVersion = 0;
+  const uint16_t Fileheader::zimMinorVersion = 1;
   const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
 
   void Fileheader::write(int out_fd) const

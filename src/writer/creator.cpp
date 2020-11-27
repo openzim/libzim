@@ -17,6 +17,8 @@
  *
  */
 
+#include <zim/writer/creator.h>
+
 #include "config.h"
 
 #include "creatordata.h"
@@ -24,7 +26,7 @@
 #include "debug.h"
 #include "workers.h"
 #include <zim/blob.h>
-#include <zim/writer/creator.h>
+#include <zim/writer/contentProvider.h>
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
@@ -62,11 +64,28 @@ log_define("zim.writer.creator")
     } while(false)
 
 #define TINFO(e) \
-    if (verbose) { \
+    if (m_verbose) { \
         double seconds = difftime(time(NULL), data->start_time); \
         std::cout << "T:" << (int)(seconds) \
                   << "; " << e << std::endl; \
     }
+
+#define TPROGRESS() \
+    if (m_verbose ) { \
+        double seconds = difftime(time(NULL),data->start_time);  \
+        std::cout << "T:" << (int)seconds \
+                  << "; A:" << data->dirents.size() \
+                  << "; RA:" << data->nbRedirectItems \
+                  << "; CA:" << data->nbCompItems \
+                  << "; UA:" << data->nbUnCompItems \
+                  << "; IA:" << data->nbIndexItems \
+                  << "; C:" << data->nbClusters \
+                  << "; CC:" << data->nbCompClusters \
+                  << "; UC:" << data->nbUnCompClusters \
+                  << "; WC:" << data->taskList.size() \
+                  << std::endl; \
+    }
+
 
 #define CLUSTER_BASE_OFFSET 1024
 
@@ -74,19 +93,48 @@ namespace zim
 {
   namespace writer
   {
-    Creator::Creator(bool verbose, CompressionType c)
-      : verbose(verbose)
-      , compression(c)
-    {}
-
+    Creator::Creator() = default;
     Creator::~Creator() = default;
 
-    void Creator::startZimCreation(const std::string& fname)
+    Creator& Creator::configVerbose(bool verbose)
     {
-      data = std::unique_ptr<CreatorData>(new CreatorData(fname, verbose, withIndex, indexingLanguage, compression));
-      data->setMinChunkSize(minChunkSize);
+      m_verbose = verbose;
+      return *this;
+    }
 
-      for(unsigned i=0; i<nbWorkerThreads; i++)
+    Creator& Creator::configCompression(CompressionType comptype)
+    {
+      m_compression = comptype;
+      return *this;
+    }
+
+    Creator& Creator::configMinClusterSize(zim::size_type size)
+    {
+      m_minClusterSize = size;
+      return *this;
+    }
+
+    Creator& Creator::configIndexing(bool indexing, std::string language)
+    {
+      m_withIndex = indexing;
+      m_indexingLanguage = language;
+      return *this;
+    }
+
+    Creator& Creator::configNbWorkers(unsigned nbWorkers)
+    {
+      m_nbWorkers = nbWorkers;
+      return *this;
+    }
+
+    void Creator::startZimCreation(const std::string& filepath)
+    {
+      data = std::unique_ptr<CreatorData>(
+        new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression)
+      );
+      data->setMinChunkSize(m_minClusterSize);
+
+      for(unsigned i=0; i<m_nbWorkers; i++)
       {
         std::thread thread(taskRunner, this->data.get());
         data->workerThreads.push_back(std::move(thread));
@@ -95,66 +143,77 @@ namespace zim
       data->writerThread = std::thread(clusterWriter, this->data.get());
     }
 
-    void Creator::addArticle(std::shared_ptr<Article> article)
+    void Creator::addItem(std::shared_ptr<Item> item)
     {
-      auto dirent = data->createDirentFromArticle(article.get());
-      data->addDirent(dirent, article.get());
-      data->nbArticles++;
-      if (article->isRedirect()) {
-        data->nbRedirectArticles++;
-      } else {
-        if (article->shouldCompress())
-          data->nbCompArticles++;
-        else
-          data->nbUnCompArticles++;
-        if (!article->getFilename().empty())
-          data->nbFileArticles++;
-        if (article->shouldIndex())
-          data->nbIndexArticles++;
-      }
-      if (verbose && data->nbArticles%1000 == 0){
-        double seconds = difftime(time(NULL),data->start_time);
-        std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbArticles
-                  << "; RA:" << data->nbRedirectArticles
-                  << "; CA:" << data->nbCompArticles
-                  << "; UA:" << data->nbUnCompArticles
-                  << "; FA:" << data->nbFileArticles
-                  << "; IA:" << data->nbIndexArticles
-                  << "; C:" << data->nbClusters
-                  << "; CC:" << data->nbCompClusters
-                  << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->taskList.size()
-                  << std::endl;
+      auto hints = item->getHints();
+
+      bool compressContent;
+      try {
+        compressContent = bool(hints.at(COMPRESS));
+      } catch(std::out_of_range&) {
+        compressContent = isCompressibleMimetype(item->getMimeType());
       }
 
+      auto dirent = data->createItemDirent(item.get());
+      data->addItemData(dirent, item->getContentProvider(), compressContent);
+
 #if defined(ENABLE_XAPIAN)
-      if (article->shouldIndex()) {
-        data->titleIndexer.index(article.get());
-        if(withIndex && !article->isRedirect()) {
-          data->taskList.pushToQueue(new IndexTask(article));
+      if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
+        data->nbIndexItems++;
+        data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
+        if(m_withIndex) {
+          data->taskList.pushToQueue(new IndexTask(item));
         }
       }
 #endif
+
+      if (data->dirents.size()%1000 == 0) {
+        TPROGRESS();
+      }
+
     }
+
+    void Creator::addMetadata(const std::string& name, const std::string& content, const std::string& mimetype)
+    {
+      auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
+      addMetadata(name, std::move(provider), mimetype);
+    }
+
+    void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
+    {
+      auto compressContent = isCompressibleMimetype(mimetype);
+      data->addData('M', name, mimetype, std::move(provider), compressContent);
+    }
+
+    void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
+    {
+      data->createRedirectDirent('C', path, title, 'C', targetPath);
+      if (data->dirents.size()%1000 == 0){
+        TPROGRESS();
+      }
+
+#if defined(ENABLE_XAPIAN)
+      if (!title.empty()) {
+        data->titleIndexer.indexTitle(path, title);
+      }
+#endif
+     }
 
     void Creator::finishZimCreation()
     {
-      if (verbose) {
-        double seconds = difftime(time(NULL),data->start_time);
-        std::cout << "T:" << (int)seconds
-                  << "; A:" << data->nbArticles
-                  << "; RA:" << data->nbRedirectArticles
-                  << "; CA:" << data->nbCompArticles
-                  << "; UA:" << data->nbUnCompArticles
-                  << "; FA:" << data->nbFileArticles
-                  << "; IA:" << data->nbIndexArticles
-                  << "; C:" << data->nbClusters
-                  << "; CC:" << data->nbCompClusters
-                  << "; UC:" << data->nbUnCompClusters
-                  << "; WC:" << data->taskList.size()
-                  << std::endl;
+      // Create mandatory entries
+      if (!m_faviconPath.empty()) {
+        data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
       }
+
+      // Create a redirection for the mainPage.
+      // We need to keep the created dirent to set the fileheader.
+      // Dirent doesn't have to be deleted.
+      if (!m_mainPath.empty()) {
+        data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
+      }
+
+      TPROGRESS();
 
       // We need to wait that all indexation task has been done before closing the
       // xapian database and add it to zim.
@@ -167,12 +226,13 @@ namespace zim
 #if defined(ENABLE_XAPIAN)
       {
         data->titleIndexer.indexingPostlude();
-        auto article = data->titleIndexer.getMetaArticle();
-        auto dirent = data->createDirentFromArticle(article);
-        data->addDirent(dirent, article);
-        delete article;
+        data->addData(
+          'X', "title/xapian", "application/octet-stream+xapian",
+          std::unique_ptr<ContentProvider>(new FileProvider(data->titleIndexer.getIndexPath())),
+          false
+        );
       }
-      if (withIndex) {
+      if (m_withIndex) {
         wait = 0;
         do {
           microsleep(wait);
@@ -181,14 +241,15 @@ namespace zim
 
         data->indexer->indexingPostlude();
         microsleep(100);
-        auto article = data->indexer->getMetaArticle();
-        auto dirent = data->createDirentFromArticle(article);
-        data->addDirent(dirent, article);
-        delete article;
+        data->addData(
+          'X', "fulltext/xapian", "application/octet-stream+xapian",
+          std::unique_ptr<ContentProvider>(new FileProvider(data->indexer->getIndexPath())),
+          false
+        );
       }
 #endif
 
-      // When we've seen all articles, write any remaining clusters.
+      // When we've seen all items, write any remaining clusters.
       if (data->compCluster->count())
         data->closeCluster(true);
 
@@ -204,7 +265,7 @@ namespace zim
       } while(ClusterTask::waiting_task.load() > 0);
 
       // Quit all workerThreads
-      for (auto i=0U; i< nbWorkerThreads; i++) {
+      for (auto i=0U; i< m_nbWorkers; i++) {
         data->taskList.pushToQueue(nullptr);
       }
       for(auto& thread: data->workerThreads) {
@@ -218,8 +279,8 @@ namespace zim
       TINFO("ResolveRedirectIndexes");
       data->resolveRedirectIndexes();
 
-      TINFO("Set article indexes");
-      data->setArticleIndexes();
+      TINFO("Set entry indexes");
+      data->setEntryIndexes();
 
       TINFO("Resolve mimetype");
       data->resolveMimeTypes();
@@ -241,35 +302,19 @@ namespace zim
 
     void Creator::fillHeader(Fileheader* header) const
     {
-      auto mainUrl = getMainUrl();
-      auto layoutUrl = getLayoutUrl();
-
       if (data->isExtended) {
         header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
       } else {
         header->setMajorVersion(Fileheader::zimClassicMajorVersion);
       }
       header->setMinorVersion(Fileheader::zimMinorVersion);
-      header->setMainPage(std::numeric_limits<article_index_type>::max());
-      header->setLayoutPage(std::numeric_limits<article_index_type>::max());
+      header->setMainPage(
+        data->mainPageDirent
+        ? entry_index_type(data->mainPageDirent->getIdx())
+        : std::numeric_limits<entry_index_type>::max());
+      header->setLayoutPage(std::numeric_limits<entry_index_type>::max());
 
-      if (!mainUrl.empty() || !layoutUrl.empty())
-      {
-        for (auto& dirent: data->dirents)
-        {
-          if (mainUrl == dirent->getFullUrl())
-          {
-            header->setMainPage(article_index_type(dirent->getIdx()));
-          }
-
-          if (layoutUrl == dirent->getFullUrl())
-          {
-            header->setLayoutPage(article_index_type(dirent->getIdx()));
-          }
-        }
-      }
-
-      header->setUuid( getUuid() );
+      header->setUuid( m_uuid );
       header->setArticleCount( data->dirents.size() );
 
       header->setMimeListPos( Fileheader::size );
@@ -316,9 +361,9 @@ namespace zim
       header.setTitleIdxPos(lseek(out_fd, 0, SEEK_CUR));
       for (Dirent* dirent: data->titleIdx)
       {
-        char tmp_buff[sizeof(article_index_type)];
+        char tmp_buff[sizeof(entry_index_type)];
         toLittleEndian(dirent->getIdx().v, tmp_buff);
-        _write(out_fd, tmp_buff, sizeof(article_index_type));
+        _write(out_fd, tmp_buff, sizeof(entry_index_type));
       }
 
       TINFO(" write cluster offset list");
@@ -362,19 +407,18 @@ namespace zim
                                    bool withIndex,
                                    std::string language,
                                    CompressionType c)
-      : compression(c),
+      : mainPageDirent(nullptr),
+        compression(c),
         withIndex(withIndex),
         indexingLanguage(language),
 #if defined(ENABLE_XAPIAN)
         titleIndexer(language, IndexingMode::TITLE, true),
 #endif
         verbose(verbose),
-        nbArticles(0),
-        nbRedirectArticles(0),
-        nbCompArticles(0),
-        nbUnCompArticles(0),
-        nbFileArticles(0),
-        nbIndexArticles(0),
+        nbRedirectItems(0),
+        nbCompItems(0),
+        nbUnCompItems(0),
+        nbIndexItems(0),
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
@@ -433,7 +477,7 @@ int mode =  _S_IREAD | _S_IWRITE;
 #endif
     }
 
-    void CreatorData::addDirent(Dirent* dirent, const Article* article)
+    void CreatorData::addDirent(Dirent* dirent)
     {
       auto ret = dirents.insert(dirent);
       if (!ret.second) {
@@ -443,7 +487,7 @@ int mode =  _S_IREAD | _S_IWRITE;
           dirents.erase(ret.first);
           dirents.insert(dirent);
         } else {
-          std::cerr << "Impossible to add " << dirent->getFullUrl().getLongUrl() << std::endl;
+          std::cerr << "Impossible to add " << dirent->getNamespace() << "/" << dirent->getPath() << std::endl;
           std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
           return;
@@ -454,70 +498,82 @@ int mode =  _S_IREAD | _S_IWRITE;
       if (dirent->isRedirect())
       {
         unresolvedRedirectDirents.insert(dirent);
+        nbRedirectItems++;
         return;
       }
+    }
 
+    void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
+    {
       // Add blob data to compressed or uncompressed cluster.
-      auto articleSize = article->getSize();
-      if (articleSize > 0)
+      auto itemSize = provider->getSize();
+      if (itemSize > 0)
       {
         isEmpty = false;
       }
 
-      Cluster *cluster;
-      if (article->shouldCompress())
-      {
-        cluster = compCluster;
-      }
-      else
-      {
-        cluster = uncompCluster;
-      }
+      auto cluster = compressContent ? compCluster : uncompCluster;
 
       // If cluster will be too large, write it to dis, and open a new
       // one for the content.
       if ( cluster->count()
-        && cluster->size().v+articleSize >= minChunkSize * 1024
+        && cluster->size().v+itemSize >= minChunkSize * 1024
          )
       {
-        log_info("cluster with " << cluster->count() << " articles, " <<
+        log_info("cluster with " << cluster->count() << " items, " <<
                  cluster->size() << " bytes; current title \"" <<
                  dirent->getTitle() << '\"');
-        cluster = closeCluster(article->shouldCompress());
+        cluster = closeCluster(compressContent);
       }
 
       dirent->setCluster(cluster);
-      cluster->addArticle(article);
+      cluster->addContent(std::move(provider));
+
+      if (compressContent) {
+        nbCompItems++;
+      } else {
+        nbUnCompItems++;
+      }
+
     }
 
-    Dirent* CreatorData::createDirentFromArticle(const Article* article)
+    void CreatorData::addData(char ns, const std::string& path, const std::string& mimetype, std::unique_ptr<ContentProvider> provider, bool compressContent) {
+      auto dirent = createDirent(ns, path, mimetype, "");
+      addItemData(dirent, std::move(provider), compressContent);
+    }
+
+    Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
     {
       auto dirent = pool.getDirent();
-      dirent->setUrl(article->getUrl());
-      dirent->setTitle(article->getTitle());
+      dirent->setNamespace(ns);
+      dirent->setPath(path);
+      dirent->setMimeType(getMimeTypeIdx(mimetype));
+      dirent->setTitle(title);
+      addDirent(dirent);
+      return dirent;
+    }
 
-      if (article->isRedirect())
-      {
-        dirent->setRedirect(nullptr);
-        dirent->setRedirectUrl(article->getRedirectUrl());
+    Dirent* CreatorData::createItemDirent(const Item* item)
+    {
+      auto path = item->getPath();
+      auto mimetype = item->getMimeType();
+      if (mimetype.empty()) {
+        std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
+        mimetype = "application/octet-stream";
       }
-      else if (article->isLinktarget())
-      {
-        dirent->setLinktarget();
-      }
-      else if (article->isDeleted())
-      {
-        dirent->setDeleted();
-      }
-      else
-      {
-        auto mimetype = article->getMimeType();
-        if (mimetype.empty()) {
-          std::cerr << "Warning, " << article->getUrl().getLongUrl() << " have empty mimetype." << std::endl;
-          mimetype = "application/octet-stream";
-        }
-        dirent->setMimeType(getMimeTypeIdx(mimetype));
-      }
+      return createDirent('C', item->getPath(), mimetype, item->getTitle());
+    }
+
+    Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
+    {
+      auto dirent = pool.getDirent();
+      dirent->setNamespace(ns);
+      dirent->setPath(path);
+      dirent->setTitle(title);
+      dirent->setRedirectNs(targetNs);
+      dirent->setRedirectPath(targetPath);
+      dirent->setRedirect(nullptr);
+      addDirent(dirent);
       return dirent;
     }
 
@@ -549,11 +605,11 @@ int mode =  _S_IREAD | _S_IWRITE;
       return cluster;
     }
 
-    void CreatorData::setArticleIndexes()
+    void CreatorData::setEntryIndexes()
     {
       // set index
       INFO("set index");
-      article_index_t idx(0);
+      entry_index_t idx(0);
       for (auto& dirent: dirents) {
         dirent->setIdx(idx);
         idx += 1;
@@ -566,11 +622,17 @@ int mode =  _S_IREAD | _S_IWRITE;
       INFO("Resolve redirect");
       for (auto dirent: unresolvedRedirectDirents)
       {
-        Dirent tmpDirent(dirent->getRedirectUrl());
+        Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
-          INFO("Invalid redirection " << dirent->getFullUrl().getLongUrl() << " redirecting to (missing) " << dirent->getRedirectUrl().getLongUrl());
+          INFO("Invalid redirection "
+              << dirent->getNamespace() << '/' << dirent->getPath()
+              << " redirecting to (missing) "
+              << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
+          if (dirent == mainPageDirent) {
+            mainPageDirent = nullptr;
+          }
         } else  {
           dirent->setRedirect(*target_pos);
         }
@@ -609,7 +671,7 @@ int mode =  _S_IREAD | _S_IWRITE;
 
       for (auto& dirent: dirents)
       {
-        if (dirent->isArticle())
+        if (dirent->isItem())
           dirent->setMimeType(mapping[dirent->getMimeType()]);
       }
     }

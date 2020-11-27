@@ -20,7 +20,8 @@
 #include "xapian/myhtmlparse.h"
 #include <zim/search_iterator.h>
 #include <zim/search.h>
-#include <zim/file.h>
+#include <zim/archive.h>
+#include <zim/item.h>
 #include "search_internal.h"
 
 namespace zim {
@@ -40,13 +41,19 @@ search_iterator::search_iterator(InternalData* internal_data)
 search_iterator::search_iterator(const search_iterator& it)
     : internal(nullptr)
 {
+#if defined(ENABLE_XAPIAN)
+    // Without xapian, internal is allways null
     if (it.internal) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
+#endif
 }
 
 search_iterator & search_iterator::operator=(const search_iterator& it) {
+#if defined(ENABLE_XAPIAN)
+    // Without xapian, internal is allways null
     if ( ! it.internal ) internal.reset();
     else if ( ! internal ) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
     else *internal = *it.internal;
+#endif
 
     return *this;
 }
@@ -77,7 +84,7 @@ search_iterator& search_iterator::operator++() {
     }
     ++(internal->iterator);
     internal->document_fetched = false;
-    internal->article_fetched = false;
+    internal->_entry.reset();
 #endif
     return *this;
 }
@@ -95,7 +102,7 @@ search_iterator& search_iterator::operator--() {
     }
     --(internal->iterator);
     internal->document_fetched = false;
-    internal->article_fetched = false;
+    internal->_entry.reset();
 #endif
     return *this;
 }
@@ -164,18 +171,20 @@ std::string search_iterator::get_snippet() const {
         return internal->get_document().get_value(internal->search->valuesmap["snippet"]);
     }
     /* No reader, no snippet */
-    Article& article = internal->get_article();
-    if ( ! article.good() )
-        return "";
-    /* Get the content of the article to generate a snippet.
-       We parse it and use the html dump to avoid remove html tags in the
-       content and be able to nicely cut the text at random place. */
-    zim::MyHtmlParser htmlParser;
-    std::string content = article.getData();
     try {
-        htmlParser.parse_html(content, "UTF-8", true);
-    } catch (...) {}
-    return internal->search->internal->results.snippet(htmlParser.dump, 500);
+        Entry& entry = internal->get_entry();
+        /* Get the content of the item to generate a snippet.
+           We parse it and use the html dump to avoid remove html tags in the
+           content and be able to nicely cut the text at random place. */
+        zim::MyHtmlParser htmlParser;
+        std::string content = entry.getItem().getData();
+        try {
+            htmlParser.parse_html(content, "UTF-8", true);
+        } catch (...) {}
+        return internal->search->internal->results.snippet(htmlParser.dump, 500);
+    } catch(...) {
+      return "";
+    }
 #else
     return "";
 #endif
@@ -229,11 +238,11 @@ int search_iterator::get_fileIndex() const {
 }
 
 search_iterator::reference search_iterator::operator*() const {
-    return internal->get_article();
+    return internal->get_entry();
 }
 
 search_iterator::pointer search_iterator::operator->() const {
-    return &internal->get_article();
+    return &internal->get_entry();
 }
 
 } // namespace zim

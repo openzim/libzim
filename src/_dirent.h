@@ -42,7 +42,7 @@ namespace zim
       cluster_index_t clusterNumber;  // only used when redirect is false
       blob_index_t blobNumber;    // only used when redirect is false
 
-      article_index_t redirectIndex;  // only used when redirect is true
+      entry_index_t redirectIndex;  // only used when redirect is true
 
       char ns;
       std::string title;
@@ -78,7 +78,7 @@ namespace zim
       cluster_index_t getClusterNumber() const      { return isRedirect() ? cluster_index_t(0) : clusterNumber; }
       blob_index_t  getBlobNumber() const         { return isRedirect() ? blob_index_t(0) : blobNumber; }
 
-      article_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : article_index_t(0); }
+      entry_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : entry_index_t(0); }
 
       char getNamespace() const               { return ns; }
       const std::string& getTitle() const     { return title.empty() ? url : title; }
@@ -110,13 +110,13 @@ namespace zim
         parameter = parameter_;
       }
 
-      void setRedirect(article_index_t idx)
+      void setRedirect(entry_index_t idx)
       {
         redirectIndex = idx;
         mimeType = redirectMimeType;
       }
 
-      void setArticle(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
+      void setItem(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
         ASSERT(mimeType, ==, 0);
         mimeType = mimeType_;

@@ -32,6 +32,7 @@
 #include "log.h"
 #include "envvalue.h"
 #include "md5.h"
+#include "tools.h"
 
 log_define("zim.file.impl")
 
@@ -41,7 +42,7 @@ namespace zim
 namespace
 {
 
-offset_t readOffset(const Reader& reader, article_index_type idx)
+offset_t readOffset(const Reader& reader, entry_index_type idx)
 {
   offset_t offset(reader.read_uint<offset_type>(offset_t(sizeof(offset_type)*idx)));
   return offset;
@@ -74,6 +75,9 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      m_newNamespaceScheme(false),
+      m_startUserEntry(0),
+      m_endUserEntry(0),
       cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
   {
     log_trace("read file \"" << fname << '"');
@@ -173,43 +177,52 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
       current += (len + 1);
     }
+
+    const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
+    if (m_newNamespaceScheme) {
+      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
+    } else {
+      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
+    }
+
   }
 
-  std::pair<bool, article_index_t> FileImpl::findx(char ns, const std::string& url)
+  std::pair<bool, entry_index_t> FileImpl::findx(char ns, const std::string& url)
   {
     return direntLookup().find(ns, url);
   }
 
-  std::pair<bool, article_index_t> FileImpl::findx(const std::string& url)
+  std::pair<bool, entry_index_t> FileImpl::findx(const std::string& url)
   {
-    size_t start = 0;
-    if (url[0] == '/') {
-      start = 1;
-    }
-    if (url.size() < (2+start) || url[1+start] != '/')
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
-    return findx(url[start], url.substr(2+start));
+    char ns;
+    std::string path;
+    try {
+      std::tie(ns, path) = parseLongPath(url);
+      return findx(ns, path);
+    } catch (...) {}
+    return { false, entry_index_t(0) };
   }
 
-  std::pair<bool, article_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
+  std::pair<bool, title_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
-    article_index_type l = article_index_type(getNamespaceBeginOffset(ns));
-    article_index_type u = article_index_type(getNamespaceEndOffset(ns));
+    entry_index_type l = entry_index_type(getNamespaceBeginOffset(ns));
+    entry_index_type u = entry_index_type(getNamespaceEndOffset(ns));
 
     if (l == u)
     {
       log_debug("namespace " << ns << " not found");
-      return std::pair<bool, article_index_t>(false, article_index_t(0));
+      return std::pair<bool, title_index_t>(false, title_index_t(0));
     }
 
     unsigned itcount = 0;
     while (u - l > 1)
     {
       ++itcount;
-      article_index_type p = l + (u - l) / 2;
-      auto d = getDirentByTitle(article_index_t(p));
+      entry_index_type p = l + (u - l) / 2;
+      auto d = getDirentByTitle(title_index_t(p));
 
       int c = ns < d->getNamespace() ? -1
             : ns > d->getNamespace() ? 1
@@ -222,50 +235,21 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, article_index_t>(true, article_index_t(p));
+        return std::pair<bool, title_index_t>(true, title_index_t(p));
       }
     }
 
-    auto d = getDirentByTitle(article_index_t(l));
+    auto d = getDirentByTitle(title_index_t(l));
     int c = title.compare(d->getTitle());
 
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, article_index_t>(true, article_index_t(l));
+      return std::pair<bool, title_index_t>(true, title_index_t(l));
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return std::pair<bool, article_index_t>(false, article_index_t(c < 0 ? l : u));
-  }
-
-  std::pair<bool, article_index_t> FileImpl::findxByClusterOrder(article_index_type idx)
-  {
-      std::call_once(orderOnceFlag, [this]
-      {
-          auto nb_articles = this->getCountArticles().v;
-          articleListByCluster.reserve(nb_articles);
-
-          for(zim::article_index_type i = 0; i < nb_articles; i++)
-          {
-              // This is the offset of the dirent in the zimFile
-              auto indexOffset = readOffset(*urlPtrOffsetReader, i);
-              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
-              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
-              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-                articleListByCluster.push_back(std::make_pair(0, i));
-              } else {
-                // If it is a classic article, get the clusterNumber (at offset 8)
-                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
-              }
-          }
-          std::sort(articleListByCluster.begin(), articleListByCluster.end());
-      });
-
-      if (idx >= articleListByCluster.size())
-          return std::pair<bool, article_index_t>(false, article_index_t(0));
-      return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
+    return std::pair<bool, title_index_t>(false, title_index_t(c < 0 ? l : u));
   }
 
   FileCompound::PartRange
@@ -274,12 +258,12 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return zimFile->locate(offset, size);
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirent(article_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx)
   {
     log_trace("FileImpl::getDirent(" << idx << ')');
 
     if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
+      throw std::out_of_range("entry index out of range");
 
     {
       std::lock_guard<std::mutex> l(direntCacheLock);
@@ -346,22 +330,49 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return dirent;
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(article_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx)
   {
-    if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
     return getDirent(getIndexByTitle(idx));
   }
 
-  article_index_t FileImpl::getIndexByTitle(article_index_t idx)
+  entry_index_t FileImpl::getIndexByTitle(title_index_t idx) const
   {
-    if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
+    if (idx.v >= getCountArticles().v)
+      throw std::out_of_range("entry index out of range");
 
-    article_index_t ret(titleIndexReader->read_uint<article_index_type>(
-                            offset_t(sizeof(article_index_t)*idx.v)));
+    entry_index_t ret(titleIndexReader->read_uint<entry_index_type>(
+                            offset_t(sizeof(entry_index_t)*idx.v)));
 
     return ret;
+  }
+
+  entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
+  {
+      std::call_once(orderOnceFlag, [this]
+      {
+          articleListByCluster.reserve(getUserEntryCount().v);
+
+          auto endIdx = getEndUserEntry().v;
+          for(auto i = getStartUserEntry().v; i < endIdx; i++)
+          {
+              // This is the offset of the dirent in the zimFile
+              auto indexOffset = readOffset(*urlPtrOffsetReader, i);
+              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
+              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
+              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
+                articleListByCluster.push_back(std::make_pair(0, i));
+              } else {
+                // If it is a classic article, get the clusterNumber (at offset 8)
+                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
+                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+              }
+          }
+          std::sort(articleListByCluster.begin(), articleListByCluster.end());
+      });
+
+      if (idx.v >= articleListByCluster.size())
+        throw std::out_of_range("entry index out of range");
+      return entry_index_t(articleListByCluster[idx.v].second);
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
@@ -392,13 +403,13 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return getClusterOffset(clusterIdx) + offset_t(1) + cluster->getBlobOffset(blobIdx);
   }
 
-  article_index_t FileImpl::getNamespaceBeginOffset(char ch)
+  entry_index_t FileImpl::getNamespaceBeginOffset(char ch)
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
     return direntLookup().getNamespaceRangeBegin(ch);
   }
 
-  article_index_t FileImpl::getNamespaceEndOffset(char ch)
+  entry_index_t FileImpl::getNamespaceEndOffset(char ch)
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
     return direntLookup().getNamespaceRangeEnd(ch);
@@ -408,10 +419,10 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   {
     std::string namespaces;
 
-    auto d = getDirent(article_index_t(0));
+    auto d = getDirent(entry_index_t(0));
     namespaces = d->getNamespace();
 
-    article_index_t idx(0);
+    entry_index_t idx(0);
     while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
     {
       d = getDirent(idx);
@@ -427,7 +438,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     {
       std::ostringstream msg;
       msg << "unknown mime type code " << idx;
-      throw std::runtime_error(msg.str());
+      throw ZimFileFormatError(msg.str());
     }
 
     return mimeTypes[idx];
@@ -537,13 +548,13 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   }
 
   bool FileImpl::checkDirentPtrs() {
-    const article_index_type articleCount = getCountArticles().v;
+    const entry_index_type articleCount = getCountArticles().v;
     const offset_t validDirentRangeStart(80); // XXX: really???
     const offset_t validDirentRangeEnd = header.hasChecksum()
                                        ? offset_t(header.getChecksumPos())
                                        : offset_t(zimReader->size().v);
     const zsize_t direntMinSize(11);
-    for ( article_index_type i = 0; i < articleCount; ++i )
+    for ( entry_index_type i = 0; i < articleCount; ++i )
     {
       const auto offset = readOffset(*urlPtrOffsetReader, i);
       if ( offset < validDirentRangeStart ||
@@ -556,9 +567,9 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   }
 
   bool FileImpl::checkDirentOrder() {
-    const article_index_type articleCount = getCountArticles().v;
+    const entry_index_type articleCount = getCountArticles().v;
     std::shared_ptr<const Dirent> prevDirent;
-    for ( article_index_type i = 0; i < articleCount; ++i )
+    for ( entry_index_type i = 0; i < articleCount; ++i )
     {
       const auto offset = readOffset(*urlPtrOffsetReader, i);
       const std::shared_ptr<const Dirent> dirent = readDirent(offset);
@@ -604,12 +615,12 @@ std::string pseudoTitle(const Dirent& d)
 } // unnamed namespace
 
   bool FileImpl::checkTitleIndex() {
-    const article_index_type articleCount = getCountArticles().v;
+    const entry_index_type articleCount = getCountArticles().v;
     std::shared_ptr<const Dirent> prevDirent;
-    for ( article_index_type i = 0; i < articleCount; ++i )
+    for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const offset_t offset(i*sizeof(article_index_t));
-      const auto a = titleIndexReader->read_uint<article_index_type>(offset);
+      const offset_t offset(i*sizeof(entry_index_t));
+      const auto a = titleIndexReader->read_uint<entry_index_type>(offset);
       if ( a >= articleCount ) {
         std::cerr << "Invalid title index entry" << std::endl;
         return false;

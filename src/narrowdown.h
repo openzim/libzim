@@ -82,7 +82,7 @@ namespace zim
 // of the range.
 class NarrowDown
 {
-  typedef article_index_type index_type;
+  typedef entry_index_type index_type;
 
 public: // types
   struct Range

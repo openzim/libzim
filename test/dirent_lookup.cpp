@@ -48,11 +48,11 @@ const std::vector<std::pair<char, std::string>> articleurl = {
 
 struct GetDirentMock
 {
-  zim::article_index_t getCountArticles() const {
-    return zim::article_index_t(articleurl.size());
+  zim::entry_index_t getCountArticles() const {
+    return zim::entry_index_t(articleurl.size());
   }
 
-  std::shared_ptr<const zim::Dirent> getDirent(zim::article_index_t idx) const {
+  std::shared_ptr<const zim::Dirent> getDirent(zim::entry_index_t idx) const {
     auto info = articleurl.at(idx.v);
     auto ret = std::make_shared<zim::Dirent>();
     ret->setUrl(info.first, info.second);

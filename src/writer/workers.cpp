@@ -55,21 +55,6 @@ namespace zim
   namespace writer
   {
 
-    inline unsigned int countWords(const std::string& text)
-    {
-      unsigned int numWords = 1;
-      unsigned int length = text.size();
-
-      for (unsigned int i = 0; i < length;) {
-        while (i < length && text[i] != ' ') {
-          i++;
-        }
-        numWords++;
-        i++;
-      }
-      return numWords;
-    }
-
     const unsigned int keywordsBoostFactor = 3;
     inline unsigned int getTitleBoostFactor(const unsigned int contentLength)
     {
@@ -95,50 +80,46 @@ namespace zim
       indexer.set_stopper(&data->indexer->stopper);
       indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
 
-      zim::MyHtmlParser htmlParser;
-      try {
-        htmlParser.parse_html(p_article->getData(), "UTF-8", true);
-      } catch (...) {}
-      if (htmlParser.dump.find("NOINDEX") != string::npos)
-      {
+      auto indexData = p_item->getIndexData();
+
+      if (!indexData->hasIndexData()) {
         return;
       }
 
       Xapian::Document document;
-      document.set_data(p_article->getUrl().getLongUrl());
       indexer.set_document(document);
 
-      auto title = p_article->getTitle();
-      auto normalizedTitle = zim::removeAccents(title);
-      auto keywords = zim::removeAccents(htmlParser.keywords);
-      auto content = zim::removeAccents(htmlParser.dump);
-
-      document.add_value(0, title);
+      document.set_data(p_item->getPath());
+      document.add_value(0, p_item->getTitle());
 
       std::stringstream countWordStringStream;
-      countWordStringStream << countWords(htmlParser.dump);
+      countWordStringStream << indexData->getWordCount();
       document.add_value(1, countWordStringStream.str());
 
-      if (htmlParser.has_geoPosition) {
+      auto geoInfo = indexData->getGeoPosition();
+      if (std::get<0>(geoInfo)) {
         auto geoPosition = Xapian::LatLongCoord(
-        htmlParser.latitude, htmlParser.longitude).serialise();
+        std::get<1>(geoInfo), std::get<2>(geoInfo)).serialise();
         document.add_value(2, geoPosition);
       }
 
+      /* Index the content */
+      auto indexContent = indexData->getContent();
+      if (!indexContent.empty()) {
+        indexer.index_text_without_positions(indexContent);
+      }
+
       /* Index the title */
-      if (!normalizedTitle.empty()) {
+      auto indexTitle = indexData->getTitle();
+      if (!indexTitle.empty()) {
         indexer.index_text_without_positions(
-          normalizedTitle, getTitleBoostFactor(content.size()));
+          indexTitle, getTitleBoostFactor(indexContent.size()));
       }
 
       /* Index the keywords */
-      if (!keywords.empty()) {
-        indexer.index_text_without_positions(keywords, keywordsBoostFactor);
-      }
-
-      /* Index the content */
-      if (!content.empty()) {
-        indexer.index_text_without_positions(content);
+      auto indexKeywords = indexData->getKeywords();
+      if (!indexKeywords.empty()) {
+        indexer.index_text_without_positions(indexKeywords, keywordsBoostFactor);
       }
 
       std::lock_guard<std::mutex> l(s_dbaccessLock);

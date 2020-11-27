@@ -25,7 +25,6 @@
 #include <map>
 #include <memory>
 #include <zim/zim.h>
-#include <zim/fileheader.h>
 #include <mutex>
 #include "lrucache.h"
 #include "concurrent_cache.h"
@@ -35,6 +34,7 @@
 #include "buffer.h"
 #include "file_reader.h"
 #include "file_compound.h"
+#include "fileheader.h"
 #include "zim_types.h"
 
 namespace zim
@@ -52,20 +52,24 @@ namespace zim
       std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      lru_cache<article_index_type, std::shared_ptr<const Dirent>> direntCache;
+      lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
       std::mutex direntCacheLock;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
+
+      const bool m_newNamespaceScheme;
+      const entry_index_t m_startUserEntry;
+      const entry_index_t m_endUserEntry;
 
       bool cacheUncompressedCluster;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
 
-      using pair_type = std::pair<cluster_index_type, article_index_type>;
-      std::vector<pair_type> articleListByCluster;
-      std::once_flag orderOnceFlag;
+      using pair_type = std::pair<cluster_index_type, entry_index_type>;
+      mutable std::vector<pair_type> articleListByCluster;
+      mutable std::once_flag orderOnceFlag;
 
       using DirentLookup = zim::DirentLookup<FileImpl>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
@@ -78,27 +82,32 @@ namespace zim
       const std::string& getFilename() const   { return filename; }
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
+      bool hasNewNamespaceScheme() const { return m_newNamespaceScheme; }
 
       FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
-      std::shared_ptr<const Dirent> getDirent(article_index_t idx);
-      std::shared_ptr<const Dirent> getDirentByTitle(article_index_t idx);
-      article_index_t getIndexByTitle(article_index_t idx);
-      article_index_t getCountArticles() const { return article_index_t(header.getArticleCount()); }
+      std::shared_ptr<const Dirent> getDirent(entry_index_t idx);
+      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx);
+      entry_index_t getIndexByTitle(title_index_t idx) const;
+      entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
+      entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
-      std::pair<bool, article_index_t> findx(char ns, const std::string& url);
-      std::pair<bool, article_index_t> findx(const std::string& url);
-      std::pair<bool, article_index_t> findxByTitle(char ns, const std::string& title);
-      std::pair<bool, article_index_t> findxByClusterOrder(article_index_type idx);
+      std::pair<bool, entry_index_t> findx(char ns, const std::string& url);
+      std::pair<bool, entry_index_t> findx(const std::string& url);
+      std::pair<bool, title_index_t> findxByTitle(char ns, const std::string& title);
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
       offset_t getClusterOffset(cluster_index_t idx) const;
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
-      article_index_t getNamespaceBeginOffset(char ch);
-      article_index_t getNamespaceEndOffset(char ch);
-      article_index_t getNamespaceCount(char ns)
+      entry_index_t getNamespaceBeginOffset(char ch);
+      entry_index_t getNamespaceEndOffset(char ch);
+      entry_index_t getNamespaceCount(char ns)
         { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
+
+      entry_index_t getStartUserEntry() const { return m_startUserEntry; }
+      entry_index_t getEndUserEntry() const { return m_endUserEntry; }
+      entry_index_t getUserEntryCount() const { return m_endUserEntry - m_startUserEntry; }
 
       std::string getNamespaces();
       bool hasNamespace(char ch) const;

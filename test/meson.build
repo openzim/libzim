@@ -7,7 +7,7 @@ tests = [
     'header',
     'uuid',
     'template',
-    'zimfile',
+    'archive',
     'iterator',
     'find',
     'compression',
@@ -15,7 +15,8 @@ tests = [
     'istreamreader',
     'decoderstreamreader',
     'rawstreamreader',
-    'bufferstreamer'
+    'bufferstreamer',
+    'parseLongPath'
 ]
 
 if gtest_dep.found() and not meson.is_cross_build()

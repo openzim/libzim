@@ -32,8 +32,7 @@
 
 #include "gtest/gtest.h"
 
-#include <zim/fileheader.h>
-
+#include "../src/fileheader.h"
 #include "../src/buffer.h"
 #include "../src/buffer_reader.h"
 
