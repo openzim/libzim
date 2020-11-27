@@ -67,6 +67,14 @@ namespace zim
        */
       explicit Archive(const std::string& fname);
 
+      /** Archive constructor.
+       *
+       *  Construct an archive from a file descriptor.
+       *
+       *  @param fd The descriptor of a seekable file representing a ZIM archive
+       */
+      explicit Archive(int fd);
+
       /** Return the filename of the zim file.
        *
        *  Return the filename as passed to the constructor
