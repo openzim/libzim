@@ -627,7 +627,7 @@ std::string pseudoTitle(const Dirent& d)
       }
       const auto direntOffset = readOffset(*urlPtrOffsetReader, a);
       const std::shared_ptr<const Dirent> dirent = readDirent(direntOffset);
-      if ( prevDirent && !(pseudoTitle(*prevDirent) < pseudoTitle(*dirent)) )
+      if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) )
       {
         std::cerr << "Title index is not properly sorted:\n"
                   << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
