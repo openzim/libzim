@@ -51,7 +51,7 @@ dump_header()
   local header_format='
     "major_version:   " 1/2 "%i"                            "\n"
     "minor_version:   " 1/2 "%i"                            "\n"
-    "uuid:            " 16/1 "%x"                           "\n"
+    "uuid:            " 16/1 "%02x"                         "\n"
     "article_count:   " 1/4 "%i"                            "\n"
     "cluster_count:   " 1/4 "%i"                            "\n"
     "url_ptr_pos:     " 1/4 "0x%08x+" 1/4 "0x%08x00000000"  "\n"
