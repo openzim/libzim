@@ -4,7 +4,7 @@ myname=$(basename "$0")
 
 die()
 {
-  echo >&2 '!!! ERROR: $*'
+  echo >&2 "!!! ERROR: $*"
   exit 1
 }
 
@@ -38,13 +38,14 @@ cd "$(dirname "$0")"
 if [ "$mode" == '--all' ]
 then
   rm -f small.zim
-  zimwriterfs -w main.html \
+  zimwriterfs --withoutFTIndex \
+              -w main.html \
               -f favicon.png \
-              -l=en \
-              -t="Test ZIM file" \
-              -d="" \
-              -c="" \
-              -p="" \
+              -l en \
+              -t "Test ZIM file" \
+              -d "N/A" \
+              -c "N/A" \
+              -p "N/A" \
               small_zimfile_data \
               small.zim \
   && echo 'small.zim was successfully created' \
