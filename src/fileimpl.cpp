@@ -174,6 +174,9 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     //   mimetype list is before this.
     // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
     const auto endMimeList = getMimeListEndUpperLimit();
+    if ( endMimeList <= header.getMimeListPos() ) {
+        throw(ZimFileFormatError("Bad ZIM archive"));
+    }
     const zsize_t size(endMimeList - header.getMimeListPos());
     if ( endMimeList > 1024 ) {
         log_warn("The MIME-type list is abnormally large (" << size.v << " bytes)");
