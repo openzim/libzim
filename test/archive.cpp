@@ -267,6 +267,11 @@ TEST(ZimArchive, validate)
     "  #0: A/Test ZIM file\n"
     "  #1: -/favicon\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.bad_mimetype_list.zim",
+    "Error getting mimelists.\n"
+  );
 }
 
 TEST(ZimArchive, multipart)

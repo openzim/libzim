@@ -188,3 +188,8 @@ create_broken_zim_file invalid.nonsorted_title_index.zim   \
                        $((title_ptr_pos))   \
                        "$title1_dirent_index" \
                        $((title_ptr_pos+4))
+
+bad_mimetype_list=$(printf '%-944s' 'This is a bad mimetype value filling all the space between the header and the first cluster without any null character')
+create_broken_zim_file invalid.bad_mimetype_list.zim   \
+                       "$bad_mimetype_list" \
+                       80
