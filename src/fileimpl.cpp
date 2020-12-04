@@ -182,23 +182,19 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
         log_warn("The MIME-type list is abnormally large (" << size.v << " bytes)");
     }
     auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
-    offset_t current = offset_t(0);
-    while (current.v < size.v)
-    {
-      offset_type len = strlen(buffer.data(current));
+    const char* const bufferEnd = buffer.data() + size.v;
+    const char* p = buffer.data();
+    while (*p != '\0') {
+      const char* zp = std::find(p, bufferEnd, '\0');
 
-      if (len == 0) {
-        break;
+      if (zp == bufferEnd) {
+        throw(ZimFileFormatError("Error getting mimelists."));
       }
 
-      if (current.v + len >= size.v) {
-       throw(ZimFileFormatError("Error getting mimelists."));
-      }
-
-      std::string mimeType(buffer.data(current), len);
+      std::string mimeType(p, zp);
       mimeTypes.push_back(mimeType);
 
-      current += (len + 1);
+      p = zp+1;
     }
 
     const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
