@@ -147,6 +147,23 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     }
   }
 
+  offset_type FileImpl::getMimeListEndUpperLimit() const
+  {
+    offset_type result(header.getUrlPtrPos());
+    result = std::min(result, header.getTitleIdxPos());
+    result = std::min(result, header.getClusterPtrPos());
+    if ( getCountArticles().v != 0 ) {
+      // assuming that dirents are placed in the zim file in the same
+      // order as the corresponding entries in the dirent pointer table
+      result = std::min(result, readOffset(*urlPtrOffsetReader, 0).v);
+
+      // assuming that clusters are placed in the zim file in the same
+      // order as the corresponding entries in the cluster pointer table
+      result = std::min(result, readOffset(*clusterOffsetReader, 0).v);
+    }
+    return result;
+  }
+
   void FileImpl::readMimeTypes()
   {
     // read mime types
@@ -156,8 +173,11 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     //   In this case, the cluster data are always at 1024 bytes offset and we know that
     //   mimetype list is before this.
     // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
-    auto endMimeList = std::min(header.getUrlPtrPos(), static_cast<zim::offset_type>(1024));
+    const auto endMimeList = getMimeListEndUpperLimit();
     const zsize_t size(endMimeList - header.getMimeListPos());
+    if ( endMimeList > 1024 ) {
+        log_warn("The MIME-type list is abnormally large (" << size.v << " bytes)");
+    }
     auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
     offset_t current = offset_t(0);
     while (current.v < size.v)

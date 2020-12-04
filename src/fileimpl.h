@@ -126,6 +126,7 @@ namespace zim
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
       std::shared_ptr<const Dirent> readDirent(offset_t offset);
+      offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
       void quickCheckForCorruptFile();
 
