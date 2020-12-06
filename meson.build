@@ -53,7 +53,7 @@ else
 endif
 
 compiler = meson.get_compiler('cpp')
-if compiler.get_id() == 'gcc' and build_machine.system() == 'linux'
+if (compiler.get_id() == 'gcc' and build_machine.system() == 'linux') or target_machine.system() == 'freebsd'
   # C++ std::thread is implemented using pthread on linux by gcc
   thread_dep = dependency('threads')
 else
