@@ -188,12 +188,12 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
   }
 
-  std::pair<bool, entry_index_t> FileImpl::findx(char ns, const std::string& url)
+  FileImpl::FindxResult FileImpl::findx(char ns, const std::string& url)
   {
     return direntLookup().find(ns, url);
   }
 
-  std::pair<bool, entry_index_t> FileImpl::findx(const std::string& url)
+  FileImpl::FindxResult FileImpl::findx(const std::string& url)
   {
     char ns;
     std::string path;
@@ -204,7 +204,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     return { false, entry_index_t(0) };
   }
 
-  std::pair<bool, title_index_t> FileImpl::findxByTitle(char ns, const std::string& title)
+  FileImpl::FindxTitleResult FileImpl::findxByTitle(char ns, const std::string& title)
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
@@ -214,7 +214,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     if (l == u)
     {
       log_debug("namespace " << ns << " not found");
-      return std::pair<bool, title_index_t>(false, title_index_t(0));
+      return { false, title_index_t(0) };
     }
 
     unsigned itcount = 0;
@@ -235,7 +235,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       else
       {
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return std::pair<bool, title_index_t>(true, title_index_t(p));
+        return { true, title_index_t(p) };
       }
     }
 
@@ -245,11 +245,11 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     if (c == 0)
     {
       log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return std::pair<bool, title_index_t>(true, title_index_t(l));
+      return { true, title_index_t(l) };
     }
 
     log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return std::pair<bool, title_index_t>(false, title_index_t(c < 0 ? l : u));
+    return { false, title_index_t(c < 0 ? l : u) };
   }
 
   FileCompound::PartRange
