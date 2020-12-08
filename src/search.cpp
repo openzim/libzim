@@ -255,17 +255,23 @@ Search::iterator Search::begin() const {
     {
         std::string xapianPath;
         auto impl = archive.getImpl();
-        if (suggestion_mode && impl->findx('X', "title/xapian").first) {
-            xapianPath = "X/title/xapian";
+        FileImpl::FindxResult r;
+        if (suggestion_mode) {
+          r = impl->findx('X', "title/xapian");
+          if (r.first) {
             hasNewSuggestionFormat = true;
-        } else if (impl->findx('X', "fulltext/xapian").first) {
-            xapianPath = "X/fulltext/xapian";
-        } else if (impl->findx('Z', "/fulltextIndex/xapian").first) {
-            xapianPath = "Z//fulltextIndex/xapian";
-        } else {
+          }
+        }
+        if (!r.first) {
+          r = impl->findx('X', "fulltext/xapian");
+        }
+        if (!r.first) {
+          r = impl->findx('Z', "/fulltextIndex/xapian");
+        }
+        if (!r.first) {
             continue;
         }
-        auto xapianEntry = archive.getEntryByPath(xapianPath);
+        auto xapianEntry = Entry(impl, entry_index_type(r.second));
         auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
         if (accessInfo.second == 0) {
             continue;
