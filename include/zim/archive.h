@@ -221,6 +221,18 @@ namespace zim
        */
       bool hasFaviconEntry() const;
 
+      /** Check if the archive has a fulltext index.
+       *
+       * @return True if the archive has a fulltext index
+       */
+      bool hasFulltextIndex() const;
+
+      /** Check if the archive has a title index.
+       *
+       * @return True if the archive has a title index
+       */
+      bool hasTitleIndex() const;
+
 
       /** Get a "iterable" by path order.
        *

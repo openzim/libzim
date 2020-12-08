@@ -174,6 +174,31 @@ namespace zim
     }
   }
 
+  bool Archive::hasFulltextIndex() const {
+    auto r = m_impl->findx('X', "fulltext/xapian");
+    if (!r.first) {
+      r = m_impl->findx('Z', "/fulltextIndex/xapian");
+    }
+    if (!r.first) {
+      return false;
+    }
+    auto entry = Entry(m_impl, entry_index_type(r.second));
+    auto item = entry.getItem(true);
+    auto accessInfo = item.getDirectAccessInformation();
+    return accessInfo.second;
+  }
+
+  bool Archive::hasTitleIndex() const {
+    auto r = m_impl->findx('X', "title/xapian");
+    if (!r.first) {
+      return false;
+    }
+    auto entry = Entry(m_impl, entry_index_type(r.second));
+    auto item = entry.getItem(true);
+    auto accessInfo = item.getDirectAccessInformation();
+    return accessInfo.second;
+  }
+
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
   {
     return EntryRange<EntryOrder::pathOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
