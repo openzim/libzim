@@ -151,6 +151,29 @@ namespace zim
     return m_impl->getFileheader().hasMainPage();
   }
 
+  Entry Archive::getFaviconEntry() const {
+    // `-/favicon` is the standard path for the favicon, but older zims may have it
+    // on other path.
+    for(auto ns:{'-', 'I'}) {
+      for (auto& path:{"favicon", "favicon.png"}) {
+        auto r = m_impl->findx(ns, path);
+        if (r.first) {
+          return getEntryByPath(entry_index_type(r.second));
+        }
+      }
+    }
+    throw EntryNotFound("Cannot find favicon entry");
+  }
+
+  bool Archive::hasFaviconEntry() const {
+    try {
+      getFaviconEntry();
+      return true;
+    } catch (EntryNotFound& e) {
+      return false;
+    }
+  }
+
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
   {
     return EntryRange<EntryOrder::pathOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
