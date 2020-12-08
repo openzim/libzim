@@ -21,11 +21,8 @@ common_sources = [
     'blob.cpp',
     'buffer.cpp',
     'md5.c',
-    'search.cpp',
-    'search_iterator.cpp',
     'template.cpp',
     'uuid.cpp',
-    'levenshtein.cpp',
     'tools.cpp',
     'compression.cpp',
     'istreamreader.cpp',
@@ -44,6 +41,9 @@ else
 endif
 
 xapian_sources = [
+    'search.cpp',
+    'search_iterator.cpp',
+    'levenshtein.cpp',
     'xapian/htmlparse.cc',
     'xapian/myhtmlparse.cc',
     'writer/xapianIndexer.cpp'

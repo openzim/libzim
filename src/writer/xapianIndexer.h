@@ -32,7 +32,6 @@ namespace zim {
     class IndexTask;
   }
 }
-class XapianIndexer;
 
 enum class IndexingMode {
   TITLE,

@@ -6,12 +6,18 @@ install_headers(
     'zim/error.h',
     'zim/item.h',
     'zim/entry.h',
-    'zim/search.h',
-    'zim/search_iterator.h',
     'zim/uuid.h',
     'zim/zim.h',
     subdir:'zim'
 )
+
+if xapian_dep.found()
+  install_headers(
+    'zim/search.h',
+    'zim/search_iterator.h',
+    subdir:'zim'
+  )
+endif
 
 install_headers(
     'zim/writer/item.h',

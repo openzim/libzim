@@ -41,36 +41,24 @@ search_iterator::search_iterator(InternalData* internal_data)
 search_iterator::search_iterator(const search_iterator& it)
     : internal(nullptr)
 {
-#if defined(ENABLE_XAPIAN)
-    // Without xapian, internal is allways null
     if (it.internal) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
-#endif
 }
 
 search_iterator & search_iterator::operator=(const search_iterator& it) {
-#if defined(ENABLE_XAPIAN)
-    // Without xapian, internal is allways null
     if ( ! it.internal ) internal.reset();
     else if ( ! internal ) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
     else *internal = *it.internal;
-#endif
 
     return *this;
 }
 
 bool search_iterator::operator==(const search_iterator& it) const {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal && ! it.internal)
         return true;
     if ( ! internal || ! it.internal)
         return false;
     return (internal->search == it.internal->search
          && internal->iterator == it.internal->iterator);
-#else
-    // If there is no xapian, there is no search. There is only one iterator: end.
-    // So all iterators are equal.
-    return true;
-#endif
 }
 
 bool search_iterator::operator!=(const search_iterator& it) const {
@@ -78,14 +66,12 @@ bool search_iterator::operator!=(const search_iterator& it) const {
 }
 
 search_iterator& search_iterator::operator++() {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return *this;
     }
     ++(internal->iterator);
     internal->document_fetched = false;
     internal->_entry.reset();
-#endif
     return *this;
 }
 
@@ -96,14 +82,12 @@ search_iterator search_iterator::operator++(int) {
 }
 
 search_iterator& search_iterator::operator--() {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return *this;
     }
     --(internal->iterator);
     internal->document_fetched = false;
     internal->_entry.reset();
-#endif
     return *this;
 }
 
@@ -114,18 +98,13 @@ search_iterator search_iterator::operator--(int) {
 }
 
 std::string search_iterator::get_url() const {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return "";
     }
     return internal->get_document().get_data();
-#else
-    return "";
-#endif
 }
 
 std::string search_iterator::get_title() const {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return "";
     }
@@ -138,23 +117,17 @@ std::string search_iterator::get_title() const {
     {
         return internal->get_document().get_value(internal->search->valuesmap["title"]);
     }
-#endif
     return "";
 }
 
 int search_iterator::get_score() const {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return 0;
     }
     return internal->iterator.get_percent();
-#else
-    return 0;
-#endif
 }
 
 std::string search_iterator::get_snippet() const {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return "";
     }
@@ -179,19 +152,15 @@ std::string search_iterator::get_snippet() const {
         zim::MyHtmlParser htmlParser;
         std::string content = entry.getItem().getData();
         try {
-            htmlParser.parse_html(content, "UTF-8", true);
+          htmlParser.parse_html(content, "UTF-8", true);
         } catch (...) {}
         return internal->search->internal->results.snippet(htmlParser.dump, 500);
-    } catch(...) {
+    } catch (...) {
       return "";
     }
-#else
-    return "";
-#endif
 }
 
 int search_iterator::get_size() const {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return -1;
     }
@@ -204,14 +173,12 @@ int search_iterator::get_size() const {
     {
         return atoi(internal->get_document().get_value(internal->search->valuesmap["size"]).c_str());
     }
-#endif
     /* The size is never used. Do we really want to get the content and
        calculate the size ? */
     return -1;
 }
 
 int search_iterator::get_wordCount() const      {
-#if defined(ENABLE_XAPIAN)
     if ( ! internal ) {
         return -1;
     }
@@ -224,16 +191,13 @@ int search_iterator::get_wordCount() const      {
     {
         return atoi(internal->get_document().get_value(internal->search->valuesmap["wordcount"]).c_str());
     }
-#endif
     return -1;
 }
 
 int search_iterator::get_fileIndex() const {
-#if defined(ENABLE_XAPIAN)
     if ( internal ) {
         return internal->get_databasenumber();
     }
-#endif
     return 0;
 }
 

@@ -20,34 +20,25 @@
 #ifndef ZIM_SEARCH_INTERNAL_H
 #define ZIM_SEARCH_INTERNAL_H
 
-#include "config.h"
-
-#if defined(ENABLE_XAPIAN)
 #include <xapian.h>
-#endif
 
 #include <zim/entry.h>
 
 namespace zim {
 
 struct Search::InternalData {
-#if defined(ENABLE_XAPIAN)
     std::vector<Xapian::Database> xapian_databases;
     Xapian::Database database;
     Xapian::MSet results;
-#endif
 };
 
 struct search_iterator::InternalData {
-#if defined(ENABLE_XAPIAN)
     const Search* search;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
     bool document_fetched;
-#endif
     std::unique_ptr<Entry> _entry;
 
-#if defined(ENABLE_XAPIAN)
     InternalData(const InternalData& other) :
       search(other.search),
       iterator(other.iterator),
@@ -84,24 +75,18 @@ struct search_iterator::InternalData {
         }
         return _document;
     }
-#endif
 
     int get_databasenumber() {
-#if defined(ENABLE_XAPIAN)
         Xapian::docid docid = *iterator;
         return (docid - 1) % search->m_archives.size();
-#endif
-        return 0;
     }
 
     Entry& get_entry() {
-#if defined(ENABLE_XAPIAN)
         if ( !_entry ) {
             int databasenumber = get_databasenumber();
             auto archive = search->m_archives.at(databasenumber);
             _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
         }
-#endif
         return *_entry.get();
     }
 };

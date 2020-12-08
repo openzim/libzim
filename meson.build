@@ -39,7 +39,7 @@ if target_machine.system() == 'freebsd'
 endif
 
 xapian_dep = dependency('xapian-core',
-                        required:false,
+                        required:get_option('with_xapian'),
                         static:static_linkage)
 conf.set('ENABLE_XAPIAN', xapian_dep.found())
 
