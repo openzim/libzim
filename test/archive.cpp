@@ -57,14 +57,15 @@ emptyZimArchiveContent()
   content += std::string(16, '\0'); // uuid
   content += std::string(4, '\0'); // article count
   content += std::string(4, '\0'); // cluster count
-  content += "\x50" + std::string(7, '\0'); // url ptr pos
-  content += "\x50" + std::string(7, '\0'); // title ptr pos
-  content += "\x50" + std::string(7, '\0'); // cluster ptr pos
+  content += "\x51" + std::string(7, '\0'); // url ptr pos
+  content += "\x51" + std::string(7, '\0'); // title ptr pos
+  content += "\x51" + std::string(7, '\0'); // cluster ptr pos
   content += "\x50" + std::string(7, '\0'); // mimelist ptr pos
   content += std::string(4, '\0'); // main page index
   content += std::string(4, '\0'); // layout page index
-  content += "\x50" + std::string(7, '\0'); // checksum pos
-  content += "\x8a\xbb\xad\x98\x64\xd5\x48\xb2\xb9\x71\xab\x30\xed\x29\xa4\x01"; // md5sum
+  content += "\x51" + std::string(7, '\0'); // checksum pos
+  content += std::string(1, '\0');; // (empty) mimelist
+  content += "\x9f\x3e\xcd\x95\x46\xf6\xc5\x3b\x35\xb4\xc6\xd4\xc0\x8e\xd0\x66"; // md5sum
   return content;
 }
 
