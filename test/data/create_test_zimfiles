@@ -1,24 +1,55 @@
 #!/usr/bin/env bash
 
+myname=$(basename "$0")
+
 die()
 {
   echo >&2 '!!! ERROR: $*'
   exit 1
 }
 
+prompt_usage()
+{
+  cat<<END
+Usage:
+
+  $myname --all|--only-broken-zimfiles
+
+'$myname --all' creates/re-generates all ZIM files, including small.zim. Due
+to some non-determinism in zimwriterfs the produced small.zim most likely will
+vary on each invocation. Since the other (broken) ZIM files are derived from
+small.zim they will vary too. This creates unnecessary pressure on git.
+Therefore use the --all option only if the source data, or ZIM file generation
+parameters change (or a serious bug is fixed in zimwriterfs). Otherwise use
+the --only-broken-zimfiles option.
+END
+  exit 1
+}
+
+if [[ $# -ne 1 || ( "$1" != '--all' && "$1" != '--only-broken-zimfiles' ) ]]
+then
+  prompt_usage
+fi
+
+mode=$1
+
 cd "$(dirname "$0")"
-rm -f small.zim
-zimwriterfs -w main.html \
-            -f favicon.png \
-            -l=en \
-            -t="Test ZIM file" \
-            -d="" \
-            -c="" \
-            -p="" \
-            small_zimfile_data \
-            small.zim \
-&& echo 'small.zim was successfully created' \
-|| die 'Failed to create small.zim'
+
+if [ "$mode" == '--all' ]
+then
+  rm -f small.zim
+  zimwriterfs -w main.html \
+              -f favicon.png \
+              -l=en \
+              -t="Test ZIM file" \
+              -d="" \
+              -c="" \
+              -p="" \
+              small_zimfile_data \
+              small.zim \
+  && echo 'small.zim was successfully created' \
+  || die 'Failed to create small.zim'
+fi
 
 zimfilesize=$(wc -c < small.zim)
 
@@ -157,3 +188,8 @@ create_broken_zim_file invalid.nonsorted_title_index.zim   \
                        $((title_ptr_pos))   \
                        "$title1_dirent_index" \
                        $((title_ptr_pos+4))
+
+bad_mimetype_list=$(printf '%-944s' 'This is a bad mimetype value filling all the space between the header and the first cluster without any null character')
+create_broken_zim_file invalid.bad_mimetype_list.zim   \
+                       "$bad_mimetype_list" \
+                       80

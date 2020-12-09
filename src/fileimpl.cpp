@@ -147,6 +147,23 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     }
   }
 
+  offset_type FileImpl::getMimeListEndUpperLimit() const
+  {
+    offset_type result(header.getUrlPtrPos());
+    result = std::min(result, header.getTitleIdxPos());
+    result = std::min(result, header.getClusterPtrPos());
+    if ( getCountArticles().v != 0 ) {
+      // assuming that dirents are placed in the zim file in the same
+      // order as the corresponding entries in the dirent pointer table
+      result = std::min(result, readOffset(*urlPtrOffsetReader, 0).v);
+
+      // assuming that clusters are placed in the zim file in the same
+      // order as the corresponding entries in the cluster pointer table
+      result = std::min(result, readOffset(*clusterOffsetReader, 0).v);
+    }
+    return result;
+  }
+
   void FileImpl::readMimeTypes()
   {
     // read mime types
@@ -156,26 +173,28 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     //   In this case, the cluster data are always at 1024 bytes offset and we know that
     //   mimetype list is before this.
     // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
-    auto endMimeList = std::min(header.getUrlPtrPos(), static_cast<zim::offset_type>(1024));
+    const auto endMimeList = getMimeListEndUpperLimit();
+    if ( endMimeList <= header.getMimeListPos() ) {
+        throw(ZimFileFormatError("Bad ZIM archive"));
+    }
     const zsize_t size(endMimeList - header.getMimeListPos());
+    if ( endMimeList > 1024 ) {
+        log_warn("The MIME-type list is abnormally large (" << size.v << " bytes)");
+    }
     auto buffer = zimReader->get_buffer(offset_t(header.getMimeListPos()), size);
-    offset_t current = offset_t(0);
-    while (current.v < size.v)
-    {
-      offset_type len = strlen(buffer.data(current));
+    const char* const bufferEnd = buffer.data() + size.v;
+    const char* p = buffer.data();
+    while (*p != '\0') {
+      const char* zp = std::find(p, bufferEnd, '\0');
 
-      if (len == 0) {
-        break;
+      if (zp == bufferEnd) {
+        throw(ZimFileFormatError("Error getting mimelists."));
       }
 
-      if (current.v + len >= size.v) {
-       throw(ZimFileFormatError("Error getting mimelists."));
-      }
-
-      std::string mimeType(buffer.data(current), len);
+      std::string mimeType(p, zp);
       mimeTypes.push_back(mimeType);
 
-      current += (len + 1);
+      p = zp+1;
     }
 
     const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
