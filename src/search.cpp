@@ -253,7 +253,6 @@ Search::iterator Search::begin() const {
     std::string stopwords;
     for(auto& archive: m_archives)
     {
-        std::string xapianPath;
         auto impl = archive.getImpl();
         FileImpl::FindxResult r;
         if (suggestion_mode) {
