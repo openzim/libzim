@@ -75,6 +75,9 @@ namespace zim
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
 
     public:
+      using FindxResult = std::pair<bool, entry_index_t>;
+      using FindxTitleResult = std::pair<bool, title_index_t>;
+
       explicit FileImpl(const std::string& fname);
 
       time_t getMTime() const;
@@ -91,9 +94,9 @@ namespace zim
       entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
       entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
-      std::pair<bool, entry_index_t> findx(char ns, const std::string& url);
-      std::pair<bool, entry_index_t> findx(const std::string& url);
-      std::pair<bool, title_index_t> findxByTitle(char ns, const std::string& title);
+      FindxResult findx(char ns, const std::string& url);
+      FindxResult findx(const std::string& url);
+      FindxTitleResult findxByTitle(char ns, const std::string& title);
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }

@@ -151,6 +151,54 @@ namespace zim
     return m_impl->getFileheader().hasMainPage();
   }
 
+  Entry Archive::getFaviconEntry() const {
+    // `-/favicon` is the standard path for the favicon, but older zims may have it
+    // on other path.
+    for(auto ns:{'-', 'I'}) {
+      for (auto& path:{"favicon", "favicon.png"}) {
+        auto r = m_impl->findx(ns, path);
+        if (r.first) {
+          return getEntryByPath(entry_index_type(r.second));
+        }
+      }
+    }
+    throw EntryNotFound("Cannot find favicon entry");
+  }
+
+  bool Archive::hasFaviconEntry() const {
+    try {
+      getFaviconEntry();
+      return true;
+    } catch (EntryNotFound& e) {
+      return false;
+    }
+  }
+
+  bool Archive::hasFulltextIndex() const {
+    auto r = m_impl->findx('X', "fulltext/xapian");
+    if (!r.first) {
+      r = m_impl->findx('Z', "/fulltextIndex/xapian");
+    }
+    if (!r.first) {
+      return false;
+    }
+    auto entry = Entry(m_impl, entry_index_type(r.second));
+    auto item = entry.getItem(true);
+    auto accessInfo = item.getDirectAccessInformation();
+    return accessInfo.second;
+  }
+
+  bool Archive::hasTitleIndex() const {
+    auto r = m_impl->findx('X', "title/xapian");
+    if (!r.first) {
+      return false;
+    }
+    auto entry = Entry(m_impl, entry_index_type(r.second));
+    auto item = entry.getItem(true);
+    auto accessInfo = item.getDirectAccessInformation();
+    return accessInfo.second;
+  }
+
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
   {
     return EntryRange<EntryOrder::pathOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);

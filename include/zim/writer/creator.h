@@ -189,7 +189,7 @@ namespace zim
         // zim data
         std::string m_mainPath;
         std::string m_faviconPath;
-        Uuid m_uuid;
+        Uuid m_uuid = Uuid::generate();
 
         void fillHeader(Fileheader* header) const;
         void write() const;

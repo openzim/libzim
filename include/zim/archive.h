@@ -178,6 +178,13 @@ namespace zim
        */
       Entry getMainEntry() const;
 
+      /** Get the favicon entry of the archive.
+       *
+       *  @return The favicon entry.
+       *  @exception EntryNotFound If no favicon entry has been specified in the archive.
+       */
+      Entry getFaviconEntry() const;
+
       /** Check in an entry has path in the archive.
        *
        *  @param path The entry's path.
@@ -207,6 +214,24 @@ namespace zim
        * @return True if the archive has a main entry.
        */
       bool hasMainEntry() const;
+
+      /** Check if archive has a favicon entry
+       *
+       * @return True if the archive has a favicon entry.
+       */
+      bool hasFaviconEntry() const;
+
+      /** Check if the archive has a fulltext index.
+       *
+       * @return True if the archive has a fulltext index
+       */
+      bool hasFulltextIndex() const;
+
+      /** Check if the archive has a title index.
+       *
+       * @return True if the archive has a title index
+       */
+      bool hasTitleIndex() const;
 
 
       /** Get a "iterable" by path order.
