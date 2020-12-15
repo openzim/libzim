@@ -32,6 +32,8 @@
 #endif
 
 
+#include <zim/zim_config.h>
+
 namespace zim
 {
   // An index of an entry (in a zim file)

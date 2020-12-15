@@ -11,7 +11,10 @@ cpp = meson.get_compiler('cpp')
 sizeof_off_t = cpp.sizeof('off_t')
 
 private_conf = configuration_data()
+public_conf = configuration_data()
+
 private_conf.set('VERSION', '"@0@"'.format(meson.project_version()))
+public_conf.set('LIBZIM_VERSION', '"@0@"'.format(meson.project_version()))
 private_conf.set('DIRENT_CACHE_SIZE', get_option('DIRENT_CACHE_SIZE'))
 private_conf.set('DIRENT_LOOKUP_CACHE_SIZE', get_option('DIRENT_LOOKUP_CACHE_SIZE'))
 private_conf.set('CLUSTER_CACHE_SIZE', get_option('CLUSTER_CACHE_SIZE'))
@@ -42,6 +45,7 @@ xapian_dep = dependency('xapian-core',
                         required:get_option('with_xapian'),
                         static:static_linkage)
 private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
+public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
 pkg_requires = ['liblzma', 'libzstd']
 if build_machine.system() == 'windows'
