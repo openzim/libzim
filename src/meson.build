@@ -1,6 +1,6 @@
 
 configure_file(output : 'config.h',
-               configuration : conf,
+               configuration : private_conf,
                input : 'config.h.in')
 
 src_directory = include_directories('.')
