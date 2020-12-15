@@ -41,9 +41,11 @@ if target_machine.system() == 'freebsd'
     execinfo_dep = cpp.find_library('execinfo')
 endif
 
-xapian_dep = dependency('xapian-core',
-                        required:get_option('with_xapian'),
-                        static:static_linkage)
+if get_option('with_xapian')
+    xapian_dep = dependency('xapian-core', static:static_linkage)
+else
+    xapian_dep = dependency('', required:false)
+endif
 private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
 public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 

@@ -89,8 +89,8 @@ jobs:
           - win32_static
           - win32_dyn
         with_xapian:
-          - enabled
-          - disabled
+          - true
+          - false
         include:
           - target: native_static
             image_variant: xenial
