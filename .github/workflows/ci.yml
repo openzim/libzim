@@ -88,6 +88,9 @@ jobs:
           - android_arm64
           - win32_static
           - win32_dyn
+        with_xapian:
+          - enabled
+          - disabled
         include:
           - target: native_static
             image_variant: xenial
@@ -156,7 +159,7 @@ jobs:
           MESON_OPTION="$MESON_OPTION -Dandroid=true"
         fi
         cd $HOME/libzim
-        meson . build ${MESON_OPTION}
+        meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
         cd build
         ninja
       env:
