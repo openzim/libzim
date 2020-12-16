@@ -36,17 +36,14 @@
 #endif
 #include <errno.h>
 
-#if defined(ENABLE_XAPIAN)
 #include "xapian.h"
 #include <unicode/locid.h>
-#endif
 
 #define MAX_MATCHES_TO_SORT 10000
 
 namespace zim
 {
 
-#if defined(ENABLE_XAPIAN)
 namespace {
 /* Split string in a token array */
 std::vector<std::string> split(const std::string & str,
@@ -136,7 +133,6 @@ class LevenshteinDistanceMaker : public Xapian::KeyMaker {
 };
 
 }
-#endif
 
 Search::Search(const std::vector<Archive>& archives) :
     internal(new InternalData),
@@ -242,7 +238,6 @@ Search& Search::set_suggestion_mode(const bool suggestion_mode) {
 #define WITH_LEV 1
 
 Search::iterator Search::begin() const {
-#if defined(ENABLE_XAPIAN)
     if ( this->search_started ) {
         return new search_iterator::InternalData(this, internal->results.begin());
     }
@@ -416,21 +411,13 @@ Search::iterator Search::begin() const {
     search_started = true;
     estimated_matches_number = internal->results.get_matches_estimated();
     return new search_iterator::InternalData(this, internal->results.begin());
-#else
-    estimated_matches_number = 0;
-    return nullptr;
-#endif
 }
 
 Search::iterator Search::end() const {
-#if defined(ENABLE_XAPIAN)
     if ( ! has_database ) {
         return nullptr;
     }
     return new search_iterator::InternalData(this, internal->results.end());
-#else
-    return nullptr;
-#endif
 }
 
 int Search::get_matches_estimated() const {

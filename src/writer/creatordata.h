@@ -36,7 +36,6 @@
 
 #if defined(ENABLE_XAPIAN)
   #include "xapianIndexer.h"
-  class XapianIndexer;
 #endif
 
 namespace zim
