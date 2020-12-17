@@ -23,13 +23,14 @@
 #include <string>
 #include <memory>
 
+#include <zim/writer/item.h>
+
 namespace zim {
 namespace writer {
 
 class CreatorData;
 class ContentProvider;
 class Dirent;
-class Item;
 
 /**
  * DirentHandler is used to add "extra" handling on dirent/item.
@@ -76,7 +77,7 @@ class DirentHandler {
      *
      * item may be nullptr (dirent is a redirect or in special case)
      */
-    virtual void handle(Dirent* dirent, std::shared_ptr<Item> item) = 0;
+    virtual void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) = 0;
 
   protected:
     virtual Dirent* createDirent() const = 0;

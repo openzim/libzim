@@ -170,7 +170,7 @@ namespace zim
 
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
-      data->handle(dirent, item);
+      data->handle(dirent, item->getHints(), item);
 
       if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
@@ -192,14 +192,14 @@ namespace zim
       data->handle(dirent);
     }
 
-    void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
+    void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
       auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
 
-      data->handle(dirent);
+      data->handle(dirent, hints);
     }
 
     void Creator::finishZimCreation()
@@ -224,7 +224,7 @@ namespace zim
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents
         auto dirent = handler->getDirent();
-        data->mp_titleListingHandler->handle(dirent, nullptr);
+        data->mp_titleListingHandler->handle(dirent, Hints(), nullptr);
       }
 
       // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
