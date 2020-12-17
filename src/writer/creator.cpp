@@ -79,7 +79,6 @@ log_define("zim.writer.creator")
                   << "; RA:" << data->nbRedirectItems \
                   << "; CA:" << data->nbCompItems \
                   << "; UA:" << data->nbUnCompItems \
-                  << "; IA:" << data->nbIndexItems \
                   << "; C:" << data->nbClusters \
                   << "; CC:" << data->nbCompClusters \
                   << "; UC:" << data->nbUnCompClusters \
@@ -394,7 +393,6 @@ namespace zim
         nbRedirectItems(0),
         nbCompItems(0),
         nbUnCompItems(0),
-        nbIndexItems(0),
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
