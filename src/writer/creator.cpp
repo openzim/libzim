@@ -206,7 +206,7 @@ namespace zim
     {
       // Create mandatory entries
       if (!m_faviconPath.empty()) {
-        auto dirent = data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
+        auto dirent = data->createRedirectDirent('W', "favicon", "", 'C', m_faviconPath);
         data->handle(dirent);
       }
 
@@ -214,7 +214,7 @@ namespace zim
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
-        data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
+        data->mainPageDirent = data->createRedirectDirent('W', "mainPage", "", 'C', m_mainPath);
         data->handle(data->mainPageDirent);
       }
 
