@@ -85,3 +85,19 @@ void TitleListingHandler::handle(Dirent* dirent, const Hints& hints, std::shared
 {
   m_dirents.push_back(dirent);
 }
+
+Dirent* TitleListingHandlerV1::createDirent() const {
+  return mp_creatorData->createDirent('X', "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
+}
+
+void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
+{
+  bool isFront { false };
+  try {
+    isFront = bool(hints.at(FRONT_ARTICLE));
+  } catch(std::out_of_range&) {}
+  if (isFront) {
+    m_dirents.push_back(dirent);
+  }
+}
+

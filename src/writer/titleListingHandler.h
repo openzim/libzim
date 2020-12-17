@@ -46,10 +46,19 @@ class TitleListingHandler : public DirentHandler {
     std::unique_ptr<ContentProvider> getContentProvider() const override;
     void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) override;
 
-  private:
+  protected:
     Dirent* createDirent() const override;
     CreatorData* mp_creatorData;
     Dirents m_dirents;
+};
+
+class TitleListingHandlerV1 : public TitleListingHandler {
+  public:
+    explicit TitleListingHandlerV1(CreatorData* data) : TitleListingHandler(data) {};
+    void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) override;
+
+  protected:
+    Dirent* createDirent() const override;
 };
 
 }
