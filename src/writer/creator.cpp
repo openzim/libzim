@@ -514,11 +514,6 @@ int mode =  _S_IREAD | _S_IWRITE;
 
     }
 
-    void CreatorData::addData(char ns, const std::string& path, const std::string& mimetype, std::unique_ptr<ContentProvider> provider, bool compressContent) {
-      auto dirent = createDirent(ns, path, mimetype, "");
-      addItemData(dirent, std::move(provider), compressContent);
-    }
-
     Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
     {
       auto dirent = pool.getDirent();
