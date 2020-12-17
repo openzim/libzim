@@ -25,6 +25,7 @@
 #include "cluster.h"
 #include "debug.h"
 #include "workers.h"
+#include "clusterWorker.h"
 #include <zim/blob.h>
 #include <zim/writer/contentProvider.h>
 #include "../endian_tools.h"
@@ -33,7 +34,8 @@
 #include "../md5.h"
 
 #if defined(ENABLE_XAPIAN)
-  #include "xapianIndexer.h"
+# include "xapianIndexer.h"
+# include "xapianWorker.h"
 #endif
 
 #ifdef _WIN32
