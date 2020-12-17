@@ -35,6 +35,7 @@ namespace zim
     enum HintKeys {
       COMPRESS
     };
+    using Hints = std::map<HintKeys, uint64_t>;
 
     class ContentProvider;
     class IndexData {
@@ -58,8 +59,6 @@ namespace zim
     class Item
     {
       public:
-        using Hints = std::map<HintKeys, uint64_t>;
-
         /**
          * The path of the item.
          *

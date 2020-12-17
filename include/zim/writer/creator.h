@@ -147,7 +147,8 @@ namespace zim
         void addRedirection(
             const std::string& path,
             const std::string& title,
-            const std::string& targetpath);
+            const std::string& targetpath,
+            const Hints& hints = Hints());
 
         /**
          * Finalize the zim creation.

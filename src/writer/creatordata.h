@@ -113,9 +113,9 @@ namespace zim
         Dirent*   mp_titleListDirent;
         offset_type m_titleListOffset;
         std::vector<std::shared_ptr<Handler>> m_handlers;
-        void handle(Dirent* dirent, std::shared_ptr<Item> item = nullptr) {
+        void handle(Dirent* dirent, const Hints& hints = Hints(), std::shared_ptr<Item> item = nullptr) {
           for(auto& handler: m_handlers) {
-            handler->handle(dirent, item);
+            handler->handle(dirent, hints, item);
           }
         }
 

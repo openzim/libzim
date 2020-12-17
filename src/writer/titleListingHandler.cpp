@@ -73,7 +73,7 @@ std::unique_ptr<ContentProvider> TitleListingHandler::getContentProvider() const
   return std::unique_ptr<ContentProvider>(new ListingProvider(&m_dirents));
 }
 
-void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+void TitleListingHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
 {
   m_dirents.insert(dirent);
 }

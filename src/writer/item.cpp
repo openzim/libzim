@@ -113,7 +113,7 @@ namespace zim
       return std::unique_ptr<IndexData>(new DefaultIndexData(ss.str(), getTitle()));
     }
 
-    Item::Hints Item::getHints() const {
+    Hints Item::getHints() const {
       return Hints();
     }
 

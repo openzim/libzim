@@ -56,7 +56,7 @@ std::unique_ptr<ContentProvider> FullTextXapianHandler::getContentProvider() con
   return std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath()));
 }
 
-void FullTextXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+void FullTextXapianHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
 {
   if (dirent->getNamespace() != 'C') {
     // We should always have namespace == 'C' but let's be careful.
@@ -90,7 +90,7 @@ std::unique_ptr<ContentProvider> TitleXapianHandler::getContentProvider() const 
   return std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath()));
 }
 
-void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item) {
+void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) {
   if (dirent->getNamespace() != 'C') {
     // We should always have namespace == 'C' but let's be careful.
     return;
