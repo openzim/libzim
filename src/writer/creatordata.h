@@ -34,10 +34,7 @@
 
 #include "../fileheader.h"
 #include "direntPool.h"
-
-#if defined(ENABLE_XAPIAN)
-  #include "xapianIndexer.h"
-#endif
+#include "titleListingHandler.h"
 
 namespace zim
 {
@@ -49,19 +46,11 @@ namespace zim
       }
     };
 
-    struct TitleCompare {
-      bool operator() (const Dirent* d1, const Dirent* d2) const {
-        return compareTitle(d1, d2);
-      }
-    };
-
-
     class Cluster;
     class CreatorData
     {
       public:
         typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
-        typedef std::multiset<Dirent*, TitleCompare> TitleSortedDirents;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
@@ -85,7 +74,6 @@ namespace zim
 
         void setEntryIndexes();
         void resolveRedirectIndexes();
-        void createTitleIndex();
         void resolveMimeTypes();
 
         uint16_t getMimeTypeIdx(const std::string& mimeType);
@@ -97,7 +85,6 @@ namespace zim
 
         UrlSortedDirents   dirents;
         UrlSortedDirents   unresolvedRedirectDirents;
-        TitleSortedDirents titleIdx;
         Dirent*            mainPageDirent;
 
         MimeTypesMap mimeTypesMap;
@@ -122,6 +109,9 @@ namespace zim
         bool withIndex;
         std::string indexingLanguage;
 
+        std::shared_ptr<TitleListingHandler> mp_titleListingHandler;
+        Dirent*   mp_titleListDirent;
+        offset_type m_titleListOffset;
         std::vector<std::shared_ptr<Handler>> m_handlers;
         void handle(Dirent* dirent, std::shared_ptr<Item> item = nullptr) {
           for(auto& handler: m_handlers) {

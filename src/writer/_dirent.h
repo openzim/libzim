@@ -117,6 +117,11 @@ namespace zim
           info.d.blobNumber = _cluster->count();
         }
 
+        zim::writer::Cluster* getCluster()
+        {
+          return cluster;
+        }
+
         cluster_index_t getClusterNumber() const {
           return cluster ? cluster->getClusterIndex() : info.d.clusterNumber;
         }

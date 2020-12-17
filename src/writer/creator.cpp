@@ -221,10 +221,29 @@ namespace zim
       TPROGRESS();
 
       for(auto& handler:data->m_handlers) {
+        if(handler == data->mp_titleListingHandler) {
+          continue;
+        }
         handler->stop();
         auto dirent = handler->getDirent();
         auto provider = handler->getContentProvider();
         data->addItemData(dirent, std::move(provider), false);
+        data->mp_titleListingHandler->handle(dirent, nullptr);
+      }
+
+      {
+        data->mp_titleListDirent = data->mp_titleListingHandler->getDirent();
+        data->mp_titleListingHandler->handle(data->mp_titleListDirent, nullptr);
+        data->mp_titleListingHandler->stop();
+        auto contentProvider = data->mp_titleListingHandler->getContentProvider();
+        auto titleListSize = contentProvider->getSize();
+        data->addItemData(
+          data->mp_titleListDirent,
+          std::move(contentProvider),
+          false);
+        // We have to get the offset of the titleList in the cluster before
+        // we close the cluster. Once the cluster is close, the offset informatino is droped.
+        data->m_titleListOffset = 1 + data->uncompCluster->size().v - titleListSize;
       }
 
       // When we've seen all items, write any remaining clusters.
@@ -263,8 +282,6 @@ namespace zim
       TINFO("Resolve mimetype");
       data->resolveMimeTypes();
 
-      TINFO("create title index");
-      data->createTitleIndex();
       TINFO(data->dirents.size() << " title index created");
       TINFO(data->clustersList.size() << " clusters created");
 
@@ -296,6 +313,9 @@ namespace zim
       header->setArticleCount( data->dirents.size() );
 
       header->setMimeListPos( Fileheader::size );
+
+      auto titleListClusterOffset = data->mp_titleListDirent->getCluster()->getOffset();
+      header->setTitleIdxPos(titleListClusterOffset.v + data->m_titleListOffset);
 
       header->setClusterCount( data->clustersList.size() );
     }
@@ -333,15 +353,6 @@ namespace zim
         char tmp_buff[sizeof(offset_type)];
         toLittleEndian(dirent->getOffset(), tmp_buff);
         _write(out_fd, tmp_buff, sizeof(offset_type));
-      }
-
-      TINFO(" write title index");
-      header.setTitleIdxPos(lseek(out_fd, 0, SEEK_CUR));
-      for (Dirent* dirent: data->titleIdx)
-      {
-        char tmp_buff[sizeof(entry_index_type)];
-        toLittleEndian(dirent->getIdx().v, tmp_buff);
-        _write(out_fd, tmp_buff, sizeof(entry_index_type));
       }
 
       TINFO(" write cluster offset list");
@@ -435,6 +446,9 @@ int mode =  _S_IREAD | _S_IWRITE;
         m_handlers.push_back(fulltextIndexer);
       }
 #endif
+
+      mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
+      m_handlers.push_back(mp_titleListingHandler);
 
       for(auto& handler:m_handlers) {
         handler->start();
@@ -607,13 +621,6 @@ int mode =  _S_IREAD | _S_IWRITE;
           dirent->setRedirect(*target_pos);
         }
       }
-    }
-
-    void CreatorData::createTitleIndex()
-    {
-      titleIdx.clear();
-      for (auto dirent: dirents)
-        titleIdx.insert(dirent);
     }
 
     void CreatorData::resolveMimeTypes()
