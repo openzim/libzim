@@ -172,6 +172,7 @@ namespace zim
 
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
+      data->handle(dirent, item);
 
 #if defined(ENABLE_XAPIAN)
       if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
@@ -198,28 +199,32 @@ namespace zim
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
       auto compressContent = isCompressibleMimetype(mimetype);
-      data->addData('M', name, mimetype, std::move(provider), compressContent);
+      auto dirent = data->createDirent('M', name, mimetype, "");
+      data->addItemData(dirent, std::move(provider), compressContent);
+      data->handle(dirent);
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
     {
-      data->createRedirectDirent('C', path, title, 'C', targetPath);
+      auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
 
+      data->handle(dirent);
 #if defined(ENABLE_XAPIAN)
       if (!title.empty()) {
         data->titleIndexer.indexTitle(path, title);
       }
 #endif
-     }
+    }
 
     void Creator::finishZimCreation()
     {
       // Create mandatory entries
       if (!m_faviconPath.empty()) {
-        data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
+        auto dirent = data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
+        data->handle(dirent);
       }
 
       // Create a redirection for the mainPage.
@@ -227,6 +232,7 @@ namespace zim
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
         data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
+        data->handle(data->mainPageDirent);
       }
 
       TPROGRESS();
@@ -264,6 +270,13 @@ namespace zim
         );
       }
 #endif
+
+      for(auto& handler:data->m_handlers) {
+        handler->stop();
+        auto dirent = handler->getDirent();
+        auto provider = handler->getContentProvider();
+        data->addItemData(dirent, std::move(provider), false);
+      }
 
       // When we've seen all items, write any remaining clusters.
       if (data->compCluster->count())
@@ -476,6 +489,10 @@ int mode =  _S_IREAD | _S_IWRITE;
           indexer->indexingPrelude(basename+".idx");
       }
 #endif
+
+      for(auto& handler:m_handlers) {
+        handler->start();
+      }
     }
 
     CreatorData::~CreatorData()

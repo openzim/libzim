@@ -24,6 +24,7 @@
 #include "queue.h"
 #include "_dirent.h"
 #include "workers.h"
+#include "handler.h"
 #include <set>
 #include <vector>
 #include <map>
@@ -121,6 +122,13 @@ namespace zim
 
         bool withIndex;
         std::string indexingLanguage;
+
+        std::vector<std::shared_ptr<Handler>> m_handlers;
+        void handle(Dirent* dirent, std::shared_ptr<Item> item = nullptr) {
+          for(auto& handler: m_handlers) {
+            handler->handle(dirent, item);
+          }
+        }
 #if defined(ENABLE_XAPIAN)
         XapianIndexer titleIndexer;
         XapianIndexer* indexer = nullptr;
