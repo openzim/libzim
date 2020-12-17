@@ -33,7 +33,8 @@ namespace zim
   namespace writer
   {
     enum HintKeys {
-      COMPRESS
+      COMPRESS,
+      FRONT_ARTICLE,
     };
     using Hints = std::map<HintKeys, uint64_t>;
 
