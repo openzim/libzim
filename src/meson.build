@@ -33,7 +33,8 @@ common_sources = [
     'writer/cluster.cpp',
     'writer/dirent.cpp',
     'writer/workers.cpp',
-    'writer/clusterWorker.cpp'
+    'writer/clusterWorker.cpp',
+    'writer/titleListingHandler.cpp'
 ]
 
 if host_machine.system() == 'windows'

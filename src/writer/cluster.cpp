@@ -230,6 +230,7 @@ void Cluster::addContent(std::unique_ptr<ContentProvider> provider)
   auto size = provider->getSize();
   _size += size;
   blobOffsets.push_back(offset_t(_size.v));
+  m_count++;
   isExtended |= (size>UINT32_MAX);
   if (size == 0)
     return;
