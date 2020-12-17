@@ -17,26 +17,37 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef OPENZIM_LIBZIM_WORKERS_H
-#define OPENZIM_LIBZIM_WORKERS_H
+#ifndef OPENZIM_LIBZIM_CLUSTER_WORKER_H
+#define OPENZIM_LIBZIM_CLUSTER_WORKER_H
+
+#include <atomic>
+#include "workers.h"
 
 namespace zim {
 namespace writer {
 
-class CreatorData;
+class Cluster;
 
-class Task {
+class ClusterTask : public Task {
   public:
-    Task() = default;
-    virtual ~Task() = default;
+    ClusterTask(Cluster* cluster) :
+      cluster(cluster)
+    {
+      ++waiting_task;
+    };
+    virtual ~ClusterTask()
+    {
+      --waiting_task;
+    }
 
-    virtual void run(CreatorData* data) = 0;
+    virtual void run(CreatorData* data);
+    static std::atomic<unsigned long> waiting_task;
+
+  private:
+    Cluster* cluster;
 };
 
-void* taskRunner(void* data);
-void* clusterWriter(void* data);
-
 }
 }
 
-#endif // OPENZIM_LIBZIM_WORKERS_H
+#endif // OPENZIM_LIBZIM_QUEUE_H

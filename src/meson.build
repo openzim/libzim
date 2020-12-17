@@ -32,7 +32,8 @@ common_sources = [
     'writer/item.cpp',
     'writer/cluster.cpp',
     'writer/dirent.cpp',
-    'writer/workers.cpp'
+    'writer/workers.cpp',
+    'writer/clusterWorker.cpp'
 ]
 
 if host_machine.system() == 'windows'
@@ -47,7 +48,8 @@ xapian_sources = [
     'levenshtein.cpp',
     'xapian/htmlparse.cc',
     'xapian/myhtmlparse.cc',
-    'writer/xapianIndexer.cpp'
+    'writer/xapianIndexer.cpp',
+    'writer/xapianWorker.cpp'
 ]
 
 sources = common_sources
