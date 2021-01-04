@@ -24,7 +24,7 @@
 
 using namespace zim;
 
-DirentAccessor::DirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)
+DirectDirentAccessor::DirectDirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)
   : mp_zimReader(zimReader),
     mp_urlPtrReader(std::move(urlPtrReader)),
     m_direntCount(direntCount),
@@ -33,13 +33,13 @@ DirentAccessor::DirentAccessor(std::shared_ptr<FileReader> zimReader, std::uniqu
 
 }
 
-std::shared_ptr<const Dirent> DirentAccessor::getDirent(entry_index_t idx) const
+std::shared_ptr<const Dirent> DirectDirentAccessor::getDirent(entry_index_t idx) const
 {
   auto direntOffset = getOffset(idx);
   return readDirent(direntOffset);
 }
 
-offset_t DirentAccessor::getOffset(entry_index_t idx) const
+offset_t DirectDirentAccessor::getOffset(entry_index_t idx) const
 {
   if (idx >= m_direntCount) {
     throw std::out_of_range("entry index out of range");
@@ -48,7 +48,7 @@ offset_t DirentAccessor::getOffset(entry_index_t idx) const
   return offset;
 }
 
-std::shared_ptr<const Dirent> DirentAccessor::readDirent(offset_t offset) const
+std::shared_ptr<const Dirent> DirectDirentAccessor::readDirent(offset_t offset) const
 {
   // We don't know the size of the dirent because it depends of the size of
   // the title, url and extra parameters.
@@ -83,4 +83,26 @@ std::shared_ptr<const Dirent> DirentAccessor::readDirent(offset_t offset) const
   }
 
   return dirent;
+}
+
+
+IndirectDirentAccessor::IndirectDirentAccessor(std::shared_ptr<const DirectDirentAccessor> direntAccessor, std::unique_ptr<const Reader> indexReader, title_index_t direntCount)
+  : mp_direntAccessor(direntAccessor),
+    mp_indexReader(std::move(indexReader)),
+    m_direntCount(direntCount)
+{}
+
+entry_index_t IndirectDirentAccessor::getDirectIndex(title_index_t idx) const
+{
+  if (idx >= m_direntCount) {
+    throw std::out_of_range("entry index out of range");
+  }
+  entry_index_t index(mp_indexReader->read_uint<entry_index_type>(offset_t(sizeof(entry_index_t)*idx.v)));
+  return index;
+}
+
+std::shared_ptr<const Dirent> IndirectDirentAccessor::getDirent(title_index_t idx) const
+{
+  auto directIndex = getDirectIndex(idx);
+  return mp_direntAccessor->getDirent(directIndex);
 }

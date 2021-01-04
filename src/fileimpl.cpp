@@ -102,12 +102,16 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
                                          zsize_t(8*header.getArticleCount()));
 
     mp_urlDirentAccessor.reset(
-        new DirentAccessor(zimReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
+        new DirectDirentAccessor(zimReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
 
-    titleIndexReader = sectionSubReader(*zimReader,
+
+    auto titleIndexReader = sectionSubReader(*zimReader,
                                         "Title index table",
                                         offset_t(header.getTitleIdxPos()),
                                         zsize_t(4*header.getArticleCount()));
+
+    mp_titleDirentAccessor.reset(
+        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(header.getArticleCount())));
 
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
@@ -319,13 +323,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
   entry_index_t FileImpl::getIndexByTitle(title_index_t idx) const
   {
-    if (idx.v >= getCountArticles().v)
-      throw std::out_of_range("entry index out of range");
-
-    entry_index_t ret(titleIndexReader->read_uint<entry_index_type>(
-                            offset_t(sizeof(entry_index_t)*idx.v)));
-
-    return ret;
+    return mp_titleDirentAccessor->getDirectIndex(idx);
   }
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
@@ -600,14 +598,12 @@ std::string pseudoTitle(const Dirent& d)
     std::shared_ptr<const Dirent> prevDirent;
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const offset_t offset(i*sizeof(entry_index_t));
-      const auto a = titleIndexReader->read_uint<entry_index_type>(offset);
-      if ( a >= articleCount ) {
+      if (mp_titleDirentAccessor->getDirectIndex(title_index_t(i)).v >= articleCount) {
         std::cerr << "Invalid title index entry" << std::endl;
         return false;
       }
 
-      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(a));
+      const std::shared_ptr<const Dirent> dirent = mp_titleDirentAccessor->getDirent(title_index_t(i));
       if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) )
       {
         std::cerr << "Title index is not properly sorted:\n"

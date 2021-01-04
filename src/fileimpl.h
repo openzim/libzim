@@ -47,10 +47,10 @@ namespace zim
       Fileheader header;
       std::string filename;
 
-      std::unique_ptr<const Reader> titleIndexReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      std::unique_ptr<const DirentAccessor> mp_urlDirentAccessor;
+      std::shared_ptr<const DirectDirentAccessor> mp_urlDirentAccessor;
+      std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
       lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
       std::mutex direntCacheLock;
@@ -71,7 +71,7 @@ namespace zim
       mutable std::vector<pair_type> articleListByCluster;
       mutable std::once_flag orderOnceFlag;
 
-      using DirentLookup = zim::DirentLookup<DirentAccessor>;
+      using DirentLookup = zim::DirentLookup<DirectDirentAccessor>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
 
     public:

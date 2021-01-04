@@ -35,16 +35,17 @@ class Reader;
 class FileReader;
 
 /**
- * DirentAccessor is used to access a dirent from its index.
+ * DirectDirentAccessor is used to access a dirent from its index.
  * It doesn't provide any "advanced" features like lookup, find or cache.
  *
  * This is the base class to locate a dirent (offset) and read it.
+ *
  */
 
-class DirentAccessor
+class DirectDirentAccessor
 {
 public: // functions
-  DirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
+  DirectDirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
 
   offset_t    getOffset(entry_index_t idx) const;
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
@@ -60,6 +61,21 @@ private: // data
 
   mutable std::vector<char>  m_bufferDirentZone;
   mutable std::mutex         m_bufferDirentLock;
+};
+
+class IndirectDirentAccessor
+{
+  public:
+    IndirectDirentAccessor(std::shared_ptr<const DirectDirentAccessor>, std::unique_ptr<const Reader> indexReader, title_index_t direntCount);
+
+    entry_index_t getDirectIndex(title_index_t idx) const;
+    std::shared_ptr<const Dirent> getDirent(title_index_t idx) const;
+    title_index_t getDirentCount() const { return m_direntCount; }
+
+  private: // data
+    std::shared_ptr<const DirectDirentAccessor> mp_direntAccessor;
+    std::unique_ptr<const Reader>               mp_indexReader;
+    title_index_t                               m_direntCount;
 };
 
 } // namespace zim
