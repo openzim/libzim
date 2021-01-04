@@ -24,9 +24,10 @@
 
 using namespace zim;
 
-DirentAccessor::DirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader)
+DirentAccessor::DirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)
   : mp_zimReader(zimReader),
     mp_urlPtrReader(std::move(urlPtrReader)),
+    m_direntCount(direntCount),
     m_bufferDirentZone(256)
 {
 
@@ -40,6 +41,9 @@ std::shared_ptr<const Dirent> DirentAccessor::getDirent(entry_index_t idx) const
 
 offset_t DirentAccessor::getOffset(entry_index_t idx) const
 {
+  if (idx >= m_direntCount) {
+    throw std::out_of_range("entry index out of range");
+  }
   offset_t offset(mp_urlPtrReader->read_uint<offset_type>(offset_t(sizeof(offset_type)*idx.v)));
   return offset;
 }

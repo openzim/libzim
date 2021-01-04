@@ -44,10 +44,11 @@ class FileReader;
 class DirentAccessor
 {
 public: // functions
-  DirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader);
+  DirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
 
   offset_t    getOffset(entry_index_t idx) const;
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
+  entry_index_t getDirentCount() const  {  return m_direntCount; }
 
 private: // functions
   std::shared_ptr<const Dirent> readDirent(offset_t) const;
@@ -55,6 +56,7 @@ private: // functions
 private: // data
   std::shared_ptr<FileReader>    mp_zimReader;
   std::unique_ptr<const Reader>  mp_urlPtrReader;
+  entry_index_t                  m_direntCount;
 
   mutable std::vector<char>  m_bufferDirentZone;
   mutable std::mutex         m_bufferDirentLock;
