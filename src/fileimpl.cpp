@@ -133,7 +133,8 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
                                          offset_t(header.getUrlPtrPos()),
                                          zsize_t(8*header.getArticleCount()));
 
-    mp_urlDirentAccessor.reset(new DirentAccessor(zimReader, std::move(urlPtrReader)));
+    mp_urlDirentAccessor.reset(
+        new DirentAccessor(zimReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
 
     titleIndexReader = sectionSubReader(*zimReader,
                                         "Title index table",
@@ -155,7 +156,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   {
     if ( ! m_direntLookup ) {
       const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-      m_direntLookup.reset(new DirentLookup(this, cacheSize));
+      m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
     }
     return *m_direntLookup;
   }
