@@ -29,6 +29,7 @@
 #include "lrucache.h"
 #include "concurrent_cache.h"
 #include "_dirent.h"
+#include "dirent_accessor.h"
 #include "dirent_lookup.h"
 #include "cluster.h"
 #include "buffer.h"
@@ -43,14 +44,13 @@ namespace zim
   {
       std::shared_ptr<FileCompound> zimFile;
       std::shared_ptr<FileReader> zimReader;
-      std::vector<char> bufferDirentZone;
-      std::mutex bufferDirentLock;
       Fileheader header;
       std::string filename;
 
       std::unique_ptr<const Reader> titleIndexReader;
-      std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
+
+      std::unique_ptr<const DirentAccessor> mp_urlDirentAccessor;
 
       lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
       std::mutex direntCacheLock;
@@ -125,7 +125,6 @@ namespace zim
   private:
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
-      std::shared_ptr<const Dirent> readDirent(offset_t offset);
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
       void quickCheckForCorruptFile();

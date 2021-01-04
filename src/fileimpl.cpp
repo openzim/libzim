@@ -71,7 +71,6 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   FileImpl::FileImpl(const std::string& fname)
     : zimFile(new FileCompound(fname)),
       zimReader(new FileReader(zimFile)),
-      bufferDirentZone(256),
       filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
@@ -97,10 +96,12 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
-    urlPtrOffsetReader = sectionSubReader(*zimReader,
-                                          "Dirent pointer table",
-                                          offset_t(header.getUrlPtrPos()),
-                                          zsize_t(8*header.getArticleCount()));
+    auto urlPtrReader = sectionSubReader(*zimReader,
+                                         "Dirent pointer table",
+                                         offset_t(header.getUrlPtrPos()),
+                                         zsize_t(8*header.getArticleCount()));
+
+    mp_urlDirentAccessor.reset(new DirentAccessor(zimReader, std::move(urlPtrReader)));
 
     titleIndexReader = sectionSubReader(*zimReader,
                                         "Title index table",
@@ -155,7 +156,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     if ( getCountArticles().v != 0 ) {
       // assuming that dirents are placed in the zim file in the same
       // order as the corresponding entries in the dirent pointer table
-      result = std::min(result, readOffset(*urlPtrOffsetReader, 0).v);
+      result = std::min(result, mp_urlDirentAccessor->getOffset(entry_index_t(0)).v);
 
       // assuming that clusters are placed in the zim file in the same
       // order as the corresponding entries in the cluster pointer table
@@ -303,49 +304,10 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
                 << direntCache.fillfactor());
     }
 
-    offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
-    const auto dirent = readDirent(indexOffset);
+    const auto dirent = mp_urlDirentAccessor->getDirent(idx);
     std::lock_guard<std::mutex> l(direntCacheLock);
     direntCache.put(idx.v, dirent);
 
-    return dirent;
-  }
-
-  std::shared_ptr<const Dirent> FileImpl::readDirent(offset_t indexOffset)
-  {
-    // We don't know the size of the dirent because it depends of the size of
-    // the title, url and extra parameters.
-    // This is a pitty but we have no choices.
-    // We cannot take a buffer of the size of the file, it would be really inefficient.
-    // Let's do try, catch and retry while chosing a smart value for the buffer size.
-    // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
-    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
-    std::shared_ptr<const Dirent> dirent;
-    {
-      std::lock_guard<std::mutex> l(bufferDirentLock);
-      zsize_t bufferSize = zsize_t(256);
-      // On very small file, the offset + 256 is higher than the size of the file,
-      // even if the file is valid.
-      // So read only to the end of the file.
-      auto totalSize = zimReader->size();
-      if (indexOffset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-indexOffset.v);
-      while (true) {
-          bufferDirentZone.reserve(size_type(bufferSize));
-          zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-          auto direntBuffer = Buffer::makeBuffer(bufferDirentZone.data(), bufferSize);
-          try {
-            dirent = std::make_shared<const Dirent>(direntBuffer);
-          } catch (InvalidSize&) {
-            // buffer size is not enougth, try again :
-            bufferSize += 256;
-            continue;
-          }
-          // Success !
-          break;
-      }
-    }
-
-    log_debug("dirent read from " << indexOffset);
     return dirent;
   }
 
@@ -375,7 +337,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
           for(auto i = getStartUserEntry().v; i < endIdx; i++)
           {
               // This is the offset of the dirent in the zimFile
-              auto indexOffset = readOffset(*urlPtrOffsetReader, i);
+              auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
               // Get the mimeType of the dirent (offset 0) to know the type of the dirent
               uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
               if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
@@ -575,7 +537,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     const zsize_t direntMinSize(11);
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const auto offset = readOffset(*urlPtrOffsetReader, i);
+      const auto offset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
       if ( offset < validDirentRangeStart ||
            offset + direntMinSize > validDirentRangeEnd ) {
         std::cerr << "Invalid dirent pointer" << std::endl;
@@ -590,8 +552,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     std::shared_ptr<const Dirent> prevDirent;
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const auto offset = readOffset(*urlPtrOffsetReader, i);
-      const std::shared_ptr<const Dirent> dirent = readDirent(offset);
+      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
       if ( prevDirent && !(prevDirent->getLongUrl() < dirent->getLongUrl()) )
       {
         std::cerr << "Dirent table is not properly sorted:\n"
@@ -644,8 +605,8 @@ std::string pseudoTitle(const Dirent& d)
         std::cerr << "Invalid title index entry" << std::endl;
         return false;
       }
-      const auto direntOffset = readOffset(*urlPtrOffsetReader, a);
-      const std::shared_ptr<const Dirent> dirent = readDirent(direntOffset);
+
+      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(a));
       if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) )
       {
         std::cerr << "Title index is not properly sorted:\n"

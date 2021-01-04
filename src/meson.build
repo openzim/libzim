@@ -11,6 +11,7 @@ common_sources = [
     'cluster.cpp',
     'buffer_reader.cpp',
     'dirent.cpp',
+    'dirent_accessor.cpp',
     'entry.cpp',
     'envvalue.cpp',
     'fileheader.cpp',
