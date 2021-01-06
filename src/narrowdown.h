@@ -23,6 +23,8 @@
 #include "zim_types.h"
 #include "debug.h"
 
+#include <zim/error.h>
+
 #include <algorithm>
 #include <vector>
 
@@ -100,15 +102,24 @@ public: // functions
   // above the class.
   void add(const std::string& key, index_type i, const std::string& nextKey)
   {
-    if ( entries.empty() )
-    {
-      ASSERT(key, <, nextKey);
-      addEntry(key, i);
+    if (key >= nextKey) {
+      std::stringstream ss;
+      ss << "Dirent table is not properly sorted:\n";
+      ss << "  #0: " << key[0] << "/" << key.substr(1) << "\n";
+      ss << "  #1: " << nextKey[0] << "/" << nextKey.substr(1);
+      throw ZimFileFormatError(ss.str());
     }
-    else
-    {
+    if ( entries.empty() ) {
+      addEntry(key, i);
+    } else {
       const std::string pseudoKey = shortestStringInBetween(key, nextKey);
-      ASSERT(pred(entries.back(), pseudoKey), ==, true);
+      if (!pred(entries.back(), pseudoKey)) {
+        std::stringstream ss;
+        ss << "Dirent table is not properly sorted:\n";
+        ss << "  #0: " << key[0] << "/" << key.substr(1) << "\n";
+        ss << "  #1: " << nextKey[0] << "/" << nextKey.substr(1);
+        throw ZimFileFormatError(ss.str());
+      }
       ASSERT(entries.back().lindex, <, i);
       addEntry(pseudoKey, i);
     }

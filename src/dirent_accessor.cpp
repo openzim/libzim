@@ -22,6 +22,8 @@
 #include "file_reader.h"
 #include "_dirent.h"
 
+#include <zim/error.h>
+
 using namespace zim;
 
 DirectDirentAccessor::DirectDirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)
@@ -50,6 +52,11 @@ offset_t DirectDirentAccessor::getOffset(entry_index_t idx) const
 
 std::shared_ptr<const Dirent> DirectDirentAccessor::readDirent(offset_t offset) const
 {
+  const auto totalSize = mp_zimReader->size();
+  if (offset.v >= totalSize.v) {
+    throw ZimFileFormatError("Invalid dirent pointer");
+  }
+
   // We don't know the size of the dirent because it depends of the size of
   // the title, url and extra parameters.
   // This is a pitty but we have no choices.
@@ -64,16 +71,20 @@ std::shared_ptr<const Dirent> DirectDirentAccessor::readDirent(offset_t offset) 
     // On very small file, the offset + 256 is higher than the size of the file,
     // even if the file is valid.
     // So read only to the end of the file.
-    auto totalSize = mp_zimReader->size();
-    if (offset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-offset.v);
+    const auto availableSize = zsize_t(totalSize.v - offset.v);
     while (true) {
         m_bufferDirentZone.reserve(size_type(bufferSize));
-        mp_zimReader->read(m_bufferDirentZone.data(), offset, bufferSize);
+        mp_zimReader->read(m_bufferDirentZone.data(), offset, bufferSize>availableSize?availableSize:bufferSize);
         auto direntBuffer = Buffer::makeBuffer(m_bufferDirentZone.data(), bufferSize);
         try {
           dirent = std::make_shared<const Dirent>(direntBuffer);
         } catch (InvalidSize&) {
           // buffer size is not enougth, try again :
+          if (bufferSize>availableSize) {
+            // Buffer was already to bigger than availableSize,
+            // It is a zim format error (wrong offset, ...)
+            throw ZimFileFormatError("Impossible to read dirent.");
+          }
           bufferSize += 256;
           continue;
         }

@@ -105,20 +105,39 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
         new DirectDirentAccessor(zimReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
 
 
-    auto titleIndexReader = sectionSubReader(*zimReader,
-                                        "Title index table",
-                                        offset_t(header.getTitleIdxPos()),
-                                        zsize_t(4*header.getArticleCount()));
-
-    mp_titleDirentAccessor.reset(
-        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(header.getArticleCount())));
-
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
                                            offset_t(header.getClusterPtrPos()),
                                            zsize_t(8*header.getClusterCount()));
 
     quickCheckForCorruptFile();
+
+    offset_t titleOffset(header.getTitleIdxPos());
+    zsize_t  titleSize(4*header.getArticleCount());
+
+    for (auto url:{"listing/titleOrdered/v1", "listing/titleOrdered/v0"}) {
+      auto result = direntLookup().find('W', url);
+      if (result.first) {
+        auto dirent = mp_urlDirentAccessor->getDirent(result.second);
+        auto cluster = getCluster(dirent->getClusterNumber());
+        if (cluster->isCompressed()) {
+          // This is a ZimFileFormatError.
+          // Let's be tolerent and skip the entry
+          continue;
+        }
+        titleOffset = getClusterOffset(dirent->getClusterNumber()) + offset_t(1) + cluster->getBlobOffset(dirent->getBlobNumber());
+        titleSize = cluster->getBlobSize(dirent->getBlobNumber());
+        break;
+      }
+    }
+
+    auto titleIndexReader = sectionSubReader(*zimReader,
+                                             "Title index table",
+                                             titleOffset,
+                                             titleSize);
+
+    mp_titleDirentAccessor.reset(
+        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(titleSize.v/4)));
 
     readMimeTypes();
   }
