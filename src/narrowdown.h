@@ -207,7 +207,7 @@ private: // types
 
     bool operator()(const Entry& entry, const std::string& key) const
     {
-      return key.compare(getKeyContent(entry)) > 0;
+      return key.compare(getKeyContent(entry)) >= 0;
     }
 
     bool operator()(const std::string& key, const Entry& entry) const
