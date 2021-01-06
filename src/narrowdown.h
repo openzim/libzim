@@ -102,7 +102,11 @@ public: // functions
   // above the class.
   void add(const std::string& key, index_type i, const std::string& nextKey)
   {
-    if (key >= nextKey) {
+    // It would be better to have `key >= nextKey`, but pretty old zim file were not enforce to
+    // have unique url, just that entries were sorted by url, but two entries could have the same url.
+    // It is somehow a bug and I've been fixed then, but we still have to be tolerent here and accept that
+    // two concecutive keys can be equal.
+    if (key > nextKey) {
       std::stringstream ss;
       ss << "Dirent table is not properly sorted:\n";
       ss << "  #0: " << key[0] << "/" << key.substr(1) << "\n";
