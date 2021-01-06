@@ -26,6 +26,8 @@
 #include <algorithm>
 #include <vector>
 
+#include <zim/error.h>
+
 namespace zim
 {
 
@@ -100,15 +102,29 @@ public: // functions
   // above the class.
   void add(const std::string& key, index_type i, const std::string& nextKey)
   {
-    if ( entries.empty() )
-    {
-      ASSERT(key, <, nextKey);
+    // It would be better to have `key >= nextKey`, but pretty old zim file were not enforce to
+    // have unique url, just that entries were sorted by url, but two entries could have the same url.
+    // It is somehow a bug and have been fixed then, but we still have to be tolerent here and accept that
+    // two concecutive keys can be equal.
+    if (key > nextKey) {
+      std::stringstream ss;
+      ss << "Dirent table is not properly sorted:\n";
+      ss << "  #" << i << ": " << key[0] << "/" << key.substr(1) << "\n";
+      ss << "  #" << i+1 << ": " << nextKey[0] << "/" << nextKey.substr(1);
+      throw ZimFileFormatError(ss.str());
+    }
+    if ( entries.empty() ) {
       addEntry(key, i);
     }
     else
     {
       const std::string pseudoKey = shortestStringInBetween(key, nextKey);
-      ASSERT(pred(entries.back(), pseudoKey), ==, true);
+      if (pred(pseudoKey, entries.back())) {
+        std::stringstream ss;
+        ss << "Dirent table is not properly sorted:\n";
+        ss << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
+        throw ZimFileFormatError(ss.str());
+      }
       ASSERT(entries.back().lindex, <, i);
       addEntry(pseudoKey, i);
     }
