@@ -52,9 +52,6 @@ namespace zim
       std::shared_ptr<const DirectDirentAccessor> mp_urlDirentAccessor;
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
-      lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
-      std::mutex direntCacheLock;
-
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 

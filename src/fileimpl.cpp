@@ -105,7 +105,6 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     : zimFile(_zimFile),
       archiveStartOffset(offset),
       zimReader(makeFileReader(zimFile, offset, size)),
-      direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
       m_startUserEntry(0),
@@ -317,40 +316,12 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx)
   {
-    log_trace("FileImpl::getDirent(" << idx << ')');
-
-    if (idx >= getCountArticles())
-      throw std::out_of_range("entry index out of range");
-
-    {
-      std::lock_guard<std::mutex> l(direntCacheLock);
-      auto v = direntCache.get(idx.v);
-      if (v.hit())
-      {
-        log_debug("dirent " << idx << " found in cache; hits "
-                  << direntCache.getHits() << " misses "
-                  << direntCache.getMisses() << " ratio "
-                  << direntCache.hitRatio() * 100 << "% fillfactor "
-                  << direntCache.fillfactor());
-        return v.value();
-      }
-
-      log_debug("dirent " << idx << " not found in cache; hits "
-                << direntCache.getHits() << " misses " << direntCache.getMisses()
-                << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor "
-                << direntCache.fillfactor());
-    }
-
-    const auto dirent = mp_urlDirentAccessor->getDirent(idx);
-    std::lock_guard<std::mutex> l(direntCacheLock);
-    direntCache.put(idx.v, dirent);
-
-    return dirent;
+    return mp_urlDirentAccessor->getDirent(idx);
   }
 
   std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx)
   {
-    return getDirent(getIndexByTitle(idx));
+    return mp_titleDirentAccessor->getDirent(idx);
   }
 
   entry_index_t FileImpl::getIndexByTitle(title_index_t idx) const
@@ -431,13 +402,13 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   {
     std::string namespaces;
 
-    auto d = getDirent(entry_index_t(0));
+    auto d = mp_urlDirentAccessor->getDirent(entry_index_t(0));
     namespaces = d->getNamespace();
 
     entry_index_t idx(0);
     while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
     {
-      d = getDirent(idx);
+      d = mp_urlDirentAccessor->getDirent(idx);
       namespaces += d->getNamespace();
     }
 

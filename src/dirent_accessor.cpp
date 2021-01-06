@@ -21,6 +21,9 @@
 
 #include "file_reader.h"
 #include "_dirent.h"
+#include "envvalue.h"
+
+#include <mutex>
 
 using namespace zim;
 
@@ -28,13 +31,26 @@ DirectDirentAccessor::DirectDirentAccessor(std::shared_ptr<FileReader> zimReader
   : mp_zimReader(zimReader),
     mp_urlPtrReader(std::move(urlPtrReader)),
     m_direntCount(direntCount),
+    m_direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
     m_bufferDirentZone(256)
 {}
 
 std::shared_ptr<const Dirent> DirectDirentAccessor::getDirent(entry_index_t idx) const
 {
+  {
+    std::lock_guard<std::mutex> l(m_direntCacheLock);
+    auto v = m_direntCache.get(idx.v);
+    if (v.hit()) {
+      return v.value();
+    }
+  }
+
   auto direntOffset = getOffset(idx);
-  return readDirent(direntOffset);
+  auto dirent = readDirent(direntOffset);
+  std::lock_guard<std::mutex> l(m_direntCacheLock);
+  m_direntCache.put(idx.v, dirent);
+
+  return dirent;
 }
 
 offset_t DirectDirentAccessor::getOffset(entry_index_t idx) const
