@@ -22,6 +22,7 @@
 
 #include "zim_types.h"
 #include "debug.h"
+#include "lrucache.h"
 
 #include <memory>
 #include <mutex>
@@ -36,7 +37,7 @@ class FileReader;
 
 /**
  * DirectDirentAccessor is used to access a dirent from its index.
- * It doesn't provide any "advanced" features like lookup, find or cache.
+ * It doesn't provide any "advanced" features like lookup or find.
  *
  * This is the base class to locate a dirent (offset) and read it.
  *
@@ -58,6 +59,9 @@ private: // data
   std::shared_ptr<FileReader>    mp_zimReader;
   std::unique_ptr<const Reader>  mp_urlPtrReader;
   entry_index_t                  m_direntCount;
+
+  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>> m_direntCache;
+  mutable std::mutex m_direntCacheLock;
 
   mutable std::vector<char>  m_bufferDirentZone;
   mutable std::mutex         m_bufferDirentLock;
