@@ -25,6 +25,8 @@
 
 #include <mutex>
 
+#include <zim/error.h>
+
 using namespace zim;
 
 DirectDirentAccessor::DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)

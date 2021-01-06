@@ -137,14 +137,6 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
         new DirectDirentAccessor(direntReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
 
 
-    auto titleIndexReader = sectionSubReader(*zimReader,
-                                        "Title index table",
-                                        offset_t(header.getTitleIdxPos()),
-                                        zsize_t(4*header.getArticleCount()));
-
-    mp_titleDirentAccessor.reset(
-        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(header.getArticleCount())));
-
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
                                            offset_t(header.getClusterPtrPos()),
@@ -152,9 +144,45 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
     quickCheckForCorruptFile();
 
+    mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+
+    if (!mp_titleDirentAccessor) {
+      offset_t titleOffset(header.getTitleIdxPos());
+      zsize_t  titleSize(4*header.getArticleCount());
+      mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
+    }
+
     readMimeTypes();
   }
 
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const std::string& path)
+  {
+    auto result = direntLookup().find('X', path);
+    if (!result.first) {
+      return nullptr;
+    }
+
+    auto dirent = mp_urlDirentAccessor->getDirent(result.second);
+    auto cluster = getCluster(dirent->getClusterNumber());
+    if (cluster->isCompressed()) {
+      // This is a ZimFileFormatError.
+      // Let's be tolerent and skip the entry
+      return nullptr;
+    }
+    auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + cluster->getBlobOffset(dirent->getBlobNumber());
+    auto titleSize = cluster->getBlobSize(dirent->getBlobNumber());
+    return getTitleAccessor(titleOffset, titleSize, "Title index table" + path);
+  }
+
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name)
+  {
+      auto titleIndexReader = sectionSubReader(*zimReader,
+                                               name,
+                                               offset,
+                                               size);
+
+      return std::unique_ptr<IndirectDirentAccessor>(new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/4)));
+  }
 
   FileImpl::DirentLookup& FileImpl::direntLookup()
   {
