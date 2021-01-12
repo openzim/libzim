@@ -30,7 +30,9 @@ class Cluster;
 
 class ClusterTask : public Task {
   public:
-    ClusterTask(Cluster* cluster) :
+    ClusterTask(const ClusterTask&) = delete;
+    ClusterTask& operator=(const ClusterTask&) = delete;
+    explicit ClusterTask(Cluster* cluster) :
       cluster(cluster)
     {
       ++waiting_task;

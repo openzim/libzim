@@ -31,7 +31,9 @@ class Item;
 
 class IndexTask : public Task {
   public:
-    IndexTask(std::shared_ptr<Item> item) :
+    IndexTask(const IndexTask&) = delete;
+    IndexTask& operator=(const IndexTask&) = delete;
+    explicit IndexTask(std::shared_ptr<Item> item) :
       mp_item(item)
     {
       ++waiting_task;
