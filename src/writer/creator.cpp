@@ -34,8 +34,7 @@
 #include "../md5.h"
 
 #if defined(ENABLE_XAPIAN)
-# include "xapianIndexer.h"
-# include "xapianWorker.h"
+# include "xapianHandler.h"
 #endif
 
 #ifdef _WIN32
@@ -174,16 +173,6 @@ namespace zim
       data->addItemData(dirent, item->getContentProvider(), compressContent);
       data->handle(dirent, item);
 
-#if defined(ENABLE_XAPIAN)
-      if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
-        data->nbIndexItems++;
-        data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
-        if(m_withIndex) {
-          data->taskList.pushToQueue(new IndexTask(item));
-        }
-      }
-#endif
-
       if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
       }
@@ -212,11 +201,6 @@ namespace zim
       }
 
       data->handle(dirent);
-#if defined(ENABLE_XAPIAN)
-      if (!title.empty()) {
-        data->titleIndexer.indexTitle(path, title);
-      }
-#endif
     }
 
     void Creator::finishZimCreation()
@@ -237,40 +221,6 @@ namespace zim
 
       TPROGRESS();
 
-      // We need to wait that all indexation task has been done before closing the
-      // xapian database and add it to zim.
-      unsigned int wait = 0;
-      do {
-        microsleep(wait);
-        wait += 10;
-      } while(IndexTask::waiting_task.load() > 0);
-
-#if defined(ENABLE_XAPIAN)
-      {
-        data->titleIndexer.indexingPostlude();
-        data->addData(
-          'X', "title/xapian", "application/octet-stream+xapian",
-          std::unique_ptr<ContentProvider>(new FileProvider(data->titleIndexer.getIndexPath())),
-          false
-        );
-      }
-      if (m_withIndex) {
-        wait = 0;
-        do {
-          microsleep(wait);
-          wait += 10;
-        } while(IndexTask::waiting_task.load() > 0);
-
-        data->indexer->indexingPostlude();
-        microsleep(100);
-        data->addData(
-          'X', "fulltext/xapian", "application/octet-stream+xapian",
-          std::unique_ptr<ContentProvider>(new FileProvider(data->indexer->getIndexPath())),
-          false
-        );
-      }
-#endif
-
       for(auto& handler:data->m_handlers) {
         handler->stop();
         auto dirent = handler->getDirent();
@@ -287,7 +237,7 @@ namespace zim
 
       TINFO("Waiting for workers");
       // wait all cluster compression has been done
-      wait = 0;
+      unsigned int wait = 0;
       do {
         microsleep(wait);
         wait += 10;
@@ -440,9 +390,6 @@ namespace zim
         compression(c),
         withIndex(withIndex),
         indexingLanguage(language),
-#if defined(ENABLE_XAPIAN)
-        titleIndexer(language, IndexingMode::TITLE, true),
-#endif
         verbose(verbose),
         nbRedirectItems(0),
         nbCompItems(0),
@@ -483,10 +430,11 @@ int mode =  _S_IREAD | _S_IWRITE;
       uncompCluster = new Cluster(zimcompNone);
 
 #if defined(ENABLE_XAPIAN)
-      titleIndexer.indexingPrelude(basename+"_title.idx");
+      auto titleIndexer = std::make_shared<TitleXapianHandler>(this);
+      m_handlers.push_back(titleIndexer);
       if (withIndex) {
-          indexer = new XapianIndexer(indexingLanguage, IndexingMode::FULL, true);
-          indexer->indexingPrelude(basename+".idx");
+        auto fulltextIndexer = std::make_shared<FullTextXapianHandler>(this);
+        m_handlers.push_back(fulltextIndexer);
       }
 #endif
 
@@ -504,10 +452,6 @@ int mode =  _S_IREAD | _S_IWRITE;
       for(auto& cluster: clustersList) {
         delete cluster;
       }
-#if defined(ENABLE_XAPIAN)
-      if (indexer)
-        delete indexer;
-#endif
     }
 
     void CreatorData::addDirent(Dirent* dirent)

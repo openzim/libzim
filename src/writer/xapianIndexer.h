@@ -28,10 +28,9 @@
 
 
 namespace zim {
-  namespace writer {
-    class IndexTask;
-  }
-}
+namespace writer {
+
+  class IndexTask;
 
 enum class IndexingMode {
   TITLE,
@@ -41,10 +40,10 @@ enum class IndexingMode {
 class XapianIndexer
 {
  public:
-  XapianIndexer(const std::string& language, IndexingMode mode, bool verbose);
+  XapianIndexer(const std::string& indexPath, const std::string& language, IndexingMode mode, bool verbose);
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
-  void indexingPrelude(const std::string indexPath);
+  void indexingPrelude();
   void flush();
   void indexingPostlude();
 
@@ -61,5 +60,8 @@ class XapianIndexer
 
  friend class zim::writer::IndexTask;
 };
+
+}
+}
 
 #endif  // LIBZIM_WRITER_XAPIANINDEXER_H
