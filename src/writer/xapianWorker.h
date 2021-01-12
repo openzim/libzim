@@ -32,6 +32,8 @@ class XapianIndexer;
 
 class IndexTask : public Task {
   public:
+    IndexTask(const IndexTask&) = delete;
+    IndexTask& operator=(const IndexTask&) = delete;
     IndexTask(std::shared_ptr<Item> item, XapianIndexer* indexer) :
       mp_item(item),
       mp_indexer(indexer)
