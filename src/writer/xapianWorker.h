@@ -32,7 +32,7 @@ class Item;
 class IndexTask : public Task {
   public:
     IndexTask(std::shared_ptr<Item> item) :
-      p_item(item)
+      mp_item(item),
     {
       ++waiting_task;
     }
@@ -45,7 +45,7 @@ class IndexTask : public Task {
     static std::atomic<unsigned long> waiting_task;
 
   private:
-    std::shared_ptr<Item> p_item;
+    std::shared_ptr<Item> mp_item;
 };
 
 }
