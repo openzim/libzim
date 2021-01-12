@@ -610,6 +610,7 @@ int mode =  _S_IREAD | _S_IWRITE;
               << " redirecting to (missing) "
               << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
+          dirent->markRemoved();
           if (dirent == mainPageDirent) {
             mainPageDirent = nullptr;
           }
