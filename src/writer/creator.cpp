@@ -220,33 +220,43 @@ namespace zim
 
       TPROGRESS();
 
+
+      // mp_titleListingHandler is a special case, it have to handle all dirents (including itself)
       for(auto& handler:data->m_handlers) {
-        if(handler == data->mp_titleListingHandler) {
-          continue;
+        // This silently create all the needed dirents
+        auto dirent = handler->getUniqueDirent();
+        if (handler == data->mp_titleListingHandler) {
+          data->mp_titleListDirent = dirent;
         }
-        handler->stop();
-        auto dirent = handler->getDirent();
-        auto provider = handler->getContentProvider();
-        data->addItemData(dirent, std::move(provider), false);
         data->mp_titleListingHandler->handle(dirent, Hints(), nullptr);
       }
 
-      {
-        data->mp_titleListDirent = data->mp_titleListingHandler->getDirent();
-        data->mp_titleListingHandler->handle(data->mp_titleListDirent, Hints(), nullptr);
-        data->mp_titleListingHandler->stop();
-        auto contentProvider = data->mp_titleListingHandler->getContentProvider();
-        auto titleListSize = contentProvider->getSize();
-        data->addItemData(
-          data->mp_titleListDirent,
-          std::move(contentProvider),
-          false);
-        // We have to get the offset of the titleList in the cluster before
-        // we close the cluster. Once the cluster is close, the offset informatino is droped.
-        data->m_titleListOffset = 1 + data->uncompCluster->size().v - titleListSize;
+      // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
+      // before we ask data to the handlers
+      TINFO("ResolveRedirectIndexes");
+      data->resolveRedirectIndexes();
+
+      TINFO("Set entry indexes");
+      data->setEntryIndexes();
+
+      TINFO("Resolve mimetype");
+      data->resolveMimeTypes();
+
+      // We can now stop the dirents, and get their content
+      for(auto& handler:data->m_handlers) {
+        handler->stop();
+        auto dirent = handler->getUniqueDirent();
+        auto provider = handler->getContentProvider();
+        auto providerSize = provider->getSize();
+        data->addItemData(dirent, std::move(provider), false);
+        if (handler == data->mp_titleListingHandler) {
+          // We have to get the offset of the titleList in the cluster before
+          // we close the cluster. Once the cluster is close, the offset informatino is droped.
+          data->m_titleListOffset = 1 + data->uncompCluster->size().v - providerSize;
+        }
       }
 
-      // When we've seen all items, write any remaining clusters.
+      // All the data has been added, we can now close all clusters
       if (data->compCluster->count())
         data->closeCluster(true);
 
@@ -272,15 +282,6 @@ namespace zim
       // Wait for writerThread to finish.
       data->clusterToWrite.pushToQueue(nullptr);
       data->writerThread.join();
-
-      TINFO("ResolveRedirectIndexes");
-      data->resolveRedirectIndexes();
-
-      TINFO("Set entry indexes");
-      data->setEntryIndexes();
-
-      TINFO("Resolve mimetype");
-      data->resolveMimeTypes();
 
       TINFO(data->dirents.size() << " title index created");
       TINFO(data->clustersList.size() << " clusters created");
