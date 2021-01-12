@@ -63,6 +63,9 @@ void TitleListingHandler::start() {
 }
 
 void TitleListingHandler::stop() {
+  m_dirents.erase(
+    std::remove_if(m_dirents.begin(), m_dirents.end(), [](const Dirent* d) { return d->isRemoved(); }),
+    m_dirents.end());
   std::sort(m_dirents.begin(), m_dirents.end(), TitleCompare());
 }
 
