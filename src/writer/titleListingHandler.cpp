@@ -35,7 +35,7 @@ class ListingProvider : public ContentProvider {
     {}
 
     zim::size_type getSize() const override {
-      return mp_dirents->size() * sizeof(zim::offset_type);
+      return mp_dirents->size() * sizeof(zim::entry_index_type);
     }
 
     zim::Blob feed() override {
@@ -44,12 +44,12 @@ class ListingProvider : public ContentProvider {
       }
       zim::toLittleEndian((*m_it)->getIdx().v, buffer);
       m_it++;
-      return zim::Blob(buffer, sizeof(zim::offset_type));
+      return zim::Blob(buffer, sizeof(zim::entry_index_type));
     }
 
   private:
     const TitleListingHandler::Dirents* mp_dirents;
-    char buffer[sizeof(zim::offset_type)];
+    char buffer[sizeof(zim::entry_index_type)];
     TitleListingHandler::Dirents::const_iterator m_it;
 };
 
