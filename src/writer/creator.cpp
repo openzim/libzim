@@ -247,12 +247,12 @@ namespace zim
         handler->stop();
         auto dirent = handler->getUniqueDirent();
         auto provider = handler->getContentProvider();
-        auto providerSize = provider->getSize();
         data->addItemData(dirent, std::move(provider), false);
         if (handler == data->mp_titleListingHandler) {
           // We have to get the offset of the titleList in the cluster before
           // we close the cluster. Once the cluster is close, the offset informatino is droped.
-          data->m_titleListOffset = 1 + data->uncompCluster->size().v - providerSize;
+          auto cluster = data->uncompCluster;
+          data->m_titleListOffset = cluster->getBlobOffset(blob_index_t(cluster->count().v-1)).v;
         }
       }
 
@@ -315,8 +315,9 @@ namespace zim
 
       header->setMimeListPos( Fileheader::size );
 
-      auto titleListClusterOffset = data->mp_titleListDirent->getCluster()->getOffset();
-      header->setTitleIdxPos(titleListClusterOffset.v + data->m_titleListOffset);
+      auto cluster = data->mp_titleListDirent->getCluster();
+      header->setTitleIdxPos(
+        1 + cluster->getOffset().v + cluster->getDataOffset().v + data->m_titleListOffset);
 
       header->setClusterCount( data->clustersList.size() );
     }

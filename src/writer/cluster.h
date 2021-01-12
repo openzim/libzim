@@ -52,7 +52,7 @@ class Cluster {
     void addContent(std::unique_ptr<ContentProvider> provider);
     void addContent(const std::string& data);
 
-    blob_index_t count() const  { return blob_index_t(blobOffsets.size() - 1); }
+    blob_index_t count() const  { return blob_index_t(m_count); }
     zsize_t size() const;
     offset_t getOffset() const { return offset; }
     void setOffset(offset_t o) { offset = o; }
@@ -67,6 +67,11 @@ class Cluster {
     zsize_t getBlobSize(blob_index_t n) const
     { return zsize_t(blobOffsets[blob_index_type(n)+1].v - blobOffsets[blob_index_type(n)].v); }
 
+    offset_t getBlobOffset(blob_index_t n) const { return blobOffsets[n.v]; }
+    offset_t getDataOffset() const {
+      return offset_t((count().v + 1) * (isExtended?sizeof(uint64_t):sizeof(uint32_t)));
+    }
+
     void write(int out_fd) const;
 
   protected:
@@ -80,6 +85,7 @@ class Cluster {
     mutable Blob compressed_data;
     std::string tmp_filename;
     std::atomic<bool> closed { false };
+    blob_index_type m_count { 0 };
 
   private:
     void write_content(writer_t writer) const;
