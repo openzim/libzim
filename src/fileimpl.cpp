@@ -111,36 +111,45 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 
     quickCheckForCorruptFile();
 
-    offset_t titleOffset(header.getTitleIdxPos());
-    zsize_t  titleSize(4*header.getArticleCount());
+    mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
 
-    for (auto url:{"listing/titleOrdered/v1", "listing/titleOrdered/v0"}) {
-      auto result = direntLookup().find('W', url);
-      if (result.first) {
-        auto dirent = mp_urlDirentAccessor->getDirent(result.second);
-        auto cluster = getCluster(dirent->getClusterNumber());
-        if (cluster->isCompressed()) {
-          // This is a ZimFileFormatError.
-          // Let's be tolerent and skip the entry
-          continue;
-        }
-        titleOffset = getClusterOffset(dirent->getClusterNumber()) + offset_t(1) + cluster->getBlobOffset(dirent->getBlobNumber());
-        titleSize = cluster->getBlobSize(dirent->getBlobNumber());
-        break;
-      }
+    if (!mp_titleDirentAccessor) {
+      offset_t titleOffset(header.getTitleIdxPos());
+      zsize_t  titleSize(4*header.getArticleCount());
+      mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
     }
-
-    auto titleIndexReader = sectionSubReader(*zimReader,
-                                             "Title index table",
-                                             titleOffset,
-                                             titleSize);
-
-    mp_titleDirentAccessor.reset(
-        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(titleSize.v/4)));
 
     readMimeTypes();
   }
 
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const std::string& path)
+  {
+    auto result = direntLookup().find('W', path);
+    if (!result.first) {
+      return nullptr;
+    }
+
+    auto dirent = mp_urlDirentAccessor->getDirent(result.second);
+    auto cluster = getCluster(dirent->getClusterNumber());
+    if (cluster->isCompressed()) {
+      // This is a ZimFileFormatError.
+      // Let's be tolerent and skip the entry
+      return nullptr;
+    }
+    auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + offset_t(1) + cluster->getBlobOffset(dirent->getBlobNumber());
+    auto titleSize = cluster->getBlobSize(dirent->getBlobNumber());
+    return getTitleAccessor(titleOffset, titleSize, "Title index table" + path);
+  }
+
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name)
+  {
+      auto titleIndexReader = sectionSubReader(*zimReader,
+                                               name,
+                                               offset,
+                                               size);
+
+      return std::unique_ptr<IndirectDirentAccessor>(new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/4)));
+  }
 
   FileImpl::DirentLookup& FileImpl::direntLookup()
   {

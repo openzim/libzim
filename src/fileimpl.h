@@ -120,6 +120,8 @@ namespace zim
 
       bool checkIntegrity(IntegrityCheck checkType);
   private:
+      std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const std::string& path);
+      std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
       offset_type getMimeListEndUpperLimit() const;
