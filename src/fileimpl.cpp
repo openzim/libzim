@@ -585,8 +585,9 @@ std::string pseudoTitle(const Dirent& d)
 
   bool FileImpl::checkTitleIndex() {
     const entry_index_type articleCount = getCountArticles().v;
+    const entry_index_type frontArticleCount = mp_titleDirentAccessor->getDirentCount().v;
     std::shared_ptr<const Dirent> prevDirent;
-    for ( entry_index_type i = 0; i < articleCount; ++i )
+    for ( entry_index_type i = 0; i < frontArticleCount; ++i )
     {
       if (mp_titleDirentAccessor->getDirectIndex(title_index_t(i)).v >= articleCount) {
         std::cerr << "Invalid title index entry" << std::endl;
