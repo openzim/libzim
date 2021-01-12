@@ -590,29 +590,41 @@ std::string pseudoTitle(const Dirent& d)
   return std::string(1, d.getNamespace()) + '/' + d.getTitle();
 }
 
+bool checkIndirectDirentAccessor(const IndirectDirentAccessor& accessor, entry_index_type totalCount) {
+  const entry_index_type direntCount = accessor.getDirentCount().v;
+  std::shared_ptr<const Dirent> prevDirent;
+  for ( entry_index_type i = 0; i < direntCount; ++i ) {
+    if (accessor.getDirectIndex(title_index_t(i)).v >= totalCount) {
+      std::cerr << "Invalid title index entry" << std::endl;
+      return false;
+    }
+
+    const std::shared_ptr<const Dirent> dirent = accessor.getDirent(title_index_t(i));
+    if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) ) {
+      std::cerr << "Title index is not properly sorted:\n"
+                << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
+                << "  #" << i   << ": " << pseudoTitle(*dirent) << std::endl;
+      return false;
+    }
+    prevDirent = dirent;
+  }
+  return true;
+}
+
 } // unnamed namespace
 
   bool FileImpl::checkTitleIndex() {
     const entry_index_type articleCount = getCountArticles().v;
-    const entry_index_type frontArticleCount = mp_titleDirentAccessor->getDirentCount().v;
-    std::shared_ptr<const Dirent> prevDirent;
-    for ( entry_index_type i = 0; i < frontArticleCount; ++i )
-    {
-      if (mp_titleDirentAccessor->getDirectIndex(title_index_t(i)).v >= articleCount) {
-        std::cerr << "Invalid title index entry" << std::endl;
-        return false;
-      }
 
-      const std::shared_ptr<const Dirent> dirent = mp_titleDirentAccessor->getDirent(title_index_t(i));
-      if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) )
-      {
-        std::cerr << "Title index is not properly sorted:\n"
-                  << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
-                  << "  #" << i   << ": " << pseudoTitle(*dirent) << std::endl;
-        return false;
-      }
-      prevDirent = dirent;
+    offset_t titleOffset(header.getTitleIdxPos());
+    zsize_t  titleSize(4*header.getArticleCount());
+    auto titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Full Title index table");
+    auto ret = checkIndirectDirentAccessor(*titleDirentAccessor, articleCount);
+
+    titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    if (titleDirentAccessor) {
+      ret &= checkIndirectDirentAccessor(*titleDirentAccessor, articleCount);
     }
-    return true;
+    return ret;
   }
 }
