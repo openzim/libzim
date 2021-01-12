@@ -29,7 +29,7 @@ using namespace zim::writer;
 
 class ListingProvider : public ContentProvider {
   public:
-    ListingProvider(const TitleListingHandler::DirentSet* dirents)
+    ListingProvider(const TitleListingHandler::Dirents* dirents)
       : mp_dirents(dirents),
         m_it(dirents->begin())
     {}
@@ -48,9 +48,9 @@ class ListingProvider : public ContentProvider {
     }
 
   private:
-    const TitleListingHandler::DirentSet* mp_dirents;
+    const TitleListingHandler::Dirents* mp_dirents;
     char buffer[sizeof(zim::offset_type)];
-    TitleListingHandler::DirentSet::iterator m_it;
+    TitleListingHandler::Dirents::const_iterator m_it;
 };
 
 TitleListingHandler::TitleListingHandler(CreatorData* data)
@@ -63,6 +63,7 @@ void TitleListingHandler::start() {
 }
 
 void TitleListingHandler::stop() {
+  std::sort(m_dirents.begin(), m_dirents.end(), TitleCompare());
 }
 
 Dirent* TitleListingHandler::getDirent() const {
@@ -75,7 +76,7 @@ std::unique_ptr<ContentProvider> TitleListingHandler::getContentProvider() const
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
 {
-  m_dirents.insert(dirent);
+  m_dirents.push_back(dirent);
 }
 
 Dirent* TitleListingHandlerV1::getDirent() const {
@@ -89,6 +90,6 @@ void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints, std::shar
     isFront = bool(hints.at(FRONT_ARTICLE));
   } catch(std::out_of_range&) {}
   if (isFront) {
-    m_dirents.insert(dirent);
+    m_dirents.push_back(dirent);
   }
 }

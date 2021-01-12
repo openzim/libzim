@@ -23,7 +23,7 @@
 #include "handler.h"
 #include "_dirent.h"
 
-#include <set>
+#include <vector>
 
 namespace zim {
 namespace writer {
@@ -36,7 +36,7 @@ struct TitleCompare {
 
 class TitleListingHandler : public DirentHandler {
   public:
-    typedef std::multiset<Dirent*, TitleCompare> DirentSet;
+    typedef std::vector<Dirent*> Dirents;
 
     explicit TitleListingHandler(CreatorData* data);
     virtual ~TitleListingHandler();
@@ -49,7 +49,7 @@ class TitleListingHandler : public DirentHandler {
 
   protected:
     CreatorData* mp_creatorData;
-    DirentSet m_dirents;
+    Dirents m_dirents;
 };
 
 class TitleListingHandlerV1 : public TitleListingHandler {
