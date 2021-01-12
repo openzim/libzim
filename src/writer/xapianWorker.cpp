@@ -44,13 +44,13 @@ namespace zim
       Xapian::Stem stemmer;
       Xapian::TermGenerator indexer;
       try {
-        stemmer = Xapian::Stem(data->indexer->stemmer_language);
+        stemmer = Xapian::Stem(mp_indexer->stemmer_language);
         indexer.set_stemmer(stemmer);
         indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
       } catch (...) {
         // No stemming for language.
       }
-      indexer.set_stopper(&data->indexer->stopper);
+      indexer.set_stopper(&mp_indexer->stopper);
       indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
 
       auto indexData = mp_item->getIndexData();
@@ -96,7 +96,7 @@ namespace zim
       }
 
       std::lock_guard<std::mutex> l(s_dbaccessLock);
-      data->indexer->writableDatabase.add_document(document);
+      mp_indexer->writableDatabase.add_document(document);
     }
   }
 }

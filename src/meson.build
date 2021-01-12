@@ -49,7 +49,8 @@ xapian_sources = [
     'xapian/htmlparse.cc',
     'xapian/myhtmlparse.cc',
     'writer/xapianIndexer.cpp',
-    'writer/xapianWorker.cpp'
+    'writer/xapianWorker.cpp',
+    'writer/xapianHandler.cpp'
 ]
 
 sources = common_sources

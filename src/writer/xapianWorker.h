@@ -28,13 +28,15 @@ namespace zim {
 namespace writer {
 
 class Item;
+class XapianIndexer;
 
 class IndexTask : public Task {
   public:
     IndexTask(const IndexTask&) = delete;
     IndexTask& operator=(const IndexTask&) = delete;
-    explicit IndexTask(std::shared_ptr<Item> item) :
-      mp_item(item)
+    IndexTask(std::shared_ptr<Item> item, XapianIndexer* indexer) :
+      mp_item(item),
+      mp_indexer(indexer)
     {
       ++waiting_task;
     }
@@ -48,6 +50,7 @@ class IndexTask : public Task {
 
   private:
     std::shared_ptr<Item> mp_item;
+    XapianIndexer* mp_indexer;
 };
 
 }

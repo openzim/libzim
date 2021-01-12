@@ -26,9 +26,12 @@
 #include <stdexcept>
 #include <cassert>
 
+using namespace zim::writer;
+
 /* Constructor */
-XapianIndexer::XapianIndexer(const std::string& language, IndexingMode indexingMode, const bool verbose)
-    : language(language),
+XapianIndexer::XapianIndexer(const std::string& indexPath, const std::string& language, IndexingMode indexingMode, const bool verbose)
+    : indexPath(indexPath),
+      language(language),
       indexingMode(indexingMode)
 {
   /* Build ICU Local object to retrieve ISO-639 language code (from
@@ -62,9 +65,8 @@ XapianIndexer::~XapianIndexer()
   }
 }
 
-void XapianIndexer::indexingPrelude(const std::string indexPath_)
+void XapianIndexer::indexingPrelude()
 {
-  indexPath = indexPath_;
   writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);
   switch (indexingMode) {
     case IndexingMode::TITLE:

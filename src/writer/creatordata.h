@@ -129,10 +129,6 @@ namespace zim
             handler->handle(dirent, item);
           }
         }
-#if defined(ENABLE_XAPIAN)
-        XapianIndexer titleIndexer;
-        XapianIndexer* indexer = nullptr;
-#endif
 
         // Some stats
         bool verbose;
