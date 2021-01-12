@@ -96,11 +96,11 @@ void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints, std::shared_
     return;
   }
 
-  auto path = dirent->getPath();
   auto title = dirent->getRealTitle();
   if (title.empty()) {
     return;
   }
+  auto path = dirent->getPath();
   mp_indexer->indexTitle(path, title);
 }
 

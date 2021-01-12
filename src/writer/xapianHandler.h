@@ -27,9 +27,9 @@ namespace writer {
 
 class XapianIndexer;
 
-class FullTextXapianHandler : public Handler {
+class FullTextXapianHandler : public DirentHandler {
   public:
-    FullTextXapianHandler(CreatorData* data);
+    explicit FullTextXapianHandler(CreatorData* data);
     virtual ~FullTextXapianHandler();
 
     void start() override;
@@ -43,9 +43,9 @@ class FullTextXapianHandler : public Handler {
     CreatorData* mp_creatorData;
 };
 
-class TitleXapianHandler : public Handler {
+class TitleXapianHandler : public DirentHandler {
   public:
-    TitleXapianHandler(CreatorData* data);
+    explicit TitleXapianHandler(CreatorData* data);
     virtual ~TitleXapianHandler();
 
     void start() override;

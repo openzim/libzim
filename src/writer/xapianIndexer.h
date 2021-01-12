@@ -30,7 +30,7 @@
 namespace zim {
 namespace writer {
 
-  class IndexTask;
+class IndexTask;
 
 enum class IndexingMode {
   TITLE,
