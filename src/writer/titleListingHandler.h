@@ -52,9 +52,9 @@ class TitleListingHandler : public DirentHandler {
     DirentSet m_dirents;
 };
 
-class TitleListingHandlerv1 : public TitleListingHandler {
+class TitleListingHandlerV1 : public TitleListingHandler {
   public:
-    TitleListingHandlerv1(CreatorData* data) : TitleListingHandler(data) {};
+    explicit TitleListingHandlerV1(CreatorData* data) : TitleListingHandler(data) {};
     Dirent* getDirent() const override;
     void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) override;
 };

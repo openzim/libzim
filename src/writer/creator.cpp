@@ -450,7 +450,7 @@ int mode =  _S_IREAD | _S_IWRITE;
       mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
       m_handlers.push_back(mp_titleListingHandler);
 
-      m_handlers.push_back(std::make_shared<TitleListingHandlerv1>(this));
+      m_handlers.push_back(std::make_shared<TitleListingHandlerV1>(this));
 
       for(auto& handler:m_handlers) {
         handler->start();
