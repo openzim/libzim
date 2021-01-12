@@ -53,7 +53,12 @@ class DirentHandler {
 
     virtual void start() = 0;
     virtual void stop() = 0;
-    virtual Dirent* getDirent() const = 0;
+    Dirent* getUniqueDirent() {
+      if (!mp_uniqueDirent) {
+        mp_uniqueDirent = getDirent();
+      }
+      return mp_uniqueDirent;
+    }
     virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
 
     /*
@@ -64,7 +69,11 @@ class DirentHandler {
     virtual void handle(Dirent* dirent, std::shared_ptr<Item> item) = 0;
 
   protected:
+    virtual Dirent* getDirent() const = 0;
     DirentHandler() = default;
+
+  private:
+    Dirent* mp_uniqueDirent {0};
 };
 
 }
