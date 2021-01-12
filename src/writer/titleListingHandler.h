@@ -34,11 +34,11 @@ struct TitleCompare {
   }
 };
 
-class TitleListingHandler : public Handler {
+class TitleListingHandler : public DirentHandler {
   public:
     typedef std::multiset<Dirent*, TitleCompare> DirentSet;
 
-    TitleListingHandler(CreatorData* data);
+    explicit TitleListingHandler(CreatorData* data);
     virtual ~TitleListingHandler();
 
     void start() override;
