@@ -17,8 +17,8 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef OPENZIM_LIBZIM_HANDLER_H
-#define OPENZIM_LIBZIM_HANDLER_H
+#ifndef OPENZIM_LIBZIM_WRITER_HANDLER_H
+#define OPENZIM_LIBZIM_WRITER_HANDLER_H
 
 #include <string>
 #include <memory>
@@ -32,10 +32,25 @@ class CreatorData;
 class ContentProvider;
 class Dirent;
 
-class Handler {
+/**
+ * DirentHandler is used to add "extra" handling on dirent/item.
+ *
+ * The main purpose of the handle is to "see" all dirents corresponding to user entries
+ * and generate it's own dirent/item.
+ *
+ * Classical use cases are :
+ *  - Generating a index of the item (xapianIndex)
+ *  - Generating a listing of the item (all item or "main" entries only)
+ *  - Count mimetypes
+ *  - ...
+ *
+ *  While it seems that DirentHandler is dynamically (de)activated by user it is not.
+ *  This is purelly a internal structur to simplify the internal architecture of the writer.
+ */
+class DirentHandler {
   public:
-    Handler(CreatorData* data);
-    virtual ~Handler() = default;
+    explicit DirentHandler(CreatorData* data);
+    virtual ~DirentHandler() = default;
 
     virtual void start() = 0;
     virtual void stop() = 0;
@@ -50,13 +65,10 @@ class Handler {
     virtual void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) = 0;
 
   protected:
-    Handler() = default;
+    DirentHandler() = default;
 };
 
-void* taskRunner(void* data);
-void* clusterWriter(void* data);
-
 }
 }
 
-#endif // OPENZIM_LIBZIM_HANDLER_H
+#endif // OPENZIM_LIBZIM_WRITER_HANDLER_H
