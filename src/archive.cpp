@@ -140,6 +140,10 @@ namespace zim
   }
 
   Entry Archive::getMainEntry() const {
+    auto r = m_impl->findx('W', "mainPage");
+    if (r.first) {
+      return getEntryByPath(entry_index_type(r.second));
+    }
     auto& header = m_impl->getFileheader();
     if (!header.hasMainPage()) {
       throw EntryNotFound("No main page");
@@ -154,7 +158,7 @@ namespace zim
   Entry Archive::getFaviconEntry() const {
     // `-/favicon` is the standard path for the favicon, but older zims may have it
     // on other path.
-    for(auto ns:{'-', 'I'}) {
+    for(auto ns:{'W', '-', 'I'}) {
       for (auto& path:{"favicon", "favicon.png"}) {
         auto r = m_impl->findx(ns, path);
         if (r.first) {
