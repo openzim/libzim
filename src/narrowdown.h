@@ -109,8 +109,8 @@ public: // functions
     if (key > nextKey) {
       std::stringstream ss;
       ss << "Dirent table is not properly sorted:\n";
-      ss << "  #0: " << key[0] << "/" << key.substr(1) << "\n";
-      ss << "  #1: " << nextKey[0] << "/" << nextKey.substr(1);
+      ss << "  #" << i << ": " << key[0] << "/" << key.substr(1) << "\n";
+      ss << "  #" << i+1 << ": " << nextKey[0] << "/" << nextKey.substr(1);
       throw ZimFileFormatError(ss.str());
     }
     if ( entries.empty() ) {
@@ -120,8 +120,7 @@ public: // functions
       if (!pred(entries.back(), pseudoKey)) {
         std::stringstream ss;
         ss << "Dirent table is not properly sorted:\n";
-        ss << "  #0: " << key[0] << "/" << key.substr(1) << "\n";
-        ss << "  #1: " << nextKey[0] << "/" << nextKey.substr(1);
+        ss << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
         throw ZimFileFormatError(ss.str());
       }
       ASSERT(entries.back().lindex, <, i);
