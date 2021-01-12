@@ -53,7 +53,7 @@ namespace zim
       indexer.set_stopper(&data->indexer->stopper);
       indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
 
-      auto indexData = p_item->getIndexData();
+      auto indexData = mp_item->getIndexData();
 
       if (!indexData->hasIndexData()) {
         return;
@@ -62,8 +62,8 @@ namespace zim
       Xapian::Document document;
       indexer.set_document(document);
 
-      document.set_data(p_item->getPath());
-      document.add_value(0, p_item->getTitle());
+      document.set_data(mp_item->getPath());
+      document.add_value(0, mp_item->getTitle());
 
       std::stringstream countWordStringStream;
       countWordStringStream << indexData->getWordCount();
