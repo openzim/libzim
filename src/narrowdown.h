@@ -104,7 +104,7 @@ public: // functions
   {
     // It would be better to have `key >= nextKey`, but pretty old zim file were not enforce to
     // have unique url, just that entries were sorted by url, but two entries could have the same url.
-    // It is somehow a bug and I've been fixed then, but we still have to be tolerent here and accept that
+    // It is somehow a bug and have been fixed then, but we still have to be tolerent here and accept that
     // two concecutive keys can be equal.
     if (key > nextKey) {
       std::stringstream ss;
@@ -117,7 +117,7 @@ public: // functions
       addEntry(key, i);
     } else {
       const std::string pseudoKey = shortestStringInBetween(key, nextKey);
-      if (!pred(entries.back(), pseudoKey)) {
+      if (pred(pseudoKey, entries.back())) {
         std::stringstream ss;
         ss << "Dirent table is not properly sorted:\n";
         ss << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
