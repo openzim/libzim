@@ -34,9 +34,11 @@ class FullTextXapianHandler : public DirentHandler {
 
     void start() override;
     void stop() override;
-    Dirent* getDirent() const override;
     std::unique_ptr<ContentProvider> getContentProvider() const override;
     void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) override;
+
+  protected:
+    Dirent* getDirent() const override;
 
   private:
     std::unique_ptr<XapianIndexer> mp_indexer;
@@ -50,9 +52,11 @@ class TitleXapianHandler : public DirentHandler {
 
     void start() override;
     void stop() override;
-    Dirent* getDirent() const override;
     std::unique_ptr<ContentProvider> getContentProvider() const override;
     void handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) override;
+
+  protected:
+    Dirent* getDirent() const override;
 
   private:
     std::unique_ptr<XapianIndexer> mp_indexer;
