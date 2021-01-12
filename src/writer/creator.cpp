@@ -220,14 +220,36 @@ namespace zim
 
       TPROGRESS();
 
+
+      for(auto& handler:data->m_handlers) {
+        // This silently create all the needed dirents
+        auto dirent = handler->getUniqueDirent();
+      }
+
+      // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
+      // before we ask data to the handlers
+      TINFO("ResolveRedirectIndexes");
+      data->resolveRedirectIndexes();
+
+      TINFO("Set entry indexes");
+      data->setEntryIndexes();
+
+      TINFO("Resolve mimetype");
+      data->resolveMimeTypes();
+
+      TINFO("create title index");
+      data->createTitleIndex();
+
+      // We can now stop the dirents, and get their content
       for(auto& handler:data->m_handlers) {
         handler->stop();
-        auto dirent = handler->getDirent();
+        auto dirent = handler->getUniqueDirent();
         auto provider = handler->getContentProvider();
+        auto providerSize = provider->getSize();
         data->addItemData(dirent, std::move(provider), false);
       }
 
-      // When we've seen all items, write any remaining clusters.
+      // All the data has been added, we can now close all clusters
       if (data->compCluster->count())
         data->closeCluster(true);
 
@@ -254,17 +276,6 @@ namespace zim
       data->clusterToWrite.pushToQueue(nullptr);
       data->writerThread.join();
 
-      TINFO("ResolveRedirectIndexes");
-      data->resolveRedirectIndexes();
-
-      TINFO("Set entry indexes");
-      data->setEntryIndexes();
-
-      TINFO("Resolve mimetype");
-      data->resolveMimeTypes();
-
-      TINFO("create title index");
-      data->createTitleIndex();
       TINFO(data->dirents.size() << " title index created");
       TINFO(data->clustersList.size() << " clusters created");
 
