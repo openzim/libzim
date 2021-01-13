@@ -595,15 +595,13 @@ bool checkIndirectDirentAccessor(const IndirectDirentAccessor& accessor, entry_i
   std::shared_ptr<const Dirent> prevDirent;
   for ( entry_index_type i = 0; i < direntCount; ++i ) {
     if (accessor.getDirectIndex(title_index_t(i)).v >= totalCount) {
-      std::cerr << "Invalid title index entry" << std::endl;
+      std::cerr << "Invalid title index entry." << std::endl;
       return false;
     }
 
     const std::shared_ptr<const Dirent> dirent = accessor.getDirent(title_index_t(i));
     if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) ) {
-      std::cerr << "Title index is not properly sorted:\n"
-                << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
-                << "  #" << i   << ": " << pseudoTitle(*dirent) << std::endl;
+      std::cerr << "Title index is not properly sorted." << std::endl;
       return false;
     }
     prevDirent = dirent;
