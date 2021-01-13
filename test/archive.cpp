@@ -242,12 +242,12 @@ TEST(ZimArchive, validate)
 
   EXPECT_BROKEN_ZIMFILE(
     "./data/invalid.outofbounds_first_title_entry.zim",
-    "Invalid title index entry\n"
+    "Invalid title index entry.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
     "./data/invalid.outofbounds_last_title_entry.zim",
-    "Invalid title index entry\n"
+    "Invalid title index entry.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
@@ -264,9 +264,7 @@ TEST(ZimArchive, validate)
 
   EXPECT_BROKEN_ZIMFILE(
     "./data/invalid.nonsorted_title_index.zim",
-    "Title index is not properly sorted:\n"
-    "  #0: A/Test ZIM file\n"
-    "  #1: -/favicon\n"
+    "Title index is not properly sorted.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
