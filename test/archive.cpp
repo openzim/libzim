@@ -385,4 +385,69 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   checkEquivalence(archive1, archive2);
 }
 
+zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
+{
+  zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
+  std::shared_ptr<char> data(new char[size]);
+  fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.second));
+  return zim::Blob(data, size);
+}
+
+TEST(ZimArchive, getDirectAccessInformation)
+{
+  const zim::Archive archive("./data/small.zim");
+  zim::entry_index_type checkedItemCount = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+}
+
+TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
+{
+  const int fd = OPEN_READ_ONLY("./data/small.zim");
+  const zim::Archive archive(fd);
+  zim::entry_index_type checkedItemCount = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+}
+
+TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
+{
+  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
+  const auto size = zim::DEFAULTFS::openFile("./data/small.zim").getSize();
+  const zim::Archive archive(fd, 8, size.v);
+  zim::entry_index_type checkedItemCount = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+}
+
 } // unnamed namespace
