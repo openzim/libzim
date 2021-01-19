@@ -85,6 +85,8 @@ struct FS {
 
 }; // unix namespace
 
+std::string getFilePathFromFD(int fd);
+
 }; // zim namespace
 
 #endif //ZIM_FS_UNIX_H_
