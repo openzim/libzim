@@ -135,32 +135,12 @@ bool FS::removeFile(path_t path) {
 
 }; // unix namespace
 
-std::string getRealPath(const std::string& path)
-{
-  std::vector<char> linkname(128, '\0');
-
-  while ( true )
-  {
-    ssize_t r = readlink(path.c_str(), &linkname[0], linkname.size());
-
-    if (r == -1) {
-      throw std::runtime_error("Failed to readlink: " + path);
-    }
-
-    if ( (size_t)r < linkname.size() ) {
-      const std::string result(linkname.begin(), linkname.begin()+r);
-      return result;
-    }
-    linkname.resize(2*linkname.size());
-  }
-}
-
 std::string getFilePathFromFD(int fd)
 {
   std::ostringstream oss;
   oss << "/dev/fd/" << fd;
 
-  return getRealPath(oss.str());
+  return oss.str();
 }
 
 }; // zim namespace
