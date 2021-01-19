@@ -47,8 +47,8 @@ struct less_range : public std::binary_function< Range, Range, bool>
   }
 };
 
-class FileCompound : private std::map<Range, FilePart<>*, less_range> {
-    typedef std::map<Range, FilePart<>*, less_range> ImplType;
+class FileCompound : private std::map<Range, FilePart*, less_range> {
+    typedef std::map<Range, FilePart*, less_range> ImplType;
 
   public: // types
     typedef const_iterator PartIterator;
@@ -92,7 +92,7 @@ class FileCompound : private std::map<Range, FilePart<>*, less_range> {
     }
 
   private: // functions
-    void addPart(FilePart<>* fpart);
+    void addPart(FilePart* fpart);
 
   private: // data
     std::string _filename;

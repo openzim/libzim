@@ -31,15 +31,16 @@
 
 namespace zim {
 
-template<typename FS=DEFAULTFS>
 class FilePart {
+  typedef DEFAULTFS FS;
+
   public:
-    using FDSharedPtr = std::shared_ptr<typename FS::FD>;
+    using FDSharedPtr = std::shared_ptr<FS::FD>;
 
   public:
     FilePart(const std::string& filename) :
         m_filename(filename),
-        m_fhandle(std::make_shared<typename FS::FD>(FS::openFile(filename))),
+        m_fhandle(std::make_shared<FS::FD>(FS::openFile(filename))),
         m_size(m_fhandle->getSize()) {}
     FilePart(int fd) :
         m_filename(""),
@@ -47,7 +48,7 @@ class FilePart {
         m_size(m_fhandle->getSize()) {}
     ~FilePart() = default;
     const std::string& filename() const { return m_filename; };
-    const typename FS::FD& fhandle() const { return *m_fhandle; };
+    const FS::FD& fhandle() const { return *m_fhandle; };
     const FDSharedPtr& shareable_fhandle() const { return m_fhandle; };
 
     zsize_t size() const { return m_size; };
