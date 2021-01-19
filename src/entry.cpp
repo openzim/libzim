@@ -61,7 +61,7 @@ Item Entry::getItem(bool follow) const
   if (isRedirect()) {
     if (! follow) {
       std::ostringstream sstream;
-      sstream << "Entry " << m_idx << " is a redirect entry.";
+      sstream << "Entry " << getPath() << " is a redirect entry.";
       throw InvalidType(sstream.str());
     }
     return getRedirect();
@@ -82,7 +82,7 @@ Item Entry::getRedirect() const {
 Entry Entry::getRedirectEntry() const  {
   if (!isRedirect()) {
     std::ostringstream sstream;
-    sstream << "Entry " << m_idx << " is not a redirect entry.";
+    sstream << "Entry " << getPath() << " is not a redirect entry.";
     throw InvalidType(sstream.str());
   }
   return Entry(m_file, static_cast<entry_index_type>(m_dirent->getRedirectIndex()));
