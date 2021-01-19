@@ -101,6 +101,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile, offset_t offset, zsize_t size)
     : zimFile(_zimFile),
+      archiveStartOffset(offset),
       zimReader(makeFileReader(zimFile, offset, size)),
       bufferDirentZone(256),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
