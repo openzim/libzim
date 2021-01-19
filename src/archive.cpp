@@ -34,6 +34,7 @@ namespace zim
     : m_impl(new FileImpl(fname))
     { }
 
+#ifndef _WIN32
   Archive::Archive(int fd)
     : m_impl(new FileImpl(fd))
     { }
@@ -41,6 +42,7 @@ namespace zim
   Archive::Archive(int fd, offset_type offset, size_type size)
     : m_impl(new FileImpl(fd, offset_t(offset), zsize_t(size)))
     { }
+#endif
 
   const std::string& Archive::getFilename() const
   {

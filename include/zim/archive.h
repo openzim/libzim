@@ -67,9 +67,12 @@ namespace zim
        */
       explicit Archive(const std::string& fname);
 
+#ifndef _WIN32
       /** Archive constructor.
        *
        *  Construct an archive from a file descriptor.
+       *
+       *  Note: This function is not available under Windows.
        *
        *  @param fd The descriptor of a seekable file representing a ZIM archive
        */
@@ -80,6 +83,8 @@ namespace zim
        *  Construct an archive from a descriptor of a file with an embedded ZIM
        *  archive inside.
        *
+       *  Note: This function is not available under Windows.
+       *
        *  @param fd The descriptor of a seekable file with a continuous segment
        *  representing a complete ZIM archive.
        *  @param offset The offset of the ZIM archive relative to the beginning
@@ -87,6 +92,7 @@ namespace zim
        *  @param size The size of the ZIM archive.
        */
       Archive(int fd, offset_type offset, size_type size);
+#endif
 
       /** Return the filename of the zim file.
        *

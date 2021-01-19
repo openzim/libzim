@@ -367,6 +367,7 @@ TEST(ZimArchive, multipart)
 # define OPEN_READ_ONLY(path) open(path, O_RDONLY)
 #endif
 
+#ifndef _WIN32
 TEST(ZimArchive, openByFD)
 {
   const zim::Archive archive1("./data/small.zim");
@@ -384,6 +385,7 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 
   checkEquivalence(archive1, archive2);
 }
+#endif
 
 zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
 {
@@ -411,6 +413,7 @@ TEST(ZimArchive, getDirectAccessInformation)
   ASSERT_NE(0, checkedItemCount);
 }
 
+#ifndef _WIN32
 TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
   const int fd = OPEN_READ_ONLY("./data/small.zim");
@@ -449,5 +452,6 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
   }
   ASSERT_NE(0, checkedItemCount);
 }
+#endif
 
 } // unnamed namespace

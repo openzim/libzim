@@ -77,8 +77,10 @@ namespace zim
       using FindxTitleResult = std::pair<bool, title_index_t>;
 
       explicit FileImpl(const std::string& fname);
+#ifndef _WIN32
       explicit FileImpl(int fd);
       FileImpl(int fd, offset_t offset, zsize_t size);
+#endif
 
       offset_t getArchiveStartOffset() const { return archiveStartOffset; }
       time_t getMTime() const;
