@@ -31,7 +31,10 @@ namespace zim
 
   class Item
   {
-    public:
+    public: // types
+      typedef std::pair<std::string, offset_type> DirectAccessInfo;
+
+    public: // functions
       explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
 
       std::string getTitle() const;
@@ -74,13 +77,13 @@ namespace zim
        *
        * @return A pair of filename/offset specifying where read the content.
        *         If it is not possible to have direct access for this item,
-       *         return a pair of `""/0`
+       *         return a pair of `{"", 0}`
        */
-      std::pair<std::string, offset_type> getDirectAccessInformation() const;
+      DirectAccessInfo getDirectAccessInformation() const;
 
       entry_index_type getIndex() const   { return m_idx; }
 
-    private:
+    private: // data
       std::shared_ptr<FileImpl> m_file;
       entry_index_type m_idx;
       std::shared_ptr<const Dirent> m_dirent;
