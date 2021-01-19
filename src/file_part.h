@@ -42,10 +42,10 @@ class FilePart {
         m_filename(filename),
         m_fhandle(std::make_shared<FS::FD>(FS::openFile(filename))),
         m_size(m_fhandle->getSize()) {}
+#ifndef _WIN32
     FilePart(int fd) :
-        m_filename(""),
-        m_fhandle(std::make_shared<typename FS::FD>(fd)),
-        m_size(m_fhandle->getSize()) {}
+        FilePart(getFilePathFromFD(fd)) {}
+#endif
     ~FilePart() = default;
     const std::string& filename() const { return m_filename; };
     const FS::FD& fhandle() const { return *m_fhandle; };
