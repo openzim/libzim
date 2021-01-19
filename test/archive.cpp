@@ -21,6 +21,7 @@
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/item.h>
+#include <zim/search.h>
 
 #include "tools.h"
 #include "../src/fs.h"
@@ -281,6 +282,8 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
   EXPECT_EQ(archive1.getClusterCount(), archive2.getClusterCount());
 
   ASSERT_EQ(archive1.getEntryCount(), archive2.getEntryCount());
+  const zim::Entry mainEntry = archive1.getMainEntry();
+  ASSERT_EQ(mainEntry.getTitle(), archive2.getMainEntry().getTitle());
 
   ASSERT_NE(0, archive1.getEntryCount()); // ==> below loop is not a noop
   {
@@ -324,6 +327,22 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
       ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
     }
   }
+
+  if ( archive1.hasTitleIndex() )
+  {
+    zim::Search search1(archive1);
+    zim::Search search2(archive2);
+    search1.set_suggestion_mode(true);
+    search2.set_suggestion_mode(true);
+    search1.set_query(mainEntry.getTitle());
+    search2.set_query(mainEntry.getTitle());
+    ASSERT_NE(0, search1.get_matches_estimated());
+    ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
+    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
+    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_url());
+    ASSERT_EQ(std::distance(search1.begin(), search1.end()),
+              std::distance(search2.begin(), search2.end()));
+  }
 }
 
 TEST(ZimArchive, multipart)
@@ -350,8 +369,8 @@ TEST(ZimArchive, multipart)
 
 TEST(ZimArchive, openByFD)
 {
-  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
-  const int fd = OPEN_READ_ONLY("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const zim::Archive archive1("./data/small.zim");
+  const int fd = OPEN_READ_ONLY("./data/small.zim");
   const zim::Archive archive2(fd);
 
   checkEquivalence(archive1, archive2);
