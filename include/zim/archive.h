@@ -67,6 +67,7 @@ namespace zim
        */
       explicit Archive(const std::string& fname);
 
+#ifndef _WIN32
       /** Archive constructor.
        *
        *  Construct an archive from a file descriptor.
@@ -87,6 +88,7 @@ namespace zim
        *  @param size The size of the ZIM archive.
        */
       Archive(int fd, offset_type offset, size_type size);
+#endif
 
       /** Return the filename of the zim file.
        *

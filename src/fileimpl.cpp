@@ -87,6 +87,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     : FileImpl(std::make_shared<FileCompound>(fname))
   {}
 
+#ifndef _WIN32
   FileImpl::FileImpl(int fd)
     : FileImpl(std::make_shared<FileCompound>(fd))
   {}
@@ -94,6 +95,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   FileImpl::FileImpl(int fd, offset_t offset, zsize_t size)
     : FileImpl(std::make_shared<FileCompound>(fd), offset, size)
   {}
+#endif
 
   FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)
     : FileImpl(_zimFile, offset_t(0), _zimFile->fsize())
