@@ -91,6 +91,7 @@ std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
   }
   auto range = first_part->first;
   auto part = first_part->second;
-  auto local_offset = full_offset - range.min;
-  return std::make_pair(part->filename(), offset_type(local_offset));
+  const offset_type local_offset(full_offset - range.min);
+  const offset_type offset = local_offset + m_file->getArchiveStartOffset().v;
+  return std::make_pair(part->filename(), offset);
 }
