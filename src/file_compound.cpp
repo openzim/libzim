@@ -33,7 +33,7 @@
 
 namespace zim {
 
-void FileCompound::addPart(FilePart<>* fpart)
+void FileCompound::addPart(FilePart* fpart)
 {
   const Range newRange(offset_t(_fsize.v), offset_t((_fsize+fpart->size()).v));
   emplace(newRange, fpart);
@@ -45,7 +45,7 @@ FileCompound::FileCompound(const std::string& filename):
   _fsize(0)
 {
   try {
-    addPart(new FilePart<>(filename));
+    addPart(new FilePart(filename));
   } catch(...) {
     int errnoSave = errno;
     _fsize = zsize_t(0);
@@ -55,7 +55,7 @@ FileCompound::FileCompound(const std::string& filename):
         const std::string fname0 = filename + ch0;
         for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
         {
-          addPart(new FilePart<>(fname0 + ch1));
+          addPart(new FilePart(fname0 + ch1));
         }
       }
     } catch (...) { }
@@ -73,7 +73,7 @@ FileCompound::FileCompound(int fd):
   _filename(),
   _fsize(0)
 {
-  addPart(new FilePart<>(fd));
+  addPart(new FilePart(fd));
 }
 
 FileCompound::~FileCompound() {
