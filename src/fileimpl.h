@@ -111,7 +111,11 @@ namespace zim
 
       entry_index_t getStartUserEntry() const { return m_startUserEntry; }
       entry_index_t getEndUserEntry() const { return m_endUserEntry; }
+      // The number of entries added by the creator. (So excluding index, ...).
+      // On new namespace scheme, number of entries in C namespace
       entry_index_t getUserEntryCount() const { return m_endUserEntry - m_startUserEntry; }
+      // The number of enties that can be considered as front article (no resource)
+      entry_index_t getFrontEntryCount() const;
 
       bool hasNamespace(char ch) const;
 

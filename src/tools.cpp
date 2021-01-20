@@ -26,7 +26,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
+#include <random>
 #include <errno.h>
 
 #ifdef _WIN32
@@ -113,4 +115,14 @@ std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
   auto shortPath = longPath.substr(std::min<unsigned int>(i+2, (unsigned int)longPath.size()));
 
   return std::make_tuple(ns, shortPath);
+}
+
+uint32_t zim::randomNumber(uint32_t max)
+{
+  static std::default_random_engine random(
+    std::chrono::system_clock::now().time_since_epoch().count());
+  static std::mutex mutex;
+
+  std::lock_guard<std::mutex> l(mutex);
+  return ((double)random() / random.max()) * max;
 }

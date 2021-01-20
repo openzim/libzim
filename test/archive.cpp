@@ -22,6 +22,7 @@
 #include <zim/archive.h>
 #include <zim/item.h>
 #include <zim/search.h>
+#include <zim/error.h>
 
 #include "tools.h"
 #include "../src/fs.h"
@@ -149,6 +150,31 @@ TEST(ZimArchive, openRealZimArchive)
     EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
     if ( archive ) {
       EXPECT_TRUE( archive->check() ) << ctx;
+    }
+  }
+}
+
+TEST(ZimArchive, randomEntry)
+{
+  const char* const zimfiles[] = {
+    "small.zim",
+    "wikibooks_be_all_nopic_2017-02.zim",
+    "wikibooks_be_all_nopic_2017-02_splitted.zim",
+    "wikipedia_en_climate_change_nopic_2020-01.zim"
+  };
+
+  for ( const std::string fname : zimfiles ) {
+    const auto path = zim::DEFAULTFS::join("data", fname);
+    const TestContext ctx{ {"path", path } };
+    const zim::Archive archive(path);
+    try {
+      auto randomEntry = archive.getRandomEntry();
+      const auto item = randomEntry.getItem(true);
+      ASSERT_TRUE(item.getMimetype().find("text/html") != std::string::npos) << ctx;
+    } catch (zim::EntryNotFound& e) {
+      FAIL() << "Impossible to find a random Entry in " << fname << ".\n"
+             << "This may occur even if this is not a bug (random will be random).\n"
+             << "Please re-run the tests.";
     }
   }
 }

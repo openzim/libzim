@@ -188,6 +188,25 @@ namespace zim
     }
   }
 
+  Entry Archive::getRandomEntry() const {
+    auto frontEntryCount = m_impl->getFrontEntryCount().v;
+    if (frontEntryCount == 0) {
+      throw EntryNotFound("Cannot find valid random entry (no front entry at all)");
+    }
+    int watchdog = 42;
+    while(--watchdog) {
+      auto idx = randomNumber(frontEntryCount-1);
+      auto entry =  getEntryByTitle(idx);
+      auto item = entry.getItem(true);
+
+      if (item.getMimetype().find("text/html") == std::string::npos) {
+        continue;
+      }
+      return entry;
+    }
+    throw EntryNotFound("Cannot find valid random entry");
+  }
+
   bool Archive::hasFulltextIndex() const {
     auto r = m_impl->findx('X', "fulltext/xapian");
     if (!r.first) {
@@ -278,7 +297,7 @@ namespace zim
     entry_index_t begin_idx, end_idx;
     if (path.empty() || path == "/") {
       begin_idx = m_impl->getStartUserEntry();
-      end_idx = m_impl->getEndUserEntry(); 
+      end_idx = m_impl->getEndUserEntry();
     } else if (m_impl->hasNewNamespaceScheme()) {
       begin_idx = m_impl->findx('C', path).second;
       path.back()++;
@@ -297,7 +316,7 @@ namespace zim
         path.back()++;
       }
       end_idx = m_impl->findx(ns, path).second;
-    } 
+    }
     return Archive::EntryRange<EntryOrder::pathOrder>(m_impl, begin_idx.v, end_idx.v);
   }
 

@@ -212,6 +212,16 @@ namespace zim
        */
       Entry getFaviconEntry() const;
 
+
+      /** Get a random entry.
+       *
+       * The entry is picked randomly from the front artice list.
+       *
+       * @return A random entry.
+       * @exception EntryNotFound If no valid random entry can be found.
+       */
+      Entry getRandomEntry() const;
+
       /** Check in an entry has path in the archive.
        *
        *  @param path The entry's path.
