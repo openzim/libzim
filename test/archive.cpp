@@ -336,6 +336,8 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     search2.set_suggestion_mode(true);
     search1.set_query(mainEntry.getTitle());
     search2.set_query(mainEntry.getTitle());
+    search1.set_range(0, archive1.getEntryCount());
+    search2.set_range(0, archive2.getEntryCount());
     ASSERT_NE(0, search1.get_matches_estimated());
     ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
     ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
