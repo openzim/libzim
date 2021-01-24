@@ -328,6 +328,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     }
   }
 
+#if defined(ENABLE_XAPIAN)
   if ( archive1.hasTitleIndex() )
   {
     zim::Search search1(archive1);
@@ -345,6 +346,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     ASSERT_EQ(std::distance(search1.begin(), search1.end()),
               std::distance(search2.begin(), search2.end()));
   }
+#endif
 }
 
 TEST(ZimArchive, multipart)
