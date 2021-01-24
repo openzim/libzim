@@ -16,9 +16,12 @@ tests = [
     'decoderstreamreader',
     'rawstreamreader',
     'bufferstreamer',
-    'parseLongPath',
-    'search'
+    'parseLongPath'
 ]
+
+if xapian_dep.found()
+    tests += ['search']
+endif
 
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
