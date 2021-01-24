@@ -34,6 +34,7 @@ TEST(Search, searchByTitle)
   zim::Search search(archive);
   search.set_suggestion_mode(true);
   search.set_query(mainEntry.getTitle());
+  search.set_range(0, archive.getEntryCount());
   ASSERT_NE(0, search.get_matches_estimated());
   ASSERT_EQ(mainEntry.getPath(), search.begin().get_url());
 }
