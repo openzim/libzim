@@ -180,7 +180,7 @@ namespace zim
 
         // configuration
         bool m_verbose = false;
-        CompressionType m_compression = zimcompLzma;
+        CompressionType m_compression = zimcompZstd;
         bool m_withIndex = false;
         size_t m_minClusterSize = 1024-64;
         std::string m_indexingLanguage;
