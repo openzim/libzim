@@ -83,6 +83,8 @@ namespace zim
         uint16_t getMimeTypeIdx(const std::string& mimeType);
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
+        void addError(const std::exception_ptr error);
+        bool isErrored() const;
         void quitAllThreads();
 
         DirentPool  pool;
@@ -101,6 +103,9 @@ namespace zim
         TaskQueue taskList;
         ThreadList workerThreads;
         std::thread  writerThread;
+        mutable std::mutex m_exceptionLock;
+        std::exception_ptr m_exceptionSlot;
+        std::atomic<bool> m_errored;
         const Compression compression;
         std::string zimName;
         std::string tmpFileName;

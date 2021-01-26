@@ -39,14 +39,18 @@ namespace zim
       Task* task;
       unsigned int wait = 0;
 
-      while(true) {
+      while(!creatorData->isErrored()) {
         microsleep(wait);
         wait += 100;
         if (creatorData->taskList.popFromQueue(task)) {
           if (task == nullptr) {
             return nullptr;
           }
-          task->run(creatorData);
+          try {
+            task->run(creatorData);
+          } catch (...) {
+            creatorData->addError(std::current_exception());
+          }
           delete task;
           wait = 0;
         }
@@ -58,7 +62,7 @@ namespace zim
       auto creatorData = static_cast<zim::writer::CreatorData*>(arg);
       Cluster* cluster;
       unsigned int wait = 0;
-      while(true) {
+      while(!creatorData->isErrored()) {
         microsleep(wait);
         wait += 100;
         if(creatorData->clusterToWrite.getHead(cluster)) {
@@ -71,7 +75,11 @@ namespace zim
           }
           creatorData->clusterToWrite.popFromQueue(cluster);
           cluster->setOffset(offset_t(lseek(creatorData->out_fd, 0, SEEK_CUR)));
-          cluster->write(creatorData->out_fd);
+          try {
+            cluster->write(creatorData->out_fd);
+          } catch (...) {
+            creatorData->addError(std::current_exception());
+          }
           cluster->clear_data();
           wait = 0;
         }

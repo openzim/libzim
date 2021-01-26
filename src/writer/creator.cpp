@@ -152,6 +152,7 @@ namespace zim
 
     void Creator::addItem(std::shared_ptr<Item> item)
     {
+      checkError();
       bool compressContent = item->getAmendedHints()[COMPRESS];
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
@@ -164,12 +165,14 @@ namespace zim
 
     void Creator::addMetadata(const std::string& name, const std::string& content, const std::string& mimetype)
     {
+      checkError();
       auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
       addMetadata(name, std::move(provider), mimetype);
     }
 
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
+      checkError();
       auto compressContent = isCompressibleMimetype(mimetype);
       auto dirent = data->createDirent(NS::M, name, mimetype, "");
       data->addItemData(dirent, std::move(provider), compressContent);
@@ -178,12 +181,14 @@ namespace zim
 
     void Creator::addIllustration(unsigned int size, const std::string& content)
     {
+      checkError();
       auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
       addIllustration(size, std::move(provider));
     }
 
     void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider)
     {
+      checkError();
       std::stringstream ss;
       ss << "Illustration_" << size << "x" << size << "@1";
       addMetadata(ss.str(), std::move(provider), "image/png");
@@ -191,6 +196,7 @@ namespace zim
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
+      checkError();
       auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
@@ -201,6 +207,7 @@ namespace zim
 
     void Creator::finishZimCreation()
     {
+      checkError();
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.
@@ -265,13 +272,16 @@ namespace zim
 
       TINFO("Waiting for workers");
       // wait all cluster compression has been done
+      // If we are in error state, threads have been stoped and waiting_task
+      // will never reach 0, so no need to wait.
       unsigned int wait = 0;
       do {
         microsleep(wait);
         wait += 10;
-      } while(ClusterTask::waiting_task.load() > 0);
+      } while(ClusterTask::waiting_task.load() > 0 && !data->isErrored());
 
       data->quitAllThreads();
+      checkError();
 
       // Delete all handler (they will clean there own data)
       data->m_direntHandlers.clear();
@@ -382,6 +392,19 @@ namespace zim
       _write(out_fd, reinterpret_cast<const char*>(digest), 16);
     }
 
+    void Creator::checkError()
+    {
+      if (data->m_errored) {
+        throw std::runtime_error("Creator is in error state");
+      }
+      std::lock_guard<std::mutex> l(data->m_exceptionLock);
+      if (data->m_exceptionSlot) {
+        std::cerr << "ERROR Detected" << std::endl;
+        data->m_errored = true;
+        std::rethrow_exception(data->m_exceptionSlot);
+      }
+    }
+
     CreatorData::CreatorData(const std::string& fname,
                                    bool verbose,
                                    bool withIndex,
@@ -389,6 +412,7 @@ namespace zim
                                    Compression c,
                                    size_t clusterSize)
       : mainPageDirent(nullptr),
+        m_errored(false),
         compression(c),
         zimName(fname),
         tmpFileName(fname + ".tmp"),
@@ -457,6 +481,24 @@ namespace zim
       if ( ! tmpFileName.empty() ) {
         DEFAULTFS::removeFile(tmpFileName);
       }
+    }
+
+    void CreatorData::addError(const std::exception_ptr exception)
+    {
+      std::lock_guard<std::mutex> l(m_exceptionLock);
+      m_exceptionSlot = exception;
+    }
+
+    bool CreatorData::isErrored() const
+    {
+      if (m_errored) {
+        return true;
+      }
+      std::lock_guard<std::mutex> l(m_exceptionLock);
+      if (m_exceptionSlot) {
+        return true;
+      }
+      return false;
     }
 
     void CreatorData::quitAllThreads() {

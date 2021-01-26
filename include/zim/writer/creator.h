@@ -226,6 +226,7 @@ namespace zim
 
         void fillHeader(Fileheader* header) const;
         void writeLastParts() const;
+        void checkError();
     };
   }
 
