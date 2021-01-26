@@ -260,6 +260,18 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return { false, entry_index_t(0) };
   }
 
+  static inline int direntCompareTitle(char ns, const std::string& title, const Dirent& dirent)
+  {
+    auto direntNs = dirent.getNamespace();
+    if (ns < direntNs) {
+      return -1;
+    }
+    if (ns > direntNs) {
+      return 1;
+    }
+    return title.compare(dirent.getTitle());
+  }
+
   FileImpl::FindxTitleResult FileImpl::findxByTitle(char ns, const std::string& title)
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
@@ -280,9 +292,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       entry_index_type p = l + (u - l) / 2;
       auto d = getDirentByTitle(title_index_t(p));
 
-      int c = ns < d->getNamespace() ? -1
-            : ns > d->getNamespace() ? 1
-            : title.compare(d->getTitle());
+      int c = direntCompareTitle(ns, title, *d);
 
       if (c < 0)
         u = p;
@@ -296,7 +306,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     }
 
     auto d = getDirentByTitle(title_index_t(l));
-    int c = title.compare(d->getTitle());
+    int c = direntCompareTitle(ns, title, *d);
 
     if (c == 0)
     {
