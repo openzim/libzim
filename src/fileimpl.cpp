@@ -272,8 +272,8 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
-    entry_index_type l = entry_index_type(getNamespaceBeginOffset(ns));
-    entry_index_type u = entry_index_type(getNamespaceEndOffset(ns));
+    entry_index_type l = 0;
+    entry_index_type u = entry_index_type(mp_titleDirentAccessor->getDirentCount());
 
     if (l == u)
     {
