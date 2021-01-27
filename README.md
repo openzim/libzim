@@ -6,14 +6,13 @@ format. It's a solution to read and write ZIM files on many systems
 and architectures. More information about the ZIM format and the
 openZIM project at https://openzim.org/.
 
-[![latest release](https://img.shields.io/github/v/tag/openzim/libzim?label=latest%20release&sort=semver)](https://download.openzim.org/release/libzim/)
-[![Build Status](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amaster)](https://github.com/openzim/libzim/actions?query=branch%3Amaster)
-[![Doc Status](https://readthedocs.org/projects/libzim/badge/?style=flat)](https://libzim.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/openzim/libzim/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
+[![Release](https://img.shields.io/github/v/tag/openzim/libzim?label=release&sort=semver)](https://download.openzim.org/release/libzim/)
+[![Reporitories](https://img.shields.io/repology/repositories/zimlib?label=repositories)](https://github.com/openzim/libzim/wiki/Repology)
+[![License](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![Build](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amaster)](https://github.com/openzim/libzim/actions?query=branch%3Amaster)
+[![Doc](https://readthedocs.org/projects/libzim/badge/?style=flat)](https://libzim.readthedocs.io/en/latest/?badge=latest)
+[![Codecov](https://codecov.io/gh/openzim/libzim/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
-[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/zimlib.svg)](https://repology.org/project/zimlib/versions)
 
 Disclaimer
 ----------
