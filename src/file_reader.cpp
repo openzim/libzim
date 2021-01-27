@@ -86,9 +86,8 @@ char MultiPartFileReader::read(offset_t offset) const {
   return ret;
 }
 
-
 void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <, _size.v);
+  ASSERT(offset.v, <=, _size.v);
   ASSERT(offset.v+size.v, <=, _size.v);
   if (! size ) {
     return;
@@ -250,7 +249,7 @@ char FileReader::read(offset_t offset) const
 
 void FileReader::read(char* dest, offset_t offset, zsize_t size) const
 {
-  ASSERT(offset.v, <, _size.v);
+  ASSERT(offset.v, <=, _size.v);
   ASSERT(offset.v+size.v, <=, _size.v);
   if (! size ) {
     return;
