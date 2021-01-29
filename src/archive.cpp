@@ -272,15 +272,28 @@ namespace zim
     // A findx with a will return 0
     // A find with b will return 4
     entry_index_t begin_idx, end_idx;
-    if (m_impl->hasNewNamespaceScheme()) {
+    if (path.empty() || path == "/") {
+      begin_idx = m_impl->getStartUserEntry();
+      end_idx = m_impl->getEndUserEntry(); 
+    } else if (m_impl->hasNewNamespaceScheme()) {
       begin_idx = m_impl->findx('C', path).second;
       path.back()++;
       end_idx = m_impl->findx('C', path).second;
     } else {
-      begin_idx = m_impl->findx(path).second;
-      path.back()++;
-      end_idx = m_impl->findx(path).second;
-    }
+      char ns;
+      try {
+        std::tie(ns, path) = parseLongPath(path);
+      } catch (...) {
+        return Archive::EntryRange<EntryOrder::pathOrder>(m_impl, 0, 0);
+      }
+      begin_idx = m_impl->findx(ns, path).second;
+      if (path.empty()) {
+        ns++;
+      } else {
+        path.back()++;
+      }
+      end_idx = m_impl->findx(ns, path).second;
+    } 
     return Archive::EntryRange<EntryOrder::pathOrder>(m_impl, begin_idx.v, end_idx.v);
   }
 

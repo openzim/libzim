@@ -46,9 +46,13 @@ TEST(FindTests, NotFoundByPath)
     auto range0 = archive.findByPath("unkwonUrl");
     auto range1 = archive.findByPath("U/unkwonUrl");
     auto range2 = archive.findByPath("A/unkwonUrl");
+    auto range3 = archive.findByPath("X");
+    auto range4 = archive.findByPath("X/");
     ASSERT_EQ(range0.begin(), range0.end());
     ASSERT_EQ(range1.begin(), range1.end());
     ASSERT_EQ(range2.begin(), range2.end());
+    ASSERT_EQ(range3.begin(), range3.end());
+    ASSERT_EQ(range4.begin(), range4.end());
 }
 
 // Found cases
@@ -103,6 +107,10 @@ TEST(FindTests, ByPath)
     auto range0 = archive.findByPath("A/Main_Page.html");
     auto range1 = archive.findByPath("I/s/");
     auto range2 = archive.findByPath("-/j/head.js");
+    auto range3 = archive.findByPath("I");
+    auto range4 = archive.findByPath("I/");
+    auto range5 = archive.findByPath("");
+    auto range6 = archive.findByPath("/");
 
     ASSERT_EQ(range0.begin()->getIndex(), 5);
     auto count = 0;
@@ -122,12 +130,45 @@ TEST(FindTests, ByPath)
     ASSERT_EQ(count, 31);
 
     ASSERT_EQ(range2.begin()->getIndex(), 2);
-     count = 0;
+    count = 0;
     for(auto& entry: range2) {
       count++;
       ASSERT_EQ(entry.getPath().find("-/j/head.js"), 0);
     }
     ASSERT_EQ(count, 1);
+
+    ASSERT_EQ(range3.begin()->getIndex(), 75);
+    count = 0;
+    for(auto& entry: range3) {
+      count++;
+      std::cout << entry.getPath() << std::endl;
+      ASSERT_EQ(entry.getPath().find("I"), 0);
+    }
+    ASSERT_EQ(count, 34);
+
+    ASSERT_EQ(range4.begin()->getIndex(), 75);
+    count = 0;
+    for(auto& entry: range4) {
+      count++;
+      std::cout << entry.getPath() << std::endl;
+      ASSERT_EQ(entry.getPath().find("I/"), 0);
+    }
+    ASSERT_EQ(count, 34);
+
+    ASSERT_EQ(range5.begin()->getIndex(), 0);
+    count = 0;
+    for(auto& entry: range5) {
+      count++;
+    }
+    ASSERT_EQ(count, 118);
+
+    ASSERT_EQ(range6.begin()->getIndex(), 0);
+    count = 0;
+    for(auto& entry: range6) {
+      count++;
+    }
+    ASSERT_EQ(count, 118);
+    
 }
 
 } // namespace

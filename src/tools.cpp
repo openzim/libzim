@@ -106,11 +106,11 @@ std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
 {
   /* Index of the namespace char; discard '/' from absolute paths */
   const unsigned int i = (longPath[0] == '/') ? 1 : 0;
-  if (i + 2 >= longPath.size() || longPath[i] == '/' || longPath[i+1] != '/')
+  if (i + 1 > longPath.size() || longPath[i] == '/' || (i + 1 < longPath.size() && longPath[i+1] != '/'))
     throw std::runtime_error("Cannot parse path");
 
   auto ns = longPath[i];
-  auto shortPath = longPath.substr(i+2, std::string::npos);
+  auto shortPath = longPath.substr(std::min(i+2, (unsigned int)longPath.size()));
 
   return std::make_tuple(ns, shortPath);
 }
