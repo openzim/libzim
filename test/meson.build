@@ -3,6 +3,7 @@ subdir('data')
 tests = [
     'lrucache',
     'cluster',
+    'creator',
     'dirent',
     'header',
     'uuid',
