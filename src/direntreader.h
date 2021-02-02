@@ -37,18 +37,18 @@ class DirentReader
 {
 public: // functions
   explicit DirentReader(std::shared_ptr<const Reader> zimReader)
-    : zimReader_(zimReader)
+    : mp_zimReader(zimReader)
   {}
 
   std::shared_ptr<const Dirent> readDirent(offset_t offset);
 
-private:
-  bool initDirent(Dirent& dirent, const Blob& direntData) const;
-
+private: // functions
+  bool initDirent(Dirent& dirent, const Buffer& direntData) const;
+  
 private: // data
-  std::shared_ptr<const Reader> zimReader_;
-  std::vector<char> buffer_;
-  std::mutex bufferMutex_;
+  std::shared_ptr<const Reader> mp_zimReader;
+  std::vector<char> m_buffer;
+  std::mutex m_bufferMutex;
 };
 
 } // namespace zim

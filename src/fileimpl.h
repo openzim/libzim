@@ -47,10 +47,7 @@ namespace zim
       std::shared_ptr<FileCompound> zimFile;
       offset_t archiveStartOffset;
       std::shared_ptr<Reader> zimReader;
-<<<<<<< HEAD
-=======
-      DirentReader direntReader;
->>>>>>> bb6fd44... Enter DirentReader
+      std::shared_ptr<DirentReader> direntReader;
       Fileheader header;
 
       std::unique_ptr<const Reader> clusterOffsetReader;

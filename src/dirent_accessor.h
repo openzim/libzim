@@ -33,7 +33,7 @@ namespace zim
 
 class Dirent;
 class Reader;
-class FileReader;
+class DirentReader;
 
 /**
  * DirectDirentAccessor is used to access a dirent from its index.
@@ -46,7 +46,7 @@ class FileReader;
 class DirectDirentAccessor
 {
 public: // functions
-  DirectDirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
+  DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
 
   offset_t    getOffset(entry_index_t idx) const;
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
@@ -56,7 +56,7 @@ private: // functions
   std::shared_ptr<const Dirent> readDirent(offset_t) const;
 
 private: // data
-  std::shared_ptr<FileReader>    mp_zimReader;
+  std::shared_ptr<DirentReader>  mp_direntReader;
   std::unique_ptr<const Reader>  mp_urlPtrReader;
   entry_index_t                  m_direntCount;
 

@@ -19,7 +19,7 @@
 
 #include "dirent_accessor.h"
 
-#include "file_reader.h"
+#include "direntreader.h"
 #include "_dirent.h"
 #include "envvalue.h"
 
@@ -27,8 +27,8 @@
 
 using namespace zim;
 
-DirectDirentAccessor::DirectDirentAccessor(std::shared_ptr<FileReader> zimReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)
-  : mp_zimReader(zimReader),
+DirectDirentAccessor::DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount)
+  : mp_direntReader(direntReader),
     mp_urlPtrReader(std::move(urlPtrReader)),
     m_direntCount(direntCount),
     m_direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
@@ -64,39 +64,7 @@ offset_t DirectDirentAccessor::getOffset(entry_index_t idx) const
 
 std::shared_ptr<const Dirent> DirectDirentAccessor::readDirent(offset_t offset) const
 {
-  // We don't know the size of the dirent because it depends of the size of
-  // the title, url and extra parameters.
-  // This is a pitty but we have no choices.
-  // We cannot take a buffer of the size of the file, it would be really inefficient.
-  // Let's do try, catch and retry while chosing a smart value for the buffer size.
-  // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
-  // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
-  std::shared_ptr<const Dirent> dirent;
-  {
-    std::lock_guard<std::mutex> l(m_bufferDirentLock);
-    zsize_t bufferSize = zsize_t(256);
-    // On very small file, the offset + 256 is higher than the size of the file,
-    // even if the file is valid.
-    // So read only to the end of the file.
-    auto totalSize = mp_zimReader->size();
-    if (offset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-offset.v);
-    while (true) {
-        m_bufferDirentZone.reserve(size_type(bufferSize));
-        mp_zimReader->read(m_bufferDirentZone.data(), offset, bufferSize);
-        auto direntBuffer = Buffer::makeBuffer(m_bufferDirentZone.data(), bufferSize);
-        try {
-          dirent = std::make_shared<const Dirent>(direntBuffer);
-        } catch (InvalidSize&) {
-          // buffer size is not enougth, try again :
-          bufferSize += 256;
-          continue;
-        }
-        // Success !
-        break;
-    }
-  }
-
-  return dirent;
+  return mp_direntReader->readDirent(offset);
 }
 
 

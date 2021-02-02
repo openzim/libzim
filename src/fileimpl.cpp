@@ -105,10 +105,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     : zimFile(_zimFile),
       archiveStartOffset(offset),
       zimReader(makeFileReader(zimFile, offset, size)),
-<<<<<<< HEAD
-=======
-      direntReader(zimReader),
->>>>>>> bb6fd44... Enter DirentReader
+      direntReader(new DirentReader(zimReader)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
       m_startUserEntry(0),
@@ -137,7 +134,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
                                          zsize_t(8*header.getArticleCount()));
 
     mp_urlDirentAccessor.reset(
-        new DirectDirentAccessor(zimReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
+        new DirectDirentAccessor(direntReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
 
 
     auto titleIndexReader = sectionSubReader(*zimReader,
@@ -367,77 +364,9 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
           std::sort(articleListByCluster.begin(), articleListByCluster.end());
       });
 
-<<<<<<< HEAD
       if (idx.v >= articleListByCluster.size())
         throw std::out_of_range("entry index out of range");
       return entry_index_t(articleListByCluster[idx.v].second);
-=======
-      if (idx >= articleListByCluster.size())
-          return std::pair<bool, article_index_t>(false, article_index_t(0));
-      return std::pair<bool, article_index_t>(true, article_index_t(articleListByCluster[idx].second));
-  }
-
-  FileCompound::PartRange
-  FileImpl::getFileParts(offset_t offset, zsize_t size)
-  {
-    return zimFile->locate(offset, size);
-  }
-
-  std::shared_ptr<const Dirent> FileImpl::getDirent(article_index_t idx)
-  {
-    log_trace("FileImpl::getDirent(" << idx << ')');
-
-    if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
-
-    pthread_mutex_lock(&direntCacheLock);
-    auto v = direntCache.get(idx.v);
-    if (v.hit())
-    {
-      log_debug("dirent " << idx << " found in cache; hits "
-                << direntCache.getHits() << " misses "
-                << direntCache.getMisses() << " ratio "
-                << direntCache.hitRatio() * 100 << "% fillfactor "
-                << direntCache.fillfactor());
-      pthread_mutex_unlock(&direntCacheLock);
-      return v.value();
-    }
-
-    log_debug("dirent " << idx << " not found in cache; hits "
-              << direntCache.getHits() << " misses " << direntCache.getMisses()
-              << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor "
-              << direntCache.fillfactor());
-    pthread_mutex_unlock(&direntCacheLock);
-
-    offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
-
-    const auto dirent = direntReader.readDirent(indexOffset);
-
-    log_debug("dirent read from " << indexOffset);
-    pthread_mutex_lock(&direntCacheLock);
-    direntCache.put(idx.v, dirent);
-    pthread_mutex_unlock(&direntCacheLock);
-
-    return dirent;
-  }
-
-  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(article_index_t idx)
-  {
-    if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
-    return getDirent(getIndexByTitle(idx));
-  }
-
-  article_index_t FileImpl::getIndexByTitle(article_index_t idx)
-  {
-    if (idx >= getCountArticles())
-      throw ZimFileFormatError("article index out of range");
-
-    article_index_t ret(titleIndexReader->read_uint<article_index_type>(
-                            offset_t(sizeof(article_index_t)*idx.v)));
-
-    return ret;
->>>>>>> bb6fd44... Enter DirentReader
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
