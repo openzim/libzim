@@ -37,22 +37,53 @@ namespace
 
 using namespace zim;
 
-void test_article_dirent(std::shared_ptr<const Dirent> dirent, char ns, const std::string& url, const std::string title, uint16_t mimetype, cluster_index_t clusterNumber, blob_index_t blobNumber) {
+template<typename T>
+struct Filter{
+  Filter() : active(false) {};
+  Filter(T value) : active(true), value(value) {};
+  bool active;
+  T    value;
+};
+
+template<>
+struct Filter<const std::string> {
+  Filter() : active(false) {};
+  Filter(std::string value) : active(true), value(value) {};
+  Filter(const char* value) : active(true), value(value) {};
+  bool active;
+  std::string value;
+};
+
+void test_article_dirent(
+  std::shared_ptr<const Dirent> dirent,
+  Filter<char> ns,
+  Filter<const std::string> url,
+  Filter<const std::string> title,
+  Filter<uint16_t> mimetype,
+  Filter<cluster_index_t> clusterNumber,
+  Filter<blob_index_t> blobNumber)
+{
   ASSERT_TRUE(dirent->isArticle());
-  ASSERT_EQ(dirent->getNamespace(), ns);
-  ASSERT_EQ(dirent->getUrl(), url);
-  ASSERT_EQ(dirent->getTitle(), title);
-  ASSERT_EQ(dirent->getMimeType(), mimetype);
-  ASSERT_EQ(dirent->getClusterNumber(), clusterNumber);
-  ASSERT_EQ(dirent->getBlobNumber(), blobNumber);
+  if (ns.active) ASSERT_EQ(dirent->getNamespace(), ns.value);
+  if (url.active) ASSERT_EQ(dirent->getUrl(), url.value);
+  if (title.active) ASSERT_EQ(dirent->getTitle(), title.value);
+  if (mimetype.active) ASSERT_EQ(dirent->getMimeType(), mimetype.value);
+  if (clusterNumber.active) ASSERT_EQ(dirent->getClusterNumber(), clusterNumber.value);
+  if (blobNumber.active) ASSERT_EQ(dirent->getBlobNumber(), blobNumber.value);
 }
 
-void test_redirect_dirent(std::shared_ptr<const Dirent> dirent, char ns, const std::string& url, const std::string title, entry_index_t target) {
+void test_redirect_dirent(
+  std::shared_ptr<const Dirent> dirent,
+  Filter<char> ns,
+  Filter<const std::string> url,
+  Filter<const std::string> title,
+  Filter<entry_index_t> target)
+{
   ASSERT_TRUE(dirent->isRedirect());
-  ASSERT_EQ(dirent->getNamespace(), ns);
-  ASSERT_EQ(dirent->getUrl(), url);
-  ASSERT_EQ(dirent->getTitle(), title);
-  ASSERT_EQ(dirent->getRedirectIndex(), target);
+  if (ns.active) ASSERT_EQ(dirent->getNamespace(), ns.value);
+  if (url.active) ASSERT_EQ(dirent->getUrl(), url.value);
+  if (title.active) ASSERT_EQ(dirent->getTitle(), title.value);
+  if (target.active) ASSERT_EQ(dirent->getRedirectIndex(), target.value);
 }
 
 TEST(ZimCreator, createEmptyZim)
