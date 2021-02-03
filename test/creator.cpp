@@ -26,6 +26,8 @@
 #include "../src/file_compound.h"
 #include "../src/file_reader.h"
 #include "../src/direntreader.h"
+#include "../src/dirent_accessor.h"
+#include "../src/_dirent.h"
 #include "../src/fileheader.h"
 #include "../src/cluster.h"
 #include "../src/rawstreamreader.h"
@@ -106,34 +108,64 @@ TEST(ZimCreator, createEmptyZim)
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  ASSERT_EQ(header.getArticleCount(), 1); // xapiantitleIndex
+  entry_index_type nb_entry = 3; // xapiantitleIndex and titleListIndexes (*2)
+  int xapian_mimetype = 0;
+  int listing_mimetype = 1;
+#else
+  entry_index_type nb_entry = 2; // titleListIndexes (*2)
+  int listing_mimetype = 0;
+#endif
+  ASSERT_EQ(header.getArticleCount(), nb_entry);
 
   //Read the only one item existing.
-  auto urlPtrPos = offset_t(header.getUrlPtrPos());
-  auto direntOffset = offset_t(reader->read_uint<offset_type>(urlPtrPos));
+  auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
+  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(urlPtrReader), entry_index_t(header.getArticleCount()));
+  std::shared_ptr<const Dirent> dirent;
 
-  DirentReader direntReader(reader);
-  auto dirent = direntReader.readDirent(direntOffset);
-  test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", 0, cluster_index_t(0), blob_index_t(0));
-#else
-  ASSERT_EQ(header.getArticleCount(), 0);
+  dirent = direntAccessor.getDirent(entry_index_t(0));
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(0), None);
+  auto v0BlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(1));
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(0), None);
+  auto v1BlobIndex = dirent->getBlobNumber();
+
+#if defined(ENABLE_XAPIAN)
+  dirent = direntAccessor.getDirent(entry_index_t(2));
+  test_article_dirent(dirent, 'X', "title/xapian", None, xapian_mimetype, cluster_index_t(0), None);
 #endif
+
+  auto clusterPtrPos = header.getClusterPtrPos();
+  auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos)));
+  auto cluster = Cluster::read(*reader, clusterOffset);
+  ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompNone);
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry));
+  auto blob = cluster->getBlob(v0BlobIndex);
+  ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
+  blob = cluster->getBlob(v1BlobIndex);
+  ASSERT_EQ(blob.size(), 0);
 }
 
 
 class TestItem : public writer::Item
 {
   public:
-    TestItem()  { }
+    TestItem(const std::string& path, const std::string& title, const std::string& content):
+     path(path), title(title), content(content)  { }
     virtual ~TestItem() = default;
 
-    virtual std::string getPath() const { return "foo"; };
-    virtual std::string getTitle() const { return "Foo"; };
+    virtual std::string getPath() const { return path; };
+    virtual std::string getTitle() const { return title; };
     virtual std::string getMimeType() const { return "text/html"; };
+    virtual writer::Hints getHints() const { return { { writer::FRONT_ARTICLE, 1 } }; }
 
     virtual std::unique_ptr<writer::ContentProvider> getContentProvider() const {
-      return std::unique_ptr<writer::ContentProvider>(new writer::StringProvider("FooContent"));
+      return std::unique_ptr<writer::ContentProvider>(new writer::StringProvider(content));
     }
+
+  std::string path;
+  std::string title;
+  std::string content;
 };
 
 TEST(ZimCreator, createZim)
@@ -143,10 +175,15 @@ TEST(ZimCreator, createZim)
   writer::Creator creator;
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
-  auto item = std::make_shared<TestItem>();
+  auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
+  creator.addItem(item);
+  // Be sure that title order is not the same that url order
+  item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
   creator.setMainPath("foo");
+  creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
+  creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
   // Do not use the high level Archive to test that zim file is correctly created but lower structure.
@@ -156,54 +193,112 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  ASSERT_EQ(header.getArticleCount(), 5); //xapiantitleIndex + xapianfulltextIndex + foo + Title + mainPage
+  entry_index_type nb_entry = 9; // xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
   int xapian_mimetype = 0;
+  int listing_mimetype = 1;
+  int html_mimetype = 2;
+  int plain_mimetype = 3;
+#else
+  entry_index_type nb_entry = 7; // foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  int listing_mimetype = 0;
   int html_mimetype = 1;
   int plain_mimetype = 2;
-#else
-  ASSERT_EQ(header.getArticleCount(), 3); // foo + Title + mainPage
-  int html_mimetype = 0;
-  int plain_mimetype = 1;
 #endif
 
+  ASSERT_EQ(header.getArticleCount(), nb_entry);
 
   // Read dirent
-  DirentReader direntReader(reader);
-  auto urlPtrPos = header.getUrlPtrPos();
-  offset_t direntOffset;
+  auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
+  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(urlPtrReader), entry_index_t(header.getArticleCount()));
   std::shared_ptr<const Dirent> dirent;
 
-  direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos)));
-  dirent = direntReader.readDirent(direntOffset);
+  entry_index_type direntIdx = 0;
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_redirect_dirent(dirent, '-', "mainPage", "mainPage", entry_index_t(1));
 
-  direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 8)));
-  dirent = direntReader.readDirent(direntOffset);
-  test_article_dirent(dirent, 'C', "foo", "Foo", html_mimetype, cluster_index_t(0), blob_index_t(0));
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'C', "foo", "Foo", html_mimetype, cluster_index_t(0), None);
+  auto fooBlobIndex = dirent->getBlobNumber();
 
-  direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 16)));
-  dirent = direntReader.readDirent(direntOffset);
-  test_article_dirent(dirent, 'M', "Title", "Title", plain_mimetype, cluster_index_t(0), blob_index_t(1));
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'C', "foo2", "AFoo", html_mimetype, cluster_index_t(0), None);
+  auto foo2BlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_redirect_dirent(dirent, 'C', "foo3", "FooRedirection", entry_index_t(1));
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'M', "Title", "Title", plain_mimetype, cluster_index_t(0), None);
+  auto metaBlobIndex = dirent->getBlobNumber();
 
 #if defined(ENABLE_XAPIAN)
-  direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 24)));
-  dirent = direntReader.readDirent(direntOffset);
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'X', "fulltext/xapian", "fulltext/xapian", xapian_mimetype, cluster_index_t(1), None);
+#endif
 
-  direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 32)));
-  dirent = direntReader.readDirent(direntOffset);
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(1), None);
+  auto v0BlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(1), None);
+  auto v1BlobIndex = dirent->getBlobNumber();
+
+#if defined(ENABLE_XAPIAN)
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", xapian_mimetype, cluster_index_t(1), None);
 #endif
 
   auto clusterPtrPos = header.getClusterPtrPos();
+
+  // Test main content
   auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos)));
   auto cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompZstd);
-  ASSERT_EQ(cluster->count(), blob_index_t(2));
-  auto blob = cluster->getBlob(blob_index_t(0));
-  ASSERT_EQ(std::string(blob.data(), blob.size()), "FooContent");
-  blob = cluster->getBlob(blob_index_t(1));
-  ASSERT_EQ(std::string(blob.data(), blob.size()), "This is a title");
+  ASSERT_EQ(cluster->count(), blob_index_t(3));
+
+  auto blob = cluster->getBlob(fooBlobIndex);
+  ASSERT_EQ(std::string(blob), "FooContent");
+
+  blob = cluster->getBlob(foo2BlobIndex);
+  ASSERT_EQ(std::string(blob), "Foo2Content");
+
+  blob = cluster->getBlob(metaBlobIndex);
+  ASSERT_EQ(std::string(blob), "This is a title");
+
+
+  // Test listing content
+  clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos + 8)));
+  cluster = Cluster::read(*reader, clusterOffset);
+  ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompNone);
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-5)); // 5 entries are not content entries
+
+  blob = cluster->getBlob(v0BlobIndex);
+  ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
+  std::vector<char> blob0Data(blob.data(), blob.end());
+  std::vector<char> expectedBlob0Data = {
+    0, 0, 0, 0,
+    2, 0, 0, 0,
+    1, 0, 0, 0,
+    3, 0, 0, 0,
+    4, 0, 0, 0,
+    5, 0, 0, 0,
+    6, 0, 0, 0
+#if defined(ENABLE_XAPIAN)
+    ,7, 0, 0, 0
+    ,8, 0, 0, 0
+#endif
+    };
+  ASSERT_EQ(blob0Data, expectedBlob0Data);
+
+  blob = cluster->getBlob(v1BlobIndex);
+  ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
+  std::vector<char> blob1Data(blob.data(), blob.end());
+  std::vector<char> expectedBlob1Data = {
+    2, 0, 0, 0,
+    1, 0, 0, 0
+  };
+  ASSERT_EQ(blob1Data, expectedBlob1Data);
 }
 
 
