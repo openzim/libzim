@@ -21,6 +21,7 @@
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/item.h>
+#include <zim/search.h>
 
 #include "tools.h"
 #include "../src/fs.h"
@@ -275,26 +276,23 @@ TEST(ZimArchive, validate)
   );
 }
 
-TEST(ZimArchive, multipart)
+void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2)
 {
-  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
-  const zim::Archive archive2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
-  ASSERT_FALSE(archive1.is_multiPart());
-  ASSERT_TRUE (archive2.is_multiPart());
-
   EXPECT_EQ(archive1.getFilesize(), archive2.getFilesize());
   EXPECT_EQ(archive1.getClusterCount(), archive2.getClusterCount());
 
   ASSERT_EQ(archive1.getEntryCount(), archive2.getEntryCount());
+  const zim::Entry mainEntry = archive1.getMainEntry();
+  ASSERT_EQ(mainEntry.getTitle(), archive2.getMainEntry().getTitle());
 
-  ASSERT_EQ(118, archive1.getEntryCount()); // ==> below loop is not a noop
+  ASSERT_NE(0, archive1.getEntryCount()); // ==> below loop is not a noop
   {
     auto range1 = archive1.iterEfficient();
     auto range2 = archive2.iterEfficient();
     for ( auto it1=range1.begin(), it2=range2.begin(); it1!=range1.end() && it2!=range2.end(); ++it1, ++it2 ) {
       auto& entry1 = *it1;
       auto& entry2 = *it2;
-ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
+      ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
       ASSERT_EQ(entry1.getPath(), entry2.getPath());
       ASSERT_EQ(entry1.getTitle(), entry2.getTitle());
       ASSERT_EQ(entry1.isRedirect(), entry2.isRedirect());
@@ -329,6 +327,135 @@ ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
       ASSERT_EQ(entry1.getIndex(), entry2.getIndex());
     }
   }
+
+#if defined(ENABLE_XAPIAN)
+  if ( archive1.hasTitleIndex() )
+  {
+    zim::Search search1(archive1);
+    zim::Search search2(archive2);
+    search1.set_suggestion_mode(true);
+    search2.set_suggestion_mode(true);
+    search1.set_query(mainEntry.getTitle());
+    search2.set_query(mainEntry.getTitle());
+    search1.set_range(0, archive1.getEntryCount());
+    search2.set_range(0, archive2.getEntryCount());
+    ASSERT_NE(0, search1.get_matches_estimated());
+    ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
+    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
+    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_url());
+    ASSERT_EQ(std::distance(search1.begin(), search1.end()),
+              std::distance(search2.begin(), search2.end()));
+  }
+#endif
 }
+
+TEST(ZimArchive, multipart)
+{
+  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
+  const zim::Archive archive2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
+  ASSERT_FALSE(archive1.is_multiPart());
+  ASSERT_TRUE (archive2.is_multiPart());
+
+  checkEquivalence(archive1, archive2);
+}
+
+#ifdef _WIN32
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <io.h>
+#undef min
+#undef max
+# define OPEN_READ_ONLY(path) _open(path, _O_RDONLY)
+#else
+# define OPEN_READ_ONLY(path) open(path, O_RDONLY)
+#endif
+
+#ifndef _WIN32
+TEST(ZimArchive, openByFD)
+{
+  const zim::Archive archive1("./data/small.zim");
+  const int fd = OPEN_READ_ONLY("./data/small.zim");
+  const zim::Archive archive2(fd);
+
+  checkEquivalence(archive1, archive2);
+}
+
+TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
+{
+  const zim::Archive archive1("./data/small.zim");
+  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
+  const zim::Archive archive2(fd, 8, archive1.getFilesize());
+
+  checkEquivalence(archive1, archive2);
+}
+#endif
+
+zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
+{
+  zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
+  std::shared_ptr<char> data(new char[size]);
+  fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.second));
+  return zim::Blob(data, size);
+}
+
+TEST(ZimArchive, getDirectAccessInformation)
+{
+  const zim::Archive archive("./data/small.zim");
+  zim::entry_index_type checkedItemCount = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+}
+
+#ifndef _WIN32
+TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
+{
+  const int fd = OPEN_READ_ONLY("./data/small.zim");
+  const zim::Archive archive(fd);
+  zim::entry_index_type checkedItemCount = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+}
+
+TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
+{
+  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
+  const auto size = zim::DEFAULTFS::openFile("./data/small.zim").getSize();
+  const zim::Archive archive(fd, 8, size.v);
+  zim::entry_index_type checkedItemCount = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+}
+#endif
 
 } // unnamed namespace

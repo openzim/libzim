@@ -22,6 +22,7 @@
 
 #include <string>
 #include <cstdio>
+#include <memory>
 
 #include <zim/zim.h>
 
@@ -30,20 +31,29 @@
 
 namespace zim {
 
-template<typename FS=DEFAULTFS>
 class FilePart {
+  typedef DEFAULTFS FS;
+
+  public:
+    using FDSharedPtr = std::shared_ptr<FS::FD>;
+
   public:
     FilePart(const std::string& filename) :
         m_filename(filename),
-        m_fhandle(FS::openFile(filename)),
-        m_size(m_fhandle.getSize()) {}
+        m_fhandle(std::make_shared<FS::FD>(FS::openFile(filename))),
+        m_size(m_fhandle->getSize()) {}
     FilePart(int fd) :
+#ifndef _WIN32
+        FilePart(getFilePathFromFD(fd)) {}
+#else
         m_filename(""),
-        m_fhandle(fd),
-        m_size(m_fhandle.getSize()) {}
+        m_fhandle(std::make_shared<typename FS::FD>(fd)),
+        m_size(m_fhandle->getSize()) {}
+#endif
     ~FilePart() = default;
     const std::string& filename() const { return m_filename; };
-    const typename FS::FD& fhandle() const { return m_fhandle; };
+    const FS::FD& fhandle() const { return *m_fhandle; };
+    const FDSharedPtr& shareable_fhandle() const { return m_fhandle; };
 
     zsize_t size() const { return m_size; };
     bool fail() const { return !m_size; };
@@ -51,7 +61,7 @@ class FilePart {
 
   private:
     const std::string m_filename;
-    typename FS::FD m_fhandle;
+    FDSharedPtr m_fhandle;
     zsize_t m_size;
 };
 

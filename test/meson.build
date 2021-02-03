@@ -19,6 +19,10 @@ tests = [
     'parseLongPath'
 ]
 
+if xapian_dep.found()
+    tests += ['search']
+endif
+
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
         test_exe = executable(test_name, [test_name+'.cpp', 'tools.cpp'],

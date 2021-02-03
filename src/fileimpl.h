@@ -42,11 +42,11 @@ namespace zim
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
-      std::shared_ptr<FileReader> zimReader;
+      offset_t archiveStartOffset;
+      std::shared_ptr<Reader> zimReader;
       std::vector<char> bufferDirentZone;
       std::mutex bufferDirentLock;
       Fileheader header;
-      std::string filename;
 
       std::unique_ptr<const Reader> titleIndexReader;
       std::unique_ptr<const Reader> urlPtrOffsetReader;
@@ -61,8 +61,6 @@ namespace zim
       const bool m_newNamespaceScheme;
       const entry_index_t m_startUserEntry;
       const entry_index_t m_endUserEntry;
-
-      bool cacheUncompressedCluster;
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
@@ -79,10 +77,15 @@ namespace zim
       using FindxTitleResult = std::pair<bool, title_index_t>;
 
       explicit FileImpl(const std::string& fname);
+#ifndef _WIN32
+      explicit FileImpl(int fd);
+      FileImpl(int fd, offset_t offset, zsize_t size);
+#endif
 
+      offset_t getArchiveStartOffset() const { return archiveStartOffset; }
       time_t getMTime() const;
 
-      const std::string& getFilename() const   { return filename; }
+      const std::string& getFilename() const   { return zimFile->filename(); }
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
       bool hasNewNamespaceScheme() const { return m_newNamespaceScheme; }
@@ -123,6 +126,9 @@ namespace zim
 
       bool checkIntegrity(IntegrityCheck checkType);
   private:
+      explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
+      FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
+
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
       std::shared_ptr<const Dirent> readDirent(offset_t offset);

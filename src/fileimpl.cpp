@@ -49,7 +49,7 @@ offset_t readOffset(const Reader& reader, entry_index_type idx)
 }
 
 std::unique_ptr<const Reader>
-sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
+sectionSubReader(const Reader& zimReader, const std::string& sectionName,
                  offset_t offset, zsize_t size)
 {
   if (!zimReader.can_read(offset, size)) {
@@ -63,27 +63,59 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
 #endif
 }
 
+std::shared_ptr<Reader>
+makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsize_t size)
+{
+  if (zimFile->fail()) {
+    return nullptr;
+  } else if ( zimFile->is_multiPart() ) {
+    ASSERT(offset.v, ==, 0u);
+    ASSERT(size, ==, zimFile->fsize());
+    return std::make_shared<MultiPartFileReader>(zimFile);
+  } else {
+    const auto& firstAndOnlyPart = zimFile->begin()->second;
+    return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle(), offset, size);
+  }
+}
+
 } //unnamed namespace
 
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
   FileImpl::FileImpl(const std::string& fname)
-    : zimFile(new FileCompound(fname)),
-      zimReader(new FileReader(zimFile)),
+    : FileImpl(std::make_shared<FileCompound>(fname))
+  {}
+
+#ifndef _WIN32
+  FileImpl::FileImpl(int fd)
+    : FileImpl(std::make_shared<FileCompound>(fd))
+  {}
+
+  FileImpl::FileImpl(int fd, offset_t offset, zsize_t size)
+    : FileImpl(std::make_shared<FileCompound>(fd), offset, size)
+  {}
+#endif
+
+  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)
+    : FileImpl(_zimFile, offset_t(0), _zimFile->fsize())
+  {}
+
+  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile, offset_t offset, zsize_t size)
+    : zimFile(_zimFile),
+      archiveStartOffset(offset),
+      zimReader(makeFileReader(zimFile, offset, size)),
       bufferDirentZone(256),
-      filename(fname),
       direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
       m_startUserEntry(0),
-      m_endUserEntry(0),
-      cacheUncompressedCluster(envValue("ZIM_CACHEUNCOMPRESSEDCLUSTER", false))
+      m_endUserEntry(0)
   {
-    log_trace("read file \"" << fname << '"');
+    log_trace("read file \"" << zimFile->filename() << '"');
 
     if (zimFile->fail())
-      throw ZimFileFormatError(std::string("can't open zim-file \"") + fname + '"');
+      throw ZimFileFormatError(std::string("can't open zim-file \"") + zimFile->filename() + '"');
 
     // read header
     if (size_type(zimReader->size()) < Fileheader::size) {
@@ -134,15 +166,15 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
     else
     {
       offset_t lastOffset = getClusterOffset(cluster_index_t(cluster_index_type(getCountClusters()) - 1));
-      log_debug("last offset=" << lastOffset.v << " file size=" << zimFile->fsize().v);
-      if (lastOffset.v > zimFile->fsize().v)
+      log_debug("last offset=" << lastOffset.v << " file size=" << getFilesize().v);
+      if (lastOffset.v > getFilesize().v)
       {
-        log_fatal("last offset (" << lastOffset << ") larger than file size (" << zimFile->fsize() << ')');
+        log_fatal("last offset (" << lastOffset << ") larger than file size (" << getFilesize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
     }
 
-    if (header.hasChecksum() && header.getChecksumPos() != (zimFile->fsize().v-16) ) {
+    if (header.hasChecksum() && header.getChecksumPos() != (getFilesize().v-16) ) {
       throw ZimFileFormatError("Checksum position is not valid");
     }
   }
@@ -539,7 +571,7 @@ sectionSubReader(const FileReader& zimReader, const std::string& sectionName,
   }
 
   zim::zsize_t FileImpl::getFilesize() const {
-    return zimFile->fsize();
+    return zimReader->size();
   }
 
   bool FileImpl::is_multiPart() const {

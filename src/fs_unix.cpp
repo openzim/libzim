@@ -19,6 +19,8 @@
 
 #include "fs_unix.h"
 #include <stdexcept>
+#include <vector>
+#include <sstream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -132,6 +134,14 @@ bool FS::removeFile(path_t path) {
 
 
 }; // unix namespace
+
+std::string getFilePathFromFD(int fd)
+{
+  std::ostringstream oss;
+  oss << "/dev/fd/" << fd;
+
+  return oss.str();
+}
 
 }; // zim namespace
 

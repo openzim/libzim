@@ -29,8 +29,6 @@
 
 namespace zim {
 
-class FileReader;
-
 struct Range {
   Range(const offset_t  min, const offset_t max)
     : min(min), max(max)
@@ -49,21 +47,22 @@ struct less_range : public std::binary_function< Range, Range, bool>
   }
 };
 
-class FileCompound : private std::map<Range, FilePart<>*, less_range> {
-    typedef std::map<Range, FilePart<>*, less_range> ImplType;
+class FileCompound : private std::map<Range, FilePart*, less_range> {
+    typedef std::map<Range, FilePart*, less_range> ImplType;
 
   public: // types
     typedef const_iterator PartIterator;
     typedef std::pair<PartIterator, PartIterator> PartRange;
 
   public: // functions
-    FileCompound(const std::string& filename);
-    FileCompound(FilePart<>* fpart);
+    explicit FileCompound(const std::string& filename);
+    explicit FileCompound(int fd);
     ~FileCompound();
 
     using ImplType::begin;
     using ImplType::end;
 
+    const std::string& filename() const { return _filename; }
     zsize_t fsize() const { return _fsize; };
     time_t getMTime() const;
     bool fail() const { return empty(); };
@@ -93,9 +92,10 @@ class FileCompound : private std::map<Range, FilePart<>*, less_range> {
     }
 
   private: // functions
-    void addPart(FilePart<>* fpart);
+    void addPart(FilePart* fpart);
 
   private: // data
+    std::string _filename;
     zsize_t _fsize;
     mutable time_t mtime;
 };
