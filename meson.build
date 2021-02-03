@@ -22,6 +22,7 @@ private_conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
 private_conf.set10('MMAP_SUPPORT_64', sizeof_off_t==8)
 if target_machine.system() == 'windows'
     private_conf.set('ENABLE_USE_MMAP', false)
+    add_project_arguments('-DNOMINMAX', language: 'cpp')
 else
     private_conf.set('ENABLE_USE_MMAP', get_option('USE_MMAP'))
 endif
