@@ -72,6 +72,8 @@ namespace zim
        *
        *  Construct an archive from a file descriptor.
        *
+       *  Note: This function is not available under Windows.
+       *
        *  @param fd The descriptor of a seekable file representing a ZIM archive
        */
       explicit Archive(int fd);
@@ -80,6 +82,8 @@ namespace zim
        *
        *  Construct an archive from a descriptor of a file with an embedded ZIM
        *  archive inside.
+       *
+       *  Note: This function is not available under Windows.
        *
        *  @param fd The descriptor of a seekable file with a continuous segment
        *  representing a complete ZIM archive.
