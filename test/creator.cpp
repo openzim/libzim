@@ -137,6 +137,7 @@ TEST(ZimCreator, createZim)
   unittests::TempFile temp("zimfile");
   auto tempPath = temp.path() + ".zim";
   writer::Creator creator;
+  creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
   auto item = std::make_shared<TestItem>();
   creator.addItem(item);
@@ -152,7 +153,7 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  ASSERT_EQ(header.getArticleCount(), 4); //xapiantitleIndex + foo + Title + mainPage
+  ASSERT_EQ(header.getArticleCount(), 5); //xapiantitleIndex + xapianfulltextIndex + foo + Title + mainPage
   int xapian_mimetype = 0;
   int html_mimetype = 1;
   int plain_mimetype = 2;
@@ -184,7 +185,11 @@ TEST(ZimCreator, createZim)
 #if defined(ENABLE_XAPIAN)
   direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 24)));
   dirent = direntReader.readDirent(direntOffset);
-  test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", xapian_mimetype, cluster_index_t(1), blob_index_t(0));
+  test_article_dirent(dirent, 'X', "fulltext/xapian", "fulltext/xapian", xapian_mimetype, cluster_index_t(1), Filter<blob_index_t>());
+
+  direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 32)));
+  dirent = direntReader.readDirent(direntOffset);
+  test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", xapian_mimetype, cluster_index_t(1), Filter<blob_index_t>());
 #endif
 
   auto clusterPtrPos = header.getClusterPtrPos();
