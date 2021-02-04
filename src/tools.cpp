@@ -110,7 +110,7 @@ std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
     throw std::runtime_error("Cannot parse path");
 
   auto ns = longPath[i];
-  auto shortPath = longPath.substr(std::min(i+2, (unsigned int)longPath.size()));
+  auto shortPath = longPath.substr(std::min<unsigned int>(i+2, (unsigned int)longPath.size()));
 
   return std::make_tuple(ns, shortPath);
 }
