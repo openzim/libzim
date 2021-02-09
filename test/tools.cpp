@@ -85,6 +85,16 @@ void TempFile::close()
   }
 }
 
+std::unique_ptr<TempFile>
+makeTempFile(const char* name, const std::string& content)
+{
+  std::unique_ptr<TempFile> p(new TempFile(name));
+  write(p->fd(), &content[0], content.size());
+  p->close();
+  return p;
+}
+
+
 } // namespace unittests
 
 } // namespace zim

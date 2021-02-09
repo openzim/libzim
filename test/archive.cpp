@@ -31,7 +31,7 @@
 namespace
 {
 
-using zim::unittests::TempFile;
+using zim::unittests::makeTempFile;
 
 using TestContextImpl = std::vector<std::pair<std::string, std::string> >;
 struct TestContext : TestContextImpl {
@@ -69,16 +69,6 @@ emptyZimArchiveContent()
   content += "\x9f\x3e\xcd\x95\x46\xf6\xc5\x3b\x35\xb4\xc6\xd4\xc0\x8e\xd0\x66"; // md5sum
   return content;
 }
-
-std::unique_ptr<TempFile>
-makeTempFile(const char* name, const std::string& content)
-{
-  std::unique_ptr<TempFile> p(new TempFile(name));
-  write(p->fd(), &content[0], content.size());
-  p->close();
-  return p;
-}
-
 
 TEST(ZimArchive, openingAnInvalidZimArchiveFails)
 {
