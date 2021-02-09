@@ -94,6 +94,9 @@ std::string to_string(const T& value)
   return ss.str();
 }
 
+std::unique_ptr<TempFile>
+makeTempFile(const char* name, const std::string& content);
+
 
 template<typename T>
 zim::Buffer write_to_buffer(const T& object)

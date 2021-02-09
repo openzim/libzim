@@ -50,7 +50,7 @@ offset_t BufferReader::offset() const
 
 
 void BufferReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <, source.size().v);
+  ASSERT(offset.v, <=, source.size().v);
   ASSERT(offset+offset_t(size.v), <=, offset_t(source.size().v));
   if (! size ) {
     return;

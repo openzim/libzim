@@ -9,6 +9,7 @@ tests = [
     'template',
     'archive',
     'iterator',
+    'reader',
     'find',
     'compression',
     'dirent_lookup',
