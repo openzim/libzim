@@ -221,7 +221,7 @@ namespace zim
       TPROGRESS();
 
 
-      for(auto& handler:data->m_handlers) {
+      for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents
         auto dirent = handler->getUniqueDirent();
       }
@@ -241,7 +241,7 @@ namespace zim
       data->createTitleIndex();
 
       // We can now stop the dirents, and get their content
-      for(auto& handler:data->m_handlers) {
+      for(auto& handler:data->m_direntHandlers) {
         handler->stop();
         auto dirent = handler->getUniqueDirent();
         auto provider = handler->getContentProvider();
@@ -440,14 +440,14 @@ int mode =  _S_IREAD | _S_IWRITE;
 
 #if defined(ENABLE_XAPIAN)
       auto titleIndexer = std::make_shared<TitleXapianHandler>(this);
-      m_handlers.push_back(titleIndexer);
+      m_direntHandlers.push_back(titleIndexer);
       if (withIndex) {
         auto fulltextIndexer = std::make_shared<FullTextXapianHandler>(this);
-        m_handlers.push_back(fulltextIndexer);
+        m_direntHandlers.push_back(fulltextIndexer);
       }
 #endif
 
-      for(auto& handler:m_handlers) {
+      for(auto& handler:m_direntHandlers) {
         handler->start();
       }
     }

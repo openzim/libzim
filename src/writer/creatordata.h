@@ -122,9 +122,9 @@ namespace zim
         bool withIndex;
         std::string indexingLanguage;
 
-        std::vector<std::shared_ptr<DirentHandler>> m_handlers;
+        std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
         void handle(Dirent* dirent, std::shared_ptr<Item> item = nullptr) {
-          for(auto& handler: m_handlers) {
+          for(auto& handler: m_direntHandlers) {
             handler->handle(dirent, item);
           }
         }
