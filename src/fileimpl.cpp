@@ -105,8 +105,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     : zimFile(_zimFile),
       archiveStartOffset(offset),
       zimReader(makeFileReader(zimFile, offset, size)),
-      bufferDirentZone(256),
-      direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
+      direntReader(new DirentReader(zimReader)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
       m_startUserEntry(0),
@@ -129,15 +128,22 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
-    urlPtrOffsetReader = sectionSubReader(*zimReader,
-                                          "Dirent pointer table",
-                                          offset_t(header.getUrlPtrPos()),
-                                          zsize_t(8*header.getArticleCount()));
+    auto urlPtrReader = sectionSubReader(*zimReader,
+                                         "Dirent pointer table",
+                                         offset_t(header.getUrlPtrPos()),
+                                         zsize_t(8*header.getArticleCount()));
 
-    titleIndexReader = sectionSubReader(*zimReader,
+    mp_urlDirentAccessor.reset(
+        new DirectDirentAccessor(direntReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
+
+
+    auto titleIndexReader = sectionSubReader(*zimReader,
                                         "Title index table",
                                         offset_t(header.getTitleIdxPos()),
                                         zsize_t(4*header.getArticleCount()));
+
+    mp_titleDirentAccessor.reset(
+        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(header.getArticleCount())));
 
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
@@ -154,7 +160,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   {
     if ( ! m_direntLookup ) {
       const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-      m_direntLookup.reset(new DirentLookup(this, cacheSize));
+      m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
     }
     return *m_direntLookup;
   }
@@ -187,7 +193,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     if ( getCountArticles().v != 0 ) {
       // assuming that dirents are placed in the zim file in the same
       // order as the corresponding entries in the dirent pointer table
-      result = std::min(result, readOffset(*urlPtrOffsetReader, 0).v);
+      result = std::min(result, mp_urlDirentAccessor->getOffset(entry_index_t(0)).v);
 
       // assuming that clusters are placed in the zim file in the same
       // order as the corresponding entries in the cluster pointer table
@@ -255,6 +261,18 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return { false, entry_index_t(0) };
   }
 
+  static inline int direntCompareTitle(char ns, const std::string& title, const Dirent& dirent)
+  {
+    auto direntNs = dirent.getNamespace();
+    if (ns < direntNs) {
+      return -1;
+    }
+    if (ns > direntNs) {
+      return 1;
+    }
+    return title.compare(dirent.getTitle());
+  }
+
   FileImpl::FindxTitleResult FileImpl::findxByTitle(char ns, const std::string& title)
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
@@ -275,9 +293,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       entry_index_type p = l + (u - l) / 2;
       auto d = getDirentByTitle(title_index_t(p));
 
-      int c = ns < d->getNamespace() ? -1
-            : ns > d->getNamespace() ? 1
-            : title.compare(d->getTitle());
+      int c = direntCompareTitle(ns, title, *d);
 
       if (c < 0)
         u = p;
@@ -291,7 +307,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     }
 
     auto d = getDirentByTitle(title_index_t(l));
-    int c = title.compare(d->getTitle());
+    int c = direntCompareTitle(ns, title, *d);
 
     if (c == 0)
     {
@@ -311,90 +327,17 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx)
   {
-    log_trace("FileImpl::getDirent(" << idx << ')');
-
-    if (idx >= getCountArticles())
-      throw std::out_of_range("entry index out of range");
-
-    {
-      std::lock_guard<std::mutex> l(direntCacheLock);
-      auto v = direntCache.get(idx.v);
-      if (v.hit())
-      {
-        log_debug("dirent " << idx << " found in cache; hits "
-                  << direntCache.getHits() << " misses "
-                  << direntCache.getMisses() << " ratio "
-                  << direntCache.hitRatio() * 100 << "% fillfactor "
-                  << direntCache.fillfactor());
-        return v.value();
-      }
-
-      log_debug("dirent " << idx << " not found in cache; hits "
-                << direntCache.getHits() << " misses " << direntCache.getMisses()
-                << " ratio " << direntCache.hitRatio() * 100 << "% fillfactor "
-                << direntCache.fillfactor());
-    }
-
-    offset_t indexOffset = readOffset(*urlPtrOffsetReader, idx.v);
-    const auto dirent = readDirent(indexOffset);
-    std::lock_guard<std::mutex> l(direntCacheLock);
-    direntCache.put(idx.v, dirent);
-
-    return dirent;
-  }
-
-  std::shared_ptr<const Dirent> FileImpl::readDirent(offset_t indexOffset)
-  {
-    // We don't know the size of the dirent because it depends of the size of
-    // the title, url and extra parameters.
-    // This is a pitty but we have no choices.
-    // We cannot take a buffer of the size of the file, it would be really inefficient.
-    // Let's do try, catch and retry while chosing a smart value for the buffer size.
-    // Most dirent will be "Article" entry (header's size == 16) without extra parameters.
-    // Let's hope that url + title size will be < 256 and if not try again with a bigger size.
-    std::shared_ptr<const Dirent> dirent;
-    {
-      std::lock_guard<std::mutex> l(bufferDirentLock);
-      zsize_t bufferSize = zsize_t(256);
-      // On very small file, the offset + 256 is higher than the size of the file,
-      // even if the file is valid.
-      // So read only to the end of the file.
-      auto totalSize = zimReader->size();
-      if (indexOffset.v + 256 > totalSize.v) bufferSize = zsize_t(totalSize.v-indexOffset.v);
-      while (true) {
-          bufferDirentZone.reserve(size_type(bufferSize));
-          zimReader->read(bufferDirentZone.data(), indexOffset, bufferSize);
-          auto direntBuffer = Buffer::makeBuffer(bufferDirentZone.data(), bufferSize);
-          try {
-            dirent = std::make_shared<const Dirent>(direntBuffer);
-          } catch (InvalidSize&) {
-            // buffer size is not enougth, try again :
-            bufferSize += 256;
-            continue;
-          }
-          // Success !
-          break;
-      }
-    }
-
-    log_debug("dirent read from " << indexOffset);
-    return dirent;
+    return mp_urlDirentAccessor->getDirent(idx);
   }
 
   std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx)
   {
-    return getDirent(getIndexByTitle(idx));
+    return mp_titleDirentAccessor->getDirent(idx);
   }
 
   entry_index_t FileImpl::getIndexByTitle(title_index_t idx) const
   {
-    if (idx.v >= getCountArticles().v)
-      throw std::out_of_range("entry index out of range");
-
-    entry_index_t ret(titleIndexReader->read_uint<entry_index_type>(
-                            offset_t(sizeof(entry_index_t)*idx.v)));
-
-    return ret;
+    return mp_titleDirentAccessor->getDirectIndex(idx);
   }
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
@@ -407,7 +350,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
           for(auto i = getStartUserEntry().v; i < endIdx; i++)
           {
               // This is the offset of the dirent in the zimFile
-              auto indexOffset = readOffset(*urlPtrOffsetReader, i);
+              auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
               // Get the mimeType of the dirent (offset 0) to know the type of the dirent
               uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
               if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
@@ -464,23 +407,6 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
     return direntLookup().getNamespaceRangeEnd(ch);
-  }
-
-  std::string FileImpl::getNamespaces()
-  {
-    std::string namespaces;
-
-    auto d = getDirent(entry_index_t(0));
-    namespaces = d->getNamespace();
-
-    entry_index_t idx(0);
-    while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
-    {
-      d = getDirent(idx);
-      namespaces += d->getNamespace();
-    }
-
-    return namespaces;
   }
 
   const std::string& FileImpl::getMimeType(uint16_t idx) const
@@ -607,7 +533,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     const zsize_t direntMinSize(11);
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const auto offset = readOffset(*urlPtrOffsetReader, i);
+      const auto offset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
       if ( offset < validDirentRangeStart ||
            offset + direntMinSize > validDirentRangeEnd ) {
         std::cerr << "Invalid dirent pointer" << std::endl;
@@ -622,8 +548,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     std::shared_ptr<const Dirent> prevDirent;
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const auto offset = readOffset(*urlPtrOffsetReader, i);
-      const std::shared_ptr<const Dirent> dirent = readDirent(offset);
+      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
       if ( prevDirent && !(prevDirent->getLongUrl() < dirent->getLongUrl()) )
       {
         std::cerr << "Dirent table is not properly sorted:\n"
@@ -667,17 +592,16 @@ std::string pseudoTitle(const Dirent& d)
 
   bool FileImpl::checkTitleIndex() {
     const entry_index_type articleCount = getCountArticles().v;
+    const entry_index_type frontArticleCount = mp_titleDirentAccessor->getDirentCount().v;
     std::shared_ptr<const Dirent> prevDirent;
-    for ( entry_index_type i = 0; i < articleCount; ++i )
+    for ( entry_index_type i = 0; i < frontArticleCount; ++i )
     {
-      const offset_t offset(i*sizeof(entry_index_t));
-      const auto a = titleIndexReader->read_uint<entry_index_type>(offset);
-      if ( a >= articleCount ) {
+      if (mp_titleDirentAccessor->getDirectIndex(title_index_t(i)).v >= articleCount) {
         std::cerr << "Invalid title index entry" << std::endl;
         return false;
       }
-      const auto direntOffset = readOffset(*urlPtrOffsetReader, a);
-      const std::shared_ptr<const Dirent> dirent = readDirent(direntOffset);
+
+      const std::shared_ptr<const Dirent> dirent = mp_titleDirentAccessor->getDirent(title_index_t(i));
       if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) )
       {
         std::cerr << "Title index is not properly sorted:\n"

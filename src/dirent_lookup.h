@@ -39,7 +39,7 @@ public: // types
   typedef std::pair<bool, entry_index_t> Result;
 
 public: // functions
-  DirentLookup(Impl* _impl, entry_index_type cacheEntryCount);
+  DirentLookup(const Impl* _impl, entry_index_type cacheEntryCount);
 
   entry_index_t getNamespaceRangeBegin(char ns) const;
   entry_index_t getNamespaceRangeEnd(char ns) const;
@@ -53,12 +53,12 @@ private: // types
   typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
 
 private: // data
-  Impl* impl = nullptr;
+  const Impl* impl = nullptr;
 
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
 
-  entry_index_type articleCount = 0;
+  entry_index_type direntCount = 0;
   NarrowDown lookupGrid;
 };
 
@@ -71,19 +71,19 @@ DirentLookup<Impl>::getDirentKey(entry_index_type i) const
 }
 
 template<class Impl>
-DirentLookup<Impl>::DirentLookup(Impl* _impl, entry_index_type cacheEntryCount)
+DirentLookup<Impl>::DirentLookup(const Impl* _impl, entry_index_type cacheEntryCount)
 {
   ASSERT(impl == nullptr, ==, true);
   impl = _impl;
-  articleCount = entry_index_type(impl->getCountArticles());
-  if ( articleCount )
+  direntCount = entry_index_type(impl->getDirentCount());
+  if ( direntCount )
   {
-    const entry_index_type step = std::max(1u, articleCount/cacheEntryCount);
-    for ( entry_index_type i = 0; i < articleCount-1; i += step )
+    const entry_index_type step = std::max(1u, direntCount/cacheEntryCount);
+    for ( entry_index_type i = 0; i < direntCount-1; i += step )
     {
         lookupGrid.add(getDirentKey(i), i, getDirentKey(i+1));
     }
-    lookupGrid.close(getDirentKey(articleCount - 1), articleCount - 1);
+    lookupGrid.close(getDirentKey(direntCount - 1), direntCount - 1);
   }
 }
 
@@ -94,7 +94,7 @@ entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
   ASSERT(ch, <=, 127);
 
   entry_index_type lower = 0;
-  entry_index_type upper = entry_index_type(impl.getCountArticles());
+  entry_index_type upper = entry_index_type(impl.getDirentCount());
   auto d = impl.getDirent(entry_index_t(0));
   while (upper - lower > 1)
   {

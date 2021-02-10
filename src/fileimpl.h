@@ -29,6 +29,7 @@
 #include "lrucache.h"
 #include "concurrent_cache.h"
 #include "_dirent.h"
+#include "dirent_accessor.h"
 #include "dirent_lookup.h"
 #include "cluster.h"
 #include "buffer.h"
@@ -36,6 +37,8 @@
 #include "file_compound.h"
 #include "fileheader.h"
 #include "zim_types.h"
+#include "direntreader.h"
+
 
 namespace zim
 {
@@ -44,16 +47,13 @@ namespace zim
       std::shared_ptr<FileCompound> zimFile;
       offset_t archiveStartOffset;
       std::shared_ptr<Reader> zimReader;
-      std::vector<char> bufferDirentZone;
-      std::mutex bufferDirentLock;
+      std::shared_ptr<DirentReader> direntReader;
       Fileheader header;
 
-      std::unique_ptr<const Reader> titleIndexReader;
-      std::unique_ptr<const Reader> urlPtrOffsetReader;
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      lru_cache<entry_index_type, std::shared_ptr<const Dirent>> direntCache;
-      std::mutex direntCacheLock;
+      std::shared_ptr<const DirectDirentAccessor> mp_urlDirentAccessor;
+      std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
@@ -69,7 +69,7 @@ namespace zim
       mutable std::vector<pair_type> articleListByCluster;
       mutable std::once_flag orderOnceFlag;
 
-      using DirentLookup = zim::DirentLookup<FileImpl>;
+      using DirentLookup = zim::DirentLookup<DirectDirentAccessor>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
 
     public:
@@ -108,14 +108,11 @@ namespace zim
 
       entry_index_t getNamespaceBeginOffset(char ch);
       entry_index_t getNamespaceEndOffset(char ch);
-      entry_index_t getNamespaceCount(char ns)
-        { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
       entry_index_t getStartUserEntry() const { return m_startUserEntry; }
       entry_index_t getEndUserEntry() const { return m_endUserEntry; }
       entry_index_t getUserEntryCount() const { return m_endUserEntry - m_startUserEntry; }
 
-      std::string getNamespaces();
       bool hasNamespace(char ch) const;
 
       const std::string& getMimeType(uint16_t idx) const;
@@ -131,7 +128,6 @@ namespace zim
 
       DirentLookup& direntLookup();
       ClusterHandle readCluster(cluster_index_t idx);
-      std::shared_ptr<const Dirent> readDirent(offset_t offset);
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
       void quickCheckForCorruptFile();

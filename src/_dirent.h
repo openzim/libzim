@@ -64,8 +64,6 @@ namespace zim
           ns('\0')
       {}
 
-      explicit Dirent(const Buffer& buffer);
-
       bool isRedirect() const                 { return mimeType == redirectMimeType; }
       bool isLinktarget() const               { return mimeType == linktargetMimeType; }
       bool isDeleted() const                  { return mimeType == deletedMimeType; }
@@ -118,7 +116,6 @@ namespace zim
 
       void setItem(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
       {
-        ASSERT(mimeType, ==, 0);
         mimeType = mimeType_;
         clusterNumber = clusterNumber_;
         blobNumber = blobNumber_;
