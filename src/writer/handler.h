@@ -49,9 +49,7 @@ class Item;
  * - Get the dirent associated to the handler using `createDirent()`.
  *   If a handler has to handle itself, it has to do it itself before (in start/stop, ...)
  *   The handlers will NOT have dirents of other hanlders passed.
- *   TitleListingHandler is a exception, it will receive ALL dirents, including its own.
  * - All dirents are correctly set (redirect resolved, index and mimetype set, ...)
- *   This step can mark dirents as removed (invalid redirect), handler may want to check that.
  * - Stop the handler with `stop()`.
  * - Content of the handler is taken using `getContentProvider`
  *

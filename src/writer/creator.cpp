@@ -245,7 +245,6 @@ namespace zim
         handler->stop();
         auto dirent = handler->getDirent();
         auto provider = handler->getContentProvider();
-        auto providerSize = provider->getSize();
         data->addItemData(dirent, std::move(provider), false);
       }
 
