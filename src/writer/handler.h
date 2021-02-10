@@ -46,7 +46,7 @@ class Item;
  * The workflow is the following:
  * - Start the handler with `start()`.
  * - Pass dirents to handle using `handle()`.
- * - Get the dirent associated to the handler using `getDirent()`.
+ * - Get the dirent associated to the handler using `createDirent()`.
  *   If a handler has to handle itself, it has to do it itself before (in start/stop, ...)
  *   The handlers will NOT have dirents of other hanlders passed.
  *   TitleListingHandler is a exception, it will receive ALL dirents, including its own.
@@ -65,11 +65,11 @@ class DirentHandler {
 
     virtual void start() = 0;
     virtual void stop() = 0;
-    Dirent* getUniqueDirent() {
-      if (!mp_uniqueDirent) {
-        mp_uniqueDirent = getDirent();
+    Dirent* getDirent() {
+      if (!mp_dirent) {
+        mp_dirent = createDirent();
       }
-      return mp_uniqueDirent;
+      return mp_dirent;
     }
     virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
 
@@ -81,11 +81,11 @@ class DirentHandler {
     virtual void handle(Dirent* dirent, std::shared_ptr<Item> item) = 0;
 
   protected:
-    virtual Dirent* getDirent() const = 0;
+    virtual Dirent* createDirent() const = 0;
     DirentHandler() = default;
 
   private:
-    Dirent* mp_uniqueDirent {0};
+    Dirent* mp_dirent {0};
 };
 
 }

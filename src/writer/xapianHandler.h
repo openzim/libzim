@@ -38,7 +38,7 @@ class FullTextXapianHandler : public DirentHandler {
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
 
   protected:
-    Dirent* getDirent() const override;
+    Dirent* createDirent() const override;
 
   private:
     std::unique_ptr<XapianIndexer> mp_indexer;
@@ -56,7 +56,7 @@ class TitleXapianHandler : public DirentHandler {
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
 
   protected:
-    Dirent* getDirent() const override;
+    Dirent* createDirent() const override;
 
   private:
     std::unique_ptr<XapianIndexer> mp_indexer;

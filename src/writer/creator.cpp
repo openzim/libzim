@@ -223,7 +223,7 @@ namespace zim
 
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents
-        auto dirent = handler->getUniqueDirent();
+        auto dirent = handler->getDirent();
       }
 
       // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
@@ -243,7 +243,7 @@ namespace zim
       // We can now stop the dirents, and get their content
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
-        auto dirent = handler->getUniqueDirent();
+        auto dirent = handler->getDirent();
         auto provider = handler->getContentProvider();
         auto providerSize = provider->getSize();
         data->addItemData(dirent, std::move(provider), false);

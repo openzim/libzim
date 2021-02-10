@@ -48,7 +48,7 @@ void FullTextXapianHandler::stop() {
   mp_indexer->indexingPostlude();
 }
 
-Dirent* FullTextXapianHandler::getDirent() const {
+Dirent* FullTextXapianHandler::createDirent() const {
   return mp_creatorData->createDirent('X', "fulltext/xapian", "application/octet-stream+xapian", "");
 }
 
@@ -82,7 +82,7 @@ void TitleXapianHandler::stop() {
   mp_indexer->indexingPostlude();
 }
 
-Dirent* TitleXapianHandler::getDirent() const {
+Dirent* TitleXapianHandler::createDirent() const {
   return mp_creatorData->createDirent('X', "title/xapian", "application/octet-stream+xapian", "");
 }
 
