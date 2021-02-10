@@ -27,7 +27,7 @@
 using namespace zim::writer;
 
 FullTextXapianHandler::FullTextXapianHandler(CreatorData* data)
-  : mp_indexer(new XapianIndexer(data->basename+"_title.idx", data->indexingLanguage, IndexingMode::FULL, true)),
+  : mp_indexer(new XapianIndexer(data->basename+"_fulltext.idx", data->indexingLanguage, IndexingMode::FULL, true)),
     mp_creatorData(data)
 {}
 
@@ -68,7 +68,7 @@ void FullTextXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 }
 
 TitleXapianHandler::TitleXapianHandler(CreatorData* data)
-  : mp_indexer(new XapianIndexer(data->basename+"_fulltext.idx", data->indexingLanguage, IndexingMode::TITLE, true)),
+  : mp_indexer(new XapianIndexer(data->basename+"_title.idx", data->indexingLanguage, IndexingMode::TITLE, true)),
     mp_creatorData(data)
 {}
 
