@@ -131,7 +131,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     auto urlPtrReader = sectionSubReader(*zimReader,
                                          "Dirent pointer table",
                                          offset_t(header.getUrlPtrPos()),
-                                         zsize_t(8*header.getArticleCount()));
+                                         zsize_t(sizeof(offset_type)*header.getArticleCount()));
 
     mp_urlDirentAccessor.reset(
         new DirectDirentAccessor(direntReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
@@ -140,7 +140,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
                                            offset_t(header.getClusterPtrPos()),
-                                           zsize_t(8*header.getClusterCount()));
+                                           zsize_t(sizeof(offset_type)*header.getClusterCount()));
 
     quickCheckForCorruptFile();
 
@@ -148,7 +148,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
     if (!mp_titleDirentAccessor) {
       offset_t titleOffset(header.getTitleIdxPos());
-      zsize_t  titleSize(4*header.getArticleCount());
+      zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
       mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
     }
 
@@ -181,7 +181,8 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
                                                offset,
                                                size);
 
-      return std::unique_ptr<IndirectDirentAccessor>(new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/4)));
+      return std::unique_ptr<IndirectDirentAccessor>(
+        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/sizeof(entry_index_type))));
   }
 
   FileImpl::DirentLookup& FileImpl::direntLookup()
@@ -641,7 +642,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     const entry_index_type articleCount = getCountArticles().v;
 
     offset_t titleOffset(header.getTitleIdxPos());
-    zsize_t  titleSize(4*header.getArticleCount());
+    zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
     auto titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Full Title index table");
     auto ret = checkTitleListing(*titleDirentAccessor, articleCount);
 
