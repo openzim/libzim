@@ -108,14 +108,11 @@ namespace zim
 
       entry_index_t getNamespaceBeginOffset(char ch);
       entry_index_t getNamespaceEndOffset(char ch);
-      entry_index_t getNamespaceCount(char ns)
-        { return getNamespaceEndOffset(ns) - getNamespaceBeginOffset(ns); }
 
       entry_index_t getStartUserEntry() const { return m_startUserEntry; }
       entry_index_t getEndUserEntry() const { return m_endUserEntry; }
       entry_index_t getUserEntryCount() const { return m_endUserEntry - m_startUserEntry; }
 
-      std::string getNamespaces();
       bool hasNamespace(char ch) const;
 
       const std::string& getMimeType(uint16_t idx) const;

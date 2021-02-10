@@ -409,23 +409,6 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return direntLookup().getNamespaceRangeEnd(ch);
   }
 
-  std::string FileImpl::getNamespaces()
-  {
-    std::string namespaces;
-
-    auto d = mp_urlDirentAccessor->getDirent(entry_index_t(0));
-    namespaces = d->getNamespace();
-
-    entry_index_t idx(0);
-    while ((idx = getNamespaceEndOffset(d->getNamespace())) < getCountArticles())
-    {
-      d = mp_urlDirentAccessor->getDirent(idx);
-      namespaces += d->getNamespace();
-    }
-
-    return namespaces;
-  }
-
   const std::string& FileImpl::getMimeType(uint16_t idx) const
   {
     if (idx > mimeTypes.size())
