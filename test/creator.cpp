@@ -37,53 +37,58 @@ namespace
 
 using namespace zim;
 
+struct NoneType {};
+const NoneType None;
+
 template<typename T>
-struct Filter{
-  Filter() : active(false) {};
-  Filter(T value) : active(true), value(value) {};
+struct Optional{
+  Optional(NoneType none) : active(false) {};
+  Optional(T value) : active(true), value(value) {};
+  void check(const T& value) { if (active) ASSERT_EQ(this->value, value); }
   bool active;
   T    value;
 };
 
 template<>
-struct Filter<const std::string> {
-  Filter() : active(false) {};
-  Filter(std::string value) : active(true), value(value) {};
-  Filter(const char* value) : active(true), value(value) {};
+struct Optional<const std::string> {
+  Optional(NoneType none) : active(false) {};
+  Optional(std::string value) : active(true), value(value) {};
+  Optional(const char* value) : active(true), value(value) {};
+  void check(const std::string& value) { if (active) ASSERT_EQ(this->value, value); }
   bool active;
   std::string value;
 };
 
 void test_article_dirent(
   std::shared_ptr<const Dirent> dirent,
-  Filter<char> ns,
-  Filter<const std::string> url,
-  Filter<const std::string> title,
-  Filter<uint16_t> mimetype,
-  Filter<cluster_index_t> clusterNumber,
-  Filter<blob_index_t> blobNumber)
+  Optional<char> ns,
+  Optional<const std::string> url,
+  Optional<const std::string> title,
+  Optional<uint16_t> mimetype,
+  Optional<cluster_index_t> clusterNumber,
+  Optional<blob_index_t> blobNumber)
 {
   ASSERT_TRUE(dirent->isArticle());
-  if (ns.active) ASSERT_EQ(dirent->getNamespace(), ns.value);
-  if (url.active) ASSERT_EQ(dirent->getUrl(), url.value);
-  if (title.active) ASSERT_EQ(dirent->getTitle(), title.value);
-  if (mimetype.active) ASSERT_EQ(dirent->getMimeType(), mimetype.value);
-  if (clusterNumber.active) ASSERT_EQ(dirent->getClusterNumber(), clusterNumber.value);
-  if (blobNumber.active) ASSERT_EQ(dirent->getBlobNumber(), blobNumber.value);
+  ns.check(dirent->getNamespace());
+  url.check(dirent->getUrl());
+  title.check(dirent->getTitle());
+  mimetype.check(dirent->getMimeType());
+  clusterNumber.check(dirent->getClusterNumber());
+  blobNumber.check(dirent->getBlobNumber());
 }
 
 void test_redirect_dirent(
   std::shared_ptr<const Dirent> dirent,
-  Filter<char> ns,
-  Filter<const std::string> url,
-  Filter<const std::string> title,
-  Filter<entry_index_t> target)
+  Optional<char> ns,
+  Optional<const std::string> url,
+  Optional<const std::string> title,
+  Optional<entry_index_t> target)
 {
   ASSERT_TRUE(dirent->isRedirect());
-  if (ns.active) ASSERT_EQ(dirent->getNamespace(), ns.value);
-  if (url.active) ASSERT_EQ(dirent->getUrl(), url.value);
-  if (title.active) ASSERT_EQ(dirent->getTitle(), title.value);
-  if (target.active) ASSERT_EQ(dirent->getRedirectIndex(), target.value);
+  ns.check(dirent->getNamespace());
+  url.check(dirent->getUrl());
+  title.check(dirent->getTitle());
+  target.check(dirent->getRedirectIndex());
 }
 
 TEST(ZimCreator, createEmptyZim)
@@ -185,11 +190,11 @@ TEST(ZimCreator, createZim)
 #if defined(ENABLE_XAPIAN)
   direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 24)));
   dirent = direntReader.readDirent(direntOffset);
-  test_article_dirent(dirent, 'X', "fulltext/xapian", "fulltext/xapian", xapian_mimetype, cluster_index_t(1), Filter<blob_index_t>());
+  test_article_dirent(dirent, 'X', "fulltext/xapian", "fulltext/xapian", xapian_mimetype, cluster_index_t(1), None);
 
   direntOffset = offset_t(reader->read_uint<offset_type>(offset_t(urlPtrPos + 32)));
   dirent = direntReader.readDirent(direntOffset);
-  test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", xapian_mimetype, cluster_index_t(1), Filter<blob_index_t>());
+  test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", xapian_mimetype, cluster_index_t(1), None);
 #endif
 
   auto clusterPtrPos = header.getClusterPtrPos();
