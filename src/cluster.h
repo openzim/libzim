@@ -72,7 +72,7 @@ namespace zim
 
       zsize_t getBlobSize(blob_index_t n) const;
 
-      offset_t getBlobOffset(blob_index_t n) const { return m_blobOffsets[blob_index_type(n)]; }
+      offset_t getBlobOffset(blob_index_t n) const { return offset_t(1) + m_blobOffsets[blob_index_type(n)]; }
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 

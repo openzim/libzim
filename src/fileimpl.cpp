@@ -394,7 +394,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed())
       return offset_t(0);
-    return getClusterOffset(clusterIdx) + offset_t(1) + cluster->getBlobOffset(blobIdx);
+    return getClusterOffset(clusterIdx) + cluster->getBlobOffset(blobIdx);
   }
 
   entry_index_t FileImpl::getNamespaceBeginOffset(char ch)
