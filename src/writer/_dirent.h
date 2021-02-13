@@ -79,9 +79,10 @@ namespace zim
           : Dirent()
           { ns = ns_; path = path_; }
 
-        char getNamespace() const               { return ns; }
+        char getNamespace() const                { return ns; }
         void setNamespace(char ns_)              { ns = ns_; }
-        const std::string& getTitle() const     { return title.empty() ? path : title; }
+        const std::string& getTitle() const      { return title.empty() ? path : title; }
+        const std::string& getRealTitle() const  { return title; }
         void setTitle(const std::string& title_) { title = title_; }
         const std::string& getPath() const       { return path; }
         void setPath(const std::string& path_) {

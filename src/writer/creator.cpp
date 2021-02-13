@@ -25,6 +25,7 @@
 #include "cluster.h"
 #include "debug.h"
 #include "workers.h"
+#include "clusterWorker.h"
 #include <zim/blob.h>
 #include <zim/writer/contentProvider.h>
 #include "../endian_tools.h"
@@ -33,7 +34,7 @@
 #include "../md5.h"
 
 #if defined(ENABLE_XAPIAN)
-  #include "xapianIndexer.h"
+# include "xapianHandler.h"
 #endif
 
 #ifdef _WIN32
@@ -78,7 +79,6 @@ log_define("zim.writer.creator")
                   << "; RA:" << data->nbRedirectItems \
                   << "; CA:" << data->nbCompItems \
                   << "; UA:" << data->nbUnCompItems \
-                  << "; IA:" << data->nbIndexItems \
                   << "; C:" << data->nbClusters \
                   << "; CC:" << data->nbCompClusters \
                   << "; UC:" << data->nbUnCompClusters \
@@ -170,16 +170,7 @@ namespace zim
 
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
-
-#if defined(ENABLE_XAPIAN)
-      if (item->getMimeType() == "text/html" && !item->getTitle().empty()) {
-        data->nbIndexItems++;
-        data->titleIndexer.indexTitle(item->getPath(), item->getTitle());
-        if(m_withIndex) {
-          data->taskList.pushToQueue(new IndexTask(item));
-        }
-      }
-#endif
+      data->handle(dirent, item);
 
       if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
@@ -196,28 +187,27 @@ namespace zim
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
       auto compressContent = isCompressibleMimetype(mimetype);
-      data->addData('M', name, mimetype, std::move(provider), compressContent);
+      auto dirent = data->createDirent('M', name, mimetype, "");
+      data->addItemData(dirent, std::move(provider), compressContent);
+      data->handle(dirent);
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath)
     {
-      data->createRedirectDirent('C', path, title, 'C', targetPath);
+      auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
 
-#if defined(ENABLE_XAPIAN)
-      if (!title.empty()) {
-        data->titleIndexer.indexTitle(path, title);
-      }
-#endif
-     }
+      data->handle(dirent);
+    }
 
     void Creator::finishZimCreation()
     {
       // Create mandatory entries
       if (!m_faviconPath.empty()) {
-        data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
+        auto dirent = data->createRedirectDirent('-', "favicon", "", 'C', m_faviconPath);
+        data->handle(dirent);
       }
 
       // Create a redirection for the mainPage.
@@ -225,45 +215,40 @@ namespace zim
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
         data->mainPageDirent = data->createRedirectDirent('-', "mainPage", "", 'C', m_mainPath);
+        data->handle(data->mainPageDirent);
       }
 
       TPROGRESS();
 
-      // We need to wait that all indexation task has been done before closing the
-      // xapian database and add it to zim.
-      unsigned int wait = 0;
-      do {
-        microsleep(wait);
-        wait += 10;
-      } while(IndexTask::waiting_task.load() > 0);
 
-#if defined(ENABLE_XAPIAN)
-      {
-        data->titleIndexer.indexingPostlude();
-        data->addData(
-          'X', "title/xapian", "application/octet-stream+xapian",
-          std::unique_ptr<ContentProvider>(new FileProvider(data->titleIndexer.getIndexPath())),
-          false
-        );
+      for(auto& handler:data->m_direntHandlers) {
+        // This silently create all the needed dirents
+        auto dirent = handler->getDirent();
       }
-      if (m_withIndex) {
-        wait = 0;
-        do {
-          microsleep(wait);
-          wait += 10;
-        } while(IndexTask::waiting_task.load() > 0);
 
-        data->indexer->indexingPostlude();
-        microsleep(100);
-        data->addData(
-          'X', "fulltext/xapian", "application/octet-stream+xapian",
-          std::unique_ptr<ContentProvider>(new FileProvider(data->indexer->getIndexPath())),
-          false
-        );
+      // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
+      // before we ask data to the handlers
+      TINFO("ResolveRedirectIndexes");
+      data->resolveRedirectIndexes();
+
+      TINFO("Set entry indexes");
+      data->setEntryIndexes();
+
+      TINFO("Resolve mimetype");
+      data->resolveMimeTypes();
+
+      TINFO("create title index");
+      data->createTitleIndex();
+
+      // We can now stop the dirents, and get their content
+      for(auto& handler:data->m_direntHandlers) {
+        handler->stop();
+        auto dirent = handler->getDirent();
+        auto provider = handler->getContentProvider();
+        data->addItemData(dirent, std::move(provider), false);
       }
-#endif
 
-      // When we've seen all items, write any remaining clusters.
+      // All the data has been added, we can now close all clusters
       if (data->compCluster->count())
         data->closeCluster(true);
 
@@ -272,7 +257,7 @@ namespace zim
 
       TINFO("Waiting for workers");
       // wait all cluster compression has been done
-      wait = 0;
+      unsigned int wait = 0;
       do {
         microsleep(wait);
         wait += 10;
@@ -290,17 +275,6 @@ namespace zim
       data->clusterToWrite.pushToQueue(nullptr);
       data->writerThread.join();
 
-      TINFO("ResolveRedirectIndexes");
-      data->resolveRedirectIndexes();
-
-      TINFO("Set entry indexes");
-      data->setEntryIndexes();
-
-      TINFO("Resolve mimetype");
-      data->resolveMimeTypes();
-
-      TINFO("create title index");
-      data->createTitleIndex();
       TINFO(data->dirents.size() << " title index created");
       TINFO(data->clustersList.size() << " clusters created");
 
@@ -425,14 +399,10 @@ namespace zim
         compression(c),
         withIndex(withIndex),
         indexingLanguage(language),
-#if defined(ENABLE_XAPIAN)
-        titleIndexer(language, IndexingMode::TITLE, true),
-#endif
         verbose(verbose),
         nbRedirectItems(0),
         nbCompItems(0),
         nbUnCompItems(0),
-        nbIndexItems(0),
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
@@ -468,12 +438,17 @@ int mode =  _S_IREAD | _S_IWRITE;
       uncompCluster = new Cluster(zimcompNone);
 
 #if defined(ENABLE_XAPIAN)
-      titleIndexer.indexingPrelude(basename+"_title.idx");
+      auto titleIndexer = std::make_shared<TitleXapianHandler>(this);
+      m_direntHandlers.push_back(titleIndexer);
       if (withIndex) {
-          indexer = new XapianIndexer(indexingLanguage, IndexingMode::FULL, true);
-          indexer->indexingPrelude(basename+".idx");
+        auto fulltextIndexer = std::make_shared<FullTextXapianHandler>(this);
+        m_direntHandlers.push_back(fulltextIndexer);
       }
 #endif
+
+      for(auto& handler:m_direntHandlers) {
+        handler->start();
+      }
     }
 
     CreatorData::~CreatorData()
@@ -485,10 +460,6 @@ int mode =  _S_IREAD | _S_IWRITE;
       for(auto& cluster: clustersList) {
         delete cluster;
       }
-#if defined(ENABLE_XAPIAN)
-      if (indexer)
-        delete indexer;
-#endif
     }
 
     void CreatorData::addDirent(Dirent* dirent)
@@ -549,11 +520,6 @@ int mode =  _S_IREAD | _S_IWRITE;
         nbUnCompItems++;
       }
 
-    }
-
-    void CreatorData::addData(char ns, const std::string& path, const std::string& mimetype, std::unique_ptr<ContentProvider> provider, bool compressContent) {
-      auto dirent = createDirent(ns, path, mimetype, "");
-      addItemData(dirent, std::move(provider), compressContent);
     }
 
     Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)

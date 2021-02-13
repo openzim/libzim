@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Tommi Maekitalo
+ * Copyright (C) 2020 Matthieu Gautier <mgautier@kymeria.fr>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,19 +17,11 @@
  *
  */
 
-#include "config.h"
-
-#include "creatordata.h"
+#include "workers.h"
 #include "cluster.h"
-#include "debug.h"
-#include <zim/blob.h>
-#include "../endian_tools.h"
-#include <algorithm>
-#include <fstream>
+#include "creatordata.h"
 
-#if defined(ENABLE_XAPIAN)
-  #include "xapianIndexer.h"
-#endif
+#include "../tools.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -37,96 +29,10 @@
 #include <unistd.h>
 #endif
 
-#include <stdio.h>
-#include <limits>
-#include <stdexcept>
-#include <sstream>
-#include <mutex>
-#include "log.h"
-#include "../fs.h"
-#include "../tools.h"
-
-static std::mutex s_dbaccessLock;
-std::atomic<unsigned long> zim::writer::ClusterTask::waiting_task(0);
-std::atomic<unsigned long> zim::writer::IndexTask::waiting_task(0);
-
 namespace zim
 {
   namespace writer
   {
-
-    const unsigned int keywordsBoostFactor = 3;
-    inline unsigned int getTitleBoostFactor(const unsigned int contentLength)
-    {
-      return contentLength / 500 + 1;
-    }
-
-
-    void ClusterTask::run(CreatorData* data) {
-      cluster->close();
-    };
-
-#if defined(ENABLE_XAPIAN)
-    void IndexTask::run(CreatorData* data) {
-      Xapian::Stem stemmer;
-      Xapian::TermGenerator indexer;
-      try {
-        stemmer = Xapian::Stem(data->indexer->stemmer_language);
-        indexer.set_stemmer(stemmer);
-        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
-      } catch (...) {
-        // No stemming for language.
-      }
-      indexer.set_stopper(&data->indexer->stopper);
-      indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
-
-      auto indexData = p_item->getIndexData();
-
-      if (!indexData->hasIndexData()) {
-        return;
-      }
-
-      Xapian::Document document;
-      indexer.set_document(document);
-
-      document.set_data(p_item->getPath());
-      document.add_value(0, p_item->getTitle());
-
-      std::stringstream countWordStringStream;
-      countWordStringStream << indexData->getWordCount();
-      document.add_value(1, countWordStringStream.str());
-
-      auto geoInfo = indexData->getGeoPosition();
-      if (std::get<0>(geoInfo)) {
-        auto geoPosition = Xapian::LatLongCoord(
-        std::get<1>(geoInfo), std::get<2>(geoInfo)).serialise();
-        document.add_value(2, geoPosition);
-      }
-
-      /* Index the content */
-      auto indexContent = indexData->getContent();
-      if (!indexContent.empty()) {
-        indexer.index_text_without_positions(indexContent);
-      }
-
-      /* Index the title */
-      auto indexTitle = indexData->getTitle();
-      if (!indexTitle.empty()) {
-        indexer.index_text_without_positions(
-          indexTitle, getTitleBoostFactor(indexContent.size()));
-      }
-
-      /* Index the keywords */
-      auto indexKeywords = indexData->getKeywords();
-      if (!indexKeywords.empty()) {
-        indexer.index_text_without_positions(indexKeywords, keywordsBoostFactor);
-      }
-
-      std::lock_guard<std::mutex> l(s_dbaccessLock);
-      data->indexer->writableDatabase.add_document(document);
-    }
-#endif
-
 
     void* taskRunner(void* arg) {
       auto creatorData = static_cast<zim::writer::CreatorData*>(arg);

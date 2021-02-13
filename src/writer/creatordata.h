@@ -24,6 +24,7 @@
 #include "queue.h"
 #include "_dirent.h"
 #include "workers.h"
+#include "handler.h"
 #include <set>
 #include <vector>
 #include <map>
@@ -76,7 +77,6 @@ namespace zim
 
         void addDirent(Dirent* dirent);
         void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
-        void addData(char ns, const std::string& path, const std::string& mimetype, std::unique_ptr<ContentProvider> provider, bool compressContent);
 
         Dirent* createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title);
         Dirent* createItemDirent(const Item* item);
@@ -121,10 +121,13 @@ namespace zim
 
         bool withIndex;
         std::string indexingLanguage;
-#if defined(ENABLE_XAPIAN)
-        XapianIndexer titleIndexer;
-        XapianIndexer* indexer = nullptr;
-#endif
+
+        std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
+        void handle(Dirent* dirent, std::shared_ptr<Item> item = nullptr) {
+          for(auto& handler: m_direntHandlers) {
+            handler->handle(dirent, item);
+          }
+        }
 
         // Some stats
         bool verbose;
@@ -132,7 +135,6 @@ namespace zim
         entry_index_type nbRedirectItems;
         entry_index_type nbCompItems;
         entry_index_type nbUnCompItems;
-        entry_index_type nbIndexItems;
         cluster_index_type nbClusters;
         cluster_index_type nbCompClusters;
         cluster_index_type nbUnCompClusters;
