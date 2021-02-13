@@ -155,20 +155,19 @@ TEST(FindTests, ByPath)
     }
     ASSERT_EQ(count, 34);
 
-    ASSERT_EQ(range5.begin()->getIndex(), 0);
     count = 0;
     for(auto& entry: range5) {
+      ASSERT_EQ(count, entry.getIndex());
       count++;
     }
     ASSERT_EQ(count, 118);
 
-    ASSERT_EQ(range6.begin()->getIndex(), 0);
     count = 0;
     for(auto& entry: range6) {
+      ASSERT_EQ(count, entry.getIndex());
       count++;
     }
     ASSERT_EQ(count, 118);
-    
 }
 
 } // namespace
