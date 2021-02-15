@@ -35,10 +35,6 @@
 #include "../fileheader.h"
 #include "direntPool.h"
 
-#if defined(ENABLE_XAPIAN)
-  #include "xapianIndexer.h"
-#endif
-
 namespace zim
 {
   namespace writer
