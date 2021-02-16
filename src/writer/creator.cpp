@@ -238,7 +238,7 @@ namespace zim
       TINFO("Resolve mimetype");
       data->resolveMimeTypes();
 
-      // We can now stop the dirents, and get their content
+      // We can now stop the direntHandlers, and get their content
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
         auto dirent = handler->getDirent();
