@@ -46,7 +46,7 @@ template<typename T>
 struct Optional{
   Optional(NoneType none) : active(false) {};
   Optional(T value) : active(true), value(value) {};
-  void check(const T& value) { if (active) ASSERT_EQ(this->value, value); }
+  void check(const T& value) { if (active) { ASSERT_EQ(this->value, value); } }
   bool active;
   T    value;
 };
@@ -56,7 +56,7 @@ struct Optional<const std::string> {
   Optional(NoneType none) : active(false) {};
   Optional(std::string value) : active(true), value(value) {};
   Optional(const char* value) : active(true), value(value) {};
-  void check(const std::string& value) { if (active) ASSERT_EQ(this->value, value); }
+  void check(const std::string& value) { if (active) { ASSERT_EQ(this->value, value); } }
   bool active;
   std::string value;
 };
