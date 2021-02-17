@@ -263,8 +263,8 @@ TEST(ClusterTest, read_extended_cluster)
     return;
   }
 
-  std::FILE* tmpfile = std::tmpfile();
-  int fd = fileno(tmpfile);
+  TempFile tmpfile("extended_cluster");
+  int fd = tmpfile.fd();
   ssize_t bytes_written;
 
   std::string blob0("123456789012345678901234567890");
@@ -318,9 +318,9 @@ TEST(ClusterTest, read_extended_cluster)
 //  std::fseek(tmpfile, bigger_than_4g-1, SEEK_CUR);
   a = '\0';
   bytes_written = write(fd, &a, 1);
-  fflush(tmpfile);
+  tmpfile.close();
 
-  auto fileCompound = std::make_shared<zim::FileCompound>(fd);
+  auto fileCompound = std::make_shared<zim::FileCompound>(tmpfile.path());
   const auto cluster2shptr = zim::Cluster::read(zim::MultiPartFileReader(fileCompound), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, true);
@@ -343,8 +343,6 @@ TEST(ClusterTest, read_extended_cluster)
   } else {
     ASSERT_EQ(b.size(), bigger_than_4g);
   }
-
-  fclose(tmpfile);
 }
 
 

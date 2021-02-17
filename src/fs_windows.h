@@ -44,7 +44,6 @@ class FD {
   public:
     FD();
     FD(fd_t handle);
-    FD(int fd);
     FD(const FD& o) = delete;
     FD(FD&& o);
     FD& operator=(FD&& o);

@@ -56,7 +56,11 @@ class FileCompound : private std::map<Range, FilePart*, less_range> {
 
   public: // functions
     explicit FileCompound(const std::string& filename);
+
+#ifndef _WIN32
     explicit FileCompound(int fd);
+#endif
+
     ~FileCompound();
 
     using ImplType::begin;

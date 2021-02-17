@@ -100,9 +100,8 @@ TEST(ZimCreator, createEmptyZim)
   creator.finishZimCreation();
 
   // Do not use the high level Archive to test that zim file is correctly created but lower structure.
-  auto fd = DEFAULTFS::openFile(tempPath);
-  auto size = fd.getSize();
-  auto reader = std::make_shared<FileReader>(std::make_shared<typename DEFAULTFS::FD>(fd.release()), offset_t(0), size);
+  auto fileCompound = std::make_shared<FileCompound>(tempPath);
+  auto reader = std::make_shared<MultiPartFileReader>(fileCompound);
   Fileheader header;
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
@@ -151,9 +150,8 @@ TEST(ZimCreator, createZim)
   creator.finishZimCreation();
 
   // Do not use the high level Archive to test that zim file is correctly created but lower structure.
-  auto fd = DEFAULTFS::openFile(tempPath);
-  auto size = fd.getSize();
-  auto reader = std::make_shared<FileReader>(std::make_shared<typename DEFAULTFS::FD>(fd.release()), offset_t(0), size);
+  auto fileCompound = std::make_shared<FileCompound>(tempPath);
+  auto reader = std::make_shared<MultiPartFileReader>(fileCompound);
   Fileheader header;
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());

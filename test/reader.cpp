@@ -38,7 +38,7 @@ using zim::unittests::makeTempFile;
 std::unique_ptr<Reader> createFileReader(const char* data, zsize_t size) {
   const auto tmpfile = makeTempFile("data", data);
   auto fd = DEFAULTFS::openFile(tmpfile->path());
-  return std::unique_ptr<Reader>(new FileReader(std::make_shared<typename DEFAULTFS::FD>(fd.release()), offset_t(0), size));
+  return std::unique_ptr<Reader>(new FileReader(std::make_shared<typename DEFAULTFS::FD>(std::move(fd)), offset_t(0), size));
 }
 
 std::unique_ptr<Reader> createMultiFileReader(const char* data, zsize_t size) {

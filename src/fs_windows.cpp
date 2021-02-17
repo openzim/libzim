@@ -57,9 +57,6 @@ FD::FD() :
 FD::FD(fd_t handle) :
   mp_impl(new ImplFD(handle)) {}
 
-FD::FD(int fd):
-  mp_impl(new ImplFD(reinterpret_cast<HANDLE>(_get_osfhandle(fd)))) {}
-
 FD::FD(FD&& o) = default;
 FD& FD::operator=(FD&& o) = default;
 
