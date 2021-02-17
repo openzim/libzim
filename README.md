@@ -95,6 +95,18 @@ ninja -C build doc
 
 Depending of you system, `ninja` may be called `ninja-build`.
 
+By default, libzim tries to compile with Xapian (and will generate an
+error if Xapian is not found).  You can build without xapian by
+passing the option `-Dwith_xapian=false` :
+```bash
+meson . build -Dwith_xapian=false
+ninja -C build doc
+```
+
+If libzim is compiled without Xapian, all search API are removed.  You
+can test if an installed version of libzim is compiled with or without
+xapian by testing the define `LIBZIM_WITH_XAPIAN`.
+
 Installation
 ------------
 
