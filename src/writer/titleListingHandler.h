@@ -17,20 +17,29 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef OPENZIM_LIBZIM_XAPIAN_HANDLER_H
-#define OPENZIM_LIBZIM_XAPIAN_HANDLER_H
+#ifndef OPENZIM_LIBZIM_LISTING_HANDLER_H
+#define OPENZIM_LIBZIM_LISTING_HANDLER_H
 
 #include "handler.h"
+#include "_dirent.h"
+
+#include <vector>
 
 namespace zim {
 namespace writer {
 
-class XapianIndexer;
+struct TitleCompare {
+  bool operator() (const Dirent* d1, const Dirent* d2) const {
+    return compareTitle(d1, d2);
+  }
+};
 
-class FullTextXapianHandler : public DirentHandler {
+class TitleListingHandler : public DirentHandler {
   public:
-    explicit FullTextXapianHandler(CreatorData* data);
-    virtual ~FullTextXapianHandler();
+    typedef std::vector<Dirent*> Dirents;
+
+    explicit TitleListingHandler(CreatorData* data);
+    virtual ~TitleListingHandler();
 
     void start() override;
     void stop() override;
@@ -40,35 +49,20 @@ class FullTextXapianHandler : public DirentHandler {
 
   protected:
     Dirent* createDirent() const override;
-
-  private:
-    std::unique_ptr<XapianIndexer> mp_indexer;
     CreatorData* mp_creatorData;
+    Dirents m_dirents;
 };
 
-class TitleXapianHandler : public DirentHandler {
+class TitleListingHandlerV1 : public TitleListingHandler {
   public:
-    explicit TitleXapianHandler(CreatorData* data);
-    virtual ~TitleXapianHandler();
-
-    void start() override;
-    void stop() override;
-    std::unique_ptr<ContentProvider> getContentProvider() const override;
-    void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
+    explicit TitleListingHandlerV1(CreatorData* data) : TitleListingHandler(data) {};
     void handle(Dirent* dirent, const Hints& hints) override;
 
   protected:
     Dirent* createDirent() const override;
-
-  private: // function
-    void handle_dirent(Dirent* dirent);
-
-  private: // data
-    std::unique_ptr<XapianIndexer> mp_indexer;
-    CreatorData* mp_creatorData;
 };
 
 }
 }
 
-#endif // OPENZIM_LIBZIM_XAPIAN_WORKER_H
+#endif // OPENZIM_LIBZIM_LISTING_HANDLER_H

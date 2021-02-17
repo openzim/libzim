@@ -61,6 +61,7 @@ namespace zim
         std::string redirectPath;
         entry_index_t idx = entry_index_t(0);
         offset_t offset;
+        bool removed;
 
       public:
         Dirent()
@@ -69,7 +70,8 @@ namespace zim
             path(),
             title(),
             redirectNs(),
-            redirectPath()
+            redirectPath(),
+            removed(false)
         {
           info.d.clusterNumber = cluster_index_t(0);
           info.d.blobNumber = blob_index_t(0);
@@ -117,6 +119,11 @@ namespace zim
           info.d.blobNumber = _cluster->count();
         }
 
+        zim::writer::Cluster* getCluster()
+        {
+          return cluster;
+        }
+
         cluster_index_t getClusterNumber() const {
           return cluster ? cluster->getClusterIndex() : info.d.clusterNumber;
         }
@@ -145,6 +152,9 @@ namespace zim
           info.d.clusterNumber = clusterNumber_;
           info.d.blobNumber = blobNumber_;
         }
+
+        bool isRemoved() const { return removed; }
+        void markRemoved() { removed = true; }
 
         void write(int out_fd) const;
 

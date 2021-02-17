@@ -131,30 +131,59 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     auto urlPtrReader = sectionSubReader(*zimReader,
                                          "Dirent pointer table",
                                          offset_t(header.getUrlPtrPos()),
-                                         zsize_t(8*header.getArticleCount()));
+                                         zsize_t(sizeof(offset_type)*header.getArticleCount()));
 
     mp_urlDirentAccessor.reset(
         new DirectDirentAccessor(direntReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
 
 
-    auto titleIndexReader = sectionSubReader(*zimReader,
-                                        "Title index table",
-                                        offset_t(header.getTitleIdxPos()),
-                                        zsize_t(4*header.getArticleCount()));
-
-    mp_titleDirentAccessor.reset(
-        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(header.getArticleCount())));
-
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
                                            offset_t(header.getClusterPtrPos()),
-                                           zsize_t(8*header.getClusterCount()));
+                                           zsize_t(sizeof(offset_type)*header.getClusterCount()));
 
     quickCheckForCorruptFile();
+
+    mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+
+    if (!mp_titleDirentAccessor) {
+      offset_t titleOffset(header.getTitleIdxPos());
+      zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
+      mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
+    }
 
     readMimeTypes();
   }
 
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const std::string& path)
+  {
+    auto result = direntLookup().find('X', path);
+    if (!result.first) {
+      return nullptr;
+    }
+
+    auto dirent = mp_urlDirentAccessor->getDirent(result.second);
+    auto cluster = getCluster(dirent->getClusterNumber());
+    if (cluster->isCompressed()) {
+      // This is a ZimFileFormatError.
+      // Let's be tolerent and skip the entry
+      return nullptr;
+    }
+    auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + cluster->getBlobOffset(dirent->getBlobNumber());
+    auto titleSize = cluster->getBlobSize(dirent->getBlobNumber());
+    return getTitleAccessor(titleOffset, titleSize, "Title index table" + path);
+  }
+
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name)
+  {
+      auto titleIndexReader = sectionSubReader(*zimReader,
+                                               name,
+                                               offset,
+                                               size);
+
+      return std::unique_ptr<IndirectDirentAccessor>(
+        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/sizeof(entry_index_type))));
+  }
 
   FileImpl::DirentLookup& FileImpl::direntLookup()
   {
@@ -277,8 +306,8 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   {
     log_debug("find article by title " << ns << " \"" << title << "\", in file \"" << getFilename() << '"');
 
-    entry_index_type l = entry_index_type(getNamespaceBeginOffset(ns));
-    entry_index_type u = entry_index_type(getNamespaceEndOffset(ns));
+    entry_index_type l = 0;
+    entry_index_type u = entry_index_type(mp_titleDirentAccessor->getDirentCount());
 
     if (l == u)
     {
@@ -394,7 +423,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed())
       return offset_t(0);
-    return getClusterOffset(clusterIdx) + offset_t(1) + cluster->getBlobOffset(blobIdx);
+    return getClusterOffset(clusterIdx) + cluster->getBlobOffset(blobIdx);
   }
 
   entry_index_t FileImpl::getNamespaceBeginOffset(char ch)
@@ -588,29 +617,39 @@ std::string pseudoTitle(const Dirent& d)
   return std::string(1, d.getNamespace()) + '/' + d.getTitle();
 }
 
+bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type totalCount) {
+  const entry_index_type direntCount = accessor.getDirentCount().v;
+  std::shared_ptr<const Dirent> prevDirent;
+  for ( entry_index_type i = 0; i < direntCount; ++i ) {
+    if (accessor.getDirectIndex(title_index_t(i)).v >= totalCount) {
+      std::cerr << "Invalid title index entry." << std::endl;
+      return false;
+    }
+
+    const std::shared_ptr<const Dirent> dirent = accessor.getDirent(title_index_t(i));
+    if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) ) {
+      std::cerr << "Title index is not properly sorted." << std::endl;
+      return false;
+    }
+    prevDirent = dirent;
+  }
+  return true;
+}
+
 } // unnamed namespace
 
   bool FileImpl::checkTitleIndex() {
     const entry_index_type articleCount = getCountArticles().v;
-    const entry_index_type frontArticleCount = mp_titleDirentAccessor->getDirentCount().v;
-    std::shared_ptr<const Dirent> prevDirent;
-    for ( entry_index_type i = 0; i < frontArticleCount; ++i )
-    {
-      if (mp_titleDirentAccessor->getDirectIndex(title_index_t(i)).v >= articleCount) {
-        std::cerr << "Invalid title index entry" << std::endl;
-        return false;
-      }
 
-      const std::shared_ptr<const Dirent> dirent = mp_titleDirentAccessor->getDirent(title_index_t(i));
-      if ( prevDirent && !(pseudoTitle(*prevDirent) <= pseudoTitle(*dirent)) )
-      {
-        std::cerr << "Title index is not properly sorted:\n"
-                  << "  #" << i-1 << ": " << pseudoTitle(*prevDirent) << "\n"
-                  << "  #" << i   << ": " << pseudoTitle(*dirent) << std::endl;
-        return false;
-      }
-      prevDirent = dirent;
+    offset_t titleOffset(header.getTitleIdxPos());
+    zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
+    auto titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Full Title index table");
+    auto ret = checkTitleListing(*titleDirentAccessor, articleCount);
+
+    titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    if (titleDirentAccessor) {
+      ret &= checkTitleListing(*titleDirentAccessor, articleCount);
     }
-    return true;
+    return ret;
   }
 }
