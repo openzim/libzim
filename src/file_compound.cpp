@@ -69,12 +69,14 @@ FileCompound::FileCompound(const std::string& filename):
   }
 }
 
+#ifndef _WIN32
 FileCompound::FileCompound(int fd):
   _filename(),
   _fsize(0)
 {
   addPart(new FilePart(fd));
 }
+#endif
 
 FileCompound::~FileCompound() {
   for(auto it=begin(); it!=end(); it++) {
