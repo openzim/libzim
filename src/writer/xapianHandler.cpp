@@ -56,15 +56,18 @@ std::unique_ptr<ContentProvider> FullTextXapianHandler::getContentProvider() con
   return std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath()));
 }
 
-void FullTextXapianHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
+void FullTextXapianHandler::handle(Dirent* dirent, const Hints& hints)
+{
+  // We have nothing to do.
+}
+
+void FullTextXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
   if (dirent->getNamespace() != 'C') {
     // We should always have namespace == 'C' but let's be careful.
     return;
   }
-  if (item) {
-    mp_creatorData->taskList.pushToQueue(new IndexTask(item, mp_indexer.get()));
-  }
+  mp_creatorData->taskList.pushToQueue(new IndexTask(item, mp_indexer.get()));
 }
 
 TitleXapianHandler::TitleXapianHandler(CreatorData* data)
@@ -90,7 +93,18 @@ std::unique_ptr<ContentProvider> TitleXapianHandler::getContentProvider() const 
   return std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath()));
 }
 
-void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item) {
+void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
+{
+  handle_dirent(dirent);
+}
+
+void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+{
+  handle_dirent(dirent);
+}
+
+void TitleXapianHandler::handle_dirent(Dirent* dirent)
+{
   if (dirent->getNamespace() != 'C') {
     // We should always have namespace == 'C' but let's be careful.
     return;

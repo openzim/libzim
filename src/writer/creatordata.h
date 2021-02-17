@@ -113,9 +113,14 @@ namespace zim
         offset_t m_titleListBlobOffset;  // The offset the title list blob,
                                          // related to the beginning of the start of cluster's data.
         std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
-        void handle(Dirent* dirent, const Hints& hints = Hints(), std::shared_ptr<Item> item = nullptr) {
+        void handle(Dirent* dirent, const Hints& hints = Hints()) {
           for(auto& handler: m_direntHandlers) {
-            handler->handle(dirent, hints, item);
+            handler->handle(dirent, hints);
+          }
+        }
+        void handle(Dirent* dirent, std::shared_ptr<Item> item) {
+          for(auto& handler: m_direntHandlers) {
+            handler->handle(dirent, item);
           }
         }
 

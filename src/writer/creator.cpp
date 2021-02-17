@@ -170,7 +170,7 @@ namespace zim
 
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
-      data->handle(dirent, item->getHints(), item);
+      data->handle(dirent, item);
 
       if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
@@ -224,7 +224,7 @@ namespace zim
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents
         auto dirent = handler->getDirent();
-        data->mp_titleListingHandler->handle(dirent, Hints(), nullptr);
+        data->mp_titleListingHandler->handle(dirent, Hints());
       }
 
       // Now we have all the dirents (but not the data), we must correctly set/fix the dirents

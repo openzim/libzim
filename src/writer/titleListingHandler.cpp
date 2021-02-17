@@ -81,7 +81,12 @@ std::unique_ptr<ContentProvider> TitleListingHandler::getContentProvider() const
   return std::unique_ptr<ContentProvider>(new ListingProvider(&m_dirents));
 }
 
-void TitleListingHandler::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
+void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+{
+  handle(dirent, item->getHints());
+}
+
+void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
   m_dirents.push_back(dirent);
 }
@@ -90,7 +95,7 @@ Dirent* TitleListingHandlerV1::createDirent() const {
   return mp_creatorData->createDirent('X', "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
 }
 
-void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints, std::shared_ptr<Item> item)
+void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints)
 {
   bool isFront { false };
   try {
