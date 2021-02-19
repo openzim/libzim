@@ -1,4 +1,4 @@
-Source: zimlib
+Source: libzim
 Section: libs
 Priority: optional
 Build-Depends: debhelper-compat (= 13),
@@ -12,7 +12,7 @@ Build-Depends: debhelper-compat (= 13),
  ninja-build,
  pkg-config
 Maintainer: Kiwix team <kiwix@kiwix.org>
-Homepage: https://www.openzim.org/wiki/Zimlib
+Homepage: https://www.openzim.org/wiki/Libzim
 Standards-Version: 4.4.1
 Rules-Requires-Root: no
 
@@ -30,13 +30,13 @@ Description: library implementation of ZIM specifications
  providing the contents of Wikipedia and Wikimedia projects for offline
  use.
  .
- zimlib is the standard implementation of ZIM specification, which
+ libzim is the standard implementation of ZIM specification, which
  implements the read and write method for ZIM files.
  .
  ZIM is a file format created with focus on extracting and encoding data
  from Mediawiki for offline use.
  .
- Features of zimlib are:
+ Features of libzim are:
   * Native, coded in C++
   * Extremely fast
   * Minimal footprint
@@ -58,7 +58,7 @@ Description: library implementation of ZIM specifications (development)
  providing the contents of Wikipedia and Wikimedia projects for offline
  use.
  .
- zimlib is the standard implementation of ZIM specification, which
+ libzim is the standard implementation of ZIM specification, which
  implements the read and write method for ZIM files.
  .
  ZIM is a file format created with focus on extracting and encoding data
