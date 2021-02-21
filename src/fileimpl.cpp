@@ -658,16 +658,12 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     const entry_index_type articleCount = getCountArticles().v;
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
-      if ( dirent->isArticle() ) {
-        const auto mimeType = dirent->getMimeType();
-        if (mimeType >= mimeTypes.size())
-        {
-          std::cerr << "Entry " << dirent->getLongUrl()
-                    << " has invalid MIME-type value " << mimeType << "."
-                    << std::endl;
-          return false;
-        }
+      const auto dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
+      if ( dirent->isArticle() && dirent->getMimeType() >= mimeTypes.size() ) {
+        std::cerr << "Entry " << dirent->getLongUrl()
+                  << " has invalid MIME-type value " << dirent->getMimeType()
+                  << "." << std::endl;
+        return false;
       }
     }
     return true;
