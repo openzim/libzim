@@ -540,6 +540,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       case IntegrityCheck::DIRENT_ORDER: return FileImpl::checkDirentOrder();
       case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
       case IntegrityCheck::CLUSTER_PTRS: return FileImpl::checkClusterPtrs();
+      case IntegrityCheck::DIRENT_MIMETYPES: return FileImpl::checkDirentMimeTypes();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
     return false;
@@ -652,4 +653,24 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     }
     return ret;
   }
+
+  bool FileImpl::checkDirentMimeTypes() {
+    const entry_index_type articleCount = getCountArticles().v;
+    for ( entry_index_type i = 0; i < articleCount; ++i )
+    {
+      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
+      if ( dirent->isArticle() ) {
+        const auto mimeType = dirent->getMimeType();
+        if (mimeType >= mimeTypes.size())
+        {
+          std::cerr << "Entry " << dirent->getLongUrl()
+                    << " has invalid MIME-type value " << mimeType << "."
+                    << std::endl;
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
 }

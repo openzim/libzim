@@ -15,6 +15,7 @@ data_files = [
   'invalid.nonsorted_dirent_table.zim',
   'invalid.nonsorted_title_index.zim',
   'invalid.bad_mimetype_list.zim',
+  'invalid.bad_mimetype_in_dirent.zim',
   'wikibooks_be_all_nopic_2017-02.zim',
   'wikibooks_be_all_nopic_2017-02_splitted.zimaa',
   'wikibooks_be_all_nopic_2017-02_splitted.zimab',

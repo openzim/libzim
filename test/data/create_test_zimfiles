@@ -82,6 +82,11 @@ encode_uint32()
   encode_integer_as_printf_fmt_string "$1" 4
 }
 
+encode_uint16()
+{
+  encode_integer_as_printf_fmt_string "$1" 2
+}
+
 outofzimfile=$(encode_uint64 $((zimfilesize+10)))
 
 get_header_field()
@@ -154,6 +159,7 @@ url_ptr_pos=$(get_header_field url_ptr_pos)
 title_ptr_pos=$(get_header_field title_ptr_pos)
 cluster_ptr_pos=$(get_header_field cluster_ptr_pos)
 bad_article_index=$(encode_uint32 $((article_count)))
+
 create_broken_zim_file invalid.outofbounds_first_direntptr.zim   \
                        "$outofzimfile" \
                        $((url_ptr_pos))
@@ -200,3 +206,7 @@ bad_mimetype_list=$(printf '%-944s' 'This is a bad mimetype value filling all th
 create_broken_zim_file invalid.bad_mimetype_list.zim   \
                        "$bad_mimetype_list" \
                        80
+
+create_broken_zim_file invalid.bad_mimetype_in_dirent.zim   \
+                       $(encode_uint16 1234) \
+                       $((dirent_ptrs[article_count/2]))
