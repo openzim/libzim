@@ -440,7 +440,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   const std::string& FileImpl::getMimeType(uint16_t idx) const
   {
-    if (idx > mimeTypes.size())
+    if (idx >= mimeTypes.size())
     {
       std::ostringstream msg;
       msg << "unknown mime type code " << idx;
