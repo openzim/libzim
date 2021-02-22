@@ -214,9 +214,6 @@ TEST(ZimCreator, createZim)
 
   entry_index_type direntIdx = 0;
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
-  test_redirect_dirent(dirent, '-', "mainPage", "mainPage", entry_index_t(1));
-
-  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'C', "foo", "Foo", html_mimetype, cluster_index_t(0), None);
   auto fooBlobIndex = dirent->getBlobNumber();
 
@@ -225,11 +222,14 @@ TEST(ZimCreator, createZim)
   auto foo2BlobIndex = dirent->getBlobNumber();
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
-  test_redirect_dirent(dirent, 'C', "foo3", "FooRedirection", entry_index_t(1));
+  test_redirect_dirent(dirent, 'C', "foo3", "FooRedirection", entry_index_t(0));
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Title", "Title", plain_mimetype, cluster_index_t(0), None);
   auto metaBlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_redirect_dirent(dirent, 'W', "mainPage", "mainPage", entry_index_t(0));
 
 #if defined(ENABLE_XAPIAN)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
@@ -277,9 +277,9 @@ TEST(ZimCreator, createZim)
   ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
   std::vector<char> blob0Data(blob.data(), blob.end());
   std::vector<char> expectedBlob0Data = {
+    1, 0, 0, 0,
     0, 0, 0, 0,
     2, 0, 0, 0,
-    1, 0, 0, 0,
     3, 0, 0, 0,
     4, 0, 0, 0,
     5, 0, 0, 0,
@@ -295,8 +295,8 @@ TEST(ZimCreator, createZim)
   ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
   std::vector<char> blob1Data(blob.data(), blob.end());
   std::vector<char> expectedBlob1Data = {
-    2, 0, 0, 0,
-    1, 0, 0, 0
+    1, 0, 0, 0,
+    0, 0, 0, 0
   };
   ASSERT_EQ(blob1Data, expectedBlob1Data);
 }
