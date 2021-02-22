@@ -71,6 +71,7 @@ namespace zim
     TITLE_INDEX, // Checks that entries in the title index are valid
                  // and properly sorted
     CLUSTER_PTRS, // Checks that offsets in ClusterPtrList are valid
+    DIRENT_MIMETYPES, // Checks that mime-type values in dirents are valid
 
     // This must be the last one and denotes the count of all checks
     COUNT

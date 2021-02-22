@@ -440,7 +440,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   const std::string& FileImpl::getMimeType(uint16_t idx) const
   {
-    if (idx > mimeTypes.size())
+    if (idx >= mimeTypes.size())
     {
       std::ostringstream msg;
       msg << "unknown mime type code " << idx;
@@ -540,6 +540,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       case IntegrityCheck::DIRENT_ORDER: return FileImpl::checkDirentOrder();
       case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
       case IntegrityCheck::CLUSTER_PTRS: return FileImpl::checkClusterPtrs();
+      case IntegrityCheck::DIRENT_MIMETYPES: return FileImpl::checkDirentMimeTypes();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
     return false;
@@ -652,4 +653,20 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     }
     return ret;
   }
+
+  bool FileImpl::checkDirentMimeTypes() {
+    const entry_index_type articleCount = getCountArticles().v;
+    for ( entry_index_type i = 0; i < articleCount; ++i )
+    {
+      const auto dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
+      if ( dirent->isArticle() && dirent->getMimeType() >= mimeTypes.size() ) {
+        std::cerr << "Entry " << dirent->getLongUrl()
+                  << " has invalid MIME-type value " << dirent->getMimeType()
+                  << "." << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
 }

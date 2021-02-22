@@ -262,6 +262,11 @@ TEST(ZimArchive, validate)
     "./data/invalid.bad_mimetype_list.zim",
     "Error getting mimelists.\n"
   );
+
+  EXPECT_BROKEN_ZIMFILE(
+    "./data/invalid.bad_mimetype_in_dirent.zim",
+    "Entry M/Language has invalid MIME-type value 1234.\n"
+  );
 }
 
 void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2)
