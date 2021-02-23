@@ -30,8 +30,7 @@
 # include "io.h"
 #else
 # include "unistd.h"
-# define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
-{throw std::runtime_error("Error writing");}
+# define _write(fd, addr, size) ::write((fd), (addr), (size))
 #endif
 
 log_define("zim.file.header")
@@ -61,7 +60,13 @@ namespace zim
     toLittleEndian(getLayoutPage(), header + 68);
     toLittleEndian(getChecksumPos(), header + 72);
 
-    _write(out_fd, header, Fileheader::size);
+    auto ret = _write(out_fd, header, Fileheader::size);
+    if (ret != Fileheader::size) {
+      std::cerr << "Error Writing" << std::endl;
+      std::cerr << "Ret is " << ret << std::endl;
+      perror("Error writing");
+      throw std::runtime_error("Error writing");
+    }
   }
 
   void Fileheader::read(const Reader& reader)
