@@ -24,6 +24,7 @@
 #include <codecvt>
 #include <windows.h>
 #include <fileapi.h>
+#include <io.h>
 #endif
 
 #include <fcntl.h>
@@ -69,7 +70,7 @@ int TempFile::fd()
 {
   if (fd_ == -1) {
 #ifdef _WIN32
-    fd_ = _wopen(wpath_, _O_RDWR);
+    fd_ = _wopen(wpath_, _O_RDWR | _O_BINARY);
 #else
     fd_ = open(path_.c_str(), O_RDWR);
 #endif
