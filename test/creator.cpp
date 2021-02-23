@@ -96,7 +96,7 @@ void test_redirect_dirent(
 TEST(ZimCreator, createEmptyZim)
 {
   unittests::TempFile temp("emptyzimfile");
-  auto tempPath = temp.path() + ".zim";
+  auto tempPath = temp.path();
   writer::Creator creator;
   creator.startZimCreation(tempPath);
   creator.finishZimCreation();
@@ -171,7 +171,7 @@ class TestItem : public writer::Item
 TEST(ZimCreator, createZim)
 {
   unittests::TempFile temp("zimfile");
-  auto tempPath = temp.path() + ".zim";
+  auto tempPath = temp.path();
   writer::Creator creator;
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);

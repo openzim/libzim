@@ -286,7 +286,7 @@ namespace zim
       ::close(data->out_fd);
 
       TINFO("rename tmpfile to final one.");
-      DEFAULTFS::rename(data->basename+".zim.tmp", data->basename+".zim");
+      DEFAULTFS::rename(data->basename+".tmp", data->basename);
 
       TINFO("finish");
     }
@@ -404,12 +404,10 @@ namespace zim
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
-        start_time(time(NULL))
+        start_time(time(NULL)),
+        basename(fname)
     {
-      basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
-                        ? fname.substr(0, fname.size() - 4)
-                        : fname;
-      auto zim_name = basename + ".zim.tmp";
+      auto zim_name = basename + ".tmp";
 #ifdef _WIN32
 int mode =  _S_IREAD | _S_IWRITE;
 #else
