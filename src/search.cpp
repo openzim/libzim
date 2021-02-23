@@ -379,6 +379,19 @@ Search::iterator Search::begin() const {
         }
     }
 
+   /*
+    * In suggestion mode, we are searching over a separate title index. Default BM25 is not
+    * adapted for this case. WDF factor(k1) controls the effect of within document frequency.
+    * k1 = 0.001 reduces the effect of word repitition in document. In BM25, smaller documents
+    * get larger weights, so normalising the length of documents is necessary using b = 1.
+    * The document set is first sorted by their relevance score then by value so that suggestion
+    * results are closer to search string.
+    * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
+    */
+    if (suggestion_mode) {
+      enquire.set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
+      enquire.set_sort_by_relevance_then_value(valuesmap["title"], false);
+    }
     enquire.set_query(query);
 
 #if WITH_LEV

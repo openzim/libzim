@@ -129,10 +129,10 @@ namespace {
                                        };
 
     std::vector<std::string> expectedResult = {
-                                        "hotel berlin, berlin",
                                         "berlin",
-                                        "berlin wall",
+                                        "hotel berlin, berlin",
                                         "again berlin",
+                                        "berlin wall",
                                         "not berlin"
                                        };
 
@@ -153,8 +153,8 @@ namespace {
                                        };
 
     std::vector<std::string> expectedResult = {
-                                        "foobar b",
-                                        "foobar a"
+                                        "foobar a",
+                                        "foobar b"
                                        };
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
@@ -175,10 +175,10 @@ namespace {
 
     std::vector<std::string> expectedResult = {
                                         "In Summer",
-                                        "Summer in Berlin",
+                                        "In mid Summer",
                                         "Shivers in summer",
-                                        "Summer in Paradise",
-                                        "In mid Summer"
+                                        "Summer in Berlin",
+                                        "Summer in Paradise"
                                        };
 
     TempZimArchive tza("testZim");
