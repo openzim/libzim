@@ -38,8 +38,6 @@
 # define _write(fd, addr, size) ::write((fd), (addr), (size))
 #endif
 
-const zim::size_type MAX_WRITE_SIZE(4UL*1024*1024*1024-1);
-
 namespace zim {
 namespace writer {
 
@@ -196,7 +194,7 @@ void Cluster::write(int out_fd) const
         size_type to_write = data.size();
         const char* src = data.data();
         while (to_write) {
-         size_type chunk_size = std::min(MAX_WRITE_SIZE, to_write);
+         size_type chunk_size = to_write > 4096 ? 4096 : to_write;
          auto ret = _write(out_fd, src, chunk_size);
          src += ret;
          to_write -= ret;
