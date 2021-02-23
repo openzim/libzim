@@ -97,7 +97,13 @@ TEST(ZimCreator, createEmptyZim)
 {
   unittests::TempFile temp("emptyzimfile");
   auto tempPath = temp.path();
+  zim::Uuid uuid;
+  // Force special char in the uuid to be sure they are not handled particularly.
+  uuid.data[5] = '\n';
+  uuid.data[10] = '\0';
+
   writer::Creator creator;
+  creator.setUuid(uuid);
   creator.startZimCreation(tempPath);
   creator.finishZimCreation();
 
@@ -172,7 +178,13 @@ TEST(ZimCreator, createZim)
 {
   unittests::TempFile temp("zimfile");
   auto tempPath = temp.path();
+  zim::Uuid uuid;
+  // Force special char in the uuid to be sure they are not handled particularly.
+  uuid.data[5] = '\n';
+  uuid.data[10] = '\0';
+
   writer::Creator creator;
+  creator.setUuid(uuid);
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
   auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
