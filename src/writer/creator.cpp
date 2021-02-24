@@ -396,6 +396,8 @@ namespace zim
                                    CompressionType c)
       : mainPageDirent(nullptr),
         compression(c),
+        zimName(fname),
+        tmpFileName(fname + ".tmp"),
         withIndex(withIndex),
         indexingLanguage(language),
         verbose(verbose),
@@ -405,9 +407,7 @@ namespace zim
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
-        start_time(time(NULL)),
-        zimName(fname),
-        tmpFileName(fname + ".tmp")
+        start_time(time(NULL))
     {
 #ifdef _WIN32
       int flag = _O_RDWR | _O_CREAT | _O_TRUNC | _O_BINARY;
