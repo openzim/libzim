@@ -22,7 +22,7 @@ tests = [
 ]
 
 if xapian_dep.found()
-    tests += ['search']
+    tests += ['search', 'suggestion']
 endif
 
 if gtest_dep.found() and not meson.is_cross_build()

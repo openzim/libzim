@@ -22,7 +22,6 @@
 #include <zim/item.h>
 #include "fileimpl.h"
 #include "search_internal.h"
-#include "levenshtein.h"
 #include "fs.h"
 
 #include <sstream>
@@ -114,23 +113,6 @@ setup_queryParser(Xapian::QueryParser* queryparser,
         queryparser->set_stopper(stopper);
     }
 }
-
-class LevenshteinDistanceMaker : public Xapian::KeyMaker {
-  public:
-    LevenshteinDistanceMaker(const std::string& query, size_t value_index):
-        query(query),
-        value_index(value_index) {}
-    ~LevenshteinDistanceMaker() = default;
-
-    virtual std::string operator() (const Xapian::Document &doc) const {
-       auto document_value = doc.get_value(value_index);
-       return Xapian::sortable_serialise(
-                  levenshtein_distance(document_value, query));
-    }
-  private:
-    std::string query;
-    size_t value_index;
-};
 
 }
 
@@ -234,8 +216,6 @@ Search& Search::set_suggestion_mode(const bool suggestion_mode) {
     this->suggestion_mode = suggestion_mode;
     return *this;
 }
-
-#define WITH_LEV 1
 
 Search::iterator Search::begin() const {
     if ( this->search_started ) {
@@ -364,9 +344,6 @@ Search::iterator Search::begin() const {
     delete queryParser;
 
     Xapian::Enquire enquire(internal->database);
-#if WITH_LEV
-    std::unique_ptr<Xapian::KeyMaker> keyMaker(nullptr);
-#endif
 
     if (geo_query && valuesmap.find("geo.position") != valuesmap.end()) {
         Xapian::GreatCircleMetric metric;
@@ -379,29 +356,21 @@ Search::iterator Search::begin() const {
         }
     }
 
-    enquire.set_query(query);
-
-#if WITH_LEV
-    if (suggestion_mode && !hasNewSuggestionFormat) {
-      size_t value_index = 0;
-      bool has_custom_distance_maker = true;
-      if ( !valuesmap.empty() ) {
-        if ( valuesmap.find("title") != valuesmap.end() ) {
-          value_index = valuesmap["title"];
-        } else {
-          // This should not happen as valuesmap has a title entry, but let's
-          // be tolerent.
-          has_custom_distance_maker = false;
-        }
-      }
-      auto temp_results = enquire.get_mset(0,0);
-      if ( has_custom_distance_maker
-        && temp_results.get_matches_estimated() <= MAX_MATCHES_TO_SORT ) {
-        keyMaker.reset(new LevenshteinDistanceMaker(this->query, value_index));
-        enquire.set_sort_by_key(keyMaker.get(), false);
-      }
+   /*
+    * In suggestion mode, we are searching over a separate title index. Default BM25 is not
+    * adapted for this case. WDF factor(k1) controls the effect of within document frequency.
+    * k1 = 0.001 reduces the effect of word repitition in document. In BM25, smaller documents
+    * get larger weights, so normalising the length of documents is necessary using b = 1.
+    * The document set is first sorted by their relevance score then by value so that suggestion
+    * results are closer to search string.
+    * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
+    */
+    if (suggestion_mode) {
+      enquire.set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
+      enquire.set_sort_by_relevance_then_value(valuesmap["title"], false);
     }
-#endif
+
+    enquire.set_query(query);
 
     if (suggestion_mode && valuesmap.find("title") != valuesmap.end()) {
       enquire.set_collapse_key(valuesmap["title"]);
