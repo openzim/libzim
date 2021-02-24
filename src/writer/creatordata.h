@@ -98,7 +98,8 @@ namespace zim
         ThreadList workerThreads;
         std::thread  writerThread;
         const CompressionType compression;
-        std::string basename;
+        std::string zimName;
+        std::string tmpFileName;
         bool isEmpty = true;
         bool isExtended = false;
         zsize_t clustersSize;

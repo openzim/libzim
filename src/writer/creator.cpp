@@ -286,7 +286,7 @@ namespace zim
       ::close(data->out_fd);
 
       TINFO("rename tmpfile to final one.");
-      DEFAULTFS::rename(data->basename+".zim.tmp", data->basename+".zim");
+      DEFAULTFS::rename(data->tmpFileName, data->zimName);
 
       TINFO("finish");
     }
@@ -404,22 +404,20 @@ namespace zim
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
-        start_time(time(NULL))
+        start_time(time(NULL)),
+        zimName(fname),
+        tmpFileName(fname + ".tmp")
     {
-      basename =  (fname.size() > 4 && fname.compare(fname.size() - 4, 4, ".zim") == 0)
-                        ? fname.substr(0, fname.size() - 4)
-                        : fname;
-      auto zim_name = basename + ".zim.tmp";
 #ifdef _WIN32
 int mode =  _S_IREAD | _S_IWRITE;
 #else
       mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #endif
-      out_fd = open(zim_name.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
+      out_fd = open(tmpFileName.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
       if (out_fd == -1){
         perror(nullptr);
         std::ostringstream ss;
-        ss << "Cannot create file " << zim_name;
+        ss << "Cannot create file " << tmpFileName;
         throw std::runtime_error(ss.str());
       }
       if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
