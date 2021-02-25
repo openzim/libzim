@@ -47,7 +47,7 @@ using zim::unittests::write_to_buffer;
 TEST(HeaderTest, read_write_header)
 {
   zim::Fileheader header;
-  header.setUuid("1234567890abcdef");
+  header.setUuid("123456789\0abcd\nf");
   header.setArticleCount(4711);
   header.setUrlPtrPos(12345);
   header.setTitleIdxPos(23456);
@@ -57,7 +57,7 @@ TEST(HeaderTest, read_write_header)
   header.setLayoutPage(13);
   header.setMimeListPos(72);
 
-  ASSERT_EQ(header.getUuid(), "1234567890abcdef");
+  ASSERT_EQ(header.getUuid(), "123456789\0abcd\nf");
   ASSERT_EQ(header.getArticleCount(), 4711U);
   ASSERT_EQ(header.getUrlPtrPos(), 12345U);
   ASSERT_EQ(header.getTitleIdxPos(), 23456U);
@@ -71,7 +71,7 @@ TEST(HeaderTest, read_write_header)
   zim::Fileheader header2;
   header2.read(zim::BufferReader(buffer));
 
-  ASSERT_EQ(header2.getUuid(), "1234567890abcdef");
+  ASSERT_EQ(header2.getUuid(), "123456789\0abcd\nf");
   ASSERT_EQ(header2.getArticleCount(), 4711U);
   ASSERT_EQ(header2.getUrlPtrPos(), 12345U);
   ASSERT_EQ(header2.getTitleIdxPos(), 23456U);

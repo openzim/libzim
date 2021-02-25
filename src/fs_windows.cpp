@@ -172,7 +172,12 @@ bool FS::makeDirectory(path_t path)
 
 void FS::rename(path_t old_path, path_t new_path)
 {
-  MoveFileW(toWideChar(old_path).get(), toWideChar(new_path).get());
+  auto ret = MoveFileExW(toWideChar(old_path).get(), toWideChar(new_path).get(), MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH);
+  if (!ret) {
+    std::ostringstream oss;
+    oss << "Cannot move file " << old_path << " to " << new_path;
+    throw std::runtime_error(oss.str());
+  }
 }
 
 std::string FS::join(path_t base, path_t name)

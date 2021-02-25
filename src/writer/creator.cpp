@@ -39,6 +39,7 @@
 
 #ifdef _WIN32
 # include <io.h>
+# include <fcntl.h>
 #else
 # include <unistd.h>
 # define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
@@ -395,6 +396,8 @@ namespace zim
                                    CompressionType c)
       : mainPageDirent(nullptr),
         compression(c),
+        zimName(fname),
+        tmpFileName(fname + ".tmp"),
         withIndex(withIndex),
         indexingLanguage(language),
         verbose(verbose),
@@ -404,16 +407,16 @@ namespace zim
         nbClusters(0),
         nbCompClusters(0),
         nbUnCompClusters(0),
-        start_time(time(NULL)),
-        zimName(fname),
-        tmpFileName(fname + ".tmp")
+        start_time(time(NULL))
     {
 #ifdef _WIN32
-int mode =  _S_IREAD | _S_IWRITE;
+      int flag = _O_RDWR | _O_CREAT | _O_TRUNC | _O_BINARY;
+      int mode =  _S_IREAD | _S_IWRITE;
 #else
+      int flag = O_RDWR | O_CREAT | O_TRUNC;
       mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #endif
-      out_fd = open(tmpFileName.c_str(), O_RDWR|O_CREAT|O_TRUNC, mode);
+      out_fd = open(tmpFileName.c_str(), flag, mode);
       if (out_fd == -1){
         perror(nullptr);
         std::ostringstream ss;
