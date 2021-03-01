@@ -54,7 +54,7 @@ namespace {
         // add dummy items with given titles
         for (auto title : titles) {
           std::string path = "dummyPath" + title;
-          auto item = std::make_shared<TestItem>(path, "plain/text", title);
+          auto item = std::make_shared<TestItem>(path, "text/html", title);
           creator.addItem(item);
         }
         creator.addMetadata("Title", "This is a title");
