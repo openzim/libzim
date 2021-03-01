@@ -98,6 +98,11 @@ namespace zim
          * The returned content provider must stay valid even after creator release
          * its reference to the item.
          *
+         * This method will be called once by libzim, in the main thread
+         * (but will be used in a different thread).
+         * The default IndexData will also call this method once (more)
+         * in the main thread (and use it in another thread).
+         *
          * @return the contentProvider of the item.
          */
         virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
@@ -109,6 +114,12 @@ namespace zim
          * to store).
          * The returned index data must stay valid even after creator release
          * its reference to the item.
+         *
+         * This method will be called twice by libzim if it is compiled with xapian
+         * (and is configured to index data). You may return the same indexData.
+         * The default implementation will use a contentProvider to get the content to index.
+         * The contentProvider will be created in the main thread but the data reading and
+         * parsing will occur in a different thread.
          *
          * @return the indexData of the item.
          *         May return a nullptr if there is no indexData.
