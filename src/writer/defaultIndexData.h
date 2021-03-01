@@ -80,7 +80,7 @@ namespace zim
 #endif
         }
 
-        std::tuple<bool, double, double> getGeoPosition() const
+        GeoPosition getGeoPosition() const
         {
 #if defined(ENABLE_XAPIAN)
           if(htmlParser.has_geoPosition) {

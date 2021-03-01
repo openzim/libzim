@@ -41,13 +41,14 @@ namespace zim
     class ContentProvider;
     class IndexData {
       public:
+        using GeoPosition = std::tuple<bool, double, double>;
         virtual ~IndexData() = default;
         virtual bool hasIndexData() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getContent() const = 0;
         virtual std::string getKeywords() const = 0;
         virtual uint32_t getWordCount() const = 0;
-        virtual std::tuple<bool, double, double> getGeoPosition() const = 0;
+        virtual GeoPosition getGeoPosition() const = 0;
     };
 
     /**
