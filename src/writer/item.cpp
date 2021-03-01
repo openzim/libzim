@@ -21,27 +21,22 @@
 #include <zim/writer/contentProvider.h>
 #include "defaultIndexData.h"
 
-#include <sstream>
-
 namespace zim
 {
   namespace writer
   {
-    std::unique_ptr<IndexData> Item::getIndexData() const
+    std::shared_ptr<IndexData> Item::getIndexData() const
     {
+      if (mp_defaultIndexData) {
+        return mp_defaultIndexData;
+      }
       if (getMimeType().find("text/html")!=0) {
         return nullptr;
       }
+
       auto provider = getContentProvider();
-      std::ostringstream ss;
-      while (true) {
-        auto blob = provider->feed();
-        if(blob.size() == 0) {
-          break;
-        }
-        ss << blob;
-      }
-      return std::unique_ptr<IndexData>(new DefaultIndexData(ss.str(), getTitle()));
+      mp_defaultIndexData = std::shared_ptr<IndexData>(new DefaultIndexData(std::move(provider), getTitle()));
+      return mp_defaultIndexData;
     }
 
     Hints Item::getHints() const {

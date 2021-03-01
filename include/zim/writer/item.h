@@ -113,7 +113,7 @@ namespace zim
          * @return the indexData of the item.
          *         May return a nullptr if there is no indexData.
          */
-        virtual std::unique_ptr<IndexData> getIndexData() const;
+        virtual std::shared_ptr<IndexData> getIndexData() const;
 
         /**
          * Hints to help the creator takes decision about the item.
@@ -122,6 +122,9 @@ namespace zim
          */
         virtual Hints getHints() const;
         virtual ~Item() = default;
+
+      private:
+        mutable std::shared_ptr<IndexData> mp_defaultIndexData;
     };
 
     /**

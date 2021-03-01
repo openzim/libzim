@@ -53,23 +53,21 @@ namespace zim
       indexer.set_stopper(&mp_indexer->stopper);
       indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
 
-      auto indexData = mp_item->getIndexData();
-
-      if (!indexData || !indexData->hasIndexData()) {
+      if (!mp_indexData || !mp_indexData->hasIndexData()) {
         return;
       }
 
       Xapian::Document document;
       indexer.set_document(document);
 
-      document.set_data(mp_item->getPath());
-      document.add_value(0, mp_item->getTitle());
+      document.set_data(m_path);
+      document.add_value(0, m_title);
 
       std::stringstream countWordStringStream;
-      countWordStringStream << indexData->getWordCount();
+      countWordStringStream << mp_indexData->getWordCount();
       document.add_value(1, countWordStringStream.str());
 
-      auto geoInfo = indexData->getGeoPosition();
+      auto geoInfo = mp_indexData->getGeoPosition();
       if (std::get<0>(geoInfo)) {
         auto geoPosition = Xapian::LatLongCoord(
         std::get<1>(geoInfo), std::get<2>(geoInfo)).serialise();
@@ -77,20 +75,20 @@ namespace zim
       }
 
       /* Index the content */
-      auto indexContent = indexData->getContent();
+      auto indexContent = mp_indexData->getContent();
       if (!indexContent.empty()) {
         indexer.index_text_without_positions(indexContent);
       }
 
       /* Index the title */
-      auto indexTitle = indexData->getTitle();
+      auto indexTitle = mp_indexData->getTitle();
       if (!indexTitle.empty()) {
         indexer.index_text_without_positions(
           indexTitle, getTitleBoostFactor(indexContent.size()));
       }
 
       /* Index the keywords */
-      auto indexKeywords = indexData->getKeywords();
+      auto indexKeywords = mp_indexData->getKeywords();
       if (!indexKeywords.empty()) {
         indexer.index_text_without_positions(indexKeywords, keywordsBoostFactor);
       }
