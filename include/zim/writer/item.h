@@ -178,7 +178,6 @@ namespace zim
         }
 
         std::unique_ptr<ContentProvider> getContentProvider() const;
-        std::unique_ptr<IndexData> getIndexData() const;
 
       protected:
         std::string content;

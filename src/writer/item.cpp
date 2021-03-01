@@ -54,15 +54,6 @@ namespace zim
       return std::unique_ptr<ContentProvider>(new SharedStringProvider(shared_string));
     }
 
-    std::unique_ptr<IndexData> StringItem::getIndexData() const
-    {
-      if (getMimeType().find("text/html")!=0) {
-        return nullptr;
-      }
-      return std::unique_ptr<IndexData>(new DefaultIndexData(content, title));
-    }
-
-
     std::unique_ptr<ContentProvider> FileItem::getContentProvider() const
     {
       return std::unique_ptr<ContentProvider>(new FileProvider(filepath));
