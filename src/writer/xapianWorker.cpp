@@ -55,7 +55,7 @@ namespace zim
 
       auto indexData = mp_item->getIndexData();
 
-      if (!indexData->hasIndexData()) {
+      if (!indexData || !indexData->hasIndexData()) {
         return;
       }
 

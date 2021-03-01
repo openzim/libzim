@@ -29,6 +29,9 @@ namespace zim
   {
     std::unique_ptr<IndexData> Item::getIndexData() const
     {
+      if (getMimeType().find("text/html")!=0) {
+        return nullptr;
+      }
       auto provider = getContentProvider();
       std::ostringstream ss;
       while (true) {
@@ -53,6 +56,9 @@ namespace zim
 
     std::unique_ptr<IndexData> StringItem::getIndexData() const
     {
+      if (getMimeType().find("text/html")!=0) {
+        return nullptr;
+      }
       return std::unique_ptr<IndexData>(new DefaultIndexData(content, title));
     }
 

@@ -110,6 +110,7 @@ namespace zim
          * its reference to the item.
          *
          * @return the indexData of the item.
+         *         May return a nullptr if there is no indexData.
          */
         virtual std::unique_ptr<IndexData> getIndexData() const;
 
