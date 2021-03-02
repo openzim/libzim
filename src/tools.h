@@ -34,6 +34,12 @@ namespace zim {
   void microsleep(int microseconds);
 
   std::tuple<char, std::string> parseLongPath(const std::string& longPath);
+
+  /** Return a random number from range [0, max]
+   *
+   * This function is threadsafe
+   **/
+  uint32_t randomNumber(uint32_t max);
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H
