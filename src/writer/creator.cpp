@@ -294,12 +294,6 @@ namespace zim
 
     void Creator::fillHeader(Fileheader* header) const
     {
-      if (data->isExtended) {
-        header->setMajorVersion(Fileheader::zimExtendedMajorVersion);
-      } else {
-        header->setMajorVersion(Fileheader::zimClassicMajorVersion);
-      }
-      header->setMinorVersion(Fileheader::zimMinorVersion);
       header->setMainPage(
         data->mainPageDirent
         ? entry_index_type(data->mainPageDirent->getIdx())
@@ -577,8 +571,6 @@ namespace zim
       taskList.pushToQueue(new ClusterTask(cluster));
       clusterToWrite.pushToQueue(cluster);
 
-      if (cluster->is_extended() )
-        isExtended = true;
       if (compressed)
       {
         cluster = compCluster = new Cluster(compression);

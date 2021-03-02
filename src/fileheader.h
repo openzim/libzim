@@ -38,8 +38,8 @@ namespace zim
   {
     public:
       static const uint32_t zimMagic;
-      static const uint16_t zimClassicMajorVersion;
-      static const uint16_t zimExtendedMajorVersion;
+      static const uint16_t zimOldMajorVersion;
+      static const uint16_t zimMajorVersion;
       static const uint16_t zimMinorVersion;
       static const size_type size;
 
@@ -59,7 +59,7 @@ namespace zim
 
     public:
       Fileheader()
-        : majorVersion(zimClassicMajorVersion),
+        : majorVersion(zimMajorVersion),
           minorVersion(zimMinorVersion),
           articleCount(0),
           titleIdxPos(0),
