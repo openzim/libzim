@@ -134,11 +134,11 @@ namespace {
 
     std::vector<std::string> resultSet = getSuggestions(archive, "berlin", archive.getEntryCount());
     std::vector<std::string> expectedResult = {
-                                                "again berlin",
                                                 "berlin",
-                                                "not berlin",
                                                 "hotel berlin, berlin",
-                                                "berlin wall"
+                                                "again berlin",
+                                                "berlin wall",
+                                                "not berlin"
                                               };
 
     ASSERT_EQ(expectedResult , resultSet);
@@ -244,16 +244,23 @@ namespace {
 
     ASSERT_EQ(expectedResult, resultSet);
 
-    // "the" which is a stopword
+    // "the"
     resultSet = getSuggestions(archive, "the", archive.getEntryCount());
-    expectedResult = {};
+    expectedResult = {
+                       "The chocolate factory",
+                       "Hour of the wolf",
+                       "The wolf among sheeps",
+                       "The wolf of Shingashina",
+                       "The wolf of Wall Street",
+                       "The wolf of Wall Street Book",
+                       "Terma termb the wolf of wall street termc"
+                     };
 
     ASSERT_EQ(expectedResult, resultSet);
 
-    // "the wolf" translates to "wolf"
+    // "the wolf"
     resultSet = getSuggestions(archive, "the wolf", archive.getEntryCount());
     expectedResult = {
-                       "Wolf",
                        "Hour of the wolf",
                        "The wolf among sheeps",
                        "The wolf of Shingashina",
@@ -265,15 +272,18 @@ namespace {
     ASSERT_EQ(expectedResult, resultSet);
 
     // "the wolf of"
-    // this gives an empty result since the word "of" being a stopword is not
-    // included in the index, but being a partial search, it must be inluced as
-    // a `WILDCARD SYNONYM of` which is not present in the index.
     resultSet = getSuggestions(archive, "the wolf of", archive.getEntryCount());
-    expectedResult = {};
+    expectedResult = {
+                       "Hour of the wolf",
+                       "The wolf of Shingashina",
+                       "The wolf of Wall Street",
+                       "The wolf of Wall Street Book",
+                       "Terma termb the wolf of wall street termc"
+                     };
 
     ASSERT_EQ(expectedResult, resultSet);
 
-    // "the wolf of wall" translates to "wolf wall"
+    // "the wolf of wall"
     resultSet = getSuggestions(archive, "the wolf of wall", archive.getEntryCount());
     expectedResult = {
                        "The wolf of Wall Street",
@@ -315,10 +325,10 @@ namespace {
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
 
-    // "she", "and", "the" are stopwords, hence the query is resolved to just "apples"
+    // "she", "and", "the" are stopwords, If stopwords are properly handled, they
+    // should be included in the result documents.
     std::vector<std::string> resultSet = getSuggestions(archive, "she and the apple", archive.getEntryCount());
     std::vector<std::string> expectedResult = {
-                                                "apple",
                                                 "she and the apple",
                                               };
     ASSERT_EQ(expectedResult, resultSet);
