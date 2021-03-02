@@ -77,13 +77,14 @@ std::map<std::string, int> read_valuesmap(const std::string &s) {
 
 
 void
-setup_queryParser(Xapian::QueryParser* queryparser,
+setup_queryParser(Xapian::QueryParser* queryParser,
                   Xapian::Database& database,
                   const std::string& language,
                   const std::string& stopwords,
+                  bool suggestion_mode,
                   bool newSuggestionFormat) {
-    queryparser->set_default_op(Xapian::Query::op::OP_AND);
-    queryparser->set_database(database);
+    queryParser->set_default_op(Xapian::Query::op::OP_AND);
+    queryParser->set_database(database);
     if ( ! language.empty() )
     {
         /* Build ICU Local object to retrieve ISO-639 language code (from
@@ -93,15 +94,15 @@ setup_queryParser(Xapian::QueryParser* queryparser,
         /* Configuring language base steemming */
         try {
             Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
-            queryparser->set_stemmer(stemmer);
-            queryparser->set_stemming_strategy(
+            queryParser->set_stemmer(stemmer);
+            queryParser->set_stemming_strategy(
               newSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
         } catch (...) {
             std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
         }
     }
 
-    if ( ! stopwords.empty() )
+    if ( ! stopwords.empty() && !suggestion_mode )
     {
         std::string stopWord;
         std::istringstream file(stopwords);
@@ -110,7 +111,7 @@ setup_queryParser(Xapian::QueryParser* queryparser,
             stopper->add(stopWord);
         }
         stopper->release();
-        queryparser->set_stopper(stopper);
+        queryParser->set_stopper(stopper);
     }
 }
 
@@ -314,7 +315,7 @@ Search::iterator Search::begin() const {
     if (verbose) {
       std::cout << "Setup queryparser using language " << language << std::endl;
     }
-    setup_queryParser(queryParser, internal->database, language, stopwords, hasNewSuggestionFormat);
+    setup_queryParser(queryParser, internal->database, language, stopwords, suggestion_mode, hasNewSuggestionFormat);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
