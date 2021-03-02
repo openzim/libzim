@@ -46,7 +46,16 @@ namespace zim
           if (task == nullptr) {
             return nullptr;
           }
-          task->run(creatorData);
+          if (creatorData->m_errored) {
+            // If the creator is in error, stop the workers
+            return nullptr;
+          }
+          try {
+            task->run(creatorData);
+          } catch (...) {
+            std::lock_guard<std::mutex> l(creatorData->m_exceptionLock);
+            creatorData->m_exceptionSlot = std::current_exception();
+          }
           delete task;
           wait = 0;
         }
@@ -64,6 +73,10 @@ namespace zim
         if(creatorData->clusterToWrite.getHead(cluster)) {
           if (cluster == nullptr) {
             // All cluster writen, we can quit
+            return nullptr;
+          }
+          if (creatorData->m_errored) {
+            // If the creator is in error, stop the workers
             return nullptr;
           }
           if (not cluster->isClosed()) {

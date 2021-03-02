@@ -63,6 +63,7 @@ namespace zim
                        bool withIndex, std::string language,
                        CompressionType compression);
         virtual ~CreatorData();
+        void closeThreads();
 
         void addDirent(Dirent* dirent);
         void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
@@ -97,6 +98,9 @@ namespace zim
         TaskQueue taskList;
         ThreadList workerThreads;
         std::thread  writerThread;
+        std::mutex m_exceptionLock;
+        std::exception_ptr m_exceptionSlot;
+        std::atomic<bool> m_errored;
         const CompressionType compression;
         std::string zimName;
         std::string tmpFileName;
