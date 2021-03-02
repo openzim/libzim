@@ -294,8 +294,6 @@ namespace zim
 
     void Creator::fillHeader(Fileheader* header) const
     {
-      header->setMajorVersion(Fileheader::zimMajorVersion);
-      header->setMinorVersion(Fileheader::zimMinorVersion);
       header->setMainPage(
         data->mainPageDirent
         ? entry_index_type(data->mainPageDirent->getIdx())
