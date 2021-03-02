@@ -101,7 +101,6 @@ namespace zim
         std::string zimName;
         std::string tmpFileName;
         bool isEmpty = true;
-        bool isExtended = false;
         zsize_t clustersSize;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;

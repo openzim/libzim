@@ -59,7 +59,7 @@ namespace zim
 
     public:
       Fileheader()
-        : majorVersion(zimClassicMajorVersion),
+        : majorVersion(zimExtendedMajorVersion),
           minorVersion(zimMinorVersion),
           articleCount(0),
           titleIdxPos(0),
