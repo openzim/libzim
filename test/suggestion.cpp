@@ -48,7 +48,7 @@ namespace {
 
       zim::Archive createZimFromTitles(std::vector<std::string> titles) {
         zim::writer::Creator creator;
-        creator.configIndexing(true, "eng");
+        creator.configIndexing(true, "en");
         creator.startZimCreation(this->path());
 
         // add dummy items with given titles
@@ -57,7 +57,9 @@ namespace {
           auto item = std::make_shared<TestItem>(path, "text/html", title);
           creator.addItem(item);
         }
+
         creator.addMetadata("Title", "This is a title");
+
         creator.finishZimCreation();
         return zim::Archive(this->path());
       }
@@ -87,15 +89,14 @@ namespace {
                                         "again berlin",
                                         "berlin",
                                         "not berlin"
-                                       };
-
-    std::vector<std::string> expectedResult = {};
-
+                                      };
 
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
 
     std::vector<std::string> resultSet = getSuggestions(archive, "", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {};
+
     ASSERT_EQ(resultSet, expectedResult);
   }
 
@@ -107,14 +108,14 @@ namespace {
                                         "again berlin",
                                         "berlin",
                                         "not berlin"
-                                       };
-
-    std::vector<std::string> expectedResult = {};
+                                      };
 
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
 
     std::vector<std::string> resultSet = getSuggestions(archive, "none", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {};
+
     ASSERT_EQ(resultSet, expectedResult);
   }
 
@@ -126,20 +127,20 @@ namespace {
                                         "again berlin",
                                         "berlin",
                                         "not berlin"
-                                       };
-
-    std::vector<std::string> expectedResult = {
-                                        "berlin",
-                                        "hotel berlin, berlin",
-                                        "again berlin",
-                                        "berlin wall",
-                                        "not berlin"
-                                       };
+                                      };
 
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
 
     std::vector<std::string> resultSet = getSuggestions(archive, "berlin", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "again berlin",
+                                                "berlin",
+                                                "not berlin",
+                                                "hotel berlin, berlin",
+                                                "berlin wall"
+                                              };
+
     ASSERT_EQ(expectedResult , resultSet);
   }
 
@@ -150,41 +151,176 @@ namespace {
                                         "foobar c",
                                         "foobar e",
                                         "foobar d"
-                                       };
+                                      };
 
-    std::vector<std::string> expectedResult = {
-                                        "foobar a",
-                                        "foobar b"
-                                       };
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
 
     std::vector<std::string> resultSet = getSuggestions(archive, "foobar", 2);
+    std::vector<std::string> expectedResult = {
+                                                "foobar a",
+                                                "foobar b"
+                                              };
+
+    ASSERT_EQ(expectedResult, resultSet);
+  }
+
+  TEST(Suggestion, partialQuery) {
+    std::vector<std::string> titles = {
+                                        "The chocolate factory",
+                                        "The wolf of Shingashina",
+                                        "The wolf of Wall Street",
+                                        "Hour of the wolf",
+                                        "Wolf",
+                                        "Terma termb the wolf of wall street termc"
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    // "wo"
+    std::vector<std::string> resultSet = getSuggestions(archive, "Wo", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "Wolf",
+                                                "Hour of the wolf",
+                                                "The wolf of Shingashina",
+                                                "The wolf of Wall Street",
+                                                "Terma termb the wolf of wall street termc"
+                                              };
+
     ASSERT_EQ(expectedResult, resultSet);
   }
 
   TEST(Suggestion, phraseOrder) {
     std::vector<std::string> titles = {
-                                        "Summer in Berlin",
-                                        "In Summer",
-                                        "Shivers in summer",
-                                        "Summer in Paradise",
-                                        "In mid Summer",
-                                        "In the winter"
-                                       };
-
-    std::vector<std::string> expectedResult = {
-                                        "In Summer",
-                                        "In mid Summer",
-                                        "Shivers in summer",
-                                        "Summer in Berlin",
-                                        "Summer in Paradise"
-                                       };
+                                        "summer winter autumn",
+                                        "winter autumn summer terma",
+                                        "autumn summer winter",
+                                        "control document",
+                                        "summer",
+                                      };
 
     TempZimArchive tza("testZim");
     const zim::Archive archive = tza.createZimFromTitles(titles);
 
-    std::vector<std::string> resultSet = getSuggestions(archive, "summer in", archive.getEntryCount());
+    std::vector<std::string> resultSet = getSuggestions(archive, "winter autumn summer", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "autumn summer winter",
+                                                "summer winter autumn",
+                                                "winter autumn summer terma",
+                                              };
+
+    ASSERT_EQ(expectedResult, resultSet);
+  }
+
+  TEST(Suggestion, incrementalSearch) {
+    std::vector<std::string> titles = {
+                                        "The chocolate factory",
+                                        "The wolf of Shingashina",
+                                        "The wolf of Wall Street",
+                                        "The wolf among sheeps",
+                                        "The wolf of Wall Street Book" ,
+                                        "Hour of the wolf",
+                                        "Wolf",
+                                        "Terma termb the wolf of wall street termc"
+                                      };
+
+    std::vector<std::string> resultSet, expectedResult;
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    // "wolf"
+    resultSet = getSuggestions(archive, "Wolf", archive.getEntryCount());
+    expectedResult = {
+                       "Wolf",
+                       "Hour of the wolf",
+                       "The wolf among sheeps",
+                       "The wolf of Shingashina",
+                       "The wolf of Wall Street",
+                       "The wolf of Wall Street Book",
+                       "Terma termb the wolf of wall street termc"
+                     };
+
+    ASSERT_EQ(expectedResult, resultSet);
+
+    // "the" which is a stopword
+    resultSet = getSuggestions(archive, "the", archive.getEntryCount());
+    expectedResult = {};
+
+    ASSERT_EQ(expectedResult, resultSet);
+
+    // "the wolf" translates to "wolf"
+    resultSet = getSuggestions(archive, "the wolf", archive.getEntryCount());
+    expectedResult = {
+                       "Wolf",
+                       "Hour of the wolf",
+                       "The wolf among sheeps",
+                       "The wolf of Shingashina",
+                       "The wolf of Wall Street",
+                       "The wolf of Wall Street Book",
+                       "Terma termb the wolf of wall street termc"
+                     };
+
+    ASSERT_EQ(expectedResult, resultSet);
+
+    // "the wolf of"
+    // this gives an empty result since the word "of" being a stopword is not
+    // included in the index, but being a partial search, it must be inluced as
+    // a `WILDCARD SYNONYM of` which is not present in the index.
+    resultSet = getSuggestions(archive, "the wolf of", archive.getEntryCount());
+    expectedResult = {};
+
+    ASSERT_EQ(expectedResult, resultSet);
+
+    // "the wolf of wall" translates to "wolf wall"
+    resultSet = getSuggestions(archive, "the wolf of wall", archive.getEntryCount());
+    expectedResult = {
+                       "The wolf of Wall Street",
+                       "The wolf of Wall Street Book",
+                       "Terma termb the wolf of wall street termc"
+                     };
+
+    ASSERT_EQ(expectedResult, resultSet);
+  }
+
+  TEST(Suggestion, phraseOutOfWindow) {
+    std::vector<std::string> titles = {
+                                        "This query",
+                                        "This is the dummy query phrase",
+                                        "the aterm bterm dummy cterm query",
+                                        "aterm the bterm dummy query cterm"
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    std::vector<std::string> resultSet = getSuggestions(archive, "the dummy query", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "This is the dummy query phrase",
+                                                "aterm the bterm dummy query cterm",
+                                                "the aterm bterm dummy cterm query"
+                                              };
+
+    ASSERT_EQ(expectedResult, resultSet);
+  }
+
+  TEST(Suggestion, checkStopword) {
+    std::vector<std::string> titles = {
+                                        "she and the apple",
+                                        "apple",
+                                        "she and the",
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    // "she", "and", "the" are stopwords, hence the query is resolved to just "apples"
+    std::vector<std::string> resultSet = getSuggestions(archive, "she and the apple", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "apple",
+                                                "she and the apple",
+                                              };
     ASSERT_EQ(expectedResult, resultSet);
   }
 }
