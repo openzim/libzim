@@ -23,6 +23,7 @@
 #include <atomic>
 #include <memory>
 #include "workers.h"
+#include <zim/writer/item.h>
 
 namespace zim {
 namespace writer {
@@ -35,7 +36,9 @@ class IndexTask : public Task {
     IndexTask(const IndexTask&) = delete;
     IndexTask& operator=(const IndexTask&) = delete;
     IndexTask(std::shared_ptr<Item> item, XapianIndexer* indexer) :
-      mp_item(item),
+      mp_indexData(item->getIndexData()),
+      m_path(item->getPath()),
+      m_title(item->getTitle()),
       mp_indexer(indexer)
     {
       ++waiting_task;
@@ -49,7 +52,9 @@ class IndexTask : public Task {
     static std::atomic<unsigned long> waiting_task;
 
   private:
-    std::shared_ptr<Item> mp_item;
+    std::shared_ptr<IndexData> mp_indexData;
+    std::string m_path;
+    std::string m_title;
     XapianIndexer* mp_indexer;
 };
 

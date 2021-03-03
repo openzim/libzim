@@ -19,98 +19,24 @@
 
 #include <zim/writer/item.h>
 #include <zim/writer/contentProvider.h>
-#include "xapian/myhtmlparse.h"
-#include "tools.h"
-
-#include <sstream>
+#include "defaultIndexData.h"
 
 namespace zim
 {
   namespace writer
   {
-    class DefaultIndexData : public IndexData {
-      public:
-        DefaultIndexData(const std::string& htmlData, const std::string& title)
-          : title(title)
-        {
-#if defined(ENABLE_XAPIAN)
-          try {
-            htmlParser.parse_html(htmlData, "UTF-8", true);
-          } catch(...) {}
-#endif
-        }
-
-        bool hasIndexData() const {
-#if defined(ENABLE_XAPIAN)
-          return (htmlParser.dump.find("NOINDEX") == std::string::npos);
-#else
-          return false;
-#endif
-        }
-
-        std::string getTitle() const {
-#if defined(ENABLE_XAPIAN)
-          return zim::removeAccents(title);
-#else
-          return "";
-#endif
-         }
-
-        std::string getContent() const {
-#if defined(ENABLE_XAPIAN)
-          return zim::removeAccents(htmlParser.dump);
-#else
-          return "";
-#endif
-        }
-
-        std::string getKeywords() const {
-#if defined(ENABLE_XAPIAN)
-          return zim::removeAccents(htmlParser.keywords);
-#else
-          return "";
-#endif
-        }
-
-        uint32_t getWordCount() const {
-#if defined(ENABLE_XAPIAN)
-          return countWords(htmlParser.dump);
-#else
-          return 0;
-#endif
-        }
-
-        std::tuple<bool, double, double> getGeoPosition() const
-        {
-#if defined(ENABLE_XAPIAN)
-          if(htmlParser.has_geoPosition) {
-            return std::make_tuple(true, htmlParser.latitude, htmlParser.longitude);
-          }
-#endif
-          return std::make_tuple(false, 0, 0);
-        }
-
-      private:
-#if defined(ENABLE_XAPIAN)
-        zim::MyHtmlParser htmlParser;
-#endif
-        std::string title;
-
-    };
-
-
-    std::unique_ptr<IndexData> Item::getIndexData() const
+    std::shared_ptr<IndexData> Item::getIndexData() const
     {
-      auto provider = getContentProvider();
-      std::ostringstream ss;
-      while (true) {
-        auto blob = provider->feed();
-        if(blob.size() == 0) {
-          break;
-        }
-        ss << blob;
+      if (mp_defaultIndexData) {
+        return mp_defaultIndexData;
       }
-      return std::unique_ptr<IndexData>(new DefaultIndexData(ss.str(), getTitle()));
+      if (getMimeType().find("text/html")!=0) {
+        return nullptr;
+      }
+
+      auto provider = getContentProvider();
+      mp_defaultIndexData = std::shared_ptr<IndexData>(new DefaultIndexData(std::move(provider), getTitle()));
+      return mp_defaultIndexData;
     }
 
     Hints Item::getHints() const {
@@ -122,12 +48,6 @@ namespace zim
       auto shared_string = std::shared_ptr<const std::string>(shared_from_this(), &content);
       return std::unique_ptr<ContentProvider>(new SharedStringProvider(shared_string));
     }
-
-    std::unique_ptr<IndexData> StringItem::getIndexData() const
-    {
-      return std::unique_ptr<IndexData>(new DefaultIndexData(content, title));
-    }
-
 
     std::unique_ptr<ContentProvider> FileItem::getContentProvider() const
     {

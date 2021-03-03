@@ -95,22 +95,34 @@ std::unique_ptr<ContentProvider> TitleXapianHandler::getContentProvider() const 
 
 void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  handle_dirent(dirent);
-}
-
-void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
-{
-  handle_dirent(dirent);
-}
-
-void TitleXapianHandler::handle_dirent(Dirent* dirent)
-{
+  // We have no items to get the title from. So it is a redirect
+  // We assume that if the redirect has a title, we must index it.
   if (dirent->getNamespace() != 'C') {
     // We should always have namespace == 'C' but let's be careful.
     return;
   }
 
   auto title = dirent->getRealTitle();
+  if (title.empty()) {
+    return;
+  }
+  auto path = dirent->getPath();
+  mp_indexer->indexTitle(path, title);
+}
+
+void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+{
+  // We have a item. And items have indexData. We must use it.
+  if (dirent->getNamespace() != 'C') {
+    // We should always have namespace == 'C' but let's be careful.
+    return;
+  }
+
+  auto indexData = item->getIndexData();
+  if (!indexData || !indexData->hasIndexData()) {
+    return;
+  }
+  auto title = indexData->getTitle();
   if (title.empty()) {
     return;
   }

@@ -41,13 +41,14 @@ namespace zim
     class ContentProvider;
     class IndexData {
       public:
+        using GeoPosition = std::tuple<bool, double, double>;
         virtual ~IndexData() = default;
         virtual bool hasIndexData() const = 0;
         virtual std::string getTitle() const = 0;
         virtual std::string getContent() const = 0;
         virtual std::string getKeywords() const = 0;
         virtual uint32_t getWordCount() const = 0;
-        virtual std::tuple<bool, double, double> getGeoPosition() const = 0;
+        virtual GeoPosition getGeoPosition() const = 0;
     };
 
     /**
@@ -97,6 +98,11 @@ namespace zim
          * The returned content provider must stay valid even after creator release
          * its reference to the item.
          *
+         * This method will be called once by libzim, in the main thread
+         * (but will be used in a different thread).
+         * The default IndexData will also call this method once (more)
+         * in the main thread (and use it in another thread).
+         *
          * @return the contentProvider of the item.
          */
         virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
@@ -109,9 +115,16 @@ namespace zim
          * The returned index data must stay valid even after creator release
          * its reference to the item.
          *
+         * This method will be called twice by libzim if it is compiled with xapian
+         * (and is configured to index data). You may return the same indexData.
+         * The default implementation will use a contentProvider to get the content to index.
+         * The contentProvider will be created in the main thread but the data reading and
+         * parsing will occur in a different thread.
+         *
          * @return the indexData of the item.
+         *         May return a nullptr if there is no indexData.
          */
-        virtual std::unique_ptr<IndexData> getIndexData() const;
+        virtual std::shared_ptr<IndexData> getIndexData() const;
 
         /**
          * Hints to help the creator takes decision about the item.
@@ -120,6 +133,9 @@ namespace zim
          */
         virtual Hints getHints() const;
         virtual ~Item() = default;
+
+      private:
+        mutable std::shared_ptr<IndexData> mp_defaultIndexData;
     };
 
     /**
@@ -176,7 +192,6 @@ namespace zim
         }
 
         std::unique_ptr<ContentProvider> getContentProvider() const;
-        std::unique_ptr<IndexData> getIndexData() const;
 
       protected:
         std::string content;
