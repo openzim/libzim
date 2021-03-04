@@ -77,13 +77,14 @@ std::map<std::string, int> read_valuesmap(const std::string &s) {
 
 
 void
-setup_queryParser(Xapian::QueryParser* queryparser,
+setup_queryParser(Xapian::QueryParser* queryParser,
                   Xapian::Database& database,
                   const std::string& language,
                   const std::string& stopwords,
+                  bool suggestion_mode,
                   bool newSuggestionFormat) {
-    queryparser->set_default_op(Xapian::Query::op::OP_AND);
-    queryparser->set_database(database);
+    queryParser->set_default_op(Xapian::Query::op::OP_AND);
+    queryParser->set_database(database);
     if ( ! language.empty() )
     {
         /* Build ICU Local object to retrieve ISO-639 language code (from
@@ -93,15 +94,15 @@ setup_queryParser(Xapian::QueryParser* queryparser,
         /* Configuring language base steemming */
         try {
             Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
-            queryparser->set_stemmer(stemmer);
-            queryparser->set_stemming_strategy(
+            queryParser->set_stemmer(stemmer);
+            queryParser->set_stemming_strategy(
               newSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
         } catch (...) {
             std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
         }
     }
 
-    if ( ! stopwords.empty() )
+    if ( ! stopwords.empty() && !suggestion_mode )
     {
         std::string stopWord;
         std::istringstream file(stopwords);
@@ -110,8 +111,31 @@ setup_queryParser(Xapian::QueryParser* queryparser,
             stopper->add(stopWord);
         }
         stopper->release();
-        queryparser->set_stopper(stopper);
+        queryParser->set_stopper(stopper);
     }
+}
+
+/*
+ * subquery_phrase: selects documents that have the terms in the order of the query
+ * within a specified window.
+ * subquery_and: selects documents that have all the terms in the query.
+ * subquery_phrase by itself is quite exclusive. To include more "similar" docs,
+ * we combine it with subquery_and using OP_OR operator. If a perticular document
+ * has a weight of A in subquery_phrase and B in subquery_and, the net weight of
+ * that document becomes A+B. So the documents closer to the query gets a higher.
+ */
+Xapian::Query parse_query(Xapian::QueryParser* query_parser, std::string qs, int flags, std::string prefix, bool suggestion_mode) {
+    Xapian::Query query, subquery_and;
+    query = subquery_and = query_parser->parse_query(qs, flags, prefix);
+
+    if (suggestion_mode) {
+      query_parser->set_default_op(Xapian::Query::op::OP_PHRASE);
+      Xapian::Query subquery_phrase = query_parser->parse_query(qs);
+      subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
+      query = Xapian::Query(Xapian::Query::OP_OR, subquery_phrase, subquery_and);
+    }
+
+    return query;
 }
 
 }
@@ -314,7 +338,7 @@ Search::iterator Search::begin() const {
     if (verbose) {
       std::cout << "Setup queryparser using language " << language << std::endl;
     }
-    setup_queryParser(queryParser, internal->database, language, stopwords, hasNewSuggestionFormat);
+    setup_queryParser(queryParser, internal->database, language, stopwords, suggestion_mode, hasNewSuggestionFormat);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
@@ -333,7 +357,7 @@ Search::iterator Search::begin() const {
     }
     Xapian::Query query;
     try {
-      query = queryParser->parse_query(this->query, flags, prefix);
+      query = parse_query(queryParser, this->query, flags, prefix, suggestion_mode);
     } catch (Xapian::QueryParserError& e) {
       estimated_matches_number = 0;
       return nullptr;

@@ -93,8 +93,6 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
     indexer.set_stemmer(stemmer);
     indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_SOME);
   } catch (...) {}
-  indexer.set_stopper(&stopper);
-  indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
   Xapian::Document currentDocument;
   currentDocument.clear_values();
   currentDocument.set_data(path);
