@@ -205,9 +205,9 @@ namespace {
 
     std::vector<std::string> resultSet = getSuggestions(archive, "winter autumn summer", archive.getEntryCount());
     std::vector<std::string> expectedResult = {
-                                                "autumn summer winter",
-                                                "summer winter autumn",
                                                 "winter autumn summer terma",
+                                                "autumn summer winter",
+                                                "summer winter autumn"
                                               };
 
     ASSERT_EQ(expectedResult, resultSet);
@@ -274,11 +274,11 @@ namespace {
     // "the wolf of"
     resultSet = getSuggestions(archive, "the wolf of", archive.getEntryCount());
     expectedResult = {
-                       "Hour of the wolf",
                        "The wolf of Shingashina",
                        "The wolf of Wall Street",
                        "The wolf of Wall Street Book",
-                       "Terma termb the wolf of wall street termc"
+                       "Terma termb the wolf of wall street termc",
+                       "Hour of the wolf"
                      };
 
     ASSERT_EQ(expectedResult, resultSet);

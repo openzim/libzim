@@ -115,6 +115,29 @@ setup_queryParser(Xapian::QueryParser* queryParser,
     }
 }
 
+/*
+ * subquery_phrase: selects documents that have the terms in the order of the query
+ * within a specified window.
+ * subquery_and: selects documents that have all the terms in the query.
+ * subquery_phrase by itself is quite exclusive. To include more "similar" docs,
+ * we combine it with subquery_and using OP_OR operator. If a perticular document
+ * has a weight of A in subquery_phrase and B in subquery_and, the net weight of
+ * that document becomes A+B. So the documents closer to the query gets a higher.
+ */
+Xapian::Query parse_query(Xapian::QueryParser* query_parser, std::string qs, int flags, std::string prefix, bool suggestion_mode) {
+    Xapian::Query query, subquery_and;
+    query = subquery_and = query_parser->parse_query(qs, flags, prefix);
+
+    if (suggestion_mode) {
+      query_parser->set_default_op(Xapian::Query::op::OP_PHRASE);
+      Xapian::Query subquery_phrase = query_parser->parse_query(qs);
+      subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
+      query = Xapian::Query(Xapian::Query::OP_OR, subquery_phrase, subquery_and);
+    }
+
+    return query;
+}
+
 }
 
 Search::Search(const std::vector<Archive>& archives) :
@@ -334,7 +357,7 @@ Search::iterator Search::begin() const {
     }
     Xapian::Query query;
     try {
-      query = queryParser->parse_query(this->query, flags, prefix);
+      query = parse_query(queryParser, this->query, flags, prefix, suggestion_mode);
     } catch (Xapian::QueryParserError& e) {
       estimated_matches_number = 0;
       return nullptr;
