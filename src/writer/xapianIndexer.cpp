@@ -65,12 +65,27 @@ XapianIndexer::~XapianIndexer()
   }
 }
 
+/*
+ * `valuesmap` is a metadata associated with the Xapian database. We are using it
+ * to attach slot numbers of each document in the index to the value they are storing.
+ * These values and slot numbers are used in collapsing, filtering etc.
+ *
+ * Title index:
+ * Slot 0: Title of the article. Used in collapsing articles with same name.
+ * Slot 1: path/redirectPath of the article. Used in collapsing duplicates(redirects).
+ *
+ * Fulltext Index:
+ * Slot 0: Title of the article. Used in collapsing articles with same name.
+ * Slot 1: Word count of the article.
+ * Slot 2: Geo position of the article. Used for geo-filtering.
+ */
+
 void XapianIndexer::indexingPrelude()
 {
   writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);
   switch (indexingMode) {
     case IndexingMode::TITLE:
-      writableDatabase.set_metadata("valuesmap", "title:0");
+      writableDatabase.set_metadata("valuesmap", "title:0;targetPath:1");
       writableDatabase.set_metadata("kind", "title");
       break;
     case IndexingMode::FULL:
@@ -83,7 +98,15 @@ void XapianIndexer::indexingPrelude()
   writableDatabase.begin_transaction(true);
 }
 
-void XapianIndexer::indexTitle(const std::string& path, const std::string& title)
+/*
+ * TODO:
+ * Currently for title index we are storing path twice (redirectPath/path in
+ * valuesmap and path in index data). In the future, we want to keep only one of
+ * these(index data if possible) to reduce index size while supporting the
+ * collapse on path feature.
+ */
+
+void XapianIndexer::indexTitle(const std::string& path, const std::string& title, const std::string& targetPath)
 {
   assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
@@ -101,6 +124,11 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   std::string unaccentedTitle = zim::removeAccents(title);
 
   currentDocument.add_value(0, title);
+  if (targetPath.empty()) {
+    currentDocument.add_value(1, path);
+  } else {
+    currentDocument.add_value(1, targetPath);
+  }
 
   if (!unaccentedTitle.empty()) {
     indexer.index_text(unaccentedTitle, 1);

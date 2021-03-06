@@ -107,7 +107,8 @@ void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
     return;
   }
   auto path = dirent->getPath();
-  mp_indexer->indexTitle(path, title);
+  auto redirectPath = dirent->getRedirectPath();
+  mp_indexer->indexTitle(path, title, redirectPath);
 }
 
 void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
