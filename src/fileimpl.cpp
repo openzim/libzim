@@ -108,6 +108,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       direntReader(new DirentReader(zimReader)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),
+      m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0)
   {
@@ -150,6 +151,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       offset_t titleOffset(header.getTitleIdxPos());
       zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
       mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
+      const_cast<bool&>(m_hasFrontArticlesIndex) = false;
     }
 
     readMimeTypes();
