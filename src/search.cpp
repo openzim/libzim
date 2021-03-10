@@ -257,15 +257,9 @@ Search& Search::set_suggestion_mode(const bool suggestion_mode) {
     return *this;
 }
 
-Search::iterator Search::begin() const {
-    if ( this->search_started ) {
-        return new search_iterator::InternalData(this, internal->results.begin());
-    }
-
+void Search::initDatabase() const {
     bool first = true;
-    bool hasNewSuggestionFormat = false;
-    std::string language;
-    std::string stopwords;
+    hasNewSuggestionFormat = false;
     for(auto& archive: m_archives)
     {
         auto impl = archive.getImpl();
@@ -341,6 +335,14 @@ Search::iterator Search::begin() const {
         internal->database.add_database(database);
         has_database = true;
     }
+}
+
+Search::iterator Search::begin() const {
+    if ( this->search_started ) {
+        return new search_iterator::InternalData(this, internal->results.begin());
+    }
+
+    initDatabase();
 
     if ( ! has_database ) {
         if (verbose) {

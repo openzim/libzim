@@ -56,7 +56,10 @@ class Search
         search_iterator end() const;
         int get_matches_estimated() const;
 
-    private:
+    private: // methods
+        void initDatabase() const;
+
+    private: // data
          struct InternalData;
          std::unique_ptr<InternalData> internal;
          std::vector<Archive> m_archives;
@@ -71,6 +74,9 @@ class Search
          int range_end;
          bool suggestion_mode;
          bool geo_query;
+         mutable bool hasNewSuggestionFormat;
+         mutable std::string language;
+         mutable std::string stopwords;
          mutable bool search_started;
          mutable bool has_database;
          mutable bool verbose;
