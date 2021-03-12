@@ -63,6 +63,10 @@ namespace {
         creator.finishZimCreation();
         return zim::Archive(this->path());
       }
+
+      const std::string getPath() {
+        return this->path();
+      }
   };
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
@@ -319,7 +323,7 @@ namespace {
     std::vector<std::string> titles = {
                                         "she and the apple",
                                         "apple",
-                                        "she and the",
+                                        "she and the"
                                       };
 
     TempZimArchive tza("testZim");
@@ -329,8 +333,62 @@ namespace {
     // should be included in the result documents.
     std::vector<std::string> resultSet = getSuggestions(archive, "she and the apple", archive.getEntryCount());
     std::vector<std::string> expectedResult = {
-                                                "she and the apple",
+                                                "she and the apple"
                                               };
     ASSERT_EQ(expectedResult, resultSet);
+  }
+
+  TEST(Suggestion, checkRedirectionCollapse) {
+    TempZimArchive tza("testZim");
+    zim::writer::Creator creator;
+    creator.configIndexing(true, "en");
+    creator.startZimCreation(tza.getPath());
+
+    auto item = std::make_shared<TestItem>("testPath", "text/html", "Article Target");
+    creator.addItem(item);
+    creator.addRedirection("redirectionPath1", "Article Redirect 1", "testPath");
+    creator.addRedirection("redirectionPath2", "Article Redirect 2", "testPath");
+
+    creator.addMetadata("Title", "Test zim");
+    creator.finishZimCreation();
+
+    zim::Archive archive(tza.getPath());
+    std::vector<std::string> resultSet = getSuggestions(archive, "Article", archive.getEntryCount());
+
+    // We should get only one result
+    std::vector<std::string> expectedResult = {
+                                                "Article Target",
+                                              };
+    ASSERT_EQ(resultSet, expectedResult);
+  }
+
+  TEST(Suggestion, checkRedirectionChain) {
+    /*
+     * As of now, we do not handle redirection chain. So if we have articles such
+     * as A->B->C. Even if A B and C are essentially the same articles, They won't
+     * get collapsed as one.
+     */
+    TempZimArchive tza("testZim");
+    zim::writer::Creator creator;
+    creator.configIndexing(true, "en");
+    creator.startZimCreation(tza.getPath());
+
+    auto item = std::make_shared<TestItem>("testPath", "text/html", "Article Target");
+    creator.addItem(item);
+    creator.addRedirection("redirectionPath1", "Article Redirect 1", "testPath");
+    creator.addRedirection("redirectionPath2", "Article Redirect 2", "redirectionPath1");
+
+    creator.addMetadata("Title", "Test zim");
+    creator.finishZimCreation();
+
+    zim::Archive archive(tza.getPath());
+    std::vector<std::string> resultSet = getSuggestions(archive, "Article", archive.getEntryCount());
+
+    // We should get only one result
+    std::vector<std::string> expectedResult = {
+                                                "Article Target",
+                                                "Article Redirect 2"
+                                              };
+    ASSERT_EQ(resultSet, expectedResult);
   }
 }

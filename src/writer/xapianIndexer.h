@@ -47,7 +47,7 @@ class XapianIndexer
   void flush();
   void indexingPostlude();
 
-  void indexTitle(const std::string& path, const std::string& title);
+  void indexTitle(const std::string& path, const std::string& title, const std::string& targetPath = "");
 
  protected:
   Xapian::WritableDatabase writableDatabase;

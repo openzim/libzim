@@ -400,6 +400,10 @@ Search::iterator Search::begin() const {
       enquire.set_collapse_key(valuesmap["title"]);
     }
 
+    if (suggestion_mode && valuesmap.find("targetPath") != valuesmap.end()) {
+      enquire.set_collapse_key(valuesmap["targetPath"]);
+    }
+
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
     search_started = true;
     estimated_matches_number = internal->results.get_matches_estimated();
