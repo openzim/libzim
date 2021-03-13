@@ -411,8 +411,6 @@ namespace {
     std::vector<std::string> resultSet = getSuggestions(archive, "Test Article", archive.getEntryCount());
 
     // We should get two results
-    // We are getting two results before removing the collapse on title because
-    // it gets overridden by the collapse on targetPath.
     std::vector<std::string> expectedResult = {
                                                 "Test Article",
                                                 "Test Article"
