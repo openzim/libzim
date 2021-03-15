@@ -396,10 +396,6 @@ Search::iterator Search::begin() const {
 
     enquire.set_query(query);
 
-    if (suggestion_mode && valuesmap.find("title") != valuesmap.end()) {
-      enquire.set_collapse_key(valuesmap["title"]);
-    }
-
     if (suggestion_mode && valuesmap.find("targetPath") != valuesmap.end()) {
       enquire.set_collapse_key(valuesmap["targetPath"]);
     }

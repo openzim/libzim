@@ -391,4 +391,30 @@ namespace {
                                               };
     ASSERT_EQ(resultSet, expectedResult);
   }
+
+  // Different articles with same title should not be collapsed in suggestions
+  TEST(Suggestion, diffArticleSameTitle) {
+    TempZimArchive tza("testZim");
+    zim::writer::Creator creator;
+    creator.configIndexing(true, "en");
+    creator.startZimCreation(tza.getPath());
+
+    auto item1 = std::make_shared<TestItem>("testPath1", "text/html", "Test Article");
+    auto item2 = std::make_shared<TestItem>("testPath2", "text/html", "Test Article");
+    creator.addItem(item1);
+    creator.addItem(item2);
+
+    creator.addMetadata("Title", "Test zim");
+    creator.finishZimCreation();
+
+    zim::Archive archive(tza.getPath());
+    std::vector<std::string> resultSet = getSuggestions(archive, "Test Article", archive.getEntryCount());
+
+    // We should get two results
+    std::vector<std::string> expectedResult = {
+                                                "Test Article",
+                                                "Test Article"
+                                              };
+    ASSERT_EQ(resultSet, expectedResult);
+  }
 }
