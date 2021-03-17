@@ -19,7 +19,8 @@ tests = [
     'rawstreamreader',
     'bufferstreamer',
     'parseLongPath',
-    'random'
+    'random',
+    'tooltesting',
 ]
 
 if xapian_dep.found()
