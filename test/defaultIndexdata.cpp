@@ -53,6 +53,28 @@ namespace {
     ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
   }
 
+  TEST(DefaultIndexdata, noindexhead) {
+    auto indexData = index_data(R"(<html><head><meta name="robots" content="noindex"></head><body>Some <b>bold</b> words</body><html>)", "A Title");
+
+    ASSERT_EQ(indexData->hasIndexData(), false);
+    ASSERT_EQ(indexData->getTitle(), "a title");
+    ASSERT_EQ(indexData->getContent(), "");
+    ASSERT_EQ(indexData->getKeywords(), "");
+    ASSERT_EQ(indexData->getWordCount(), 0);
+    ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
+  }
+
+  TEST(DefaultIndexdata, noindexnone) {
+    auto indexData = index_data(R"(<html><head><meta name="robots" content="none"></head><body>Some <b>bold</b> words</body><html>)", "A Title");
+
+    ASSERT_EQ(indexData->hasIndexData(), false);
+    ASSERT_EQ(indexData->getTitle(), "a title");
+    ASSERT_EQ(indexData->getContent(), "");
+    ASSERT_EQ(indexData->getKeywords(), "");
+    ASSERT_EQ(indexData->getWordCount(), 0);
+    ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
+  }
+
  TEST(DefaultIndexdata, noindexbody) {
     auto indexData = index_data("<html><body>NOINDEXSome <b>bold</b> words</body><html>", "A Title");
 

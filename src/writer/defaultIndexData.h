@@ -72,7 +72,7 @@ namespace zim
           try {
             htmlParser.parse_html(ss.str(), "UTF-8", true);
           } catch(...) {}
-          m_hasIndexData = (htmlParser.dump.find("NOINDEX") == std::string::npos);
+          m_hasIndexData = !htmlParser.dump.empty() && htmlParser.indexing_allowed && (htmlParser.dump.find("NOINDEX") == std::string::npos);
           m_content = zim::removeAccents(htmlParser.dump);
           m_keywords = zim::removeAccents(htmlParser.keywords);
           m_wordCount = countWords(htmlParser.dump);
