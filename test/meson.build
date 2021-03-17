@@ -20,6 +20,7 @@ tests = [
     'bufferstreamer',
     'parseLongPath',
     'random',
+    'defaultIndexdata',
     'tooltesting',
 ]
 
