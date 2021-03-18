@@ -20,12 +20,11 @@ tests = [
     'bufferstreamer',
     'parseLongPath',
     'random',
-    'defaultIndexdata',
     'tooltesting',
 ]
 
 if xapian_dep.found()
-    tests += ['search', 'suggestion']
+    tests += ['search', 'suggestion', 'defaultIndexdata']
 endif
 
 if gtest_dep.found() and not meson.is_cross_build()
