@@ -417,4 +417,25 @@ namespace {
                                               };
     ASSERT_EQ(resultSet, expectedResult);
   }
+
+  // Titles which begins with the search string should have higher relevance
+  TEST(Suggestion, anchorQueryToBeginning) {
+    std::vector<std::string> titles = {
+                                        "aterm bterm this is a title cterm",
+                                        "this is a title aterm bterm cterm",
+                                        "aterm this is a title bterm cterm"
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    std::vector<std::string> resultSet = getSuggestions(archive, "This is a title", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "aterm bterm this is a title cterm",
+                                                "aterm this is a title bterm cterm",
+                                                "this is a title aterm bterm cterm"
+                                              };
+
+    ASSERT_EQ(expectedResult, resultSet);
+  }
 }
