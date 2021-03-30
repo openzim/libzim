@@ -239,13 +239,13 @@ namespace zim
 
   Archive::EntryRange<EntryOrder::titleOrder> Archive::iterByTitle() const
   {
-    if (m_impl->hasFullTitleIndex()) {
+    if (m_impl->hasFrontArticlesIndex()) {
+      // We have a front articles index. We can "simply" loop over all front entries.
+      return EntryRange<EntryOrder::titleOrder>(m_impl, 0, m_impl->getFrontEntryCount().v);
+    } else  {
       // We don't have an index listing only front entry. We have to loop over user entry.
       // (`C` namespace in new zim scheme, all namespace in old ones)
       return EntryRange<EntryOrder::titleOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
-    } else {
-      // We have an index. We can "simply" loop over all front entries.
-      return EntryRange<EntryOrder::titleOrder>(m_impl, 0, m_impl->getFrontEntryCount().v);
     }
   }
 
