@@ -70,15 +70,11 @@ class InternalDataBase {
 };
 
 struct Search::InternalData {
-    InternalData(const std::vector<Archive>& archives, bool suggestionMode)
-     : m_internalDb(archives, suggestionMode),
-       results()
-       {}
-    InternalDataBase m_internalDb;
     Xapian::MSet results;
 };
 
 struct search_iterator::InternalData {
+    std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<Search::InternalData> searchData;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
@@ -86,6 +82,7 @@ struct search_iterator::InternalData {
     std::unique_ptr<Entry> _entry;
 
     InternalData(const InternalData& other) :
+      mp_internalDb(other.mp_internalDb),
       searchData(other.searchData),
       iterator(other.iterator),
       _document(other._document),
@@ -97,6 +94,7 @@ struct search_iterator::InternalData {
     InternalData& operator=(const InternalData& other)
     {
       if (this != &other) {
+        mp_internalDb = other.mp_internalDb;
         searchData = other.searchData;
         iterator = other.iterator;
         _document = other._document;
@@ -107,6 +105,7 @@ struct search_iterator::InternalData {
     }
 
     InternalData(const Search* search, Xapian::MSetIterator iterator) :
+        mp_internalDb(search->mp_internalDb),
         searchData(search->internal),
         iterator(iterator),
         document_fetched(false)
@@ -124,13 +123,13 @@ struct search_iterator::InternalData {
 
     int get_databasenumber() {
         Xapian::docid docid = *iterator;
-        return (docid - 1) % searchData->m_internalDb.m_archives.size();
+        return (docid - 1) % mp_internalDb->m_archives.size();
     }
 
     Entry& get_entry() {
         if ( !_entry ) {
             int databasenumber = get_databasenumber();
-            auto archive = searchData->m_internalDb.m_archives.at(databasenumber);
+            auto archive = mp_internalDb->m_archives.at(databasenumber);
             _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
         }
         return *_entry.get();

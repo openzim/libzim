@@ -32,8 +32,8 @@ namespace {
   using zim::unittests::TestItem;
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
-    zim::Search search(archive);
-    search.set_suggestion_mode(true);
+    zim::Searcher searcher(archive);
+    auto search = searcher.search(true);
     search.set_query(query);
     search.set_range(0, range);
     search.set_verbose(true);
@@ -48,8 +48,8 @@ namespace {
   }
 
   std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
-    zim::Search search(archive);
-    search.set_suggestion_mode(true);
+    zim::Searcher searcher(archive);
+    auto search = searcher.search(true);
     search.set_query(query);
     search.set_range(0, range);
     search.set_verbose(true);
@@ -443,8 +443,8 @@ namespace {
 
     zim::Archive archive(tza.getPath());
 
-    zim::Search search(archive);
-    search.set_suggestion_mode(true);
+    zim::Searcher searcher(archive);
+    auto search = searcher.search(true);
     search.set_query("Test Article");
     search.set_range(0, archive.getEntryCount());
     search.set_verbose(true);

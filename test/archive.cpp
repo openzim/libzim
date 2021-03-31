@@ -380,10 +380,10 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
   {
     // Resolve any potential redirect.
     auto mainItem = mainEntry.getItem(true);
-    zim::Search search1(archive1);
-    zim::Search search2(archive2);
-    search1.set_suggestion_mode(true);
-    search2.set_suggestion_mode(true);
+    zim::Searcher searcher1(archive1);
+    zim::Searcher searcher2(archive2);
+    auto search1 = searcher1.search(true);
+    auto search2 = searcher2.search(true);
     search1.set_query(mainItem.getTitle());
     search2.set_query(mainItem.getTitle());
     search1.set_range(0, archive1.getEntryCount());

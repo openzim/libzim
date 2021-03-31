@@ -253,75 +253,73 @@ void InternalDataBase::setupQueryparser(
     }
 }
 
-Search::Search(const std::vector<Archive>& archives) :
-    internal(nullptr),
-    m_archives(archives),
-    query(""),
-    latitude(0), longitude(0), distance(0),
-    range_start(0), range_end(0),
-    suggestion_mode(false),
-    geo_query(false),
-    search_started(false),
-    verbose(false),
-    estimated_matches_number(0)
+Searcher::Searcher(const std::vector<Archive>& archives) :
+    mp_internalDb(nullptr),
+    mp_internalSuggestionDb(nullptr),
+    m_archives(archives)
 {}
 
-Search::Search(const Archive& archive) :
-    internal(nullptr),
-    query(""),
-    latitude(0), longitude(0), distance(0),
-    range_start(0), range_end(0),
-    suggestion_mode(false),
-    geo_query(false),
-    search_started(false),
-    verbose(false),
-    estimated_matches_number(0)
+Searcher::Searcher(const Archive& archive) :
+    mp_internalDb(nullptr),
+    mp_internalSuggestionDb(nullptr)
 {
     m_archives.push_back(archive);
 }
 
-Search::Search(const Search& it) :
-     internal(nullptr),
-     m_archives(it.m_archives),
-     query(it.query),
-     latitude(it.latitude), longitude(it.longitude), distance(it.distance),
-     range_start(it.range_start), range_end(it.range_end),
-     suggestion_mode(it.suggestion_mode),
-     geo_query(it.geo_query),
-     search_started(false),
-     verbose(it.verbose),
-     estimated_matches_number(0)
-{ }
+Searcher::Searcher(const Searcher& other) = default;
+Searcher& Searcher::operator=(const Searcher& other) = default;
+Searcher::Searcher(Searcher&& other) = default;
+Searcher& Searcher::operator=(Searcher&& other) = default;
+Searcher::~Searcher() = default;
 
-Search& Search::operator=(const Search& it)
-{
-     if ( internal ) internal.reset();
-     m_archives = it.m_archives;
-     query = it.query;
-     latitude = it.latitude;
-     longitude = it.longitude;
-     distance = it.distance;
-     range_start = it.range_start;
-     range_end = it.range_end;
-     suggestion_mode = it.suggestion_mode;
-     geo_query = it.geo_query;
-     search_started = false;
-     verbose = it.verbose;
-     estimated_matches_number = 0;
-     return *this;
+Searcher& Searcher::add_archive(const Archive& archive) {
+    m_archives.push_back(archive);
+    mp_internalDb.reset();
+    mp_internalSuggestionDb.reset();
+    return *this;
 }
 
-Search::Search(Search&& it) = default;
-Search& Search::operator=(Search&& it) = default;
-Search::~Search() = default;
+Search Searcher::search(bool suggestionMode)
+{
+  if (suggestionMode) {
+    if (!mp_internalSuggestionDb) {
+      initDatabase(true);
+    }
+    return Search(mp_internalSuggestionDb, true);
+  } else {
+    if (!mp_internalDb) {
+      initDatabase(false);
+    }
+    return Search(mp_internalDb, false);
+  }
+}
+
+void Searcher::initDatabase(bool suggestionMode)
+{
+  if (suggestionMode) {
+    mp_internalSuggestionDb = std::make_shared<InternalDataBase>(m_archives, true);
+  } else {
+    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
+  }
+}
+
+Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, bool suggestionMode)
+ : mp_internalDb(p_internalDb),
+   internal(std::make_shared<InternalData>()),
+   query(""),
+   latitude(0), longitude(0), distance(0),
+   range_start(0), range_end(0),
+   suggestion_mode(suggestionMode),
+   geo_query(false),
+   search_started(false),
+   verbose(false),
+   estimated_matches_number(0)
+{
+}
+
 
 void Search::set_verbose(bool verbose) {
     this->verbose = verbose;
-}
-
-Search& Search::add_archive(const Archive& archive) {
-    m_archives.push_back(archive);
-    return *this;
 }
 
 Search& Search::set_query(const std::string& query) {
@@ -337,29 +335,20 @@ Search& Search::set_georange(float latitude, float longitude, float distance) {
     return *this;
 }
 
+
 Search& Search::set_range(int start, int end) {
     this->range_start = start;
     this->range_end = end;
     return *this;
 }
 
-Search& Search::set_suggestion_mode(const bool suggestion_mode) {
-    this->suggestion_mode = suggestion_mode;
-    return *this;
-}
-
-void Search::initDatabase() const {
-    internal.reset(new InternalData(m_archives, suggestion_mode));
-}
 
 Search::iterator Search::begin() const {
     if ( this->search_started ) {
         return new search_iterator::InternalData(this, internal->results.begin());
     }
 
-    initDatabase();
-
-    if ( ! internal->m_internalDb.hasDatabase() ) {
+    if ( ! mp_internalDb->hasDatabase() ) {
         if (verbose) {
           std::cout << "No database, no result" << std::endl;
         }
@@ -369,9 +358,9 @@ Search::iterator Search::begin() const {
 
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
     if (verbose) {
-      std::cout << "Setup queryparser using language " << internal->m_internalDb.m_language << std::endl;
+      std::cout << "Setup queryparser using language " << mp_internalDb->m_language << std::endl;
     }
-    internal->m_internalDb.setupQueryparser(queryParser, suggestion_mode);
+    mp_internalDb->setupQueryparser(queryParser, suggestion_mode);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
@@ -380,8 +369,8 @@ Search::iterator Search::begin() const {
         std::cout << "Mark query as 'partial'" << std::endl;
       }
       flags |= Xapian::QueryParser::FLAG_PARTIAL;
-      if ( !internal->m_internalDb.m_hasNewSuggestionFormat
-        && internal->m_internalDb.m_prefixes.find("S") != std::string::npos ) {
+      if ( !mp_internalDb->m_hasNewSuggestionFormat
+        && mp_internalDb->m_prefixes.find("S") != std::string::npos ) {
         if (verbose) {
           std::cout << "Searching in title namespace" << std::endl;
         }
@@ -400,12 +389,12 @@ Search::iterator Search::begin() const {
     }
     delete queryParser;
 
-    Xapian::Enquire enquire(internal->m_internalDb.m_database);
+    Xapian::Enquire enquire(mp_internalDb->m_database);
 
-    if (geo_query && internal->m_internalDb.hasValue("geo.position")) {
+    if (geo_query && mp_internalDb->hasValue("geo.position")) {
         Xapian::GreatCircleMetric metric;
         Xapian::LatLongCoord centre(latitude, longitude);
-        Xapian::LatLongDistancePostingSource ps(internal->m_internalDb.valueSlot("geo.position"), centre, metric, distance);
+        Xapian::LatLongDistancePostingSource ps(mp_internalDb->valueSlot("geo.position"), centre, metric, distance);
         if ( this->query.empty()) {
           query = Xapian::Query(&ps);
         } else {
@@ -424,15 +413,15 @@ Search::iterator Search::begin() const {
     */
     if (suggestion_mode) {
       enquire.set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
-      if (internal->m_internalDb.hasValue("title")) {
-        enquire.set_sort_by_relevance_then_value(internal->m_internalDb.valueSlot("title"), false);
+      if (mp_internalDb->hasValue("title")) {
+        enquire.set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
       }
     }
 
     enquire.set_query(query);
 
-    if (suggestion_mode && internal->m_internalDb.hasValue("targetPath")) {
-      enquire.set_collapse_key(internal->m_internalDb.valueSlot("targetPath"));
+    if (suggestion_mode && mp_internalDb->hasValue("targetPath")) {
+      enquire.set_collapse_key(mp_internalDb->valueSlot("targetPath"));
     }
 
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
@@ -442,7 +431,7 @@ Search::iterator Search::begin() const {
 }
 
 Search::iterator Search::end() const {
-    if ( ! internal->m_internalDb.hasDatabase() ) {
+    if ( ! mp_internalDb->hasDatabase() ) {
         return nullptr;
     }
     return new search_iterator::InternalData(this, internal->results.end());

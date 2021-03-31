@@ -105,9 +105,9 @@ std::string search_iterator::get_path() const {
     }
 
     std::string path = internal->get_document().get_data();
-    bool hasNewNamespaceScheme = internal->searchData->m_internalDb.m_archives.at(get_fileIndex()).hasNewNamespaceScheme();
+    bool hasNewNamespaceScheme = internal->mp_internalDb->m_archives.at(get_fileIndex()).hasNewNamespaceScheme();
 
-    std::string dbDataType = internal->searchData->m_internalDb.m_database.get_metadata("data");
+    std::string dbDataType = internal->mp_internalDb->m_database.get_metadata("data");
     if (dbDataType.empty()) {
         dbDataType = "fullPath";
     }
@@ -132,14 +132,14 @@ std::string search_iterator::get_title() const {
     if ( ! internal ) {
         return "";
     }
-    if ( ! internal->searchData->m_internalDb.hasValuesmap() )
+    if ( ! internal->mp_internalDb->hasValuesmap() )
     {
         /* This is the old legacy version. Guess and try */
         return internal->get_document().get_value(0);
     }
-    else if ( internal->searchData->m_internalDb.hasValue("title") )
+    else if ( internal->mp_internalDb->hasValue("title") )
     {
-        return internal->get_document().get_value(internal->searchData->m_internalDb.valueSlot("title"));
+        return internal->get_document().get_value(internal->mp_internalDb->valueSlot("title"));
     }
     return "";
 }
@@ -157,7 +157,7 @@ std::string search_iterator::get_snippet() const {
     }
 
     // Generate title snippet for suggestion_mode
-    if ( internal->searchData->m_internalDb.m_suggestionMode )
+    if ( internal->mp_internalDb->m_suggestionMode )
     {
         try {
             return internal->searchData->results.snippet(get_title(), 500);
@@ -167,7 +167,7 @@ std::string search_iterator::get_snippet() const {
     }
 
     // Generate full text snippet
-    if ( ! internal->searchData->m_internalDb.hasValuesmap() )
+    if ( ! internal->mp_internalDb->hasValuesmap() )
     {
         /* This is the old legacy version. Guess and try */
         std::string stored_snippet = internal->get_document().get_value(1);
@@ -175,9 +175,9 @@ std::string search_iterator::get_snippet() const {
             return stored_snippet;
         /* Let's continue here, and see if we can genenate one */
     }
-    else if ( internal->searchData->m_internalDb.hasValue("snippet") )
+    else if ( internal->mp_internalDb->hasValue("snippet") )
     {
-        return internal->get_document().get_value(internal->searchData->m_internalDb.valueSlot("snippet"));
+        return internal->get_document().get_value(internal->mp_internalDb->valueSlot("snippet"));
     }
     /* No reader, no snippet */
     try {
@@ -200,14 +200,14 @@ int search_iterator::get_size() const {
     if ( ! internal ) {
         return -1;
     }
-    if ( ! internal->searchData->m_internalDb.hasValuesmap() )
+    if ( ! internal->mp_internalDb->hasValuesmap() )
     {
         /* This is the old legacy version. Guess and try */
         return internal->get_document().get_value(2).empty() == true ? -1 : atoi(internal->get_document().get_value(2).c_str());
     }
-    else if ( internal->searchData->m_internalDb.hasValue("size") )
+    else if ( internal->mp_internalDb->hasValue("size") )
     {
-        return atoi(internal->get_document().get_value(internal->searchData->m_internalDb.valueSlot("size")).c_str());
+        return atoi(internal->get_document().get_value(internal->mp_internalDb->valueSlot("size")).c_str());
     }
     /* The size is never used. Do we really want to get the content and
        calculate the size ? */
@@ -218,14 +218,14 @@ int search_iterator::get_wordCount() const      {
     if ( ! internal ) {
         return -1;
     }
-    if ( ! internal->searchData->m_internalDb.hasValuesmap() )
+    if ( ! internal->mp_internalDb->hasValuesmap() )
     {
         /* This is the old legacy version. Guess and try */
         return internal->get_document().get_value(3).empty() == true ? -1 : atoi(internal->get_document().get_value(3).c_str());
     }
-    else if ( internal->searchData->m_internalDb.hasValue("wordcount") )
+    else if ( internal->mp_internalDb->hasValue("wordcount") )
     {
-        return atoi(internal->get_document().get_value(internal->searchData->m_internalDb.valueSlot("wordcount")).c_str());
+        return atoi(internal->get_document().get_value(internal->mp_internalDb->valueSlot("wordcount")).c_str());
     }
     return -1;
 }

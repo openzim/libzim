@@ -36,8 +36,8 @@ TEST(search_iterator, functions) {
     "item a",
   });
 
-  zim::Search search(archive);
-  search.set_suggestion_mode(true);
+  zim::Searcher searcher(archive);
+  auto search = searcher.search(true);
   search.set_query("item");
   search.set_range(0, archive.getEntryCount());
   search.set_verbose(true);
@@ -61,8 +61,8 @@ TEST(search_iterator, iteration) {
     "item b"
   });
 
-  zim::Search search(archive);
-  search.set_suggestion_mode(true);
+  zim::Searcher searcher(archive);
+  auto search = searcher.search(true);
   search.set_query("item");
   search.set_range(0, archive.getEntryCount());
   search.set_verbose(true);

@@ -29,6 +29,39 @@ namespace zim
 {
 
 class Archive;
+class InternalDataBase;
+
+/**
+ * A Searcher is a object searching a set of Archives
+ *
+ * A Searcher is mainly used to create new `Search`
+ * Internaly, this is mainly a wrapper around a Xapian database.
+ */
+class Searcher
+{
+  public:
+    explicit Searcher(const std::vector<Archive>& archives);
+    explicit Searcher(const Archive& archive);
+    Searcher(const Searcher& other);
+    Searcher& operator=(const Searcher& other);
+    Searcher(Searcher&& other);
+    Searcher& operator=(Searcher&& other);
+    ~Searcher();
+
+    Searcher& add_archive(const Archive& archive);
+
+    Search search(bool suggestionMode);
+
+  private: // methods
+    void initDatabase(bool suggestionMode);
+
+  private: // data
+    std::shared_ptr<InternalDataBase> mp_internalDb;
+    std::shared_ptr<InternalDataBase> mp_internalSuggestionDb;
+    std::vector<Archive> m_archives;
+};
+
+
 class Search
 {
     friend class search_iterator;
@@ -36,33 +69,23 @@ class Search
     public:
         typedef search_iterator iterator;
 
-        explicit Search(const std::vector<Archive>& archives);
-        explicit Search(const Archive& archive);
-        Search(const Search& it);
-        Search& operator=(const Search& it);
-        Search(Search&& it);
-        Search& operator=(Search&& it);
-        ~Search();
-
         void set_verbose(bool verbose);
 
-        Search& add_archive(const Archive& archive);
         Search& set_query(const std::string& query);
         Search& set_georange(float latitude, float longitude, float distance);
         Search& set_range(int start, int end);
-        Search& set_suggestion_mode(bool suggestion_mode);
 
         search_iterator begin() const;
         search_iterator end() const;
         int get_matches_estimated() const;
 
     private: // methods
-        void initDatabase() const;
+        Search(std::shared_ptr<InternalDataBase> p_internalDb, bool suggestionMode);
 
     private: // data
          struct InternalData;
+         std::shared_ptr<InternalDataBase> mp_internalDb;
          mutable std::shared_ptr<InternalData> internal;
-         std::vector<Archive> m_archives;
 
          std::string query;
          float latitude;
@@ -75,6 +98,8 @@ class Search
          mutable bool search_started;
          mutable bool verbose;
          mutable int estimated_matches_number;
+
+  friend class Searcher;
 };
 
 } //namespace zim
