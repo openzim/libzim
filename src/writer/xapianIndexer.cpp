@@ -82,7 +82,8 @@ XapianIndexer::~XapianIndexer()
 
 void XapianIndexer::indexingPrelude()
 {
-  writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE);
+  writableDatabase = Xapian::WritableDatabase(indexPath + ".tmp", Xapian::DB_CREATE_OR_OVERWRITE | Xapian::DB_NO_TERMLIST);
+
   switch (indexingMode) {
     case IndexingMode::TITLE:
       writableDatabase.set_metadata("valuesmap", "title:0;targetPath:1");
