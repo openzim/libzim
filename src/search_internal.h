@@ -37,7 +37,7 @@ class InternalDataBase {
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::QueryParser& getQueryParser();
+    Xapian::Query parseQuery(const Query& query);
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
@@ -52,15 +52,15 @@ class InternalDataBase {
     // The valuesmap associated with the database.
     std::map<std::string, int> m_valuesmap;
 
-    // The prefix stored in the database.
-    std::string m_prefixes;
+    // The prefix to search on.
+    std::string m_prefix;
+
+    // Flags to use to parse the query.
+    unsigned int m_flags;
 
     // If the database is open for suggestion.
     // True even if the dabase has no newSuggestionformat.
     bool m_suggestionMode;
-
-    // If the database is open for suggestion and has new suggestion format (title db).
-    bool m_hasNewSuggestionFormat;
 
     // The query parser corresponding to the database.
     Xapian::QueryParser m_queryParser;
