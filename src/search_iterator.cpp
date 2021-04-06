@@ -55,12 +55,13 @@ search_iterator & search_iterator::operator=(const search_iterator& it) {
 }
 
 bool search_iterator::operator==(const search_iterator& it) const {
-    if ( ! internal && ! it.internal)
+    if ( ! internal && ! it.internal) {
         return true;
-    if ( ! internal || ! it.internal)
+    }
+    if ( ! internal || ! it.internal) {
         return false;
-    return (internal->searchData == it.internal->searchData
-         && internal->iterator == it.internal->iterator);
+    }
+    return (*internal == *it.internal);
 }
 
 bool search_iterator::operator!=(const search_iterator& it) const {
@@ -160,7 +161,7 @@ std::string search_iterator::get_snippet() const {
     if ( internal->mp_internalDb->m_suggestionMode )
     {
         try {
-            return internal->searchData->results.snippet(get_title(), 500);
+            return internal->mp_mset->snippet(get_title(), 500);
         } catch(...) {
             return "";
         }
@@ -190,7 +191,7 @@ std::string search_iterator::get_snippet() const {
         try {
           htmlParser.parse_html(content, "UTF-8", true);
         } catch (...) {}
-        return internal->searchData->results.snippet(htmlParser.dump, 500);
+        return internal->mp_mset->snippet(htmlParser.dump, 500);
     } catch (...) {
       return "";
     }

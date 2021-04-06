@@ -38,11 +38,11 @@ TEST(search_iterator, functions) {
 
   zim::Searcher searcher(archive);
   auto search = searcher.search(true);
-  search.set_query("item");
-  search.set_range(0, archive.getEntryCount());
-  search.set_verbose(true);
+  search.setQuery("item");
+  search.setVerbose(true);
+  auto result = search.getResults(0, archive.getEntryCount());
 
-  auto it = search.begin();
+  auto it = result.begin();
 
   // Test functions
   ASSERT_EQ(it.get_title(), "item a");
@@ -63,24 +63,24 @@ TEST(search_iterator, iteration) {
 
   zim::Searcher searcher(archive);
   auto search = searcher.search(true);
-  search.set_query("item");
-  search.set_range(0, archive.getEntryCount());
-  search.set_verbose(true);
+  search.setQuery("item");
+  search.setVerbose(true);
+  auto result = search.getResults(0, archive.getEntryCount());
 
-  auto it = search.begin();
-  ASSERT_EQ(it.get_title(), search.begin().get_title());
+  auto it = result.begin();
+  ASSERT_EQ(it.get_title(), result.begin().get_title());
 
   ASSERT_EQ(it.get_title(), "item a");
   it++;
   ASSERT_EQ(it.get_title(), "item b");
-  ASSERT_TRUE(it != search.begin());
+  ASSERT_TRUE(it != result.begin());
 
   it--;
   ASSERT_EQ(it.get_title(), "item a");
-  ASSERT_TRUE(search.begin() == it);
+  ASSERT_TRUE(result.begin() == it);
 
   it++; it++;
-  ASSERT_TRUE(it == search.end());
+  ASSERT_TRUE(it == result.end());
 }
 
 } // anonymous namespace

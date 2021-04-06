@@ -25,11 +25,19 @@
 #include <string>
 #include <map>
 
+namespace Xapian {
+  class Enquire;
+  class MSet;
+};
+
 namespace zim
 {
 
 class Archive;
 class InternalDataBase;
+class Search;
+class SearchResultSet;
+
 
 /**
  * A Searcher is a object searching a set of Archives
@@ -62,44 +70,70 @@ class Searcher
 };
 
 
+/**
+ * A Search represent a particular search, based on a `Searcher`.
+ *
+ * This is mainly a wrapper around a Xapian::Enquire.
+ * The `Search` must be configured first (with `set*` methods) and
+ * must be started (with `start` method)
+ *
+ * Results can be queried with the `get*` methods **after** the search is started.
+ */
 class Search
 {
-    friend class search_iterator;
-    friend struct search_iterator::InternalData;
     public:
-        typedef search_iterator iterator;
+        Search(Search&& s);
+        Search& operator=(Search&& s);
+        ~Search();
 
-        void set_verbose(bool verbose);
+        Search& setVerbose(bool verbose);
+        Search& setQuery(const std::string& query);
+        Search& setGeorange(float latitude, float longitude, float distance);
 
-        Search& set_query(const std::string& query);
-        Search& set_georange(float latitude, float longitude, float distance);
-        Search& set_range(int start, int end);
-
-        search_iterator begin() const;
-        search_iterator end() const;
-        int get_matches_estimated() const;
+        const SearchResultSet getResults(int start, int end) const;
+        int getEstimatedMatches() const;
 
     private: // methods
         Search(std::shared_ptr<InternalDataBase> p_internalDb, bool suggestionMode);
+        Xapian::Enquire& getEnquire() const;
 
     private: // data
-         struct InternalData;
          std::shared_ptr<InternalDataBase> mp_internalDb;
-         mutable std::shared_ptr<InternalData> internal;
+         mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
 
-         std::string query;
-         float latitude;
-         float longitude;
-         float distance;
-         int range_start;
-         int range_end;
-         bool suggestion_mode;
-         bool geo_query;
-         mutable bool search_started;
-         mutable bool verbose;
-         mutable int estimated_matches_number;
+         bool m_verbose { false };
+         std::string m_query { "" };
+         bool m_suggestionMode { false };
+
+         bool m_geoquery { false };
+         float m_latitude { 0 };
+         float m_longitude { 0 };
+         float m_distance { 0 } ;
 
   friend class Searcher;
+};
+
+/**
+ * The `SearchResult` represent a range of results corresponding to a `Search`.
+ *
+ * It mainly allows to get a iterator.
+ */
+class SearchResultSet
+{
+  public:
+    typedef search_iterator iterator;
+    iterator begin() const;
+    iterator end() const;
+    int size() const;
+
+  private:
+    SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb, Xapian::MSet&& mset);
+    SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb);
+
+  private: // data
+    std::shared_ptr<InternalDataBase> mp_internalDb;
+    std::shared_ptr<Xapian::MSet> mp_mset;
+  friend class Search;
 };
 
 } //namespace zim

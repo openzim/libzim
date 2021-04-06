@@ -384,18 +384,19 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     zim::Searcher searcher2(archive2);
     auto search1 = searcher1.search(true);
     auto search2 = searcher2.search(true);
-    search1.set_query(mainItem.getTitle());
-    search2.set_query(mainItem.getTitle());
-    search1.set_range(0, archive1.getEntryCount());
-    search2.set_range(0, archive2.getEntryCount());
-    ASSERT_NE(0, search1.get_matches_estimated());
-    ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
-    auto firstSearchItem1 = search1.begin()->getItem(true);
-    auto firstSearchItem2 = search2.begin()->getItem(true);
+    search1.setQuery(mainItem.getTitle());
+    search2.setQuery(mainItem.getTitle());
+    ASSERT_NE(0, search1.getEstimatedMatches());
+    ASSERT_EQ(search1.getEstimatedMatches(), search2.getEstimatedMatches());
+
+    auto result1 = search1.getResults(0, archive1.getEntryCount());
+    auto result2 = search2.getResults(0, archive2.getEntryCount());
+    auto firstSearchItem1 = result1.begin()->getItem(true);
+    auto firstSearchItem2 = result2.begin()->getItem(true);
     ASSERT_EQ(mainItem.getPath(), firstSearchItem1.getPath());
     ASSERT_EQ(mainItem.getPath(), firstSearchItem2.getPath());
-    ASSERT_EQ(std::distance(search1.begin(), search1.end()),
-              std::distance(search2.begin(), search2.end()));
+    ASSERT_EQ(std::distance(result1.begin(), result1.end()),
+              std::distance(result2.begin(), result2.end()));
   }
 #endif
 }

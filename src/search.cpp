@@ -305,97 +305,96 @@ void Searcher::initDatabase(bool suggestionMode)
 
 Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, bool suggestionMode)
  : mp_internalDb(p_internalDb),
-   internal(std::make_shared<InternalData>()),
-   query(""),
-   latitude(0), longitude(0), distance(0),
-   range_start(0), range_end(0),
-   suggestion_mode(suggestionMode),
-   geo_query(false),
-   search_started(false),
-   verbose(false),
-   estimated_matches_number(0)
+   mp_enquire(nullptr),
+   m_suggestionMode(suggestionMode)
 {
 }
 
+Search::~Search() = default;
+Search::Search(Search&& s) = default;
+Search& Search::operator=(Search&& s) = default;
 
-void Search::set_verbose(bool verbose) {
-    this->verbose = verbose;
-}
-
-Search& Search::set_query(const std::string& query) {
-    this->query = query;
+Search& Search::setVerbose(bool verbose) {
+    m_verbose = verbose;
     return *this;
 }
 
-Search& Search::set_georange(float latitude, float longitude, float distance) {
-    this->latitude = latitude;
-    this->longitude = longitude;
-    this->distance = distance;
-    geo_query = true;
+Search& Search::setQuery(const std::string& query) {
+    m_query = query;
     return *this;
 }
 
-
-Search& Search::set_range(int start, int end) {
-    this->range_start = start;
-    this->range_end = end;
+Search& Search::setGeorange(float latitude, float longitude, float distance) {
+    m_latitude = latitude;
+    m_longitude = longitude;
+    m_distance = distance;
+    m_geoquery = true;
     return *this;
 }
 
-
-Search::iterator Search::begin() const {
-    if ( this->search_started ) {
-        return new search_iterator::InternalData(this, internal->results.begin());
+int Search::getEstimatedMatches() const
+{
+    try {
+      auto enquire = getEnquire();
+      // Force xapian to check at least one document even if we ask for an empty mset.
+      // Else, the get_matches_estimated may be wrong and return 0 even if we have results.
+      auto mset = enquire.get_mset(0, 0, 1);
+      return mset.get_matches_estimated();
+    } catch(Xapian::QueryParserError& e) {
+      return 0;
     }
+}
 
-    if ( ! mp_internalDb->hasDatabase() ) {
-        if (verbose) {
-          std::cout << "No database, no result" << std::endl;
-        }
-        estimated_matches_number = 0;
-        return nullptr;
+const SearchResultSet Search::getResults(int start, int end) const {
+    try {
+      auto enquire = getEnquire();
+      auto mset = enquire.get_mset(start, end);
+      return SearchResultSet(mp_internalDb, std::move(mset));
+    } catch(Xapian::QueryParserError& e) {
+      return SearchResultSet(mp_internalDb);
+    }
+}
+
+Xapian::Enquire& Search::getEnquire() const
+{
+    if ( mp_enquire ) {
+        return *mp_enquire;
     }
 
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
-    if (verbose) {
+    if (m_verbose) {
       std::cout << "Setup queryparser using language " << mp_internalDb->m_language << std::endl;
     }
-    mp_internalDb->setupQueryparser(queryParser, suggestion_mode);
+    mp_internalDb->setupQueryparser(queryParser, m_suggestionMode);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
-    if (suggestion_mode) {
-      if (verbose) {
+    if (m_suggestionMode) {
+      if (m_verbose) {
         std::cout << "Mark query as 'partial'" << std::endl;
       }
       flags |= Xapian::QueryParser::FLAG_PARTIAL;
       if ( !mp_internalDb->m_hasNewSuggestionFormat
         && mp_internalDb->m_prefixes.find("S") != std::string::npos ) {
-        if (verbose) {
+        if (m_verbose) {
           std::cout << "Searching in title namespace" << std::endl;
         }
         prefix = "S";
       }
     }
-    Xapian::Query query;
-    try {
-      query = parse_query(queryParser, this->query, flags, prefix, suggestion_mode);
-    } catch (Xapian::QueryParserError& e) {
-      estimated_matches_number = 0;
-      return nullptr;
-    }
-    if (verbose) {
-        std::cout << "Parsed query '" << this->query << "' to " << query.get_description() << std::endl;
+    auto query = parse_query(queryParser, m_query, flags, prefix, m_suggestionMode);
+    if (m_verbose) {
+        std::cout << "Parsed query '" << m_query << "' to " << query.get_description() << std::endl;
     }
     delete queryParser;
 
-    Xapian::Enquire enquire(mp_internalDb->m_database);
+    auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    if (geo_query && mp_internalDb->hasValue("geo.position")) {
+    if (m_geoquery && mp_internalDb->hasValue("geo.position")) {
         Xapian::GreatCircleMetric metric;
-        Xapian::LatLongCoord centre(latitude, longitude);
-        Xapian::LatLongDistancePostingSource ps(mp_internalDb->valueSlot("geo.position"), centre, metric, distance);
-        if ( this->query.empty()) {
+        Xapian::LatLongCoord centre(m_latitude, m_longitude);
+        Xapian::LatLongDistancePostingSource ps(mp_internalDb->valueSlot("geo.position"), centre, metric, m_distance);
+        if ( m_query.empty()) {
           query = Xapian::Query(&ps);
         } else {
           query = Xapian::Query(Xapian::Query::OP_FILTER, query, Xapian::Query(&ps));
@@ -411,36 +410,56 @@ Search::iterator Search::begin() const {
     * results are closer to search string.
     * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
     */
-    if (suggestion_mode) {
-      enquire.set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
+    if (m_suggestionMode) {
+      enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
       if (mp_internalDb->hasValue("title")) {
-        enquire.set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
+        enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
       }
     }
 
-    enquire.set_query(query);
+    enquire->set_query(query);
 
-    if (suggestion_mode && mp_internalDb->hasValue("targetPath")) {
-      enquire.set_collapse_key(mp_internalDb->valueSlot("targetPath"));
+
+    if (m_suggestionMode && mp_internalDb->hasValue("targetPath")) {
+      enquire->set_collapse_key(mp_internalDb->valueSlot("targetPath"));
     }
 
-    internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
-    search_started = true;
-    estimated_matches_number = internal->results.get_matches_estimated();
-    return new search_iterator::InternalData(this, internal->results.begin());
+    mp_enquire = std::move(enquire);
+    return *mp_enquire;
 }
 
-Search::iterator Search::end() const {
-    if ( ! mp_internalDb->hasDatabase() ) {
+SearchResultSet::SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb, Xapian::MSet&& mset) :
+  mp_internalDb(p_internalDb),
+  mp_mset(std::make_shared<Xapian::MSet>(mset))
+{}
+
+SearchResultSet::SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb) :
+  mp_internalDb(p_internalDb),
+  mp_mset(nullptr)
+{}
+
+int SearchResultSet::size() const
+{
+  if (! mp_mset) {
+      return 0;
+  }
+  return mp_mset->size();
+}
+
+SearchResultSet::iterator SearchResultSet::begin() const
+{
+    if ( ! mp_mset ) {
         return nullptr;
     }
-    return new search_iterator::InternalData(this, internal->results.end());
+    return new search_iterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
 }
 
-int Search::get_matches_estimated() const {
-    // Ensure that the search as begin
-    begin();
-    return estimated_matches_number;
+SearchResultSet::iterator SearchResultSet::end() const
+{
+    if ( ! mp_mset ) {
+        return nullptr;
+    }
+    return new search_iterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
 }
 
 } //namespace zim

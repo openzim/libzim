@@ -38,12 +38,12 @@ using zim::unittests::TestItem;
 std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
   zim::Searcher searcher(archive);
   auto search = searcher.search(false);
-  search.set_query(query);
-  search.set_range(0, range);
-  search.set_verbose(true);
+  search.setQuery(query);
+  search.setVerbose(true);
+  auto result = search.getResults(0, range);
 
   std::vector<std::string> snippets;
-  for (auto entry = search.begin(); entry != search.end(); entry++) {
+  for (auto entry = result.begin(); entry != result.end(); entry++) {
     snippets.push_back(entry.get_snippet());
   }
   return snippets;
@@ -64,10 +64,10 @@ TEST(Search, searchByTitle)
     const auto mainItem = archive.getMainEntry().getItem(true);
     zim::Searcher searcher(archive);
     auto search = searcher.search(true);
-    search.set_query(mainItem.getTitle());
-    search.set_range(0, archive.getEntryCount());
-    ASSERT_NE(0, search.get_matches_estimated());
-    ASSERT_EQ(mainItem.getPath(), search.begin().get_path());
+    search.setQuery(mainItem.getTitle());
+    ASSERT_NE(0, search.getEstimatedMatches());
+    auto result = search.getResults(0, archive.getEntryCount());
+    ASSERT_EQ(mainItem.getPath(), result.begin().get_path());
   }
 }
 #endif
@@ -92,12 +92,12 @@ TEST(Search, indexFullPath)
 
   zim::Searcher searcher(archive);
   auto search = searcher.search(false);
-  search.set_query("test article");
-  search.set_range(0, archive.getEntryCount());
-  search.set_verbose(true);
+  search.setQuery("test article");
 
-  ASSERT_EQ(search.begin().get_path(), "testPath");
-  ASSERT_EQ(search.begin().get_dbData().substr(0, 2), "C/");
+  ASSERT_NE(0, search.getEstimatedMatches());
+  auto result = search.getResults(0, archive.getEntryCount());
+  ASSERT_EQ(result.begin().get_path(), "testPath");
+  ASSERT_EQ(result.begin().get_dbData().substr(0, 2), "C/");
 }
 
 TEST(Search, fulltextSnippet)

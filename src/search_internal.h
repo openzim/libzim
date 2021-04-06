@@ -24,6 +24,10 @@
 
 #include <zim/entry.h>
 
+namespace Xapian {
+  class QueryParser;
+};
+
 namespace zim {
 
 /**
@@ -69,13 +73,9 @@ class InternalDataBase {
     std::string m_stopwords;
 };
 
-struct Search::InternalData {
-    Xapian::MSet results;
-};
-
 struct search_iterator::InternalData {
     std::shared_ptr<InternalDataBase> mp_internalDb;
-    std::shared_ptr<Search::InternalData> searchData;
+    std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
     bool document_fetched;
@@ -83,7 +83,7 @@ struct search_iterator::InternalData {
 
     InternalData(const InternalData& other) :
       mp_internalDb(other.mp_internalDb),
-      searchData(other.searchData),
+      mp_mset(other.mp_mset),
       iterator(other.iterator),
       _document(other._document),
       document_fetched(other.document_fetched),
@@ -95,7 +95,7 @@ struct search_iterator::InternalData {
     {
       if (this != &other) {
         mp_internalDb = other.mp_internalDb;
-        searchData = other.searchData;
+        mp_mset = other.mp_mset;
         iterator = other.iterator;
         _document = other._document;
         document_fetched = other.document_fetched;
@@ -104,16 +104,16 @@ struct search_iterator::InternalData {
       return *this;
     }
 
-    InternalData(const Search* search, Xapian::MSetIterator iterator) :
-        mp_internalDb(search->mp_internalDb),
-        searchData(search->internal),
+    InternalData(std::shared_ptr<InternalDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
+        mp_internalDb(p_internalDb),
+        mp_mset(p_mset),
         iterator(iterator),
         document_fetched(false)
     {};
 
     Xapian::Document get_document() {
         if ( !document_fetched ) {
-            if (iterator != searchData->results.end()) {
+            if (iterator != mp_mset->end()) {
                 _document = iterator.get_document();
             }
             document_fetched = true;
@@ -133,6 +133,12 @@ struct search_iterator::InternalData {
             _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
         }
         return *_entry.get();
+    }
+
+    bool operator==(const InternalData& other) const {
+        return (mp_internalDb == other.mp_internalDb
+            &&  mp_mset == other.mp_mset
+            &&  iterator == other.iterator);
     }
 };
 
