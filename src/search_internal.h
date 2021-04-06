@@ -24,10 +24,6 @@
 
 #include <zim/entry.h>
 
-namespace Xapian {
-  class QueryParser;
-};
-
 namespace zim {
 
 /**
@@ -41,7 +37,7 @@ class InternalDataBase {
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    void setupQueryparser(Xapian::QueryParser* queryParse, bool suggestionMode);
+    Xapian::QueryParser& getQueryParser();
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
@@ -66,11 +62,8 @@ class InternalDataBase {
     // If the database is open for suggestion and has new suggestion format (title db).
     bool m_hasNewSuggestionFormat;
 
-    // The language of the database.
-    std::string m_language;
-
-    // The stop words associated to the language of the database.
-    std::string m_stopwords;
+    // The query parser corresponding to the database.
+    Xapian::QueryParser m_queryParser;
 };
 
 struct search_iterator::InternalData {

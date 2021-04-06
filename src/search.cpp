@@ -122,6 +122,8 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
     m_hasNewSuggestionFormat(false)
 {
     bool first = true;
+    m_queryParser.set_database(m_database);
+    m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
     for(auto& archive: archives) {
         auto impl = archive.getImpl();
         FileImpl::FindxResult r;
@@ -173,18 +175,40 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
 
         if ( first ) {
             m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            m_language = database.get_metadata("language");
-            if (m_language.empty() ) {
+            auto language = database.get_metadata("language");
+            if (language.empty() ) {
                 // Database created before 2017/03 has no language metadata.
                 // However, term were stemmed anyway and we need to stem our
                 // search query the same the database was created.
                 // So we need a language, let's use the one of the zim.
                 // If zimfile has no language metadata, we can't do lot more here :/
                 try {
-                    m_language = archive.getMetadata("Language");
+                    language = archive.getMetadata("Language");
                 } catch(...) {}
             }
-            m_stopwords = database.get_metadata("stopwords");
+            if (!language.empty()) {
+                icu::Locale languageLocale(language.c_str());
+                /* Configuring language base steemming */
+                try {
+                    Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
+                    m_queryParser.set_stemmer(stemmer);
+                    m_queryParser.set_stemming_strategy(
+                    m_hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
+                } catch (...) {
+                    std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+                }
+            }
+            auto stopwords = database.get_metadata("stopwords");
+            if ( !stopwords.empty() && !suggestionMode ){
+                std::string stopWord;
+                std::istringstream file(stopwords);
+                Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
+                while (std::getline(file, stopWord, '\n')) {
+                    stopper->add(stopWord);
+                }
+                stopper->release();
+                m_queryParser.set_stopper(stopper);
+            }
             m_prefixes = database.get_metadata("prefixes");
         } else {
             std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
@@ -219,38 +243,9 @@ int InternalDataBase::valueSlot(const std::string& valueName) const
   return m_valuesmap.at(valueName);
 }
 
-void InternalDataBase::setupQueryparser(
-  Xapian::QueryParser* queryParser,
-  bool suggestionMode)
+Xapian::QueryParser& InternalDataBase::getQueryParser()
 {
-    queryParser->set_default_op(Xapian::Query::op::OP_AND);
-    queryParser->set_database(m_database);
-    if ( ! m_language.empty() ) {
-        /* Build ICU Local object to retrieve ISO-639 language code (from
-           ISO-639-3) */
-        icu::Locale languageLocale(m_language.c_str());
-
-        /* Configuring language base steemming */
-        try {
-            Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
-            queryParser->set_stemmer(stemmer);
-            queryParser->set_stemming_strategy(
-            m_hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
-        } catch (...) {
-            std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
-        }
-    }
-
-    if ( !m_stopwords.empty() && !suggestionMode ){
-        std::string stopWord;
-        std::istringstream file(m_stopwords);
-        Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
-        while (std::getline(file, stopWord, '\n')) {
-            stopper->add(stopWord);
-        }
-        stopper->release();
-        queryParser->set_stopper(stopper);
-    }
+    return m_queryParser;
 }
 
 Searcher::Searcher(const std::vector<Archive>& archives) :
@@ -362,12 +357,7 @@ Xapian::Enquire& Search::getEnquire() const
         return *mp_enquire;
     }
 
-    Xapian::QueryParser* queryParser = new Xapian::QueryParser();
-    if (m_query.m_verbose) {
-      std::cout << "Setup queryparser using language " << mp_internalDb->m_language << std::endl;
-    }
-    mp_internalDb->setupQueryparser(queryParser, m_query.m_suggestionMode);
-
+    auto queryParser = mp_internalDb->getQueryParser();
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
     if (m_query.m_suggestionMode) {
@@ -383,11 +373,10 @@ Xapian::Enquire& Search::getEnquire() const
         prefix = "S";
       }
     }
-    auto query = parse_query(queryParser, m_query.m_query, flags, prefix, m_query.m_suggestionMode);
+    auto query = parse_query(&queryParser, m_query.m_query, flags, prefix, m_query.m_suggestionMode);
     if (m_query.m_verbose) {
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
-    delete queryParser;
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
