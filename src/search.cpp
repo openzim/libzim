@@ -279,18 +279,18 @@ Searcher& Searcher::add_archive(const Archive& archive) {
     return *this;
 }
 
-Search Searcher::search(bool suggestionMode)
+Search Searcher::search(const Query& query)
 {
-  if (suggestionMode) {
+  if (query.m_suggestionMode) {
     if (!mp_internalSuggestionDb) {
       initDatabase(true);
     }
-    return Search(mp_internalSuggestionDb, true);
+    return Search(mp_internalSuggestionDb, query);
   } else {
     if (!mp_internalDb) {
       initDatabase(false);
     }
-    return Search(mp_internalDb, false);
+    return Search(mp_internalDb, query);
   }
 }
 
@@ -303,28 +303,29 @@ void Searcher::initDatabase(bool suggestionMode)
   }
 }
 
-Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, bool suggestionMode)
+Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
  : mp_internalDb(p_internalDb),
    mp_enquire(nullptr),
-   m_suggestionMode(suggestionMode)
+   m_query(query)
 {
 }
 
-Search::~Search() = default;
 Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
+Search::~Search() = default;
 
-Search& Search::setVerbose(bool verbose) {
+Query& Query::setVerbose(bool verbose) {
     m_verbose = verbose;
     return *this;
 }
 
-Search& Search::setQuery(const std::string& query) {
+Query& Query::setQuery(const std::string& query, bool suggestionMode) {
     m_query = query;
+    m_suggestionMode = suggestionMode;
     return *this;
 }
 
-Search& Search::setGeorange(float latitude, float longitude, float distance) {
+Query& Query::setGeorange(float latitude, float longitude, float distance) {
     m_latitude = latitude;
     m_longitude = longitude;
     m_distance = distance;
@@ -362,39 +363,39 @@ Xapian::Enquire& Search::getEnquire() const
     }
 
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
-    if (m_verbose) {
+    if (m_query.m_verbose) {
       std::cout << "Setup queryparser using language " << mp_internalDb->m_language << std::endl;
     }
-    mp_internalDb->setupQueryparser(queryParser, m_suggestionMode);
+    mp_internalDb->setupQueryparser(queryParser, m_query.m_suggestionMode);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
-    if (m_suggestionMode) {
-      if (m_verbose) {
+    if (m_query.m_suggestionMode) {
+      if (m_query.m_verbose) {
         std::cout << "Mark query as 'partial'" << std::endl;
       }
       flags |= Xapian::QueryParser::FLAG_PARTIAL;
       if ( !mp_internalDb->m_hasNewSuggestionFormat
         && mp_internalDb->m_prefixes.find("S") != std::string::npos ) {
-        if (m_verbose) {
+        if (m_query.m_verbose) {
           std::cout << "Searching in title namespace" << std::endl;
         }
         prefix = "S";
       }
     }
-    auto query = parse_query(queryParser, m_query, flags, prefix, m_suggestionMode);
-    if (m_verbose) {
-        std::cout << "Parsed query '" << m_query << "' to " << query.get_description() << std::endl;
+    auto query = parse_query(queryParser, m_query.m_query, flags, prefix, m_query.m_suggestionMode);
+    if (m_query.m_verbose) {
+        std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
     delete queryParser;
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    if (m_geoquery && mp_internalDb->hasValue("geo.position")) {
+    if (m_query.m_geoquery && mp_internalDb->hasValue("geo.position")) {
         Xapian::GreatCircleMetric metric;
-        Xapian::LatLongCoord centre(m_latitude, m_longitude);
-        Xapian::LatLongDistancePostingSource ps(mp_internalDb->valueSlot("geo.position"), centre, metric, m_distance);
-        if ( m_query.empty()) {
+        Xapian::LatLongCoord centre(m_query.m_latitude, m_query.m_longitude);
+        Xapian::LatLongDistancePostingSource ps(mp_internalDb->valueSlot("geo.position"), centre, metric, m_query.m_distance);
+        if ( m_query.m_query.empty()) {
           query = Xapian::Query(&ps);
         } else {
           query = Xapian::Query(Xapian::Query::OP_FILTER, query, Xapian::Query(&ps));
@@ -410,7 +411,7 @@ Xapian::Enquire& Search::getEnquire() const
     * results are closer to search string.
     * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
     */
-    if (m_suggestionMode) {
+    if (m_query.m_suggestionMode) {
       enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
       if (mp_internalDb->hasValue("title")) {
         enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
@@ -420,7 +421,7 @@ Xapian::Enquire& Search::getEnquire() const
     enquire->set_query(query);
 
 
-    if (m_suggestionMode && mp_internalDb->hasValue("targetPath")) {
+    if (m_query.m_suggestionMode && mp_internalDb->hasValue("targetPath")) {
       enquire->set_collapse_key(mp_internalDb->valueSlot("targetPath"));
     }
 

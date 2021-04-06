@@ -37,9 +37,9 @@ using zim::unittests::TestItem;
 
 std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
   zim::Searcher searcher(archive);
-  auto search = searcher.search(false);
-  search.setQuery(query);
-  search.setVerbose(true);
+  zim::Query _query;
+  _query.setQuery(query, false);
+  auto search = searcher.search(_query);
   auto result = search.getResults(0, range);
 
   std::vector<std::string> snippets;
@@ -63,8 +63,9 @@ TEST(Search, searchByTitle)
     ASSERT_TRUE(archive.hasTitleIndex());
     const auto mainItem = archive.getMainEntry().getItem(true);
     zim::Searcher searcher(archive);
-    auto search = searcher.search(true);
-    search.setQuery(mainItem.getTitle());
+    zim::Query query;
+    query.setQuery(mainItem.getTitle(), true);
+    auto search = searcher.search(query);
     ASSERT_NE(0, search.getEstimatedMatches());
     auto result = search.getResults(0, archive.getEntryCount());
     ASSERT_EQ(mainItem.getPath(), result.begin().get_path());
@@ -91,8 +92,9 @@ TEST(Search, indexFullPath)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(archive);
-  auto search = searcher.search(false);
-  search.setQuery("test article");
+  zim::Query query;
+  query.setQuery("test article", false);
+  auto search = searcher.search(query);
 
   ASSERT_NE(0, search.getEstimatedMatches());
   auto result = search.getResults(0, archive.getEntryCount());

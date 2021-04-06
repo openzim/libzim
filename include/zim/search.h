@@ -35,6 +35,7 @@ namespace zim
 
 class Archive;
 class InternalDataBase;
+class Query;
 class Search;
 class SearchResultSet;
 
@@ -58,7 +59,7 @@ class Searcher
 
     Searcher& add_archive(const Archive& archive);
 
-    Search search(bool suggestionMode);
+    Search search(const Query& query);
 
   private: // methods
     void initDatabase(bool suggestionMode);
@@ -67,6 +68,33 @@ class Searcher
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<InternalDataBase> mp_internalSuggestionDb;
     std::vector<Archive> m_archives;
+};
+
+
+/**
+ * A Query represent a query.
+ *
+ * It describe what have to be searched and how.
+ * A Query is "database" independent.
+ */
+class Query
+{
+  public:
+    Query() = default;
+
+
+    Query& setVerbose(bool verbose);
+    Query& setQuery(const std::string& query, bool suggestionMode);
+    Query& setGeorange(float latitude, float longitude, float distance);
+
+    bool m_verbose { false };
+    std::string m_query { "" };
+    bool m_suggestionMode { false };
+
+    bool m_geoquery { false };
+    float m_latitude { 0 };
+    float m_longitude { 0 };
+    float m_distance { 0 } ;
 };
 
 
@@ -86,29 +114,17 @@ class Search
         Search& operator=(Search&& s);
         ~Search();
 
-        Search& setVerbose(bool verbose);
-        Search& setQuery(const std::string& query);
-        Search& setGeorange(float latitude, float longitude, float distance);
-
         const SearchResultSet getResults(int start, int end) const;
         int getEstimatedMatches() const;
 
     private: // methods
-        Search(std::shared_ptr<InternalDataBase> p_internalDb, bool suggestionMode);
+        Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query);
         Xapian::Enquire& getEnquire() const;
 
     private: // data
          std::shared_ptr<InternalDataBase> mp_internalDb;
          mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
-
-         bool m_verbose { false };
-         std::string m_query { "" };
-         bool m_suggestionMode { false };
-
-         bool m_geoquery { false };
-         float m_latitude { 0 };
-         float m_longitude { 0 };
-         float m_distance { 0 } ;
+         Query m_query;
 
   friend class Searcher;
 };

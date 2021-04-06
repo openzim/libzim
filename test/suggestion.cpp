@@ -33,9 +33,9 @@ namespace {
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
     zim::Searcher searcher(archive);
-    auto search = searcher.search(true);
-    search.setQuery(query);
-    search.setVerbose(true);
+    zim::Query _query;
+    _query.setQuery(query, true).setVerbose(true);
+    auto search = searcher.search(_query);
 
     auto searchResult = search.getResults(0, range);
 
@@ -50,9 +50,9 @@ namespace {
 
   std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
     zim::Searcher searcher(archive);
-    auto search = searcher.search(true);
-    search.setQuery(query);
-    search.setVerbose(true);
+    zim::Query _query;
+    _query.setQuery(query, true);
+    auto search = searcher.search(_query);
     auto result = search.getResults(0, range);
 
     std::vector<std::string> snippets;
@@ -445,10 +445,9 @@ namespace {
     zim::Archive archive(tza.getPath());
 
     zim::Searcher searcher(archive);
-    auto search = searcher.search(true);
-    search.setQuery("Test Article");
-    search.setVerbose(true);
-
+    zim::Query query;
+    query.setQuery("Test Article", true);
+    auto search = searcher.search(query);
     auto result = search.getResults(0, archive.getEntryCount());
 
     ASSERT_EQ(result.begin().get_path(), "testPath");

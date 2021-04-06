@@ -37,9 +37,9 @@ TEST(search_iterator, functions) {
   });
 
   zim::Searcher searcher(archive);
-  auto search = searcher.search(true);
-  search.setQuery("item");
-  search.setVerbose(true);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
   auto it = result.begin();
@@ -62,9 +62,9 @@ TEST(search_iterator, iteration) {
   });
 
   zim::Searcher searcher(archive);
-  auto search = searcher.search(true);
-  search.setQuery("item");
-  search.setVerbose(true);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
   auto it = result.begin();

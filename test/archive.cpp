@@ -382,10 +382,10 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     auto mainItem = mainEntry.getItem(true);
     zim::Searcher searcher1(archive1);
     zim::Searcher searcher2(archive2);
-    auto search1 = searcher1.search(true);
-    auto search2 = searcher2.search(true);
-    search1.setQuery(mainItem.getTitle());
-    search2.setQuery(mainItem.getTitle());
+    zim::Query query;
+    query.setQuery(mainItem.getTitle(), true);
+    auto search1 = searcher1.search(query);
+    auto search2 = searcher2.search(query);
     ASSERT_NE(0, search1.getEstimatedMatches());
     ASSERT_EQ(search1.getEstimatedMatches(), search2.getEstimatedMatches());
 
