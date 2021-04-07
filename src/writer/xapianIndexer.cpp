@@ -21,6 +21,7 @@
 #include "libzim-resources.h"
 #include "fs.h"
 #include "tools.h"
+#include "../constants.h"
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
@@ -132,7 +133,8 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   }
 
   if (!unaccentedTitle.empty()) {
-    indexer.index_text(unaccentedTitle, 1);
+    std::string anchoredTitle = ANCHOR_TERM + unaccentedTitle;
+    indexer.index_text(anchoredTitle, 1);
   }
 
   /* add to the database */

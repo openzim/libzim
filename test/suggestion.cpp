@@ -139,9 +139,9 @@ namespace {
     std::vector<std::string> resultSet = getSuggestions(archive, "berlin", archive.getEntryCount());
     std::vector<std::string> expectedResult = {
                                                 "berlin",
+                                                "berlin wall",
                                                 "hotel berlin, berlin",
                                                 "again berlin",
-                                                "berlin wall",
                                                 "not berlin"
                                               };
 
@@ -252,11 +252,11 @@ namespace {
     resultSet = getSuggestions(archive, "the", archive.getEntryCount());
     expectedResult = {
                        "The chocolate factory",
-                       "Hour of the wolf",
                        "The wolf among sheeps",
                        "The wolf of Shingashina",
                        "The wolf of Wall Street",
                        "The wolf of Wall Street Book",
+                       "Hour of the wolf",
                        "Terma termb the wolf of wall street termc"
                      };
 
@@ -265,11 +265,11 @@ namespace {
     // "the wolf"
     resultSet = getSuggestions(archive, "the wolf", archive.getEntryCount());
     expectedResult = {
-                       "Hour of the wolf",
                        "The wolf among sheeps",
                        "The wolf of Shingashina",
                        "The wolf of Wall Street",
                        "The wolf of Wall Street Book",
+                       "Hour of the wolf",
                        "Terma termb the wolf of wall street termc"
                      };
 
@@ -416,5 +416,26 @@ namespace {
                                                 "Test Article"
                                               };
     ASSERT_EQ(resultSet, expectedResult);
+  }
+
+  // Titles which begins with the search string should have higher relevance
+  TEST(Suggestion, anchorQueryToBeginning) {
+    std::vector<std::string> titles = {
+                                        "aterm bterm this is a title cterm",
+                                        "this is a title aterm bterm cterm",
+                                        "aterm this is a title bterm cterm"
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    std::vector<std::string> resultSet = getSuggestions(archive, "This is a title", archive.getEntryCount());
+    std::vector<std::string> expectedResult = {
+                                                "this is a title aterm bterm cterm",
+                                                "aterm bterm this is a title cterm",
+                                                "aterm this is a title bterm cterm"
+                                              };
+
+    ASSERT_EQ(expectedResult, resultSet);
   }
 }

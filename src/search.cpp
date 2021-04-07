@@ -38,6 +38,8 @@
 #include "xapian.h"
 #include <unicode/locid.h>
 
+#include "constants.h"
+
 #define MAX_MATCHES_TO_SORT 10000
 
 namespace zim
@@ -118,21 +120,34 @@ setup_queryParser(Xapian::QueryParser* queryParser,
 /*
  * subquery_phrase: selects documents that have the terms in the order of the query
  * within a specified window.
+ * subquery_anchored: selects documents that have the terms in the order of the
+ * query within a specified window and starts from the beginning of the document.
  * subquery_and: selects documents that have all the terms in the query.
- * subquery_phrase by itself is quite exclusive. To include more "similar" docs,
- * we combine it with subquery_and using OP_OR operator. If a perticular document
- * has a weight of A in subquery_phrase and B in subquery_and, the net weight of
- * that document becomes A+B. So the documents closer to the query gets a higher.
+ *
+ * subquery_phrase and subquery_anchored by themselves are quite exclusive. To
+ * include more "similar" docs, we combine them with subquery_and using OP_OR
+ * operator. If a particular document has a weight of A in subquery_and and B
+ * in subquery_phrase and C in subquery_anchored, the net weight of that document
+ * becomes A+B+C (normalised out of 100). So the documents closer to the query
+ * gets a higher relevance.
  */
 Xapian::Query parse_query(Xapian::QueryParser* query_parser, std::string qs, int flags, std::string prefix, bool suggestion_mode) {
     Xapian::Query query, subquery_and;
     query = subquery_and = query_parser->parse_query(qs, flags, prefix);
 
-    if (suggestion_mode) {
+    if (suggestion_mode && !query.empty()) {
+      Xapian::Query subquery_phrase, subquery_anchored;
       query_parser->set_default_op(Xapian::Query::op::OP_PHRASE);
-      Xapian::Query subquery_phrase = query_parser->parse_query(qs);
+
+      subquery_phrase = query_parser->parse_query(qs);
       subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
-      query = Xapian::Query(Xapian::Query::OP_OR, subquery_phrase, subquery_and);
+
+      qs = ANCHOR_TERM + qs;
+      subquery_anchored = query_parser->parse_query(qs);
+      subquery_anchored = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_anchored.get_terms_begin(), subquery_anchored.get_terms_end(), subquery_anchored.get_length());
+
+      query = Xapian::Query(Xapian::Query::OP_OR, query, subquery_phrase);
+      query = Xapian::Query(Xapian::Query::OP_OR, query, subquery_anchored);
     }
 
     return query;
