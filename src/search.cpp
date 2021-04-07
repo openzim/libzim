@@ -114,8 +114,110 @@ Xapian::Query parse_query(Xapian::QueryParser* query_parser, std::string qs, int
     return query;
 }
 
+} // end of anonymous namespace
+
+
+InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode)
+  : m_suggestionMode(suggestionMode),
+    m_hasNewSuggestionFormat(false)
+{
+    bool first = true;
+    for(auto& archive: archives) {
+        auto impl = archive.getImpl();
+        FileImpl::FindxResult r;
+        if (suggestionMode) {
+          r = impl->findx('X', "title/xapian");
+          if (r.first) {
+            m_hasNewSuggestionFormat = true;
+          }
+        }
+        if (!r.first) {
+          r = impl->findx('X', "fulltext/xapian");
+        }
+        if (!r.first) {
+          r = impl->findx('Z', "/fulltextIndex/xapian");
+        }
+        if (!r.first) {
+            continue;
+        }
+        auto xapianEntry = Entry(impl, entry_index_type(r.second));
+        auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
+        if (accessInfo.second == 0) {
+            continue;
+        }
+
+        DEFAULTFS::FD databasefd;
+        try {
+            databasefd = DEFAULTFS::openFile(accessInfo.first);
+        } catch (...) {
+            std::cerr << "Impossible to open " << accessInfo.first << std::endl;
+            std::cerr << strerror(errno) << std::endl;
+            continue;
+        }
+        if (!databasefd.seek(offset_t(accessInfo.second))) {
+            std::cerr << "Something went wrong seeking databasedb "
+                      << accessInfo.first << std::endl;
+            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+            continue;
+        }
+        Xapian::Database database;
+        try {
+            database = Xapian::Database(databasefd.release());
+        } catch( Xapian::DatabaseError& e) {
+            std::cerr << "Something went wrong opening xapian database for zimfile "
+                      << accessInfo.first << std::endl;
+            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+            std::cerr << "error = " << e.get_msg() << std::endl;
+            continue;
+        }
+
+        if ( first ) {
+            m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
+            m_language = database.get_metadata("language");
+            if (m_language.empty() ) {
+                // Database created before 2017/03 has no language metadata.
+                // However, term were stemmed anyway and we need to stem our
+                // search query the same the database was created.
+                // So we need a language, let's use the one of the zim.
+                // If zimfile has no language metadata, we can't do lot more here :/
+                try {
+                    m_language = archive.getMetadata("Language");
+                } catch(...) {}
+            }
+            m_stopwords = database.get_metadata("stopwords");
+            m_prefixes = database.get_metadata("prefixes");
+        } else {
+            std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
+            if (m_valuesmap != valuesmap ) {
+                // [TODO] Ignore the database, raise a error ?
+            }
+        }
+        m_xapianDatabases.push_back(database);
+        m_database.add_database(database);
+        m_archives.push_back(archive);
+        first = false;
+    }
 }
 
+bool InternalDataBase::hasDatabase() const
+{
+  return !m_xapianDatabases.empty();
+}
+
+bool InternalDataBase::hasValuesmap() const
+{
+  return !m_valuesmap.empty();
+}
+
+bool InternalDataBase::hasValue(const std::string& valueName) const
+{
+  return (m_valuesmap.find(valueName) != m_valuesmap.end());
+}
+
+int InternalDataBase::valueSlot(const std::string& valueName) const
+{
+  return m_valuesmap.at(valueName);
+}
 
 void InternalDataBase::setupQueryparser(
   Xapian::QueryParser* queryParser,
@@ -149,26 +251,6 @@ void InternalDataBase::setupQueryparser(
         stopper->release();
         queryParser->set_stopper(stopper);
     }
-}
-
-bool InternalDataBase::hasDatabase() const
-{
-  return !m_xapianDatabases.empty();
-}
-
-bool InternalDataBase::hasValuesmap() const
-{
-  return !m_valuesmap.empty();
-}
-
-bool InternalDataBase::hasValue(const std::string& valueName) const
-{
-  return (m_valuesmap.find(valueName) != m_valuesmap.end());
-}
-
-int InternalDataBase::valueSlot(const std::string& valueName) const
-{
-  return m_valuesmap.at(valueName);
 }
 
 Search::Search(const std::vector<Archive>& archives) :
@@ -264,88 +346,6 @@ Search& Search::set_range(int start, int end) {
 Search& Search::set_suggestion_mode(const bool suggestion_mode) {
     this->suggestion_mode = suggestion_mode;
     return *this;
-}
-
-InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode)
-  : m_suggestionMode(suggestionMode),
-    m_hasNewSuggestionFormat(false)
-{
-    bool first = true;
-    for(auto& archive: archives) {
-        auto impl = archive.getImpl();
-        FileImpl::FindxResult r;
-        if (suggestionMode) {
-          r = impl->findx('X', "title/xapian");
-          if (r.first) {
-            m_hasNewSuggestionFormat = true;
-          }
-        }
-        if (!r.first) {
-          r = impl->findx('X', "fulltext/xapian");
-        }
-        if (!r.first) {
-          r = impl->findx('Z', "/fulltextIndex/xapian");
-        }
-        if (!r.first) {
-            continue;
-        }
-        auto xapianEntry = Entry(impl, entry_index_type(r.second));
-        auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
-        if (accessInfo.second == 0) {
-            continue;
-        }
-
-        DEFAULTFS::FD databasefd;
-        try {
-            databasefd = DEFAULTFS::openFile(accessInfo.first);
-        } catch (...) {
-            std::cerr << "Impossible to open " << accessInfo.first << std::endl;
-            std::cerr << strerror(errno) << std::endl;
-            continue;
-        }
-        if (!databasefd.seek(offset_t(accessInfo.second))) {
-            std::cerr << "Something went wrong seeking databasedb "
-                      << accessInfo.first << std::endl;
-            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
-            continue;
-        }
-        Xapian::Database database;
-        try {
-            database = Xapian::Database(databasefd.release());
-        } catch( Xapian::DatabaseError& e) {
-            std::cerr << "Something went wrong opening xapian database for zimfile "
-                      << accessInfo.first << std::endl;
-            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
-            std::cerr << "error = " << e.get_msg() << std::endl;
-            continue;
-        }
-
-        if ( first ) {
-            m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            m_language = database.get_metadata("language");
-            if (m_language.empty() ) {
-                // Database created before 2017/03 has no language metadata.
-                // However, term were stemmed anyway and we need to stem our
-                // search query the same the database was created.
-                // So we need a language, let's use the one of the zim.
-                // If zimfile has no language metadata, we can't do lot more here :/
-                try {
-                    m_language = archive.getMetadata("Language");
-                } catch(...) {}
-            }
-            m_stopwords = database.get_metadata("stopwords");
-            m_prefixes = database.get_metadata("prefixes");
-        } else {
-            std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            if (m_valuesmap != valuesmap ) {
-                // [TODO] Ignore the database, raise a error ?
-            }
-        }
-        m_xapianDatabases.push_back(database);
-        m_database.add_database(database);
-        m_archives.push_back(archive);
-        first = false;
-    }
 }
 
 void Search::initDatabase() const {
