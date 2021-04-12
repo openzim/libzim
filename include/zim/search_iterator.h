@@ -46,7 +46,7 @@ class search_iterator : public std::iterator<std::bidirectional_iterator_tag, En
         search_iterator& operator--();
         search_iterator operator--(int);
 
-        std::string get_url() const;
+        std::string get_path() const;
         std::string get_title() const;
         int get_score() const;
         std::string get_snippet() const;

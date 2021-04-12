@@ -73,7 +73,7 @@ TEST(Search, searchByTitle)
   search.set_query(mainEntry.getTitle());
   search.set_range(0, archive.getEntryCount());
   ASSERT_NE(0, search.get_matches_estimated());
-  ASSERT_EQ(mainEntry.getPath(), search.begin().get_url());
+  ASSERT_EQ(mainEntry.getPath(), search.begin().get_path());
 }
 
 // To secure compatibity of new zim files with older kiwixes, we need to index

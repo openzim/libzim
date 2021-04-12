@@ -359,8 +359,8 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     search2.set_range(0, archive2.getEntryCount());
     ASSERT_NE(0, search1.get_matches_estimated());
     ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
-    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
-    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_url());
+    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_path());
+    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_path());
     ASSERT_EQ(std::distance(search1.begin(), search1.end()),
               std::distance(search2.begin(), search2.end()));
   }

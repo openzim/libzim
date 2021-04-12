@@ -79,6 +79,11 @@ XapianIndexer::~XapianIndexer()
  * Slot 0: Title of the article. Used in collapsing articles with same name.
  * Slot 1: Word count of the article.
  * Slot 2: Geo position of the article. Used for geo-filtering.
+ *
+ * `kind` metadata indicate whether the database is a title or a fulltext index.
+ *
+ * `data` metadata indicate the type of data stored in the index. A value of "fullPath"
+ * means the data stores the complete path with a namespace.
  */
 
 void XapianIndexer::indexingPrelude()
@@ -89,10 +94,12 @@ void XapianIndexer::indexingPrelude()
     case IndexingMode::TITLE:
       writableDatabase.set_metadata("valuesmap", "title:0;targetPath:1");
       writableDatabase.set_metadata("kind", "title");
+      writableDatabase.set_metadata("data", "fullPath");
       break;
     case IndexingMode::FULL:
       writableDatabase.set_metadata("valuesmap", "title:0;wordcount:1;geo.position:2");
       writableDatabase.set_metadata("kind", "fulltext");
+      writableDatabase.set_metadata("data", "fullPath");
       break;
   }
   writableDatabase.set_metadata("language", language);
@@ -101,6 +108,8 @@ void XapianIndexer::indexingPrelude()
 }
 
 /*
+ * For title index, index the full path with namespace as data of the document.
+ * The targetPath in valuesmap will store the path without namespace.
  * TODO:
  * Currently for title index we are storing path twice (redirectPath/path in
  * valuesmap and path in index data). In the future, we want to keep only one of
@@ -120,7 +129,9 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   } catch (...) {}
   Xapian::Document currentDocument;
   currentDocument.clear_values();
-  currentDocument.set_data(path);
+
+  std::string fullPath = "C/" + path;
+  currentDocument.set_data(fullPath);
   indexer.set_document(currentDocument);
 
   std::string unaccentedTitle = zim::removeAccents(title);

@@ -60,7 +60,8 @@ namespace zim
       Xapian::Document document;
       indexer.set_document(document);
 
-      document.set_data(m_path);
+      std::string fullPath = "C/" + m_path;
+      document.set_data(fullPath);
       document.add_value(0, m_title);
 
       std::stringstream countWordStringStream;
