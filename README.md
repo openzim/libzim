@@ -43,6 +43,7 @@ libraries need to be available:
 * [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
 * [UUID](http://e2fsprogs.sourceforge.net/) (package `uuid-dev` on Ubuntu)
 * [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
+* [zim-testing-suite](https://github.com/openzim/zim-testing-suite) - optional, data for unittests.
 
 To build the documentations you need the packages :
 
@@ -107,6 +108,26 @@ If libzim is compiled without Xapian, all search API are removed.  You
 can test if an installed version of libzim is compiled with or without
 xapian by testing the define `LIBZIM_WITH_XAPIAN`.
 
+Testing
+-------
+
+The unit test need testing zim files.
+They are located in the repository [zim-testing-suite](https://github.com/openzim/zim-testing-suite).
+
+Decompress the zim files in https://github.com/openzim/zim-testing-suite/releases/download/v0.1/zim-testing-suite-0.1.tar.gz in a directory
+and set a environment variable pointing to this directory.
+
+Then, you can run :
+```bash
+meson test
+```
+
+If the automated tests fail or timeout, you need to be aware that this
+test suite needs up to 16GB of memory. You can skip this specific tests with:
+```bash
+SKIP_BIG_MEMORY_TEST=1 meson test
+```
+
 Installation
 ------------
 
@@ -151,12 +172,6 @@ git checkout release
 mkdir ../bin
 cp ninja ../bin
 cd ..
-```
-
-If the automated tests fail or timeout, you need to be aware that this
-test suite needs up to 16GB of memory. You can skip this specific tests with:
-```bash
-SKIP_BIG_MEMORY_TEST=1 ninja test
 ```
 
 If the compilation still fails, you might need to get a more recent

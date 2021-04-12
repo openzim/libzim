@@ -1,4 +1,3 @@
-subdir('data')
 
 tests = [
     'lrucache',
