@@ -27,6 +27,8 @@
 #include <io.h>
 #endif
 
+#include "../src/fs.h"
+
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -95,6 +97,10 @@ makeTempFile(const char* name, const std::string& content)
   return p;
 }
 
+std::string getDataFilePath(const std::string& filename)
+{
+  return zim::DEFAULTFS::join("data", filename);
+}
 
 } // namespace unittests
 

@@ -33,6 +33,7 @@ namespace
 {
 
 using zim::unittests::makeTempFile;
+using zim::unittests::getDataFilePath;
 
 using TestContextImpl = std::vector<std::pair<std::string, std::string> >;
 struct TestContext : TestContextImpl {
@@ -144,7 +145,7 @@ TEST(ZimArchive, openRealZimArchive)
   };
 
   for ( const std::string fname : zimfiles ) {
-    const std::string path = zim::DEFAULTFS::join("data", fname);
+    const std::string path = getDataFilePath(fname);
     const TestContext ctx{ {"path", path } };
     std::unique_ptr<zim::Archive> archive;
     EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
@@ -163,7 +164,7 @@ TEST(ZimArchive, randomEntry)
   };
 
   for ( const std::string fname : zimfiles ) {
-    const auto path = zim::DEFAULTFS::join("data", fname);
+    const auto path = getDataFilePath(fname);
     const TestContext ctx{ {"path", path } };
     const zim::Archive archive(path);
     try {
@@ -205,7 +206,7 @@ public:
     checksToRun.set();                                            \
     checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));     \
     CapturedStderr stderror;                                      \
-    EXPECT_FALSE(zim::validate(zimpath, checksToRun));            \
+    EXPECT_FALSE(zim::validate(getDataFilePath(zimpath), checksToRun));            \
     EXPECT_EQ(expected_stderror_text, std::string(stderror));     \
   }
 
@@ -214,82 +215,82 @@ TEST(ZimArchive, validate)
   zim::IntegrityCheckList all;
   all.set();
 
-  ASSERT_TRUE(zim::validate("./data/small.zim", all));
+  ASSERT_TRUE(zim::validate(getDataFilePath("small.zim"), all));
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.smaller_than_header.zim",
+    "invalid.smaller_than_header.zim",
     "zim-file is too small to contain a header\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_urlptrpos.zim",
+    "invalid.outofbounds_urlptrpos.zim",
     "Dirent pointer table outside (or not fully inside) ZIM file.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_titleptrpos.zim",
+    "invalid.outofbounds_titleptrpos.zim",
     "Title index table outside (or not fully inside) ZIM file.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_clusterptrpos.zim",
+    "invalid.outofbounds_clusterptrpos.zim",
     "Cluster pointer table outside (or not fully inside) ZIM file.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.invalid_mimelistpos.zim",
+    "invalid.invalid_mimelistpos.zim",
     "mimelistPos must be 80.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.invalid_checksumpos.zim",
+    "invalid.invalid_checksumpos.zim",
     "Checksum position is not valid\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_first_direntptr.zim",
+    "invalid.outofbounds_first_direntptr.zim",
     "Invalid dirent pointer\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_last_direntptr.zim",
+    "invalid.outofbounds_last_direntptr.zim",
     "Invalid dirent pointer\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_first_title_entry.zim",
+    "invalid.outofbounds_first_title_entry.zim",
     "Invalid title index entry.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_last_title_entry.zim",
+    "invalid.outofbounds_last_title_entry.zim",
     "Invalid title index entry.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.outofbounds_first_clusterptr.zim",
+    "invalid.outofbounds_first_clusterptr.zim",
     "Invalid cluster pointer\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.nonsorted_dirent_table.zim",
+    "invalid.nonsorted_dirent_table.zim",
     "Dirent table is not properly sorted:\n"
     "  #0: A/main.html\n"
     "  #1: -/favicon\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.nonsorted_title_index.zim",
+    "invalid.nonsorted_title_index.zim",
     "Title index is not properly sorted.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.bad_mimetype_list.zim",
+    "invalid.bad_mimetype_list.zim",
     "Error getting mimelists.\n"
   );
 
   EXPECT_BROKEN_ZIMFILE(
-    "./data/invalid.bad_mimetype_in_dirent.zim",
+    "invalid.bad_mimetype_in_dirent.zim",
     "Entry M/Language has invalid MIME-type value 1234.\n"
   );
 }
@@ -369,8 +370,8 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 
 TEST(ZimArchive, multipart)
 {
-  const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
-  const zim::Archive archive2("./data/wikibooks_be_all_nopic_2017-02_splitted.zim");
+  const zim::Archive archive1(getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+  const zim::Archive archive2(getDataFilePath("wikibooks_be_all_nopic_2017-02_splitted.zim"));
   ASSERT_FALSE(archive1.is_multiPart());
   ASSERT_TRUE (archive2.is_multiPart());
 
@@ -384,16 +385,16 @@ TEST(ZimArchive, multipart)
 #include <io.h>
 #undef min
 #undef max
-# define OPEN_READ_ONLY(path) _open(path, _O_RDONLY)
+# define OPEN_READ_ONLY(path) _open(path.c_str(), _O_RDONLY)
 #else
-# define OPEN_READ_ONLY(path) open(path, O_RDONLY)
+# define OPEN_READ_ONLY(path) open(path.c_str(), O_RDONLY)
 #endif
 
 #ifndef _WIN32
 TEST(ZimArchive, openByFD)
 {
-  const zim::Archive archive1("./data/small.zim");
-  const int fd = OPEN_READ_ONLY("./data/small.zim");
+  const zim::Archive archive1(getDataFilePath("small.zim"));
+  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim"));
   const zim::Archive archive2(fd);
 
   checkEquivalence(archive1, archive2);
@@ -401,8 +402,8 @@ TEST(ZimArchive, openByFD)
 
 TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 {
-  const zim::Archive archive1("./data/small.zim");
-  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
+  const zim::Archive archive1(getDataFilePath("small.zim"));
+  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim.embedded"));
   const zim::Archive archive2(fd, 8, archive1.getFilesize());
 
   checkEquivalence(archive1, archive2);
@@ -419,7 +420,7 @@ zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type si
 
 TEST(ZimArchive, getDirectAccessInformation)
 {
-  const zim::Archive archive("./data/small.zim");
+  const zim::Archive archive(getDataFilePath("small.zim"));
   zim::entry_index_type checkedItemCount = 0;
   for ( auto entry : archive.iterEfficient() ) {
     if (!entry.isRedirect()) {
@@ -438,7 +439,7 @@ TEST(ZimArchive, getDirectAccessInformation)
 #ifndef _WIN32
 TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
-  const int fd = OPEN_READ_ONLY("./data/small.zim");
+  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim"));
   const zim::Archive archive(fd);
   zim::entry_index_type checkedItemCount = 0;
   for ( auto entry : archive.iterEfficient() ) {
@@ -457,8 +458,8 @@ TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 
 TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
 {
-  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
-  const auto size = zim::DEFAULTFS::openFile("./data/small.zim").getSize();
+  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim.embedded"));
+  const auto size = zim::DEFAULTFS::openFile(getDataFilePath("small.zim")).getSize();
   const zim::Archive archive(fd, 8, size.v);
   zim::entry_index_type checkedItemCount = 0;
   for ( auto entry : archive.iterEfficient() ) {
