@@ -27,10 +27,13 @@
 
 #include "tools.h"
 
+#include "tools.h"
 #include "gtest/gtest.h"
 
 namespace
 {
+
+using zim::unittests::getDataFilePath;
 
 class TestItem : public zim::writer::Item
 {
@@ -65,7 +68,7 @@ class TempZimArchive : zim::unittests::TempFile
 
 TEST(Search, searchByTitle)
 {
-  const zim::Archive archive("./data/small.zim");
+  const zim::Archive archive(getDataFilePath("small.zim"));
   ASSERT_TRUE(archive.hasTitleIndex());
   const zim::Entry mainEntry = archive.getMainEntry();
   zim::Search search(archive);

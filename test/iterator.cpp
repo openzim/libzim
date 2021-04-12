@@ -21,11 +21,13 @@
 #include <zim/archive.h>
 #include <zim/error.h>
 
+#include "tools.h"
 #include "gtest/gtest.h"
 
 namespace
 {
 
+using zim::unittests::getDataFilePath;
 
 TEST(ClusterIteratorTest, getEntryByClusterOrder)
 {
@@ -37,7 +39,7 @@ TEST(ClusterIteratorTest, getEntryByClusterOrder)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto nbEntries = archive.getEntryCount();
 
@@ -51,7 +53,7 @@ TEST(ClusterIteratorTest, getEntryByClusterOrder)
 
 TEST(getEntry, indexOutOfRange)
 {
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto nbEntries = archive.getEntryCount();
 
@@ -76,7 +78,7 @@ TEST(IteratorTests, begin)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     int i = 0;
     for(auto& entry: archive.iterEfficient()) {
@@ -90,7 +92,7 @@ TEST(IteratorTests, begin)
 TEST(IteratorTests, beginByTitle)
 {
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto it = archive.iterByTitle().begin();
 
@@ -108,7 +110,7 @@ TEST(IteratorTests, beginByTitle)
 TEST(IteratorTests, beginByPath)
 {
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto it = archive.iterByPath().begin();
     int i = 0;

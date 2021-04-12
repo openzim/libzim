@@ -21,16 +21,21 @@
 #include <zim/archive.h>
 #include <zim/error.h>
 
+#include "tools.h"
+
 #include "gtest/gtest.h"
 
 namespace
 {
 // Not found cases
 
+
+using zim::unittests::getDataFilePath;
+
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto range0 = archive.findByTitle("unkownTitle");
     auto range1 = archive.findByTitle("j/body.js");
@@ -41,7 +46,7 @@ TEST(FindTests, NotFoundByTitle)
 // By Path
 TEST(FindTests, NotFoundByPath)
 {
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto range0 = archive.findByPath("unkwonUrl");
     auto range1 = archive.findByPath("U/unkwonUrl");
@@ -60,7 +65,7 @@ TEST(FindTests, NotFoundByPath)
 // ByTitle
 TEST(FindTests, ByTitle)
 {
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto range0 = archive.findByTitle("Main Page");
     ASSERT_EQ(range0.begin()->getIndex(), 5);
@@ -90,7 +95,7 @@ TEST(FindTests, ByTitle)
 // By Path (compatibility)
 TEST(FindTests, ByPathNoNS)
 {
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto it1 = archive.findByPath("j/body.js");
     auto it2 = archive.findByPath("m/115a35549794e50dcd03e60ef1a1ae24.png");
@@ -102,7 +107,7 @@ TEST(FindTests, ByPathNoNS)
 // By Path
 TEST(FindTests, ByPath)
 {
-    zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
+    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
     auto range0 = archive.findByPath("A/Main_Page.html");
     auto range1 = archive.findByPath("I/s/");
