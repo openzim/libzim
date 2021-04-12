@@ -56,6 +56,10 @@ class search_iterator : public std::iterator<std::bidirectional_iterator_tag, En
         reference operator*() const;
         pointer operator->() const;
 
+#ifdef ZIM_PRIVATE
+        std::string get_dbData() const;
+#endif
+
     private:
         struct InternalData;
         std::unique_ptr<InternalData> internal;

@@ -17,6 +17,8 @@
  *
  */
 
+#define ZIM_PRIVATE
+
 #include "xapian/myhtmlparse.h"
 #include <zim/search_iterator.h>
 #include <zim/search.h>
@@ -101,6 +103,14 @@ std::string search_iterator::get_url() const {
     if ( ! internal ) {
         return "";
     }
+    return internal->get_document().get_data();
+}
+
+std::string search_iterator::get_dbData() const {
+    if ( ! internal ) {
+        return "";
+    }
+
     return internal->get_document().get_data();
 }
 
