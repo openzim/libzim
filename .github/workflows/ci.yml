@@ -44,6 +44,11 @@ jobs:
           meson . build ${MESON_OPTION}
           cd build
           ninja
+      - name: Install test data
+        if: startsWith(matrix.target, 'native_')
+        shell: bash
+        run: |
+          wget -O- https://github.com/openzim/zim-testing-suite/releases/download/v0.1/zim-testing-suite-0.1.tar.gz | tar -xz -C $HOME
       - name: Test
         if: startsWith(matrix.target, 'native_')
         shell: bash
@@ -52,6 +57,7 @@ jobs:
           cd build
           meson test --verbose
         env:
+          ZIM_TEST_DATA_DIR: "/Users/runner/zim-testing-suite-0.1"
           SKIP_BIG_MEMORY_TEST: 1
 
   Windows:
@@ -65,17 +71,24 @@ jobs:
           python-version: '3.6'
       - name: Install packages
         run:
-          choco install ninja
+          choco install ninja wget
       - name: Install python modules
         run: pip3 install meson
       - name: Compile
         shell: cmd
         run: .github\script\build_libzim.cmd
+      - name: Install test data
+        shell: bash
+        run: |
+          wget -O- https://github.com/openzim/zim-testing-suite/releases/download/v0.1/zim-testing-suite-0.1.tar.gz | tar -xz -C D:/a
       - name: Test
         shell: cmd
         run: |
+          dir D:\a
           cd build
           meson test --verbose
+        env:
+          ZIM_TEST_DATA_DIR: "D:\\a\\zim-testing-suite-0.1"
 
   Linux:
     strategy:
@@ -164,6 +177,11 @@ jobs:
         ninja
       env:
         PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
+    - name: Install test data
+      if: startsWith(matrix.target, 'native_')
+      shell: bash
+      run: |
+        wget -O- https://github.com/openzim/zim-testing-suite/releases/download/v0.1/zim-testing-suite-0.1.tar.gz | tar -xz -C $HOME
     - name: Test
       if: startsWith(matrix.target, 'native_')
       shell: bash
@@ -172,6 +190,7 @@ jobs:
         meson test --verbose
         ninja coverage
       env:
+        ZIM_TEST_DATA_DIR: "/home/runner/zim-testing-suite-0.1"
         LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
         SKIP_BIG_MEMORY_TEST: 1
     - name: Publish coverage
