@@ -17,6 +17,8 @@
  *
  */
 
+#define ZIM_PRIVATE
+
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/search.h>
@@ -437,5 +439,31 @@ namespace {
                                               };
 
     ASSERT_EQ(expectedResult, resultSet);
+  }
+
+  // To secure compatibity of new zim files with older kiwixes, we need to index
+  // full path of the entries as data of documents.
+  TEST(Suggestion, indexFullPath) {
+    TempZimArchive tza("testZim");
+    zim::writer::Creator creator;
+    creator.configIndexing(true, "en");
+    creator.startZimCreation(tza.getPath());
+
+    auto item = std::make_shared<TestItem>("testPath", "text/html", "Test Article");
+    creator.addItem(item);
+
+    creator.addMetadata("Title", "Test zim");
+    creator.finishZimCreation();
+
+    zim::Archive archive(tza.getPath());
+
+    zim::Search search(archive);
+    search.set_suggestion_mode(true);
+    search.set_query("Test Article");
+    search.set_range(0, archive.getEntryCount());
+    search.set_verbose(true);
+
+    ASSERT_EQ(search.begin().get_path(), "testPath");
+    ASSERT_EQ(search.begin().get_dbData().substr(0, 2), "C/");
   }
 }
