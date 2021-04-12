@@ -113,6 +113,8 @@ zim::Buffer write_to_buffer(const T& object)
   return buf;
 }
 
+std::string getDataFilePath(const std::string& filename);
+
 } // namespace unittests
 
 } // namespace zim
