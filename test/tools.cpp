@@ -25,6 +25,8 @@
 #include <windows.h>
 #include <fileapi.h>
 #include <io.h>
+#else
+#include <dirent.h>
 #endif
 
 #include "../src/fs.h"
@@ -111,10 +113,26 @@ void setDataDir(std::string& dataDir)
 
 const std::vector<std::string> getDataFilePath(const std::string& filename)
 {
-  std::string dataDir;
-  setDataDir(dataDir);
-  auto path = zim::DEFAULTFS::join(dataDir, filename);
-  return { path };
+  std::vector<std::string> filePaths;
+  std::string dataDirPath;
+  setDataDir(dataDirPath);
+  auto dataDir = opendir(dataDirPath.c_str());
+
+  if (!dataDir) {
+    filePaths.emplace_back(dataDirPath, "NO_DATA_DIR", filename);
+    return filePaths;
+  }
+  struct dirent* current = NULL;
+  while(current = readdir(dataDir)) {
+    if (current->d_name[0] == '.' || current->d_name[0] == '_') {
+      continue;
+    }
+    filePaths.push_back(zim::DEFAULTFS::join(zim::DEFAULTFS::join(dataDirPath, current->d_name), filename));
+  }
+
+  closedir(dataDir);
+
+  return filePaths;
 }
 
 } // namespace unittests
