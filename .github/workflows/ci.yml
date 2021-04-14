@@ -22,7 +22,8 @@ jobs:
         with:
           python-version: '3.6'
       - name: Install packages
-        run:
+        run: |
+          brew update
           brew install gcovr pkg-config ninja
       - name: Install python modules
         run: pip3 install meson==0.52.1 pytest
