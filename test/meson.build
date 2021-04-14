@@ -37,6 +37,9 @@ else
     run_target('download_test_data', command : [test_data_downloader, '--remove-top-dir', datadir])
 endif
 
+testenv = environment()
+testenv.set('ZIM_TEST_DATA_DIR', datadir)
+
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
         test_exe = executable(test_name, [test_name+'.cpp', 'tools.cpp'],
@@ -47,7 +50,6 @@ if gtest_dep.found() and not meson.is_cross_build()
                               cpp_args: test_cpp_args,
                               dependencies: deps + [gtest_dep],
                               build_rpath: '$ORIGIN')
-        test(test_name, test_exe, timeout : 120,
-             workdir: meson.current_build_dir())
+        test(test_name, test_exe, timeout : 120, env: testenv)
     endforeach
 endif
