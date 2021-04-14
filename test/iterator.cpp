@@ -39,31 +39,35 @@ TEST(ClusterIteratorTest, getEntryByClusterOrder)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    auto nbEntries = archive.getEntryCount();
+        auto nbEntries = archive.getEntryCount();
 
-    ASSERT_EQ(nbEntries, expected.size());
+        ASSERT_EQ(nbEntries, expected.size());
 
-    for (auto i = 0u; i < nbEntries; i++)
-    {
-        EXPECT_EQ(archive.getEntryByClusterOrder(i).getIndex(), expected[i]);
+        for (auto i = 0u; i < nbEntries; i++)
+        {
+            EXPECT_EQ(archive.getEntryByClusterOrder(i).getIndex(), expected[i]);
+        }
     }
 }
 
 TEST(getEntry, indexOutOfRange)
 {
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    auto nbEntries = archive.getEntryCount();
+        auto nbEntries = archive.getEntryCount();
 
-    try {
-        archive.getEntryByPath(nbEntries);
-        FAIL() << "Should throw exception\n";
-    }  catch (std::out_of_range& e) {
-        ASSERT_EQ(e.what(), std::string("entry index out of range"));
-    }  catch(...) {
-        FAIL() << "Should throw exception\n";
+        try {
+            archive.getEntryByPath(nbEntries);
+            FAIL() << "Should throw exception\n";
+        }  catch (std::out_of_range& e) {
+            ASSERT_EQ(e.what(), std::string("entry index out of range"));
+        }  catch(...) {
+            FAIL() << "Should throw exception\n";
+        }
     }
 }
 
@@ -78,12 +82,14 @@ TEST(IteratorTests, begin)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    int i = 0;
-    for(auto& entry: archive.iterEfficient()) {
-        EXPECT_EQ(entry.getIndex(), expected[i]);
-        i++;
+        int i = 0;
+        for(auto& entry: archive.iterEfficient()) {
+            EXPECT_EQ(entry.getIndex(), expected[i]);
+            i++;
+        }
     }
 }
 
@@ -92,17 +98,20 @@ TEST(IteratorTests, begin)
 TEST(IteratorTests, beginByTitle)
 {
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
-    auto it = archive.iterByTitle().begin();
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    int i = 0;
-    while (i < 10)
-    {
-        EXPECT_EQ(it->getIndex(), expected[i]);
-        it++; i++;
+        auto it = archive.iterByTitle().begin();
+
+        int i = 0;
+        while (i < 10)
+        {
+            EXPECT_EQ(it->getIndex(), expected[i]);
+            it++; i++;
+        }
+        std::cout << "\n";
     }
-    std::cout << "\n";
 }
 
 
@@ -110,14 +119,17 @@ TEST(IteratorTests, beginByTitle)
 TEST(IteratorTests, beginByPath)
 {
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
 
-    auto it = archive.iterByPath().begin();
-    int i = 0;
-    while (i < 10)
-    {
-        EXPECT_EQ(it->getIndex(), expected[i]);
-        it++; i++;
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
+
+        auto it = archive.iterByPath().begin();
+        int i = 0;
+        while (i < 10)
+        {
+            EXPECT_EQ(it->getIndex(), expected[i]);
+            it++; i++;
+        }
     }
 }
 

@@ -35,29 +35,33 @@ using zim::unittests::getDataFilePath;
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    auto range0 = archive.findByTitle("unkownTitle");
-    auto range1 = archive.findByTitle("j/body.js");
-    ASSERT_EQ(range0.begin(), range0.end());
-    ASSERT_EQ(range1.begin(), range1.end());
+        auto range0 = archive.findByTitle("unkownTitle");
+        auto range1 = archive.findByTitle("j/body.js");
+        ASSERT_EQ(range0.begin(), range0.end());
+        ASSERT_EQ(range1.begin(), range1.end());
+    }
 }
 
 // By Path
 TEST(FindTests, NotFoundByPath)
 {
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    auto range0 = archive.findByPath("unkwonUrl");
-    auto range1 = archive.findByPath("U/unkwonUrl");
-    auto range2 = archive.findByPath("A/unkwonUrl");
-    auto range3 = archive.findByPath("X");
-    auto range4 = archive.findByPath("X/");
-    ASSERT_EQ(range0.begin(), range0.end());
-    ASSERT_EQ(range1.begin(), range1.end());
-    ASSERT_EQ(range2.begin(), range2.end());
-    ASSERT_EQ(range3.begin(), range3.end());
-    ASSERT_EQ(range4.begin(), range4.end());
+        auto range0 = archive.findByPath("unkwonUrl");
+        auto range1 = archive.findByPath("U/unkwonUrl");
+        auto range2 = archive.findByPath("A/unkwonUrl");
+        auto range3 = archive.findByPath("X");
+        auto range4 = archive.findByPath("X/");
+        ASSERT_EQ(range0.begin(), range0.end());
+        ASSERT_EQ(range1.begin(), range1.end());
+        ASSERT_EQ(range2.begin(), range2.end());
+        ASSERT_EQ(range3.begin(), range3.end());
+        ASSERT_EQ(range4.begin(), range4.end());
+    }
 }
 
 // Found cases
@@ -65,30 +69,32 @@ TEST(FindTests, NotFoundByPath)
 // ByTitle
 TEST(FindTests, ByTitle)
 {
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (path);
 
-    auto range0 = archive.findByTitle("Main Page");
-    ASSERT_EQ(range0.begin()->getIndex(), 5);
-    ASSERT_EQ(range0.end()->getIndex(), 7); // getIndex of an entry is always the path order.
-                                            // It happens that the 6th in title order is the 7th in path order.
+        auto range0 = archive.findByTitle("Main Page");
+        ASSERT_EQ(range0.begin()->getIndex(), 5);
+        ASSERT_EQ(range0.end()->getIndex(), 7); // getIndex of an entry is always the path order.
+                                                // It happens that the 6th in title order is the 7th in path order.
 
-    auto count = 0;
-    for(auto& entry: range0) {
-      count++;
-      ASSERT_EQ(entry.getTitle().find("Main Page"), 0);
+        auto count = 0;
+        for(auto& entry: range0) {
+          count++;
+          ASSERT_EQ(entry.getTitle().find("Main Page"), 0);
+        }
+        ASSERT_EQ(count, 1);
+
+        auto range1 = archive.findByTitle("Украінская");
+        ASSERT_EQ(range1.begin()->getIndex(), 53);
+        ASSERT_EQ(range1.end()->getIndex(), 58);
+
+        count = 0;
+        for(auto& entry: range1) {
+          count++;
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+        }
+        ASSERT_EQ(count, 5);
     }
-    ASSERT_EQ(count, 1);
-
-    auto range1 = archive.findByTitle("Украінская");
-    ASSERT_EQ(range1.begin()->getIndex(), 53);
-    ASSERT_EQ(range1.end()->getIndex(), 58);
-
-    count = 0;
-    for(auto& entry: range1) {
-      count++;
-      ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
-    }
-    ASSERT_EQ(count, 5);
 }
 
 #if 0
@@ -107,7 +113,8 @@ TEST(FindTests, ByPathNoNS)
 // By Path
 TEST(FindTests, ByPath)
 {
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
+  for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+    zim::Archive archive (path);
 
     auto range0 = archive.findByPath("A/Main_Page.html");
     auto range1 = archive.findByPath("I/s/");
@@ -173,6 +180,7 @@ TEST(FindTests, ByPath)
       count++;
     }
     ASSERT_EQ(count, 118);
+  }
 }
 
 } // namespace

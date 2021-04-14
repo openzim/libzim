@@ -145,12 +145,13 @@ TEST(ZimArchive, openRealZimArchive)
   };
 
   for ( const std::string fname : zimfiles ) {
-    const std::string path = getDataFilePath(fname);
-    const TestContext ctx{ {"path", path } };
-    std::unique_ptr<zim::Archive> archive;
-    EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
-    if ( archive ) {
-      EXPECT_TRUE( archive->check() ) << ctx;
+    for (auto& path: getDataFilePath(fname)) {
+      const TestContext ctx{ {"path", path } };
+      std::unique_ptr<zim::Archive> archive;
+      EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
+      if ( archive ) {
+        EXPECT_TRUE( archive->check() ) << ctx;
+      }
     }
   }
 }
@@ -164,17 +165,18 @@ TEST(ZimArchive, randomEntry)
   };
 
   for ( const std::string fname : zimfiles ) {
-    const auto path = getDataFilePath(fname);
-    const TestContext ctx{ {"path", path } };
-    const zim::Archive archive(path);
-    try {
-      auto randomEntry = archive.getRandomEntry();
-      const auto item = randomEntry.getItem(true);
-      ASSERT_TRUE(item.getMimetype().find("text/html") != std::string::npos) << ctx;
-    } catch (zim::EntryNotFound& e) {
-      FAIL() << "Impossible to find a random Entry in " << fname << ".\n"
-             << "This may occur even if this is not a bug (random will be random).\n"
-             << "Please re-run the tests.";
+    for (auto& path: getDataFilePath(fname)) {
+      const TestContext ctx{ {"path", path } };
+      const zim::Archive archive(path);
+      try {
+        auto randomEntry = archive.getRandomEntry();
+        const auto item = randomEntry.getItem(true);
+        ASSERT_TRUE(item.getMimetype().find("text/html") != std::string::npos) << ctx;
+      } catch (zim::EntryNotFound& e) {
+        FAIL() << "Impossible to find a random Entry in " << fname << ".\n"
+               << "This may occur even if this is not a bug (random will be random).\n"
+               << "Please re-run the tests.";
+      }
     }
   }
 }
@@ -200,96 +202,100 @@ public:
   operator std::string() const { return buffer.str(); }
 };
 
-#define EXPECT_BROKEN_ZIMFILE(zimpath, expected_stderror_text)    \
-  {                                                               \
-    zim::IntegrityCheckList checksToRun;                          \
-    checksToRun.set();                                            \
-    checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));     \
-    CapturedStderr stderror;                                      \
-    EXPECT_FALSE(zim::validate(getDataFilePath(zimpath), checksToRun));            \
-    EXPECT_EQ(expected_stderror_text, std::string(stderror));     \
+void expect_broken_zimfile(const std::string& zimName, const std::string& expected_stderror_text)
+{
+  zim::IntegrityCheckList checksToRun;
+  checksToRun.set();
+  checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));
+  for(auto& path: getDataFilePath(zimName)) {
+    CapturedStderr stderror;
+    EXPECT_FALSE(zim::validate(path, checksToRun));
+    EXPECT_EQ(expected_stderror_text, std::string(stderror));
   }
+}
 
 TEST(ZimArchive, validate)
 {
   zim::IntegrityCheckList all;
   all.set();
 
-  ASSERT_TRUE(zim::validate(getDataFilePath("small.zim"), all));
+  for(auto& path: getDataFilePath("small.zim")) {
+    ASSERT_TRUE(zim::validate(path, all));
+  }
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.smaller_than_header.zim",
     "zim-file is too small to contain a header\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_urlptrpos.zim",
     "Dirent pointer table outside (or not fully inside) ZIM file.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_titleptrpos.zim",
     "Title index table outside (or not fully inside) ZIM file.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_clusterptrpos.zim",
     "Cluster pointer table outside (or not fully inside) ZIM file.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.invalid_mimelistpos.zim",
     "mimelistPos must be 80.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.invalid_checksumpos.zim",
     "Checksum position is not valid\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_first_direntptr.zim",
     "Invalid dirent pointer\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_last_direntptr.zim",
     "Invalid dirent pointer\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_first_title_entry.zim",
     "Invalid title index entry.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_last_title_entry.zim",
     "Invalid title index entry.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.outofbounds_first_clusterptr.zim",
     "Invalid cluster pointer\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.nonsorted_dirent_table.zim",
     "Dirent table is not properly sorted:\n"
     "  #0: A/main.html\n"
     "  #1: -/favicon\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.nonsorted_title_index.zim",
     "Title index is not properly sorted.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.bad_mimetype_list.zim",
     "Error getting mimelists.\n"
   );
 
-  EXPECT_BROKEN_ZIMFILE(
+  expect_broken_zimfile(
     "invalid.bad_mimetype_in_dirent.zim",
     "Entry M/Language has invalid MIME-type value 1234.\n"
   );
@@ -370,12 +376,19 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 
 TEST(ZimArchive, multipart)
 {
-  const zim::Archive archive1(getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
-  const zim::Archive archive2(getDataFilePath("wikibooks_be_all_nopic_2017-02_splitted.zim"));
-  ASSERT_FALSE(archive1.is_multiPart());
-  ASSERT_TRUE (archive2.is_multiPart());
+  auto nonSplittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02.zim");
+  auto splittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02_splitted.zim");
 
-  checkEquivalence(archive1, archive2);
+  auto currentNonSplitted = nonSplittedZims.begin();
+  auto currentSplitted = splittedZims.begin();
+  for(; currentNonSplitted!=nonSplittedZims.end() && currentSplitted!=splittedZims.end(); currentNonSplitted++, currentSplitted++) {
+    const zim::Archive archive1(*currentNonSplitted);
+    const zim::Archive archive2(*currentSplitted);
+    ASSERT_FALSE(archive1.is_multiPart());
+    ASSERT_TRUE (archive2.is_multiPart());
+
+    checkEquivalence(archive1, archive2);
+  }
 }
 
 #ifdef _WIN32
@@ -385,28 +398,37 @@ TEST(ZimArchive, multipart)
 #include <io.h>
 #undef min
 #undef max
-# define OPEN_READ_ONLY(path) _open(path.c_str(), _O_RDONLY)
+# define OPEN_READ_ONLY(path) _open((path).c_str(), _O_RDONLY)
 #else
-# define OPEN_READ_ONLY(path) open(path.c_str(), O_RDONLY)
+# define OPEN_READ_ONLY(path) open((path).c_str(), O_RDONLY)
 #endif
 
 #ifndef _WIN32
 TEST(ZimArchive, openByFD)
 {
-  const zim::Archive archive1(getDataFilePath("small.zim"));
-  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim"));
-  const zim::Archive archive2(fd);
+  for(auto& path: getDataFilePath("small.zim")) {
+    const zim::Archive archive1(path);
+    const int fd = OPEN_READ_ONLY(path);
+    const zim::Archive archive2(fd);
 
-  checkEquivalence(archive1, archive2);
+    checkEquivalence(archive1, archive2);
+  }
 }
 
 TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 {
-  const zim::Archive archive1(getDataFilePath("small.zim"));
-  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim.embedded"));
-  const zim::Archive archive2(fd, 8, archive1.getFilesize());
+  auto normalZims = getDataFilePath("small.zim");
+  auto embeddedZims = getDataFilePath("small.zim.embedded");
 
-  checkEquivalence(archive1, archive2);
+  auto currentNormal = normalZims.begin();
+  auto currentEmbedded = embeddedZims.begin();
+  for(; currentNormal!=normalZims.end() && currentEmbedded!=embeddedZims.end(); currentNormal++, currentEmbedded++) {
+    const zim::Archive archive1(*currentNormal);
+    const int fd = OPEN_READ_ONLY(*currentEmbedded);
+    const zim::Archive archive2(fd, 8, archive1.getFilesize());
+
+    checkEquivalence(archive1, archive2);
+  }
 }
 #endif
 
@@ -420,60 +442,71 @@ zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type si
 
 TEST(ZimArchive, getDirectAccessInformation)
 {
-  const zim::Archive archive(getDataFilePath("small.zim"));
-  zim::entry_index_type checkedItemCount = 0;
-  for ( auto entry : archive.iterEfficient() ) {
-    if (!entry.isRedirect()) {
-      const TestContext ctx{ {"entry", entry.getPath() } };
-      const auto item = entry.getItem();
-      const auto dai = item.getDirectAccessInformation();
-      if ( dai.first != "" ) {
-        ++checkedItemCount;
-        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+  for(auto& path:getDataFilePath("small.zim")) {
+    const zim::Archive archive(path);
+    zim::entry_index_type checkedItemCount = 0;
+    for ( auto entry : archive.iterEfficient() ) {
+      if (!entry.isRedirect()) {
+        const TestContext ctx{ {"entry", entry.getPath() } };
+        const auto item = entry.getItem();
+        const auto dai = item.getDirectAccessInformation();
+        if ( dai.first != "" ) {
+          ++checkedItemCount;
+          EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+        }
       }
     }
+    ASSERT_NE(0, checkedItemCount);
   }
-  ASSERT_NE(0, checkedItemCount);
 }
 
 #ifndef _WIN32
 TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
-  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim"));
-  const zim::Archive archive(fd);
-  zim::entry_index_type checkedItemCount = 0;
-  for ( auto entry : archive.iterEfficient() ) {
-    if (!entry.isRedirect()) {
-      const TestContext ctx{ {"entry", entry.getPath() } };
-      const auto item = entry.getItem();
-      const auto dai = item.getDirectAccessInformation();
-      if ( dai.first != "" ) {
-        ++checkedItemCount;
-        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+  for(auto& path:getDataFilePath("small.zim")) {
+    const int fd = OPEN_READ_ONLY(path);
+    const zim::Archive archive(fd);
+    zim::entry_index_type checkedItemCount = 0;
+    for ( auto entry : archive.iterEfficient() ) {
+      if (!entry.isRedirect()) {
+        const TestContext ctx{ {"entry", entry.getPath() } };
+        const auto item = entry.getItem();
+        const auto dai = item.getDirectAccessInformation();
+        if ( dai.first != "" ) {
+          ++checkedItemCount;
+          EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+        }
       }
     }
+    ASSERT_NE(0, checkedItemCount);
   }
-  ASSERT_NE(0, checkedItemCount);
 }
 
 TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
 {
-  const int fd = OPEN_READ_ONLY(getDataFilePath("small.zim.embedded"));
-  const auto size = zim::DEFAULTFS::openFile(getDataFilePath("small.zim")).getSize();
-  const zim::Archive archive(fd, 8, size.v);
-  zim::entry_index_type checkedItemCount = 0;
-  for ( auto entry : archive.iterEfficient() ) {
-    if (!entry.isRedirect()) {
-      const TestContext ctx{ {"entry", entry.getPath() } };
-      const auto item = entry.getItem();
-      const auto dai = item.getDirectAccessInformation();
-      if ( dai.first != "" ) {
-        ++checkedItemCount;
-        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+  auto normalZims = getDataFilePath("small.zim");
+  auto embeddedZims = getDataFilePath("small.zim.embedded");
+
+  auto currentNormal = normalZims.begin();
+  auto currentEmbedded = embeddedZims.begin();
+  for(; currentNormal!=normalZims.end() && currentEmbedded!=embeddedZims.end(); currentNormal++, currentEmbedded++) {
+    const int fd = OPEN_READ_ONLY(*currentEmbedded);
+    const auto size = zim::DEFAULTFS::openFile(*currentNormal).getSize();
+    const zim::Archive archive(fd, 8, size.v);
+    zim::entry_index_type checkedItemCount = 0;
+    for ( auto entry : archive.iterEfficient() ) {
+      if (!entry.isRedirect()) {
+        const TestContext ctx{ {"entry", entry.getPath() } };
+        const auto item = entry.getItem();
+        const auto dai = item.getDirectAccessInformation();
+        if ( dai.first != "" ) {
+          ++checkedItemCount;
+          EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+        }
       }
     }
+    ASSERT_NE(0, checkedItemCount);
   }
-  ASSERT_NE(0, checkedItemCount);
 }
 #endif
 

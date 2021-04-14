@@ -97,9 +97,10 @@ makeTempFile(const char* name, const std::string& content)
   return p;
 }
 
-std::string getDataFilePath(const std::string& filename)
+const std::vector<std::string> getDataFilePath(const std::string& filename)
 {
-  return zim::DEFAULTFS::join("data", filename);
+  auto path = zim::DEFAULTFS::join("data", filename);
+  return { path };
 }
 
 } // namespace unittests
