@@ -22,6 +22,7 @@
 
 
 #include <string>
+#include <vector>
 #include <sys/types.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -113,7 +114,7 @@ zim::Buffer write_to_buffer(const T& object)
   return buf;
 }
 
-std::string getDataFilePath(const std::string& filename);
+const std::vector<std::string> getDataFilePath(const std::string& filename);
 
 } // namespace unittests
 

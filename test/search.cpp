@@ -69,15 +69,17 @@ class TempZimArchive : zim::unittests::TempFile
 #if WITH_TEST_DATA
 TEST(Search, searchByTitle)
 {
-  const zim::Archive archive(getDataFilePath("small.zim"));
-  ASSERT_TRUE(archive.hasTitleIndex());
-  const zim::Entry mainEntry = archive.getMainEntry();
-  zim::Search search(archive);
-  search.set_suggestion_mode(true);
-  search.set_query(mainEntry.getTitle());
-  search.set_range(0, archive.getEntryCount());
-  ASSERT_NE(0, search.get_matches_estimated());
-  ASSERT_EQ(mainEntry.getPath(), search.begin().get_path());
+  for(auto& path:getDataFilePath("small.zim")) {
+    const zim::Archive archive(path);
+    ASSERT_TRUE(archive.hasTitleIndex());
+    const zim::Entry mainEntry = archive.getMainEntry();
+    zim::Search search(archive);
+    search.set_suggestion_mode(true);
+    search.set_query(mainEntry.getTitle());
+    search.set_range(0, archive.getEntryCount());
+    ASSERT_NE(0, search.get_matches_estimated());
+    ASSERT_EQ(mainEntry.getPath(), search.begin().get_path());
+  }
 }
 #endif
 
