@@ -1,5 +1,3 @@
-subdir('data')
-
 tests = [
     'lrucache',
     'cluster',
@@ -27,6 +25,10 @@ if xapian_dep.found()
     tests += ['search', 'suggestion', 'defaultIndexdata']
 endif
 
+testenv = environment()
+datadir = meson.current_source_dir() / 'data'
+testenv.set('ZIM_TEST_DATA_DIR', datadir)
+
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
         test_exe = executable(test_name, [test_name+'.cpp', 'tools.cpp'],
@@ -36,7 +38,6 @@ if gtest_dep.found() and not meson.is_cross_build()
                               link_args: extra_link_args,
                               dependencies : deps + [gtest_dep],
                               build_rpath : '$ORIGIN')
-        test(test_name, test_exe, timeout : 120,
-             workdir: meson.current_build_dir())
+        test(test_name, test_exe, timeout : 120, env : testenv)
     endforeach
 endif

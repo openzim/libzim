@@ -31,6 +31,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
+#include "gtest/gtest.h"
 
 namespace zim
 {
@@ -97,9 +98,22 @@ makeTempFile(const char* name, const std::string& content)
   return p;
 }
 
+void setDataDir(std::string& dataDir)
+{
+  // FAIL must be used in a void function. So we need to use a out parameter.
+  const char* cDataDir = std::getenv("ZIM_TEST_DATA_DIR");
+  if (cDataDir == NULL) {
+    dataDir = "INVALID_DATA_DIR";
+    FAIL() << "ZIM_TEST_DATA_DIR is not defined. You must define it to the directory containing test zim files.";
+  }
+  dataDir = cDataDir;
+}
+
 const std::vector<std::string> getDataFilePath(const std::string& filename)
 {
-  auto path = zim::DEFAULTFS::join("data", filename);
+  std::string dataDir;
+  setDataDir(dataDir);
+  auto path = zim::DEFAULTFS::join(dataDir, filename);
   return { path };
 }
 
