@@ -137,7 +137,8 @@ Xapian::Query parse_query(Xapian::QueryParser* query_parser, std::string qs, int
 
     if (suggestion_mode && !query.empty()) {
       Xapian::Query subquery_phrase, subquery_anchored;
-      query_parser->set_default_op(Xapian::Query::op::OP_PHRASE);
+      query_parser->set_default_op(Xapian::Query::op::OP_OR);
+      query_parser->set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
 
       subquery_phrase = query_parser->parse_query(qs);
       subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
