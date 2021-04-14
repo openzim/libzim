@@ -17,6 +17,8 @@
  *
  */
 
+#define ZIM_PRIVATE
+
 #include "xapian/myhtmlparse.h"
 #include <zim/search_iterator.h>
 #include <zim/search.h>
@@ -97,10 +99,32 @@ search_iterator search_iterator::operator--(int) {
     return it;
 }
 
-std::string search_iterator::get_url() const {
+std::string search_iterator::get_path() const {
     if ( ! internal ) {
         return "";
     }
+
+    std::string path = internal->get_document().get_data();
+    bool hasNewNamespaceScheme = internal->search->m_archives.at(get_fileIndex()).hasNewNamespaceScheme();
+
+    std::string dbDataType = internal->search->internal->database.get_metadata("data");
+    if (dbDataType.empty()) {
+        dbDataType = "fullPath";
+    }
+
+    // If the archive has new namespace scheme and the type of its indexed data
+    // is `fullPath` we return only the `path` without namespace
+    if (hasNewNamespaceScheme && dbDataType == "fullPath") {
+        path = path.substr(2);
+    }
+    return path;
+}
+
+std::string search_iterator::get_dbData() const {
+    if ( ! internal ) {
+        return "";
+    }
+
     return internal->get_document().get_data();
 }
 
