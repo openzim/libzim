@@ -360,18 +360,22 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 #if defined(ENABLE_XAPIAN)
   if ( archive1.hasTitleIndex() )
   {
+    // Resolve any potential redirect.
+    auto mainItem = mainEntry.getItem(true);
     zim::Search search1(archive1);
     zim::Search search2(archive2);
     search1.set_suggestion_mode(true);
     search2.set_suggestion_mode(true);
-    search1.set_query(mainEntry.getTitle());
-    search2.set_query(mainEntry.getTitle());
+    search1.set_query(mainItem.getTitle());
+    search2.set_query(mainItem.getTitle());
     search1.set_range(0, archive1.getEntryCount());
     search2.set_range(0, archive2.getEntryCount());
     ASSERT_NE(0, search1.get_matches_estimated());
     ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
-    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_path());
-    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_path());
+    auto firstSearchItem1 = search1.begin()->getItem(true);
+    auto firstSearchItem2 = search2.begin()->getItem(true);
+    ASSERT_EQ(mainItem.getPath(), firstSearchItem1.getPath());
+    ASSERT_EQ(mainItem.getPath(), firstSearchItem2.getPath());
     ASSERT_EQ(std::distance(search1.begin(), search1.end()),
               std::distance(search2.begin(), search2.end()));
   }
