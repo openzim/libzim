@@ -204,17 +204,13 @@ public:
   operator std::string() const { return buffer.str(); }
 };
 
-void expect_broken_zimfile(const std::string& zimName, const std::string& expected_stderror_text)
-{
-  zim::IntegrityCheckList checksToRun;
-  checksToRun.set();
-  checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));
-  for(auto& testfile: getDataFilePath(zimName)) {
-    CapturedStderr stderror;
-    EXPECT_FALSE(zim::validate(testfile.path, checksToRun));
-    EXPECT_EQ(expected_stderror_text, std::string(stderror));
-  }
-}
+#define EXPECT_BROKEN_ZIMFILE(ZIMPATH, EXPECTED_STDERROR_TEXT) \
+  CapturedStderr stderror;                                     \
+  EXPECT_FALSE(zim::validate(ZIMPATH, checksToRun));           \
+  EXPECT_EQ(EXPECTED_STDERROR_TEXT, std::string(stderror)) << ZIMPATH;
+
+#define TEST_BROKEN_ZIM_NAME(ZIMNAME, EXPECTED)                \
+for(auto& testfile: getDataFilePath(ZIMNAME)) {EXPECT_BROKEN_ZIMFILE(testfile.path, EXPECTED)}
 
 #if WITH_TEST_DATA
 TEST(ZimArchive, validate)
@@ -226,82 +222,104 @@ TEST(ZimArchive, validate)
     ASSERT_TRUE(zim::validate(testfile.path, all));
   }
 
-  expect_broken_zimfile(
+  zim::IntegrityCheckList checksToRun;
+  checksToRun.set();
+  checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));
+
+  TEST_BROKEN_ZIM_NAME(
     "invalid.smaller_than_header.zim",
     "zim-file is too small to contain a header\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_urlptrpos.zim",
     "Dirent pointer table outside (or not fully inside) ZIM file.\n"
   );
 
-  expect_broken_zimfile(
-    "invalid.outofbounds_titleptrpos.zim",
-    "Title index table outside (or not fully inside) ZIM file.\n"
-  );
+  for(auto& testfile: getDataFilePath("invalid.outofbounds_titleptrpos.zim")) {
+    std::string expected;
+    if (testfile.category == "withns") {
+      expected = "Title index table outside (or not fully inside) ZIM file.\n";
+    } else {
+      expected = "Full Title index table outside (or not fully inside) ZIM file.\n";
+    }
+    EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
+  }
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_clusterptrpos.zim",
     "Cluster pointer table outside (or not fully inside) ZIM file.\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.invalid_mimelistpos.zim",
     "mimelistPos must be 80.\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.invalid_checksumpos.zim",
     "Checksum position is not valid\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_first_direntptr.zim",
     "Invalid dirent pointer\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_last_direntptr.zim",
     "Invalid dirent pointer\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_first_title_entry.zim",
     "Invalid title index entry.\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_last_title_entry.zim",
     "Invalid title index entry.\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.outofbounds_first_clusterptr.zim",
     "Invalid cluster pointer\n"
   );
 
-  expect_broken_zimfile(
-    "invalid.nonsorted_dirent_table.zim",
-    "Dirent table is not properly sorted:\n"
-    "  #0: A/main.html\n"
-    "  #1: -/favicon\n"
-  );
 
-  expect_broken_zimfile(
+  for(auto& testfile: getDataFilePath("invalid.nonsorted_dirent_table.zim")) {
+    std::string expected;
+    if (testfile.category == "withns") {
+      expected = "Dirent table is not properly sorted:\n"
+                 "  #0: A/main.html\n"
+                 "  #1: -/favicon\n";
+    } else {
+      expected = "Dirent table is not properly sorted:\n"
+                 "  #0: C/main.html\n"
+                 "  #1: C/favicon.png\n";
+    }
+    EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
+  }
+
+  TEST_BROKEN_ZIM_NAME(
     "invalid.nonsorted_title_index.zim",
     "Title index is not properly sorted.\n"
   );
 
-  expect_broken_zimfile(
+  TEST_BROKEN_ZIM_NAME(
     "invalid.bad_mimetype_list.zim",
     "Error getting mimelists.\n"
   );
 
-  expect_broken_zimfile(
-    "invalid.bad_mimetype_in_dirent.zim",
-    "Entry M/Language has invalid MIME-type value 1234.\n"
-  );
+  for(auto& testfile: getDataFilePath("invalid.bad_mimetype_in_dirent.zim")) {
+    std::string expected;
+    if (testfile.category == "withns") {
+      expected = "Entry M/Language has invalid MIME-type value 1234.\n";
+    } else {
+      expected = "Entry M/Scraper has invalid MIME-type value 1234.\n";
+    }
+    EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
+  }
 }
 #endif
 
