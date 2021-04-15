@@ -114,7 +114,14 @@ zim::Buffer write_to_buffer(const T& object)
   return buf;
 }
 
-const std::vector<std::string> getDataFilePath(const std::string& filename);
+struct TestFile {
+  TestFile(const std::string& dataDir, const std::string& category, const std::string& filename);
+  const std::string filename;
+  const std::string category;
+  const std::string path;
+};
+
+const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category = "");
 
 } // namespace unittests
 

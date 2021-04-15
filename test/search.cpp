@@ -69,8 +69,8 @@ class TempZimArchive : zim::unittests::TempFile
 #if WITH_TEST_DATA
 TEST(Search, searchByTitle)
 {
-  for(auto& path:getDataFilePath("small.zim")) {
-    const zim::Archive archive(path);
+  for(auto& testfile:getDataFilePath("small.zim")) {
+    const zim::Archive archive(testfile.path);
     ASSERT_TRUE(archive.hasTitleIndex());
     const zim::Entry mainEntry = archive.getMainEntry();
     zim::Search search(archive);
