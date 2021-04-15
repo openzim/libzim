@@ -35,8 +35,8 @@ using zim::unittests::getDataFilePath;
 // ByTitle
 TEST(FindTests, NotFoundByTitle)
 {
-    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
-        zim::Archive archive (path);
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (testfile.path);
 
         auto range0 = archive.findByTitle("unkownTitle");
         auto range1 = archive.findByTitle("j/body.js");
@@ -48,8 +48,8 @@ TEST(FindTests, NotFoundByTitle)
 // By Path
 TEST(FindTests, NotFoundByPath)
 {
-    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
-        zim::Archive archive (path);
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (testfile.path);
 
         auto range0 = archive.findByPath("unkwonUrl");
         auto range1 = archive.findByPath("U/unkwonUrl");
@@ -69,8 +69,8 @@ TEST(FindTests, NotFoundByPath)
 // ByTitle
 TEST(FindTests, ByTitle)
 {
-    for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
-        zim::Archive archive (path);
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+        zim::Archive archive (testfile.path);
 
         auto range0 = archive.findByTitle("Main Page");
         ASSERT_EQ(range0.begin()->getIndex(), 5);
@@ -113,8 +113,8 @@ TEST(FindTests, ByPathNoNS)
 // By Path
 TEST(FindTests, ByPath)
 {
-  for(auto& path:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
-    zim::Archive archive (path);
+  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+    zim::Archive archive (testfile.path);
 
     auto range0 = archive.findByPath("A/Main_Page.html");
     auto range1 = archive.findByPath("I/s/");

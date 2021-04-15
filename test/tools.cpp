@@ -111,9 +111,16 @@ void setDataDir(std::string& dataDir)
   dataDir = cDataDir;
 }
 
-const std::vector<std::string> getDataFilePath(const std::string& filename)
+TestFile::TestFile(const std::string& dataDir, const std::string& category, const std::string& filename) :
+  filename(filename),
+  category(category),
+  path(zim::DEFAULTFS::join(zim::DEFAULTFS::join(dataDir, category), filename))
 {
-  std::vector<std::string> filePaths;
+}
+
+const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category)
+{
+  std::vector<TestFile> filePaths;
   std::string dataDirPath;
   setDataDir(dataDirPath);
   auto dataDir = opendir(dataDirPath.c_str());
@@ -121,15 +128,20 @@ const std::vector<std::string> getDataFilePath(const std::string& filename)
   if (!dataDir) {
     return filePaths;
   }
-  struct dirent* current = NULL;
-  while(current = readdir(dataDir)) {
-    if (current->d_name[0] == '.' || current->d_name[0] == '_') {
-      continue;
-    }
-    filePaths.push_back(zim::DEFAULTFS::join(zim::DEFAULTFS::join(dataDirPath, current->d_name), filename));
-  }
 
-  closedir(dataDir);
+  if (!category.empty()) {
+      // We have asked for a particular category.
+      filePaths.emplace_back(dataDirPath, category, filename);
+  } else {
+    struct dirent* current = NULL;
+    while((current = readdir(dataDir))) {
+      if (current->d_name[0] == '.' || current->d_name[0] == '_') {
+        continue;
+      }
+      filePaths.emplace_back(dataDirPath, current->d_name, filename);
+    }
+    closedir(dataDir);
+  }
 
   return filePaths;
 }

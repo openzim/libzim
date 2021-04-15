@@ -145,10 +145,10 @@ TEST(ZimArchive, openRealZimArchive)
   };
 
   for ( const std::string fname : zimfiles ) {
-    for (auto& path: getDataFilePath(fname)) {
-      const TestContext ctx{ {"path", path } };
+    for (auto& testfile: getDataFilePath(fname)) {
+      const TestContext ctx{ {"path", testfile.path } };
       std::unique_ptr<zim::Archive> archive;
-      EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
+      EXPECT_NO_THROW( archive.reset(new zim::Archive(testfile.path)) ) << ctx;
       if ( archive ) {
         EXPECT_TRUE( archive->check() ) << ctx;
       }
@@ -165,9 +165,9 @@ TEST(ZimArchive, randomEntry)
   };
 
   for ( const std::string fname : zimfiles ) {
-    for (auto& path: getDataFilePath(fname)) {
-      const TestContext ctx{ {"path", path } };
-      const zim::Archive archive(path);
+    for (auto& testfile: getDataFilePath(fname)) {
+      const TestContext ctx{ {"path", testfile.path } };
+      const zim::Archive archive(testfile.path);
       try {
         auto randomEntry = archive.getRandomEntry();
         const auto item = randomEntry.getItem(true);
@@ -207,9 +207,9 @@ void expect_broken_zimfile(const std::string& zimName, const std::string& expect
   zim::IntegrityCheckList checksToRun;
   checksToRun.set();
   checksToRun.reset(size_t(zim::IntegrityCheck::CHECKSUM));
-  for(auto& path: getDataFilePath(zimName)) {
+  for(auto& testfile: getDataFilePath(zimName)) {
     CapturedStderr stderror;
-    EXPECT_FALSE(zim::validate(path, checksToRun));
+    EXPECT_FALSE(zim::validate(testfile.path, checksToRun));
     EXPECT_EQ(expected_stderror_text, std::string(stderror));
   }
 }
@@ -219,8 +219,8 @@ TEST(ZimArchive, validate)
   zim::IntegrityCheckList all;
   all.set();
 
-  for(auto& path: getDataFilePath("small.zim")) {
-    ASSERT_TRUE(zim::validate(path, all));
+  for(auto& testfile: getDataFilePath("small.zim")) {
+    ASSERT_TRUE(zim::validate(testfile.path, all));
   }
 
   expect_broken_zimfile(
@@ -382,8 +382,8 @@ TEST(ZimArchive, multipart)
   auto currentNonSplitted = nonSplittedZims.begin();
   auto currentSplitted = splittedZims.begin();
   for(; currentNonSplitted!=nonSplittedZims.end() && currentSplitted!=splittedZims.end(); currentNonSplitted++, currentSplitted++) {
-    const zim::Archive archive1(*currentNonSplitted);
-    const zim::Archive archive2(*currentSplitted);
+    const zim::Archive archive1(currentNonSplitted->path);
+    const zim::Archive archive2(currentSplitted->path);
     ASSERT_FALSE(archive1.is_multiPart());
     ASSERT_TRUE (archive2.is_multiPart());
 
@@ -406,9 +406,9 @@ TEST(ZimArchive, multipart)
 #ifndef _WIN32
 TEST(ZimArchive, openByFD)
 {
-  for(auto& path: getDataFilePath("small.zim")) {
-    const zim::Archive archive1(path);
-    const int fd = OPEN_READ_ONLY(path);
+  for(auto& testfile: getDataFilePath("small.zim")) {
+    const zim::Archive archive1(testfile.path);
+    const int fd = OPEN_READ_ONLY(testfile.path);
     const zim::Archive archive2(fd);
 
     checkEquivalence(archive1, archive2);
@@ -423,8 +423,8 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   auto currentNormal = normalZims.begin();
   auto currentEmbedded = embeddedZims.begin();
   for(; currentNormal!=normalZims.end() && currentEmbedded!=embeddedZims.end(); currentNormal++, currentEmbedded++) {
-    const zim::Archive archive1(*currentNormal);
-    const int fd = OPEN_READ_ONLY(*currentEmbedded);
+    const zim::Archive archive1(currentNormal->path);
+    const int fd = OPEN_READ_ONLY(currentEmbedded->path);
     const zim::Archive archive2(fd, 8, archive1.getFilesize());
 
     checkEquivalence(archive1, archive2);
@@ -442,8 +442,8 @@ zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type si
 
 TEST(ZimArchive, getDirectAccessInformation)
 {
-  for(auto& path:getDataFilePath("small.zim")) {
-    const zim::Archive archive(path);
+  for(auto& testfile:getDataFilePath("small.zim")) {
+    const zim::Archive archive(testfile.path);
     zim::entry_index_type checkedItemCount = 0;
     for ( auto entry : archive.iterEfficient() ) {
       if (!entry.isRedirect()) {
@@ -463,8 +463,8 @@ TEST(ZimArchive, getDirectAccessInformation)
 #ifndef _WIN32
 TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
-  for(auto& path:getDataFilePath("small.zim")) {
-    const int fd = OPEN_READ_ONLY(path);
+  for(auto& testfile:getDataFilePath("small.zim")) {
+    const int fd = OPEN_READ_ONLY(testfile.path);
     const zim::Archive archive(fd);
     zim::entry_index_type checkedItemCount = 0;
     for ( auto entry : archive.iterEfficient() ) {
@@ -490,8 +490,8 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
   auto currentNormal = normalZims.begin();
   auto currentEmbedded = embeddedZims.begin();
   for(; currentNormal!=normalZims.end() && currentEmbedded!=embeddedZims.end(); currentNormal++, currentEmbedded++) {
-    const int fd = OPEN_READ_ONLY(*currentEmbedded);
-    const auto size = zim::DEFAULTFS::openFile(*currentNormal).getSize();
+    const int fd = OPEN_READ_ONLY(currentEmbedded->path);
+    const auto size = zim::DEFAULTFS::openFile(currentNormal->path).getSize();
     const zim::Archive archive(fd, 8, size.v);
     zim::entry_index_type checkedItemCount = 0;
     for ( auto entry : archive.iterEfficient() ) {
