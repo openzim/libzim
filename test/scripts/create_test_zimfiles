@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 myname=$(basename "$0")
+scriptdir=$(dirname "$(readlink -f "$0")")
 
 die()
 {
@@ -13,7 +14,7 @@ prompt_usage()
   cat<<END
 Usage:
 
-  $myname --all|--only-derived-zimfiles
+  $myname --all|--only-derived-zimfiles <source_directory> <output_directory>
 
 '$myname --all' creates/re-generates all ZIM files, including small.zim. Due
 to some non-determinism in zimwriterfs the produced small.zim most likely will
@@ -26,18 +27,19 @@ END
   exit 1
 }
 
-if [[ $# -ne 1 || ( "$1" != '--all' && "$1" != '--only-derived-zimfiles' ) ]]
+if [[ $# -ne 3 || ( "$1" != '--all' && "$1" != '--only-derived-zimfiles' ) ]]
 then
   prompt_usage
 fi
 
 mode=$1
+source_dir=$2
+output_dir=$3
 
-cd "$(dirname "$0")"
 
 if [ "$mode" == '--all' ]
 then
-  rm -f small.zim
+  rm -f $output_dir/small.zim
   zimwriterfs --withoutFTIndex \
               -w main.html \
               -f favicon.png \
@@ -46,11 +48,13 @@ then
               -d "N/A" \
               -c "N/A" \
               -p "N/A" \
-              small_zimfile_data \
-              small.zim \
+              $source_dir \
+              $output_dir/small.zim \
   && echo 'small.zim was successfully created' \
   || die 'Failed to create small.zim'
 fi
+
+cd $output_dir
 
 printf "BEGINZIM" > small.zim.embedded \
 && cat small.zim >> small.zim.embedded \
@@ -60,7 +64,7 @@ printf "BEGINZIM" > small.zim.embedded \
 
 zimfilesize=$(wc -c < small.zim)
 
-zimheader=$(./inspectzim --header small.zim|tail -n +2)
+zimheader=$($scriptdir/inspectzim --header small.zim|tail -n +2)
 
 encode_integer_as_printf_fmt_string()
 {
@@ -180,7 +184,7 @@ create_broken_zim_file invalid.outofbounds_first_clusterptr.zim   \
                        "$outofzimfile" \
                        $((cluster_ptr_pos))
 
-dirent_ptrs=($(./inspectzim --dirent_ptr_table small.zim|tail -n +2))
+dirent_ptrs=($($scriptdir/inspectzim --dirent_ptr_table small.zim|tail -n +2))
 
 dirent1_address=$(encode_uint64 $((dirent_ptrs[0])))
 dirent2_address=$(encode_uint64 $((dirent_ptrs[1])))
@@ -191,7 +195,7 @@ create_broken_zim_file invalid.nonsorted_dirent_table.zim   \
                        "$dirent1_address" \
                        $((url_ptr_pos+8))
 
-title_index=($(./inspectzim --title_index small.zim|tail -n +2))
+title_index=($($scriptdir/inspectzim --title_index small.zim|tail -n +2))
 
 title1_dirent_index=$(encode_uint32 $((title_index[0])))
 title2_dirent_index=$(encode_uint32 $((title_index[1])))
