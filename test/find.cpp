@@ -108,7 +108,7 @@ TEST(FindTests, ByPathNoNS)
 // By Path
 TEST(FindTests, ByPath)
 {
-  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
     zim::Archive archive (testfile.path);
 
     auto range0 = archive.findByPath("A/Main_Page.html");
@@ -175,6 +175,48 @@ TEST(FindTests, ByPath)
       count++;
     }
     ASSERT_EQ(count, 118);
+  }
+}
+
+// By Path
+TEST(FindTests, ByPathNons)
+{
+  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "nons")) {
+    zim::Archive archive (testfile.path);
+
+    auto range0 = archive.findByPath("Першая_старонка.html");
+    auto range1 = archive.findByPath("П");
+    auto range2 = archive.findByPath("");
+    auto range3 = archive.findByPath("/");
+
+    auto count = 0;
+    for(auto& entry: range0) {
+      count++;
+      ASSERT_EQ(entry.getPath().find("Першая_старонка.html"), 0);
+    }
+    ASSERT_EQ(count, 1);
+
+    count = 0;
+    for(auto& entry: range1) {
+      count++;
+      std::cout << entry.getPath() << std::endl;
+      ASSERT_EQ(entry.getPath().find("П"), 0);
+    }
+    ASSERT_EQ(count, 2);
+
+    count = 0;
+    for(auto& entry: range2) {
+      ASSERT_EQ(count, entry.getIndex());
+      count++;
+    }
+    ASSERT_EQ(count, 109);
+
+    count = 0;
+    for(auto& entry: range3) {
+      ASSERT_EQ(count, entry.getIndex());
+      count++;
+    }
+    ASSERT_EQ(count, 109);
   }
 }
 
