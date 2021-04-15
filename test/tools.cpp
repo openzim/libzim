@@ -123,17 +123,25 @@ const std::vector<TestFile> getDataFilePath(const std::string& filename, const s
   std::vector<TestFile> filePaths;
   std::string dataDirPath;
   setDataDir(dataDirPath);
-  auto dataDir = opendir(dataDirPath.c_str());
-
-  if (!dataDir) {
-    filePaths.emplace_back(dataDirPath, "NO_DATA_DIR", filename);
-    return filePaths;
-  }
 
   if (!category.empty()) {
       // We have asked for a particular category.
       filePaths.emplace_back(dataDirPath, category, filename);
   } else {
+#ifdef _WIN32
+    // We don't have dirent.h in windows.
+    // If we move to test data out of the repository, we will need a way to discover the data.
+    // Use a static list of categories for now.
+    for (auto& category: {"withns", "nons"}) {
+      filePaths.emplace_back(dataDirPath, category, filename);
+    }
+#else
+    auto dataDir = opendir(dataDirPath.c_str());
+
+    if (!dataDir) {
+      filePaths.emplace_back(dataDirPath, "NO_DATA_DIR", filename);
+      return filePaths;
+    }
     struct dirent* current = NULL;
     while((current = readdir(dataDir))) {
       if (current->d_name[0] == '.' || current->d_name[0] == '_') {
@@ -142,6 +150,7 @@ const std::vector<TestFile> getDataFilePath(const std::string& filename, const s
       filePaths.emplace_back(dataDirPath, current->d_name, filename);
     }
     closedir(dataDir);
+#endif
   }
 
   return filePaths;
