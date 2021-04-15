@@ -38,7 +38,7 @@ namespace {
         : BasicItem(path, mimetype, title) {}
 
       virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const {
-        return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider(""));
+        return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider("foo"));
       }
   };
 

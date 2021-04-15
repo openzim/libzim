@@ -78,16 +78,20 @@ std::string zim::removeAccents(const std::string& text)
 
 uint32_t zim::countWords(const std::string& text)
 {
-  unsigned int numWords = 1;
+  unsigned int numWords = 0;
   unsigned int length = text.size();
+  unsigned int i = 0;
 
-  for (unsigned int i = 0; i < length;) {
-    while (i < length && text[i] != ' ') {
-      i++;
-    }
+  // Find first word
+  while ( i < length && std::isspace(text[i]) ) i++;
+
+  while ( i < length ) {
+    // Find end of word
+    while ( i < length && !std::isspace(text[i]) ) i++;
     numWords++;
-      i++;
-    }
+    // Find start of next word
+    while ( i < length && std::isspace(text[i]) ) i++;
+  }
   return numWords;
 }
 

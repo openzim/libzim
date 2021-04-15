@@ -60,25 +60,25 @@ namespace zim
             return;
           }
 #if defined(ENABLE_XAPIAN)
+          std::ostringstream ss;
+          while (true) {
+            auto blob = mp_contentProvider->feed();
+            if(blob.size() == 0) {
+              break;
+            }
+            ss << blob;
+          }
+          MyHtmlParser htmlParser;
           try {
-            std::ostringstream ss;
-            while (true) {
-              auto blob = mp_contentProvider->feed();
-              if(blob.size() == 0) {
-                break;
-              }
-              ss << blob;
-            }
-            MyHtmlParser htmlParser;
             htmlParser.parse_html(ss.str(), "UTF-8", true);
-            m_hasIndexData = (htmlParser.dump.find("NOINDEX") == std::string::npos);
-            m_content = zim::removeAccents(htmlParser.dump);
-            m_keywords = zim::removeAccents(htmlParser.keywords);
-            m_wordCount = countWords(htmlParser.dump);
-            if(htmlParser.has_geoPosition) {
-              m_geoPosition = std::make_tuple(true, htmlParser.latitude, htmlParser.longitude);
-            }
           } catch(...) {}
+          m_hasIndexData = !htmlParser.dump.empty() && htmlParser.indexing_allowed && (htmlParser.dump.find("NOINDEX") == std::string::npos);
+          m_content = zim::removeAccents(htmlParser.dump);
+          m_keywords = zim::removeAccents(htmlParser.keywords);
+          m_wordCount = countWords(htmlParser.dump);
+          if(htmlParser.has_geoPosition) {
+            m_geoPosition = std::make_tuple(true, htmlParser.latitude, htmlParser.longitude);
+          }
 #endif
           m_initialized = true;
         }

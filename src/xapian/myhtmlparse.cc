@@ -26,297 +26,322 @@
 // #include "utf8convert.h"
 
 #include <ctype.h>
-#include <string.h>
 #include <sstream>
+#include <string.h>
 
-inline void
-lowercase_string(string &str)
-{
-    for (string::iterator i = str.begin(); i != str.end(); ++i) {
-	*i = tolower(static_cast<unsigned char>(*i));
+inline void lowercase_string(string &str) {
+  for (string::iterator i = str.begin(); i != str.end(); ++i) {
+    *i = tolower(static_cast<unsigned char>(*i));
+  }
+}
+
+void zim::MyHtmlParser::parse_html(const string &text, const string &charset_,
+                                   bool charset_from_meta_) {
+  charset = charset_;
+  charset_from_meta = charset_from_meta_;
+  HtmlParser::parse_html(text);
+}
+
+void zim::MyHtmlParser::process_text(const string &text) {
+  if (!text.empty() && !in_script_tag && !in_style_tag) {
+    string::size_type b = text.find_first_not_of(WHITESPACE);
+    if (b)
+      pending_space = true;
+    while (b != string::npos) {
+      if (pending_space && !dump.empty())
+        dump += ' ';
+      string::size_type e = text.find_first_of(WHITESPACE, b);
+      pending_space = (e != string::npos);
+      if (!pending_space) {
+        dump.append(text.data() + b, text.size() - b);
+        return;
+      }
+      dump.append(text.data() + b, e - b);
+      b = text.find_first_not_of(WHITESPACE, e + 1);
     }
+  }
 }
 
-void
-zim::MyHtmlParser::parse_html(const string &text, const string &charset_,
-			 bool charset_from_meta_)
-{
-    charset = charset_;
-    charset_from_meta = charset_from_meta_;
-    HtmlParser::parse_html(text);
+inline float _stof(std::string str) {
+  std::istringstream stream(str);
+  float ret;
+  stream >> ret;
+  return ret;
 }
 
-void
-zim::MyHtmlParser::process_text(const string &text)
-{
-    if (!text.empty() && !in_script_tag && !in_style_tag) {
-	string::size_type b = text.find_first_not_of(WHITESPACE);
-	if (b) pending_space = true;
-	while (b != string::npos) {
-	    if (pending_space && !dump.empty()) dump += ' ';
-	    string::size_type e = text.find_first_of(WHITESPACE, b);
-	    pending_space = (e != string::npos);
-	    if (!pending_space) {
-		dump.append(text.data() + b, text.size() - b);
-		return;
-	    }
-	    dump.append(text.data() + b, e - b);
-	    b = text.find_first_not_of(WHITESPACE, e + 1);
-	}
+void zim::MyHtmlParser::opening_tag(const string &tag) {
+  if (tag.empty())
+    return;
+  switch (tag[0]) {
+  case 'a':
+    if (tag == "address")
+      pending_space = true;
+    break;
+  case 'b':
+    if (tag == "body") {
+      dump.resize(0);
+      break;
     }
-}
-
-inline float _stof(std::string str){
-    std::istringstream stream(str);
-    float ret;
-    stream >> ret;
-    return ret;
-}
-
-void
-zim::MyHtmlParser::opening_tag(const string &tag)
-{
-    if (tag.empty()) return;
-    switch (tag[0]) {
-	case 'a':
-	    if (tag == "address") pending_space = true;
-	    break;
-	case 'b':
-	    if (tag == "body") {
-		dump.resize(0);
-		break;
-	    }
-	    if (tag == "blockquote" || tag == "br") pending_space = true;
-	    break;
-	case 'c':
-	    if (tag == "center") pending_space = true;
-	    break;
-	case 'd':
-	    if (tag == "dd" || tag == "dir" || tag == "div" || tag == "dl" ||
-		tag == "dt") pending_space = true;
-	    break;
-	case 'e':
-	    if (tag == "embed") pending_space = true;
-	    break;
-	case 'f':
-	    if (tag == "fieldset" || tag == "form") pending_space = true;
-	    break;
-	case 'h':
-	    // hr, and h1, ..., h6
-	    if (tag.length() == 2 && strchr("r123456", tag[1]))
-		pending_space = true;
-	    break;
-	case 'i':
-	    if (tag == "iframe" || tag == "img" || tag == "isindex" ||
-		tag == "input") pending_space = true;
-	    break;
-	case 'k':
-	    if (tag == "keygen") pending_space = true;
-	    break;
-	case 'l':
-	    if (tag == "legend" || tag == "li" || tag == "listing")
-		pending_space = true;
-	    break;
-	case 'm':
-	    if (tag == "meta") {
-		string content;
-		if (get_parameter("content", content)) {
-		    string name;
-		    if (get_parameter("name", name)) {
-			lowercase_string(name);
-			if (name == "description") {
-			    if (sample.empty()) {
-				swap(sample, content);
-				// convert_to_utf8(sample, charset);
-				decode_entities(sample);
-			    }
-			} else if (name == "keywords") {
-			    if (!keywords.empty()) keywords += ' ';
-			    // convert_to_utf8(content, charset);
-			    decode_entities(content);
-			    keywords += content;
-			} else if (name == "robots") {
-			    decode_entities(content);
-			    lowercase_string(content);
-			    if (content.find("none") != string::npos ||
-				content.find("noindex") != string::npos) {
-				indexing_allowed = false;
-				throw true;
-			    }
-			} 
-                        else if (name == "geo.position") {
-			    auto sep_pos = content.find(";");
-			    if (sep_pos != string::npos) {
-				try {
-				    latitude = _stof(content.substr(0, sep_pos));
-				    longitude = _stof(content.substr(sep_pos+1));
-				    has_geoPosition = true;
-				} catch (...) {
-				    //invalid value in content, just pass and continue.
-				}
-			    }
- 			}
-			break;
-		    }
-		    // If the current charset came from a meta tag, don't
-		    // force reparsing again!
-		    if (charset_from_meta) break;
-		    string hdr;
-		    if (get_parameter("http-equiv", hdr)) {
-			lowercase_string(hdr);
-			if (hdr == "content-type") {
-			    lowercase_string(content);
-			    size_t start = content.find("charset=");
-			    if (start == string::npos) break;
-			    start += 8;
-			    if (start == content.size()) break;
-			    size_t end = start;
-			    if (content[start] != '"') {
-				while (end < content.size()) {
-				    unsigned char ch = content[end];
-				    if (ch <= 32 || ch >= 127 ||
-					strchr(";()<>@,:\\\"/[]?={}", ch))
-					break;
-				    ++end;
-				}
-			    } else {
-				++start;
-				++end;
-				while (end < content.size()) {
-				    unsigned char ch = content[end];
-				    if (ch == '"') break;
-				    if (ch == '\\') content.erase(end, 1);
-				    ++end;
-				}
-			    }
-			    string newcharset(content, start, end - start);
-			    if (charset != newcharset) {
-				throw newcharset;
-			    }
-			}
-		    }
-		    break;
-		}
-		if (charset_from_meta) break;
-		string newcharset;
-		if (get_parameter("charset", newcharset)) {
-		    // HTML5 added: <meta charset="...">
-		    lowercase_string(newcharset);
-		    if (charset != newcharset) {
-			throw newcharset;
-		    }
-		}
-		break;
-	    }
-	    if (tag == "marquee" || tag == "menu" || tag == "multicol")
-		pending_space = true;
-	    break;
-	case 'o':
-	    if (tag == "ol" || tag == "option") pending_space = true;
-	    break;
-	case 'p':
-	    if (tag == "p" || tag == "pre" || tag == "plaintext")
-		pending_space = true;
-	    break;
-	case 'q':
-	    if (tag == "q") pending_space = true;
-	    break;
-	case 's':
-	    if (tag == "style") {
-		in_style_tag = true;
-		break;
-	    }
-	    if (tag == "script") {
-		in_script_tag = true;
-		break;
-	    }
-	    if (tag == "select") pending_space = true;
-	    break;
-	case 't':
-	    if (tag == "table" || tag == "td" || tag == "textarea" ||
-		tag == "th") pending_space = true;
-	    break;
-	case 'u':
-	    if (tag == "ul") pending_space = true;
-	    break;
-	case 'x':
-	    if (tag == "xmp") pending_space = true;
-	    break;
+    if (tag == "blockquote" || tag == "br")
+      pending_space = true;
+    break;
+  case 'c':
+    if (tag == "center")
+      pending_space = true;
+    break;
+  case 'd':
+    if (tag == "dd" || tag == "dir" || tag == "div" || tag == "dl" ||
+        tag == "dt")
+      pending_space = true;
+    break;
+  case 'e':
+    if (tag == "embed")
+      pending_space = true;
+    break;
+  case 'f':
+    if (tag == "fieldset" || tag == "form")
+      pending_space = true;
+    break;
+  case 'h':
+    // hr, and h1, ..., h6
+    if (tag.length() == 2 && strchr("r123456", tag[1]))
+      pending_space = true;
+    break;
+  case 'i':
+    if (tag == "iframe" || tag == "img" || tag == "isindex" || tag == "input")
+      pending_space = true;
+    break;
+  case 'k':
+    if (tag == "keygen")
+      pending_space = true;
+    break;
+  case 'l':
+    if (tag == "legend" || tag == "li" || tag == "listing")
+      pending_space = true;
+    break;
+  case 'm':
+    if (tag == "meta") {
+      string content;
+      if (get_parameter("content", content)) {
+        string name;
+        if (get_parameter("name", name)) {
+          lowercase_string(name);
+          if (name == "description") {
+            if (sample.empty()) {
+              swap(sample, content);
+              // convert_to_utf8(sample, charset);
+              decode_entities(sample);
+            }
+          } else if (name == "keywords") {
+            if (!keywords.empty())
+              keywords += ' ';
+            // convert_to_utf8(content, charset);
+            decode_entities(content);
+            keywords += content;
+          } else if (name == "robots") {
+            decode_entities(content);
+            lowercase_string(content);
+            if (content.find("none") != string::npos ||
+                content.find("noindex") != string::npos) {
+              indexing_allowed = false;
+              throw true;
+            }
+          } else if (name == "geo.position") {
+            auto sep_pos = content.find(";");
+            if (sep_pos != string::npos) {
+              try {
+                latitude = _stof(content.substr(0, sep_pos));
+                longitude = _stof(content.substr(sep_pos + 1));
+                has_geoPosition = true;
+              } catch (...) {
+                // invalid value in content, just pass and continue.
+              }
+            }
+          }
+          break;
+        }
+        // If the current charset came from a meta tag, don't
+        // force reparsing again!
+        if (charset_from_meta)
+          break;
+        string hdr;
+        if (get_parameter("http-equiv", hdr)) {
+          lowercase_string(hdr);
+          if (hdr == "content-type") {
+            lowercase_string(content);
+            size_t start = content.find("charset=");
+            if (start == string::npos)
+              break;
+            start += 8;
+            if (start == content.size())
+              break;
+            size_t end = start;
+            if (content[start] != '"') {
+              while (end < content.size()) {
+                unsigned char ch = content[end];
+                if (ch <= 32 || ch >= 127 || strchr(";()<>@,:\\\"/[]?={}", ch))
+                  break;
+                ++end;
+              }
+            } else {
+              ++start;
+              ++end;
+              while (end < content.size()) {
+                unsigned char ch = content[end];
+                if (ch == '"')
+                  break;
+                if (ch == '\\')
+                  content.erase(end, 1);
+                ++end;
+              }
+            }
+            string newcharset(content, start, end - start);
+            if (charset != newcharset) {
+              throw newcharset;
+            }
+          }
+        }
+        break;
+      }
+      if (charset_from_meta)
+        break;
+      string newcharset;
+      if (get_parameter("charset", newcharset)) {
+        // HTML5 added: <meta charset="...">
+        lowercase_string(newcharset);
+        if (charset != newcharset) {
+          throw newcharset;
+        }
+      }
+      break;
     }
+    if (tag == "marquee" || tag == "menu" || tag == "multicol")
+      pending_space = true;
+    break;
+  case 'o':
+    if (tag == "ol" || tag == "option")
+      pending_space = true;
+    break;
+  case 'p':
+    if (tag == "p" || tag == "pre" || tag == "plaintext")
+      pending_space = true;
+    break;
+  case 'q':
+    if (tag == "q")
+      pending_space = true;
+    break;
+  case 's':
+    if (tag == "style") {
+      in_style_tag = true;
+      break;
+    }
+    if (tag == "script") {
+      in_script_tag = true;
+      break;
+    }
+    if (tag == "select")
+      pending_space = true;
+    break;
+  case 't':
+    if (tag == "table" || tag == "td" || tag == "textarea" || tag == "th")
+      pending_space = true;
+    break;
+  case 'u':
+    if (tag == "ul")
+      pending_space = true;
+    break;
+  case 'x':
+    if (tag == "xmp")
+      pending_space = true;
+    break;
+  }
 }
 
-void
-zim::MyHtmlParser::closing_tag(const string &tag)
-{
-    if (tag.empty()) return;
-    switch (tag[0]) {
-	case 'a':
-	    if (tag == "address") pending_space = true;
-	    break;
-	case 'b':
-	    if (tag == "body") {
-		throw true;
-	    }
-	    if (tag == "blockquote" || tag == "br") pending_space = true;
-	    break;
-	case 'c':
-	    if (tag == "center") pending_space = true;
-	    break;
-	case 'd':
-	    if (tag == "dd" || tag == "dir" || tag == "div" || tag == "dl" ||
-		tag == "dt") pending_space = true;
-	    break;
-	case 'f':
-	    if (tag == "fieldset" || tag == "form") pending_space = true;
-	    break;
-	case 'h':
-	    // hr, and h1, ..., h6
-	    if (tag.length() == 2 && strchr("r123456", tag[1]))
-		pending_space = true;
-	    break;
-	case 'i':
-	    if (tag == "iframe") pending_space = true;
-	    break;
-	case 'l':
-	    if (tag == "legend" || tag == "li" || tag == "listing")
-		pending_space = true;
-	    break;
-	case 'm':
-	    if (tag == "marquee" || tag == "menu") pending_space = true;
-	    break;
-	case 'o':
-	    if (tag == "ol" || tag == "option") pending_space = true;
-	    break;
-	case 'p':
-	    if (tag == "p" || tag == "pre") pending_space = true;
-	    break;
-	case 'q':
-	    if (tag == "q") pending_space = true;
-	    break;
-	case 's':
-	    if (tag == "style") {
-		in_style_tag = false;
-		break;
-	    }
-	    if (tag == "script") {
-		in_script_tag = false;
-		break;
-	    }
-	    if (tag == "select") pending_space = true;
-	    break;
-	case 't':
-	    if (tag == "title") {
-		if (title.empty()) swap(title, dump);
-		break;
-	    }
-	    if (tag == "table" || tag == "td" || tag == "textarea" ||
-		tag == "th") pending_space = true;
-	    break;
-	case 'u':
-	    if (tag == "ul") pending_space = true;
-	    break;
-	case 'x':
-	    if (tag == "xmp") pending_space = true;
-	    break;
+void zim::MyHtmlParser::closing_tag(const string &tag) {
+  if (tag.empty())
+    return;
+  switch (tag[0]) {
+  case 'a':
+    if (tag == "address")
+      pending_space = true;
+    break;
+  case 'b':
+    if (tag == "body") {
+      throw true;
     }
+    if (tag == "blockquote" || tag == "br")
+      pending_space = true;
+    break;
+  case 'c':
+    if (tag == "center")
+      pending_space = true;
+    break;
+  case 'd':
+    if (tag == "dd" || tag == "dir" || tag == "div" || tag == "dl" ||
+        tag == "dt")
+      pending_space = true;
+    break;
+  case 'f':
+    if (tag == "fieldset" || tag == "form")
+      pending_space = true;
+    break;
+  case 'h':
+    // hr, and h1, ..., h6
+    if (tag.length() == 2 && strchr("r123456", tag[1]))
+      pending_space = true;
+    break;
+  case 'i':
+    if (tag == "iframe")
+      pending_space = true;
+    break;
+  case 'l':
+    if (tag == "legend" || tag == "li" || tag == "listing")
+      pending_space = true;
+    break;
+  case 'm':
+    if (tag == "marquee" || tag == "menu")
+      pending_space = true;
+    break;
+  case 'o':
+    if (tag == "ol" || tag == "option")
+      pending_space = true;
+    break;
+  case 'p':
+    if (tag == "p" || tag == "pre")
+      pending_space = true;
+    break;
+  case 'q':
+    if (tag == "q")
+      pending_space = true;
+    break;
+  case 's':
+    if (tag == "style") {
+      in_style_tag = false;
+      break;
+    }
+    if (tag == "script") {
+      in_script_tag = false;
+      break;
+    }
+    if (tag == "select")
+      pending_space = true;
+    break;
+  case 't':
+    if (tag == "title") {
+      if (title.empty())
+        swap(title, dump);
+      break;
+    }
+    if (tag == "table" || tag == "td" || tag == "textarea" || tag == "th")
+      pending_space = true;
+    break;
+  case 'u':
+    if (tag == "ul")
+      pending_space = true;
+    break;
+  case 'x':
+    if (tag == "xmp")
+      pending_space = true;
+    break;
+  }
 }
