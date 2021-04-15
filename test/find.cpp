@@ -72,12 +72,12 @@ TEST(FindTests, ByTitle)
     for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
         zim::Archive archive (testfile.path);
 
-        auto range0 = archive.findByTitle("Main Page");
+        auto range0 = archive.findByTitle("Першая старонка");
 
         auto count = 0;
         for(auto& entry: range0) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Main Page"), 0);
+          ASSERT_EQ(entry.getTitle().find("Першая старонка"), 0);
         }
         ASSERT_EQ(count, 1);
 

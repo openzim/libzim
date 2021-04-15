@@ -20,6 +20,7 @@
 
 #define ZIM_PRIVATE
 #include <zim/archive.h>
+#include <zim/item.h>
 #include <zim/search.h>
 #include <zim/writer/creator.h>
 #include <zim/writer/item.h>
@@ -71,13 +72,13 @@ TEST(Search, searchByTitle)
   for(auto& testfile:getDataFilePath("small.zim")) {
     const zim::Archive archive(testfile.path);
     ASSERT_TRUE(archive.hasTitleIndex());
-    const zim::Entry mainEntry = archive.getMainEntry();
+    const auto mainItem = archive.getMainEntry().getItem(true);
     zim::Search search(archive);
     search.set_suggestion_mode(true);
-    search.set_query(mainEntry.getTitle());
+    search.set_query(mainItem.getTitle());
     search.set_range(0, archive.getEntryCount());
     ASSERT_NE(0, search.get_matches_estimated());
-    ASSERT_EQ(mainEntry.getPath(), search.begin().get_path());
+    ASSERT_EQ(mainItem.getPath(), search.begin().get_path());
   }
 }
 
