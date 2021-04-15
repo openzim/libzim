@@ -73,9 +73,6 @@ TEST(FindTests, ByTitle)
         zim::Archive archive (testfile.path);
 
         auto range0 = archive.findByTitle("Main Page");
-        ASSERT_EQ(range0.begin()->getIndex(), 5);
-        ASSERT_EQ(range0.end()->getIndex(), 7); // getIndex of an entry is always the path order.
-                                                // It happens that the 6th in title order is the 7th in path order.
 
         auto count = 0;
         for(auto& entry: range0) {
@@ -85,8 +82,6 @@ TEST(FindTests, ByTitle)
         ASSERT_EQ(count, 1);
 
         auto range1 = archive.findByTitle("Украінская");
-        ASSERT_EQ(range1.begin()->getIndex(), 53);
-        ASSERT_EQ(range1.end()->getIndex(), 58);
 
         count = 0;
         for(auto& entry: range1) {
