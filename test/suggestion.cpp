@@ -87,6 +87,12 @@ namespace {
     return result;
   }
 
+#define EXPECT_SUGGESTION_RESULTS(archive, query, ...)          \
+  ASSERT_EQ(                                                    \
+      getSuggestions(archive, query, archive.getEntryCount()),  \
+      std::vector<std::string>({__VA_ARGS__})                   \
+  )
+
   TEST(Suggestion, emptyQuery) {
     std::vector<std::string> titles = {
                                         "fooland",
@@ -465,5 +471,28 @@ namespace {
 
     ASSERT_EQ(search.begin().get_path(), "testPath");
     ASSERT_EQ(search.begin().get_dbData().substr(0, 2), "C/");
+  }
+
+  TEST(Suggestion, nonWordCharacters) {
+    TempZimArchive tza("testZim");
+    {
+      const zim::Archive archive = tza.createZimFromTitles({
+        "Alice Bob",
+        "Bonnie + Clyde",
+        "Jack & Jill, on the hill"
+      });
+
+      EXPECT_SUGGESTION_RESULTS(archive, "Alice & Bob",
+        "Alice Bob"
+      );
+
+      EXPECT_SUGGESTION_RESULTS(archive, "Bonnie + Clyde",
+        "Bonnie + Clyde"
+      );
+
+      EXPECT_SUGGESTION_RESULTS(archive, "Jack & Jill",
+        "Jack & Jill, on the hill"
+      );
+    }
   }
 }
