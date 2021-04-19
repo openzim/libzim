@@ -132,7 +132,7 @@ const std::vector<TestFile> getDataFilePath(const std::string& filename, const s
     // We don't have dirent.h in windows.
     // If we move to test data out of the repository, we will need a way to discover the data.
     // Use a static list of categories for now.
-    for (auto& category: {"normal", "nons"}) {
+    for (auto& category: {"withns", "nons"}) {
       filePaths.emplace_back(dataDirPath, category, filename);
     }
 #else

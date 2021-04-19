@@ -39,7 +39,7 @@ TEST(ClusterIteratorTest, getEntryByClusterOrder)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
         zim::Archive archive (testfile.path);
 
         auto nbEntries = archive.getEntryCount();
@@ -55,7 +55,7 @@ TEST(ClusterIteratorTest, getEntryByClusterOrder)
 
 TEST(getEntry, indexOutOfRange)
 {
-    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
         zim::Archive archive (testfile.path);
 
         auto nbEntries = archive.getEntryCount();
@@ -82,7 +82,7 @@ TEST(IteratorTests, begin)
 117, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108 };
 
-    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
         zim::Archive archive (testfile.path);
 
         int i = 0;
@@ -99,7 +99,7 @@ TEST(IteratorTests, beginByTitle)
 {
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
 
-    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
         zim::Archive archive (testfile.path);
 
         auto it = archive.iterByTitle().begin();
@@ -120,7 +120,7 @@ TEST(IteratorTests, beginByPath)
 {
     std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
         zim::Archive archive (testfile.path);
 
         auto it = archive.iterByPath().begin();

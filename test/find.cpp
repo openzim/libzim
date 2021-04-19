@@ -95,7 +95,7 @@ TEST(FindTests, ByTitle)
 // By Path
 TEST(FindTests, ByPath)
 {
-  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "normal")) {
+  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
     zim::Archive archive (testfile.path);
 
     auto range0 = archive.findByPath("A/Main_Page.html");

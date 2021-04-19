@@ -235,7 +235,7 @@ TEST(ZimArchive, validate)
 
   for(auto& testfile: getDataFilePath("invalid.outofbounds_titleptrpos.zim")) {
     std::string expected;
-    if (testfile.category == "normal") {
+    if (testfile.category == "withns") {
       expected = "Title index table outside (or not fully inside) ZIM file.\n";
     } else {
       expected = "Full Title index table outside (or not fully inside) ZIM file.\n";
@@ -286,7 +286,7 @@ TEST(ZimArchive, validate)
 
   for(auto& testfile: getDataFilePath("invalid.nonsorted_dirent_table.zim")) {
     std::string expected;
-    if (testfile.category == "normal") {
+    if (testfile.category == "withns") {
       expected = "Dirent table is not properly sorted:\n"
                  "  #0: A/main.html\n"
                  "  #1: -/favicon\n";
@@ -310,7 +310,7 @@ TEST(ZimArchive, validate)
 
   for(auto& testfile: getDataFilePath("invalid.bad_mimetype_in_dirent.zim")) {
     std::string expected;
-    if (testfile.category == "normal") {
+    if (testfile.category == "withns") {
       expected = "Entry M/Language has invalid MIME-type value 1234.\n";
     } else {
       expected = "Entry M/Scraper has invalid MIME-type value 1234.\n";
