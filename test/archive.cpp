@@ -401,11 +401,10 @@ TEST(ZimArchive, multipart)
   auto nonSplittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02.zim");
   auto splittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02_splitted.zim");
 
-  auto currentNonSplitted = nonSplittedZims.begin();
-  auto currentSplitted = splittedZims.begin();
-  for(; currentNonSplitted!=nonSplittedZims.end() && currentSplitted!=splittedZims.end(); currentNonSplitted++, currentSplitted++) {
-    const zim::Archive archive1(currentNonSplitted->path);
-    const zim::Archive archive2(currentSplitted->path);
+  ASSERT_EQ(nonSplittedZims.size(), splittedZims.size()) << "We must have same number of zim files. (This is a test data issue)";
+  for(auto i=0UL; i < nonSplittedZims.size(); i++) {
+    const zim::Archive archive1(nonSplittedZims[i].path);
+    const zim::Archive archive2(splittedZims[i].path);
     ASSERT_FALSE(archive1.is_multiPart());
     ASSERT_TRUE (archive2.is_multiPart());
 
@@ -442,11 +441,10 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded");
 
-  auto currentNormal = normalZims.begin();
-  auto currentEmbedded = embeddedZims.begin();
-  for(; currentNormal!=normalZims.end() && currentEmbedded!=embeddedZims.end(); currentNormal++, currentEmbedded++) {
-    const zim::Archive archive1(currentNormal->path);
-    const int fd = OPEN_READ_ONLY(currentEmbedded->path);
+  ASSERT_EQ(normalZims.size(), embeddedZims.size()) << "We must have same number of zim files. (This is a test data issue)";
+  for(auto i=0UL; i < normalZims.size(); i++) {
+    const zim::Archive archive1(normalZims[i].path);
+    const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
     const zim::Archive archive2(fd, 8, archive1.getFilesize());
 
     checkEquivalence(archive1, archive2);
@@ -509,11 +507,10 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded");
 
-  auto currentNormal = normalZims.begin();
-  auto currentEmbedded = embeddedZims.begin();
-  for(; currentNormal!=normalZims.end() && currentEmbedded!=embeddedZims.end(); currentNormal++, currentEmbedded++) {
-    const int fd = OPEN_READ_ONLY(currentEmbedded->path);
-    const auto size = zim::DEFAULTFS::openFile(currentNormal->path).getSize();
+  ASSERT_EQ(normalZims.size(), embeddedZims.size()) << "We must have same number of zim files. (This is a test data issue)";
+  for(auto i=0UL; i < normalZims.size(); i++) {
+    const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
+    const auto size = zim::DEFAULTFS::openFile(normalZims[i].path).getSize();
     const zim::Archive archive(fd, 8, size.v);
     zim::entry_index_type checkedItemCount = 0;
     for ( auto entry : archive.iterEfficient() ) {
