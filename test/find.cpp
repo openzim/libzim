@@ -93,19 +93,6 @@ TEST(FindTests, ByTitle)
     }
 }
 
-#if 0
-// By Path (compatibility)
-TEST(FindTests, ByPathNoNS)
-{
-    zim::Archive archive (getDataFilePath("wikibooks_be_all_nopic_2017-02.zim"));
-
-    auto it1 = archive.findByPath("j/body.js");
-    auto it2 = archive.findByPath("m/115a35549794e50dcd03e60ef1a1ae24.png");
-    ASSERT_EQ(it1->getIndex(), 1);
-    ASSERT_EQ(it2->getIndex(), 76);
-}
-#endif
-
 // By Path
 TEST(FindTests, ByPath)
 {
