@@ -139,6 +139,7 @@ const std::vector<TestFile> getDataFilePath(const std::string& filename, const s
     auto dataDir = opendir(dataDirPath.c_str());
 
     if (!dataDir) {
+      filePaths.emplace_back(dataDirPath, "NO_DATA_DIR", filename);
       return filePaths;
     }
     struct dirent* current = NULL;
