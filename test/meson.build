@@ -26,7 +26,7 @@ if xapian_dep.found()
 endif
 
 testenv = environment()
-datadir = meson.current_source_dir() / 'data'
+datadir = join_paths(meson.current_source_dir(), 'data')
 testenv.set('ZIM_TEST_DATA_DIR', datadir)
 
 if gtest_dep.found() and not meson.is_cross_build()
