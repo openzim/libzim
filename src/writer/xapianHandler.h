@@ -34,6 +34,7 @@ class FullTextXapianHandler : public DirentHandler {
 
     void start() override;
     void stop() override;
+    bool isCompressible() override { return false; }
     std::unique_ptr<ContentProvider> getContentProvider() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
     void handle(Dirent* dirent, const Hints& hints) override;
@@ -53,6 +54,7 @@ class TitleXapianHandler : public DirentHandler {
 
     void start() override;
     void stop() override;
+    bool isCompressible() override { return false; }
     std::unique_ptr<ContentProvider> getContentProvider() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
     void handle(Dirent* dirent, const Hints& hints) override;
