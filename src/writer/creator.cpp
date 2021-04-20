@@ -244,7 +244,7 @@ namespace zim
         handler->stop();
         auto dirent = handler->getDirent();
         auto provider = handler->getContentProvider();
-        data->addItemData(dirent, std::move(provider), false);
+        data->addItemData(dirent, std::move(provider), handler->isCompressible());
         if (handler == data->mp_titleListingHandler) {
           // We have to get the offset of the titleList in the cluster before
           // we close the cluster. Once the cluster is close, the offset information is dropped.
