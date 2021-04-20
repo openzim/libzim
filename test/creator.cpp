@@ -114,12 +114,14 @@ TEST(ZimCreator, createEmptyZim)
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 3; // xapiantitleIndex and titleListIndexes (*2)
+  entry_index_type nb_entry = 4; // counter + xapiantitleIndex and titleListIndexes (*2)
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
+  int plain_mimetype = 2;
 #else
-  entry_index_type nb_entry = 2; // titleListIndexes (*2)
+  entry_index_type nb_entry = 3; // counter + titleListIndexes (*2)
   int listing_mimetype = 0;
+  int plain_mimetype = 1;
 #endif
   ASSERT_EQ(header.getArticleCount(), nb_entry);
 
@@ -129,23 +131,26 @@ TEST(ZimCreator, createEmptyZim)
   std::shared_ptr<const Dirent> dirent;
 
   dirent = direntAccessor.getDirent(entry_index_t(0));
-  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(0), None);
-  auto v0BlobIndex = dirent->getBlobNumber();
+  test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
 
   dirent = direntAccessor.getDirent(entry_index_t(1));
-  test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(0), None);
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(1), None);
+  auto v0BlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(2));
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(1), None);
   auto v1BlobIndex = dirent->getBlobNumber();
 
 #if defined(ENABLE_XAPIAN)
-  dirent = direntAccessor.getDirent(entry_index_t(2));
-  test_article_dirent(dirent, 'X', "title/xapian", None, xapian_mimetype, cluster_index_t(0), None);
+  dirent = direntAccessor.getDirent(entry_index_t(3));
+  test_article_dirent(dirent, 'X', "title/xapian", None, xapian_mimetype, cluster_index_t(1), None);
 #endif
 
   auto clusterPtrPos = header.getClusterPtrPos();
-  auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos)));
+  auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos+8)));
   auto cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompNone);
-  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry));
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-1)); // 1 entry is not compressed
   auto blob = cluster->getBlob(v0BlobIndex);
   ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
   blob = cluster->getBlob(v1BlobIndex);
@@ -205,13 +210,13 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 9; // xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 10; // counter + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
   int html_mimetype = 2;
   int plain_mimetype = 3;
 #else
-  entry_index_type nb_entry = 7; // foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 8; // counter + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
   int listing_mimetype = 0;
   int html_mimetype = 1;
   int plain_mimetype = 2;
@@ -237,8 +242,12 @@ TEST(ZimCreator, createZim)
   test_redirect_dirent(dirent, 'C', "foo3", "FooRedirection", entry_index_t(0));
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
+  auto counterBlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Title", "Title", plain_mimetype, cluster_index_t(0), None);
-  auto metaBlobIndex = dirent->getBlobNumber();
+  auto titleBlobIndex = dirent->getBlobNumber();
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_redirect_dirent(dirent, 'W', "mainPage", "mainPage", entry_index_t(0));
@@ -267,7 +276,7 @@ TEST(ZimCreator, createZim)
   auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos)));
   auto cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompZstd);
-  ASSERT_EQ(cluster->count(), blob_index_t(3));
+  ASSERT_EQ(cluster->count(), blob_index_t(4)); // 4 entries are compressed content
 
   auto blob = cluster->getBlob(fooBlobIndex);
   ASSERT_EQ(std::string(blob), "FooContent");
@@ -275,15 +284,18 @@ TEST(ZimCreator, createZim)
   blob = cluster->getBlob(foo2BlobIndex);
   ASSERT_EQ(std::string(blob), "Foo2Content");
 
-  blob = cluster->getBlob(metaBlobIndex);
+  blob = cluster->getBlob(titleBlobIndex);
   ASSERT_EQ(std::string(blob), "This is a title");
+
+  blob = cluster->getBlob(counterBlobIndex);
+  ASSERT_EQ(std::string(blob), "text/html=2");
 
 
   // Test listing content
   clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos + 8)));
   cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompNone);
-  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-5)); // 5 entries are not content entries
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-6)); // 6 entries are either compressed or redirections
 
   blob = cluster->getBlob(v0BlobIndex);
   ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
@@ -295,10 +307,11 @@ TEST(ZimCreator, createZim)
     3, 0, 0, 0,
     4, 0, 0, 0,
     5, 0, 0, 0,
-    6, 0, 0, 0
+    6, 0, 0, 0,
+    7, 0, 0, 0
 #if defined(ENABLE_XAPIAN)
-    ,7, 0, 0, 0
     ,8, 0, 0, 0
+    ,9, 0, 0, 0
 #endif
     };
   ASSERT_EQ(blob0Data, expectedBlob0Data);
