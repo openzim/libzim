@@ -1,5 +1,3 @@
-subdir('data')
-
 tests = [
     'lrucache',
     'cluster',
@@ -26,6 +24,13 @@ tests = [
 if xapian_dep.found()
     tests += ['search', 'suggestion', 'defaultIndexdata']
 endif
+
+datadir = get_option('test_data_dir')
+if datadir == ''
+    # We need to download the test data.
+    datadir = join_paths(meson.current_build_dir(), 'data')
+endif
+run_target('download_test_data', command : [test_data_downloader, '--remove-top-dir', datadir])
 
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
