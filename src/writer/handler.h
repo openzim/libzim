@@ -64,6 +64,7 @@ class DirentHandler {
 
     virtual void start() = 0;
     virtual void stop() = 0;
+    virtual bool isCompressible() = 0;
     Dirent* getDirent() {
       if (!mp_dirent) {
         mp_dirent = createDirent();

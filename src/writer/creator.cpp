@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <fstream>
 #include "../md5.h"
+#include "counterHandler.h"
 
 #if defined(ENABLE_XAPIAN)
 # include "xapianHandler.h"
@@ -244,7 +245,7 @@ namespace zim
         handler->stop();
         auto dirent = handler->getDirent();
         auto provider = handler->getContentProvider();
-        data->addItemData(dirent, std::move(provider), false);
+        data->addItemData(dirent, std::move(provider), handler->isCompressible());
         if (handler == data->mp_titleListingHandler) {
           // We have to get the offset of the titleList in the cluster before
           // we close the cluster. Once the cluster is close, the offset information is dropped.
@@ -442,6 +443,7 @@ namespace zim
       mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
       m_direntHandlers.push_back(mp_titleListingHandler);
       m_direntHandlers.push_back(std::make_shared<TitleListingHandlerV1>(this));
+      m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
       for(auto& handler:m_direntHandlers) {
         handler->start();
