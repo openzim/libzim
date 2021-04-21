@@ -181,6 +181,28 @@ TEST(ZimArchive, randomEntry)
     }
   }
 }
+
+TEST(ZimArchive, illustration)
+{
+  const char* const zimfiles[] = {
+    "small.zim",
+    "wikibooks_be_all_nopic_2017-02.zim"
+  };
+
+  for ( const std::string fname : zimfiles ) {
+    for (auto& testfile: getDataFilePath(fname)) {
+      const TestContext ctx{ {"path", testfile.path } };
+      const zim::Archive archive(testfile.path);
+      ASSERT_TRUE(archive.hasIllustration(48)) << ctx;
+      auto illustrationItem = archive.getIllustrationItem(48);
+      if(testfile.category == "nons") {
+        ASSERT_EQ(illustrationItem.getPath(), "Illustration_48x48@1") << ctx;
+      } else {
+        ASSERT_EQ(illustrationItem.getPath(), "I/favicon.png") << ctx;
+      }
+    }
+  }
+}
 #endif
 
 class CapturedStderr
@@ -316,7 +338,7 @@ TEST(ZimArchive, validate)
     if (testfile.category == "withns") {
       expected = "Entry M/Language has invalid MIME-type value 1234.\n";
     } else {
-      expected = "Entry M/Scraper has invalid MIME-type value 1234.\n";
+      expected = "Entry M/Publisher has invalid MIME-type value 1234.\n";
     }
     EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
   }

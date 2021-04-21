@@ -196,6 +196,19 @@ namespace zim
       data->handle(dirent);
     }
 
+    void Creator::addIllustration(unsigned int size, const std::string& content)
+    {
+      auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
+      addIllustration(size, std::move(provider));
+    }
+
+    void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider)
+    {
+      std::stringstream ss;
+      ss << "Illustration_" << size << "x" << size << "@1";
+      addMetadata(ss.str(), std::move(provider), "image/png");
+    }
+
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
       auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
@@ -208,12 +221,6 @@ namespace zim
 
     void Creator::finishZimCreation()
     {
-      // Create mandatory entries
-      if (!m_faviconPath.empty()) {
-        auto dirent = data->createRedirectDirent('W', "favicon", "", 'C', m_faviconPath);
-        data->handle(dirent);
-      }
-
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.

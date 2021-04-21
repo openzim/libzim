@@ -146,6 +146,21 @@ namespace zim
         void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype);
 
         /**
+         * Add illustration to the archive.
+         *
+         * @param size the size (width and height) of the illustration.
+         * @param content the content of the illustration (must be a png content)
+         */
+        void addIllustration(unsigned int size, const std::string& content);
+        /**
+         * Add illustration to the archive.
+         *
+         * @param size the size (width and height) of the illustration.
+         * @param provider the provider of the content of the illustration (must be a png content)
+         */
+
+        void addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider);
+        /**
          * Add a redirection to the archive.
          *
          * @param path the path of the redirection.
@@ -171,13 +186,6 @@ namespace zim
         void setMainPath(const std::string& mainPath) { m_mainPath = mainPath; }
 
         /**
-         * Set the path of the favicon.
-         *
-         * @param faviconPath The path of the favicon.
-         */
-        void setFaviconPath(const std::string& faviconPath) { m_faviconPath = faviconPath; }
-
-        /**
          * Set the uuid of the the archive.
          *
          * @param uuid The uuid of the archive.
@@ -197,7 +205,6 @@ namespace zim
 
         // zim data
         std::string m_mainPath;
-        std::string m_faviconPath;
         Uuid m_uuid = Uuid::generate();
 
         void fillHeader(Fileheader* header) const;
