@@ -47,11 +47,31 @@ namespace {
     return result;
   }
 
+  std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
+    zim::Search search(archive);
+    search.set_suggestion_mode(true);
+    search.set_query(query);
+    search.set_range(0, range);
+    search.set_verbose(true);
+
+    std::vector<std::string> snippets;
+    for (auto entry = search.begin(); entry != search.end(); entry++) {
+      snippets.push_back(entry.get_snippet());
+    }
+    return snippets;
+  }
+
 #define EXPECT_SUGGESTION_RESULTS(archive, query, ...)          \
   ASSERT_EQ(                                                    \
       getSuggestions(archive, query, archive.getEntryCount()),  \
       std::vector<std::string>({__VA_ARGS__})                   \
   )
+
+#define EXPECT_SNIPPET_EQ(archive, range, query, ...)           \
+  ASSERT_EQ(                                                    \
+    getSnippet(archive, query, range),                          \
+    std::vector<std::string>({__VA_ARGS__})                     \
+  )                                                             \
 
   TEST(Suggestion, emptyQuery) {
     std::vector<std::string> titles = {
@@ -454,5 +474,53 @@ namespace {
         "Jack & Jill, on the hill"
       );
     }
+  }
+
+  TEST(Suggestion, titleSnippet) {
+    TempZimArchive tza("testzim");
+
+    const zim::Archive archive = tza.createZimFromTitles({
+      "this is a straight run of matching words",
+      "this is a broken set of likely words",
+      "this is a long title to ensure that the snippets generated contain the entire title even if match is one word"
+    });
+
+    EXPECT_SNIPPET_EQ(
+      archive,
+      1,
+      "straight run of matching",
+      {
+        "this is a <b>straight</b> <b>run</b> <b>of</b> <b>matching</b> words"
+      }
+    );
+
+    EXPECT_SNIPPET_EQ(
+      archive,
+      1,
+      "broken likely",
+      {
+        "this is a <b>broken</b> set of <b>likely</b> words"
+      }
+    );
+
+    EXPECT_SNIPPET_EQ(
+      archive,
+      1,
+      "generated",
+      {
+        "this is a long title to ensure that the snippets <b>generated</b> contain the entire title even if match is one word"
+      }
+    );
+
+    EXPECT_SNIPPET_EQ(
+      archive,
+      archive.getEntryCount(),
+      "this is",
+      {
+        "<b>this</b> <b>is</b> a broken set of likely words",
+        "<b>this</b> <b>is</b> a straight run of matching words",
+        "<b>this</b> <b>is</b> a long title to ensure that the snippets generated contain the entire title even if match <b>is</b> one word"
+      }
+    );
   }
 }
