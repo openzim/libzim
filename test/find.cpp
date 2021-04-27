@@ -28,6 +28,7 @@ namespace
 // Not found cases
 
 // ByTitle
+#if WITH_TEST_DATA
 TEST(FindTests, NotFoundByTitle)
 {
     zim::Archive archive ("./data/wikibooks_be_all_nopic_2017-02.zim");
@@ -169,5 +170,6 @@ TEST(FindTests, ByPath)
     }
     ASSERT_EQ(count, 118);
 }
+#endif
 
 } // namespace

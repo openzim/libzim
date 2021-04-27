@@ -118,7 +118,7 @@ You must tell meson where the test data is located.
 By default, meson will use a internal directory in your build directory.
 But you can specify another directory with option `test_data_dir`:
 
-```
+```bash
 meson . build -Dtest_data_dir=<A_DIR_WITH_TEST_DATA>
 ```
 
@@ -128,12 +128,20 @@ Whatever you specify a directory or not, you need a extra step to download the d
 - As `ninja` to do it for you with `ninja download_test_data` once the project is configured.
 
 The simple workflow is :
-```
+```bash
 meson . build # Configure the project (using default directory for test data)
 cd build
 ninja # Build
 ninja download_test_data # Download the test data
 meson test # Test
+```
+
+It is possible to deactivate all tests using test data zim files by passing `none` to the `test_data_dir` option :
+```bash
+meson . build -Dtest_data_dir=none
+cd build
+ninja
+meson test # Run tests but tests needing test zim files.
 ```
 
 If the automated tests fail or timeout, you need to be aware that some

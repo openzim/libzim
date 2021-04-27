@@ -63,6 +63,7 @@ class TempZimArchive : zim::unittests::TempFile
     }
 };
 
+#if WITH_TEST_DATA
 TEST(Search, searchByTitle)
 {
   const zim::Archive archive("./data/small.zim");
@@ -75,6 +76,7 @@ TEST(Search, searchByTitle)
   ASSERT_NE(0, search.get_matches_estimated());
   ASSERT_EQ(mainEntry.getPath(), search.begin().get_path());
 }
+#endif
 
 // To secure compatibity of new zim files with older kiwixes, we need to index
 // full path of the entries as data of documents.

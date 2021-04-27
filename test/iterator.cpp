@@ -26,7 +26,7 @@
 namespace
 {
 
-
+#if WITH_TEST_DATA
 TEST(ClusterIteratorTest, getEntryByClusterOrder)
 {
     std::vector<zim::entry_index_type> expected = {
@@ -118,5 +118,6 @@ TEST(IteratorTests, beginByPath)
         it++; i++;
     }
 }
+#endif
 
 } // namespace
