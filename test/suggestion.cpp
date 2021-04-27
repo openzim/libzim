@@ -19,12 +19,8 @@
 
 #define ZIM_PRIVATE
 
-#include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/search.h>
-#include <zim/writer/creator.h>
-#include <zim/writer/item.h>
-#include <zim/writer/contentProvider.h>
 
 #include "tools.h"
 
@@ -32,44 +28,8 @@
 
 namespace {
 
-  class TestItem : public zim::writer::BasicItem {
-      public:
-      TestItem(const std::string& path, const std::string& mimetype, const std::string& title)
-        : BasicItem(path, mimetype, title) {}
-
-      virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const {
-        return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider("foo"));
-      }
-  };
-
-  // Helper class to create a temporary zim from titles list
-  // Remove the temporary file once test is done.
-  class TempZimArchive : zim::unittests::TempFile {
-    public:
-      explicit TempZimArchive(const char* tempPath) : zim::unittests::TempFile {tempPath} {}
-
-      zim::Archive createZimFromTitles(std::vector<std::string> titles) {
-        zim::writer::Creator creator;
-        creator.configIndexing(true, "en");
-        creator.startZimCreation(this->path());
-
-        // add dummy items with given titles
-        for (auto title : titles) {
-          std::string path = "dummyPath" + title;
-          auto item = std::make_shared<TestItem>(path, "text/html", title);
-          creator.addItem(item);
-        }
-
-        creator.addMetadata("Title", "This is a title");
-
-        creator.finishZimCreation();
-        return zim::Archive(this->path());
-      }
-
-      const std::string getPath() {
-        return this->path();
-      }
-  };
+  using zim::unittests::TempZimArchive;
+  using zim::unittests::TestItem;
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
     zim::Search search(archive);

@@ -36,6 +36,13 @@
 #include "../src/buffer.h"
 #include <limits.h>
 
+#define ZIM_PRIVATE
+#include <zim/archive.h>
+#include <zim/search.h>
+#include <zim/writer/creator.h>
+#include <zim/writer/item.h>
+#include <zim/writer/contentProvider.h>
+
 namespace zim
 {
 
@@ -130,6 +137,34 @@ struct TestFile {
 };
 
 const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category = "");
+
+// Helper class to create temporary zim and remove it once the test is done
+class TempZimArchive : zim::unittests::TempFile {
+  public:
+    explicit TempZimArchive(const char* tempPath) : zim::unittests::TempFile {tempPath} {}
+    zim::Archive createZimFromTitles(std::vector<std::string> titles);
+    const std::string getPath();
+};
+
+class TestItem : public zim::writer::Item {
+  public:
+    TestItem(const std::string& path, const std::string& mimetype = "text/html", const std::string& title = "Test Item", const std::string& content = "foo") :
+      path(path), title(title), content(content), mimetype(mimetype) {}
+    virtual ~TestItem() = default;
+
+    virtual std::string getPath() const { return path; };
+    virtual std::string getTitle() const { return title; };
+    virtual std::string getMimeType() const { return mimetype; };
+
+    virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const {
+      return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider(content));
+    }
+
+  std::string path;
+  std::string title;
+  std::string content;
+  std::string mimetype;
+};
 
 } // namespace unittests
 
