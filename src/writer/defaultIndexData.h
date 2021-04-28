@@ -22,7 +22,7 @@
 
 #include <zim/writer/item.h>
 #include "xapian/myhtmlparse.h"
-#include "tools.h"
+#include "../tools.h"
 
 #include <atomic>
 #include <mutex>
@@ -75,7 +75,7 @@ namespace zim
           m_hasIndexData = !htmlParser.dump.empty() && htmlParser.indexing_allowed && (htmlParser.dump.find("NOINDEX") == std::string::npos);
           m_content = zim::removeAccents(htmlParser.dump);
           m_keywords = zim::removeAccents(htmlParser.keywords);
-          m_wordCount = countWords(htmlParser.dump);
+          m_wordCount = zim::countWords(htmlParser.dump);
           if(htmlParser.has_geoPosition) {
             m_geoPosition = std::make_tuple(true, htmlParser.latitude, htmlParser.longitude);
           }
