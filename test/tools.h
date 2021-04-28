@@ -22,6 +22,7 @@
 
 
 #include <string>
+#include <vector>
 #include <sys/types.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -112,6 +113,15 @@ zim::Buffer write_to_buffer(const T& object)
     throw std::runtime_error("Cannot read");
   return buf;
 }
+
+struct TestFile {
+  TestFile(const std::string& dataDir, const std::string& category, const std::string& filename);
+  const std::string filename;
+  const std::string category;
+  const std::string path;
+};
+
+const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category = "");
 
 } // namespace unittests
 
