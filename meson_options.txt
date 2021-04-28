@@ -18,3 +18,5 @@ option('doc', type : 'boolean', value : false,
   description : 'Build the documentations.')
 option('with_xapian', type : 'boolean', value: true,
   description: 'Build libzim with xapian support')
+option('test_data_dir', type : 'string', value: '',
+  description: 'Where the test data are. If not set, meson will use a internal directory in  the build dir. If you want to download the data in the specified directory you can use `meson download_test_data`. As a special value, you can pass `none` to deactivate test using external test data.')

@@ -51,6 +51,7 @@ jobs:
         run: |
           export LD_LIBRARY_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib:$HOME/BUILD_${{matrix.target}}/INSTALL/lib64
           cd build
+          ninja download_test_data
           meson test --verbose
         env:
           SKIP_BIG_MEMORY_TEST: 1
@@ -76,6 +77,7 @@ jobs:
         shell: cmd
         run: |
           cd build
+          ninja download_test_data
           meson test --verbose
 
   Linux:
@@ -170,6 +172,7 @@ jobs:
       shell: bash
       run: |
         cd $HOME/libzim/build
+        ninja download_test_data
         meson test --verbose
         ninja coverage
       env:

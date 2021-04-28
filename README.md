@@ -43,6 +43,8 @@ libraries need to be available:
 * [Xapian](https://xapian.org/) - optional (package `libxapian-dev` on Ubuntu)
 * [UUID](http://e2fsprogs.sourceforge.net/) (package `uuid-dev` on Ubuntu)
 * [Google Test](https://github.com/google/googletest) - optional (package `googletest` on Ubuntu)
+* [zim-testing-suite](https://github.com/openzim/zim-testing-suite) - optional, data for unittests.
+
 
 To build the documentations you need the packages :
 
@@ -107,6 +109,47 @@ If libzim is compiled without Xapian, all search API are removed.  You
 can test if an installed version of libzim is compiled with or without
 xapian by testing the define `LIBZIM_WITH_XAPIAN`.
 
+Testing
+-------
+
+Zim files needed by unit-tests are not inculded in this repository.
+You must tell meson where the test data is located.
+
+By default, meson will use a internal directory in your build directory.
+But you can specify another directory with option `test_data_dir`:
+
+```bash
+meson . build -Dtest_data_dir=<A_DIR_WITH_TEST_DATA>
+```
+
+Whatever you specify a directory or not, you need a extra step to download the data. At choice:
+- Get the data from the repository [zim-testing-suite](https://github.com/openzim/zim-testing-suite) and put it yourself in the directory.
+- Use the script [download_test_data.py](scripts/download_test_data.py) which will download and extract the data for you.
+- As `ninja` to do it for you with `ninja download_test_data` once the project is configured.
+
+The simple workflow is :
+```bash
+meson . build # Configure the project (using default directory for test data)
+cd build
+ninja # Build
+ninja download_test_data # Download the test data
+meson test # Test
+```
+
+It is possible to deactivate all tests using test data zim files by passing `none` to the `test_data_dir` option :
+```bash
+meson . build -Dtest_data_dir=none
+cd build
+ninja
+meson test # Run tests but tests needing test zim files.
+```
+
+If the automated tests fail or timeout, you need to be aware that some
+tests need up to 16GB of memory. You can skip those specific tests with:
+```bash
+SKIP_BIG_MEMORY_TEST=1 meson test
+```
+
 Installation
 ------------
 
@@ -151,12 +194,6 @@ git checkout release
 mkdir ../bin
 cp ninja ../bin
 cd ..
-```
-
-If the automated tests fail or timeout, you need to be aware that this
-test suite needs up to 16GB of memory. You can skip this specific tests with:
-```bash
-SKIP_BIG_MEMORY_TEST=1 ninja test
 ```
 
 If the compilation still fails, you might need to get a more recent

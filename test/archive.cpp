@@ -134,6 +134,7 @@ TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
   ASSERT_FALSE(archive.check());
 }
 
+#if WITH_TEST_DATA
 TEST(ZimArchive, openRealZimArchive)
 {
   const char* const zimfiles[] = {
@@ -177,6 +178,7 @@ TEST(ZimArchive, randomEntry)
     }
   }
 }
+#endif
 
 class CapturedStderr
 {
@@ -209,6 +211,7 @@ public:
     EXPECT_EQ(expected_stderror_text, std::string(stderror));     \
   }
 
+#if WITH_TEST_DATA
 TEST(ZimArchive, validate)
 {
   zim::IntegrityCheckList all;
@@ -293,6 +296,7 @@ TEST(ZimArchive, validate)
     "Entry M/Language has invalid MIME-type value 1234.\n"
   );
 }
+#endif
 
 void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2)
 {
@@ -367,6 +371,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 #endif
 }
 
+#if WITH_TEST_DATA
 TEST(ZimArchive, multipart)
 {
   const zim::Archive archive1("./data/wikibooks_be_all_nopic_2017-02.zim");
@@ -407,7 +412,8 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 
   checkEquivalence(archive1, archive2);
 }
-#endif
+#endif // not _WIN32
+#endif // WITH_TEST_DATA
 
 zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
 {
@@ -417,6 +423,7 @@ zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type si
   return zim::Blob(data, size);
 }
 
+#if WITH_TEST_DATA
 TEST(ZimArchive, getDirectAccessInformation)
 {
   const zim::Archive archive("./data/small.zim");
@@ -474,6 +481,7 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
   }
   ASSERT_NE(0, checkedItemCount);
 }
-#endif
+#endif // not _WIN32
+#endif // WITH_TEST_DATA
 
 } // unnamed namespace

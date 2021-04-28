@@ -6,6 +6,10 @@ export SKIP_BIG_MEMORY_TEST=1
 %:
 	dh $@ --buildsystem=meson
 
+# Skip tests that require zim-testing-data for now
+override_dh_auto_configure:
+	dh_auto_configure -- -Dtest_data_dir=none
+
 # Increase test timeout
 override_dh_auto_test:
 	dh_auto_test -- -t 3
