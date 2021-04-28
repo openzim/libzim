@@ -45,11 +45,29 @@ class SearchResultSet;
  *
  * A Searcher is mainly used to create new `Search`
  * Internaly, this is mainly a wrapper around a Xapian database.
+ *
+ * You should consider that all search operations are NOT threadsafe.
+ * It is up to you to protect your calls to avoid race competition.
+ * However, Searcher (and subsequent classes) do not maintain a global/share state.
+ * You can create several Searchers and use them in different threads.
  */
 class Searcher
 {
   public:
+    /** Searcher constructor.
+     *
+     * Construct a searcher on top of several archives (multi search).
+     *
+     * @param archives A list(vector) of archives to search on.
+     */
     explicit Searcher(const std::vector<Archive>& archives);
+
+    /** Searcher constructor.
+     *
+     * Construct a searcher on top of on archive.
+     *
+     * @param archive A archive to search on.
+     */
     explicit Searcher(const Archive& archive);
     Searcher(const Searcher& other);
     Searcher& operator=(const Searcher& other);
@@ -57,8 +75,18 @@ class Searcher
     Searcher& operator=(Searcher&& other);
     ~Searcher();
 
+    /** Add a archive to the searcher.
+     *
+     * Adding a archive to a searcher do not invalidate already created search.
+     */
     Searcher& add_archive(const Archive& archive);
 
+    /** Create a search for a specific query.
+     *
+     * The search is made on all archives added to the Searcher.
+     *
+     * @param query The Query to search.
+     */
     Search search(const Query& query);
 
   private: // methods
@@ -80,11 +108,35 @@ class Searcher
 class Query
 {
   public:
+    /** Query constructor.
+     *
+     * Create a empty query.
+     */
     Query() = default;
 
-
+    /** Set the verbosity of the Query.
+     *
+     * @param verbose If the query must be verbose or not.
+     */
     Query& setVerbose(bool verbose);
+
+    /** Set the textual query of the Query.
+     *
+     * @param query The string to search for.
+     * @param suggestionMode If we should search on title (suggestionMode)
+     *                       or on fulltext index.
+     */
     Query& setQuery(const std::string& query, bool suggestionMode);
+
+    /** Set the geographical query of the Query.
+     *
+     * Some article may be geo positioned.
+     * You can search for articles in a certain distance of a point.
+     *
+     * @param latitude The latitute of the point.
+     * @param longitude The longitude of the point.
+     * @param distance The maximal distance from the point.
+     */
     Query& setGeorange(float latitude, float longitude, float distance);
 
     bool m_verbose { false };
@@ -101,11 +153,8 @@ class Query
 /**
  * A Search represent a particular search, based on a `Searcher`.
  *
- * This is mainly a wrapper around a Xapian::Enquire.
- * The `Search` must be configured first (with `set*` methods) and
- * must be started (with `start` method)
- *
- * Results can be queried with the `get*` methods **after** the search is started.
+ * This is somehow the reunification of a `Searcher` (what to search on)
+ * and a `Query` (what to search for).
  */
 class Search
 {
@@ -114,7 +163,19 @@ class Search
         Search& operator=(Search&& s);
         ~Search();
 
+        /** Get a set of results for this search.
+         *
+         * @param start The begining of the range to get
+         *              (offset of the first result).
+         * @param end   The end of the range to get
+         *              (offset of the result past the end of the range).
+         */
         const SearchResultSet getResults(int start, int end) const;
+
+        /** Get the number of estimated results for this search.
+         *
+         * As the name suggest, it is a estimation of the number of results.
+         */
         int getEstimatedMatches() const;
 
     private: // methods
@@ -138,8 +199,14 @@ class SearchResultSet
 {
   public:
     typedef search_iterator iterator;
+
+    /** The begin iterator on the result range. */
     iterator begin() const;
+
+    /** The end iterator on the result range. */
     iterator end() const;
+
+    /** The size of the SearchResult (end()-begin()) */
     int size() const;
 
   private:
