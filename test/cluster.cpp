@@ -226,8 +226,9 @@ TEST(ClusterTest, read_write_extended_cluster)
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   std::string blob2("abcdefghijklmnopqrstuvwxyz");
-  zim::size_type bigger_than_4g = 1024LL*1024LL*1024LL*4LL+1024LL;
-  auto bigProvider = std::unique_ptr<zim::writer::ContentProvider>(new FakeProvider(bigger_than_4g));
+  const uint64_t FOUR_GIB = 4LL * 1024LL*1024LL*1024LL;
+  zim::size_type almost_4g = FOUR_GIB - 16;
+  auto bigProvider = std::unique_ptr<zim::writer::ContentProvider>(new FakeProvider(almost_4g));
 
   zim::writer::Cluster cluster(zim::zimcompNone);
   cluster.addContent(blob0);
@@ -235,6 +236,7 @@ TEST(ClusterTest, read_write_extended_cluster)
   cluster.addContent(blob2);
   cluster.addContent(std::move(bigProvider));
 
+  ASSERT_GT(cluster.size().v, FOUR_GIB);
   ASSERT_EQ(cluster.is_extended(), true);
 
   auto buffer = write_to_buffer(cluster);
@@ -248,7 +250,7 @@ TEST(ClusterTest, read_write_extended_cluster)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(3)).v, bigger_than_4g);
+  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(3)).v, almost_4g);
   ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
   ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
   ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
