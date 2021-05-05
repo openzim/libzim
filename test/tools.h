@@ -34,6 +34,7 @@
 #endif
 
 #include "../src/buffer.h"
+#include <limits.h>
 
 namespace zim
 {
@@ -109,8 +110,15 @@ zim::Buffer write_to_buffer(const T& object)
 
   auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
   LSEEK(tmp_fd, 0, SEEK_SET);
-  if (read(tmp_fd, const_cast<char*>(buf.data()), size) == -1)
-    throw std::runtime_error("Cannot read");
+  char* p = const_cast<char*>(buf.data());
+  while ( size != 0 ) {
+    const auto size_to_read = std::min(size_type(size), size_type(INT_MAX));
+    const auto n = read(tmp_fd, p, size_to_read);
+    if ( n == -1)
+      throw std::runtime_error("Cannot read");
+    p += n;
+    size -= n;
+  }
   return buf;
 }
 
