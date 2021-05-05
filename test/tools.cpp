@@ -156,6 +156,28 @@ const std::vector<TestFile> getDataFilePath(const std::string& filename, const s
   return filePaths;
 }
 
+zim::Archive TempZimArchive::createZimFromTitles(std::vector<std::string> titles) {
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(this->path());
+
+  // add dummy items with given titles
+  for (auto title : titles) {
+    std::string path = "dummyPath" + title;
+    auto item = std::make_shared<TestItem>(path, "text/html", title);
+    creator.addItem(item);
+  }
+
+  creator.addMetadata("Title", "This is a title");
+
+  creator.finishZimCreation();
+  return zim::Archive(this->path());
+}
+
+const std::string TempZimArchive::getPath() {
+  return this->path();
+}
+
 } // namespace unittests
 
 } // namespace zim
