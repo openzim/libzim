@@ -18,3 +18,5 @@
  */
 
 #define ANCHOR_TERM "0posanchor "
+
+#define DEFAULT_CLUSTER_SIZE 1024*1024

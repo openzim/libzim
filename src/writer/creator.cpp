@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <fstream>
 #include "../md5.h"
+#include "../constants.h"
 #include "counterHandler.h"
 
 #if defined(ENABLE_XAPIAN)
@@ -95,7 +96,9 @@ namespace zim
 {
   namespace writer
   {
-    Creator::Creator() = default;
+    Creator::Creator()
+      : m_clusterSize(DEFAULT_CLUSTER_SIZE)
+    {}
     Creator::~Creator() = default;
 
     Creator& Creator::configVerbose(bool verbose)
@@ -124,9 +127,9 @@ namespace zim
       return *this;
     }
 
-    Creator& Creator::configMinClusterSize(zim::size_type size)
+    Creator& Creator::configClusterSize(zim::size_type targetSize)
     {
-      m_minClusterSize = size;
+      m_clusterSize = targetSize;
       return *this;
     }
 
@@ -146,9 +149,8 @@ namespace zim
     void Creator::startZimCreation(const std::string& filepath)
     {
       data = std::unique_ptr<CreatorData>(
-        new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression)
+        new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_clusterSize)
       );
-      data->setMinChunkSize(m_minClusterSize);
 
       for(unsigned i=0; i<m_nbWorkers; i++)
       {
@@ -388,11 +390,13 @@ namespace zim
                                    bool verbose,
                                    bool withIndex,
                                    std::string language,
-                                   CompressionType c)
+                                   CompressionType c,
+                                   size_t clusterSize)
       : mainPageDirent(nullptr),
         compression(c),
         zimName(fname),
         tmpFileName(fname + ".tmp"),
+        clusterSize(clusterSize),
         withIndex(withIndex),
         indexingLanguage(language),
         verbose(verbose),
@@ -501,7 +505,7 @@ namespace zim
       // If cluster will be too large, write it to dis, and open a new
       // one for the content.
       if ( cluster->count()
-        && cluster->size().v+itemSize >= minChunkSize * 1024
+        && cluster->size().v+itemSize >= clusterSize
          )
       {
         log_info("cluster with " << cluster->count() << " items, " <<
