@@ -26,21 +26,67 @@
 
 namespace zim {
 
+/**
+ * A class to encapsulate a xapian database and all the information we can gather from it.
+ */
+class InternalDataBase {
+  public: // methods
+    InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode);
+    bool hasDatabase() const;
+    bool hasValuesmap() const;
+    bool hasValue(const std::string& valueName) const;
+    int  valueSlot(const std::string&  valueName) const;
+
+    void setupQueryparser(Xapian::QueryParser* queryParse, bool suggestionMode);
+
+  public: // data
+    // The (main) database we will search on (wrapping other xapian databases).
+    Xapian::Database m_database;
+
+    // The real databases.
+    std::vector<Xapian::Database> m_xapianDatabases;
+
+    // The archives we are searching on.
+    std::vector<Archive> m_archives;
+
+    // The valuesmap associated with the database.
+    std::map<std::string, int> m_valuesmap;
+
+    // The prefix stored in the database.
+    std::string m_prefixes;
+
+    // If the database is open for suggestion.
+    // True even if the dabase has no newSuggestionformat.
+    bool m_suggestionMode;
+
+    // If the database is open for suggestion and has new suggestion format (title db).
+    bool m_hasNewSuggestionFormat;
+
+    // The language of the database.
+    std::string m_language;
+
+    // The stop words associated to the language of the database.
+    std::string m_stopwords;
+};
+
 struct Search::InternalData {
-    std::vector<Xapian::Database> xapian_databases;
-    Xapian::Database database;
+    InternalData(const std::vector<Archive>& archives, bool suggestionMode)
+     : m_internalDb(archives, suggestionMode),
+       results()
+       {}
+    InternalDataBase m_internalDb;
     Xapian::MSet results;
 };
 
 struct search_iterator::InternalData {
-    const Search* search;
+    std::shared_ptr<Search::InternalData> searchData;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
     bool document_fetched;
     std::unique_ptr<Entry> _entry;
 
     InternalData(const InternalData& other) :
-      search(other.search),
+      searchData(other.searchData),
       iterator(other.iterator),
       _document(other._document),
       document_fetched(other.document_fetched),
@@ -51,7 +97,7 @@ struct search_iterator::InternalData {
     InternalData& operator=(const InternalData& other)
     {
       if (this != &other) {
-        search = other.search;
+        searchData = other.searchData;
         iterator = other.iterator;
         _document = other._document;
         document_fetched = other.document_fetched;
@@ -61,14 +107,14 @@ struct search_iterator::InternalData {
     }
 
     InternalData(const Search* search, Xapian::MSetIterator iterator) :
-        search(search),
+        searchData(search->internal),
         iterator(iterator),
         document_fetched(false)
     {};
 
     Xapian::Document get_document() {
         if ( !document_fetched ) {
-            if (iterator != search->internal->results.end()) {
+            if (iterator != searchData->results.end()) {
                 _document = iterator.get_document();
             }
             document_fetched = true;
@@ -78,13 +124,13 @@ struct search_iterator::InternalData {
 
     int get_databasenumber() {
         Xapian::docid docid = *iterator;
-        return (docid - 1) % search->m_archives.size();
+        return (docid - 1) % searchData->m_internalDb.m_archives.size();
     }
 
     Entry& get_entry() {
         if ( !_entry ) {
             int databasenumber = get_databasenumber();
-            auto archive = search->m_archives.at(databasenumber);
+            auto archive = searchData->m_internalDb.m_archives.at(databasenumber);
             _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
         }
         return *_entry.get();

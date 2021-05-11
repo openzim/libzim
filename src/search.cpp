@@ -77,46 +77,6 @@ std::map<std::string, int> read_valuesmap(const std::string &s) {
     return result;
 }
 
-
-void
-setup_queryParser(Xapian::QueryParser* queryParser,
-                  Xapian::Database& database,
-                  const std::string& language,
-                  const std::string& stopwords,
-                  bool suggestion_mode,
-                  bool newSuggestionFormat) {
-    queryParser->set_default_op(Xapian::Query::op::OP_AND);
-    queryParser->set_database(database);
-    if ( ! language.empty() )
-    {
-        /* Build ICU Local object to retrieve ISO-639 language code (from
-           ISO-639-3) */
-        icu::Locale languageLocale(language.c_str());
-
-        /* Configuring language base steemming */
-        try {
-            Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
-            queryParser->set_stemmer(stemmer);
-            queryParser->set_stemming_strategy(
-              newSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
-        } catch (...) {
-            std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
-        }
-    }
-
-    if ( ! stopwords.empty() && !suggestion_mode )
-    {
-        std::string stopWord;
-        std::istringstream file(stopwords);
-        Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
-        while (std::getline(file, stopWord, '\n')) {
-            stopper->add(stopWord);
-        }
-        stopper->release();
-        queryParser->set_stopper(stopper);
-    }
-}
-
 /*
  * subquery_phrase: selects documents that have the terms in the order of the query
  * within a specified window.
@@ -156,29 +116,82 @@ Xapian::Query parse_query(Xapian::QueryParser* query_parser, std::string qs, int
 
 }
 
+
+void InternalDataBase::setupQueryparser(
+  Xapian::QueryParser* queryParser,
+  bool suggestionMode)
+{
+    queryParser->set_default_op(Xapian::Query::op::OP_AND);
+    queryParser->set_database(m_database);
+    if ( ! m_language.empty() ) {
+        /* Build ICU Local object to retrieve ISO-639 language code (from
+           ISO-639-3) */
+        icu::Locale languageLocale(m_language.c_str());
+
+        /* Configuring language base steemming */
+        try {
+            Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
+            queryParser->set_stemmer(stemmer);
+            queryParser->set_stemming_strategy(
+            m_hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
+        } catch (...) {
+            std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+        }
+    }
+
+    if ( !m_stopwords.empty() && !suggestionMode ){
+        std::string stopWord;
+        std::istringstream file(m_stopwords);
+        Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
+        while (std::getline(file, stopWord, '\n')) {
+            stopper->add(stopWord);
+        }
+        stopper->release();
+        queryParser->set_stopper(stopper);
+    }
+}
+
+bool InternalDataBase::hasDatabase() const
+{
+  return !m_xapianDatabases.empty();
+}
+
+bool InternalDataBase::hasValuesmap() const
+{
+  return !m_valuesmap.empty();
+}
+
+bool InternalDataBase::hasValue(const std::string& valueName) const
+{
+  return (m_valuesmap.find(valueName) != m_valuesmap.end());
+}
+
+int InternalDataBase::valueSlot(const std::string& valueName) const
+{
+  return m_valuesmap.at(valueName);
+}
+
 Search::Search(const std::vector<Archive>& archives) :
-    internal(new InternalData),
+    internal(nullptr),
     m_archives(archives),
-    prefixes(""), query(""),
+    query(""),
     latitude(0), longitude(0), distance(0),
     range_start(0), range_end(0),
     suggestion_mode(false),
     geo_query(false),
     search_started(false),
-    has_database(false),
     verbose(false),
     estimated_matches_number(0)
 {}
 
 Search::Search(const Archive& archive) :
-    internal(new InternalData),
-    prefixes(""), query(""),
+    internal(nullptr),
+    query(""),
     latitude(0), longitude(0), distance(0),
     range_start(0), range_end(0),
     suggestion_mode(false),
     geo_query(false),
     search_started(false),
-    has_database(false),
     verbose(false),
     estimated_matches_number(0)
 {
@@ -186,16 +199,14 @@ Search::Search(const Archive& archive) :
 }
 
 Search::Search(const Search& it) :
-     internal(new InternalData),
+     internal(nullptr),
      m_archives(it.m_archives),
-     prefixes(it.prefixes),
      query(it.query),
      latitude(it.latitude), longitude(it.longitude), distance(it.distance),
      range_start(it.range_start), range_end(it.range_end),
      suggestion_mode(it.suggestion_mode),
      geo_query(it.geo_query),
      search_started(false),
-     has_database(false),
      verbose(it.verbose),
      estimated_matches_number(0)
 { }
@@ -204,7 +215,6 @@ Search& Search::operator=(const Search& it)
 {
      if ( internal ) internal.reset();
      m_archives = it.m_archives;
-     prefixes = it.prefixes;
      query = it.query;
      latitude = it.latitude;
      longitude = it.longitude;
@@ -214,7 +224,6 @@ Search& Search::operator=(const Search& it)
      suggestion_mode = it.suggestion_mode;
      geo_query = it.geo_query;
      search_started = false;
-     has_database = false;
      verbose = it.verbose;
      estimated_matches_number = 0;
      return *this;
@@ -257,17 +266,18 @@ Search& Search::set_suggestion_mode(const bool suggestion_mode) {
     return *this;
 }
 
-void Search::initDatabase() const {
+InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode)
+  : m_suggestionMode(suggestionMode),
+    m_hasNewSuggestionFormat(false)
+{
     bool first = true;
-    hasNewSuggestionFormat = false;
-    for(auto& archive: m_archives)
-    {
+    for(auto& archive: archives) {
         auto impl = archive.getImpl();
         FileImpl::FindxResult r;
-        if (suggestion_mode) {
+        if (suggestionMode) {
           r = impl->findx('X', "title/xapian");
           if (r.first) {
-            hasNewSuggestionFormat = true;
+            m_hasNewSuggestionFormat = true;
           }
         }
         if (!r.first) {
@@ -311,30 +321,35 @@ void Search::initDatabase() const {
         }
 
         if ( first ) {
-            this->valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            language = database.get_metadata("language");
-            if (language.empty() ) {
-              // Database created before 2017/03 has no language metadata.
-              // However, term were stemmed anyway and we need to stem our
-              // search query the same the database was created.
-              // So we need a language, let's use the one of the zim.
-              // If zimfile has no language metadata, we can't do lot more here :/
-              try {
-                language = archive.getMetadata("Language");
-              } catch(...) {}
+            m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
+            m_language = database.get_metadata("language");
+            if (m_language.empty() ) {
+                // Database created before 2017/03 has no language metadata.
+                // However, term were stemmed anyway and we need to stem our
+                // search query the same the database was created.
+                // So we need a language, let's use the one of the zim.
+                // If zimfile has no language metadata, we can't do lot more here :/
+                try {
+                    m_language = archive.getMetadata("Language");
+                } catch(...) {}
             }
-            stopwords = database.get_metadata("stopwords");
-            this->prefixes = database.get_metadata("prefixes");
+            m_stopwords = database.get_metadata("stopwords");
+            m_prefixes = database.get_metadata("prefixes");
         } else {
             std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            if (this->valuesmap != valuesmap ) {
+            if (m_valuesmap != valuesmap ) {
                 // [TODO] Ignore the database, raise a error ?
             }
         }
-        internal->xapian_databases.push_back(database);
-        internal->database.add_database(database);
-        has_database = true;
+        m_xapianDatabases.push_back(database);
+        m_database.add_database(database);
+        m_archives.push_back(archive);
+        first = false;
     }
+}
+
+void Search::initDatabase() const {
+    internal.reset(new InternalData(m_archives, suggestion_mode));
 }
 
 Search::iterator Search::begin() const {
@@ -344,7 +359,7 @@ Search::iterator Search::begin() const {
 
     initDatabase();
 
-    if ( ! has_database ) {
+    if ( ! internal->m_internalDb.hasDatabase() ) {
         if (verbose) {
           std::cout << "No database, no result" << std::endl;
         }
@@ -354,9 +369,9 @@ Search::iterator Search::begin() const {
 
     Xapian::QueryParser* queryParser = new Xapian::QueryParser();
     if (verbose) {
-      std::cout << "Setup queryparser using language " << language << std::endl;
+      std::cout << "Setup queryparser using language " << internal->m_internalDb.m_language << std::endl;
     }
-    setup_queryParser(queryParser, internal->database, language, stopwords, suggestion_mode, hasNewSuggestionFormat);
+    internal->m_internalDb.setupQueryparser(queryParser, suggestion_mode);
 
     std::string prefix = "";
     unsigned flags = Xapian::QueryParser::FLAG_DEFAULT;
@@ -365,8 +380,8 @@ Search::iterator Search::begin() const {
         std::cout << "Mark query as 'partial'" << std::endl;
       }
       flags |= Xapian::QueryParser::FLAG_PARTIAL;
-      if ( !hasNewSuggestionFormat
-        && this->prefixes.find("S") != std::string::npos ) {
+      if ( !internal->m_internalDb.m_hasNewSuggestionFormat
+        && internal->m_internalDb.m_prefixes.find("S") != std::string::npos ) {
         if (verbose) {
           std::cout << "Searching in title namespace" << std::endl;
         }
@@ -385,12 +400,12 @@ Search::iterator Search::begin() const {
     }
     delete queryParser;
 
-    Xapian::Enquire enquire(internal->database);
+    Xapian::Enquire enquire(internal->m_internalDb.m_database);
 
-    if (geo_query && valuesmap.find("geo.position") != valuesmap.end()) {
+    if (geo_query && internal->m_internalDb.hasValue("geo.position")) {
         Xapian::GreatCircleMetric metric;
         Xapian::LatLongCoord centre(latitude, longitude);
-        Xapian::LatLongDistancePostingSource ps(valuesmap["geo.position"], centre, metric, distance);
+        Xapian::LatLongDistancePostingSource ps(internal->m_internalDb.valueSlot("geo.position"), centre, metric, distance);
         if ( this->query.empty()) {
           query = Xapian::Query(&ps);
         } else {
@@ -409,13 +424,15 @@ Search::iterator Search::begin() const {
     */
     if (suggestion_mode) {
       enquire.set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
-      enquire.set_sort_by_relevance_then_value(valuesmap["title"], false);
+      if (internal->m_internalDb.hasValue("title")) {
+        enquire.set_sort_by_relevance_then_value(internal->m_internalDb.valueSlot("title"), false);
+      }
     }
 
     enquire.set_query(query);
 
-    if (suggestion_mode && valuesmap.find("targetPath") != valuesmap.end()) {
-      enquire.set_collapse_key(valuesmap["targetPath"]);
+    if (suggestion_mode && internal->m_internalDb.hasValue("targetPath")) {
+      enquire.set_collapse_key(internal->m_internalDb.valueSlot("targetPath"));
     }
 
     internal->results = enquire.get_mset(this->range_start, this->range_end-this->range_start);
@@ -425,7 +442,7 @@ Search::iterator Search::begin() const {
 }
 
 Search::iterator Search::end() const {
-    if ( ! has_database ) {
+    if ( ! internal->m_internalDb.hasDatabase() ) {
         return nullptr;
     }
     return new search_iterator::InternalData(this, internal->results.end());

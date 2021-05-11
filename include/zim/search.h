@@ -61,11 +61,9 @@ class Search
 
     private: // data
          struct InternalData;
-         std::unique_ptr<InternalData> internal;
+         mutable std::shared_ptr<InternalData> internal;
          std::vector<Archive> m_archives;
 
-         mutable std::map<std::string, int> valuesmap;
-         mutable std::string prefixes;
          std::string query;
          float latitude;
          float longitude;
@@ -74,11 +72,7 @@ class Search
          int range_end;
          bool suggestion_mode;
          bool geo_query;
-         mutable bool hasNewSuggestionFormat;
-         mutable std::string language;
-         mutable std::string stopwords;
          mutable bool search_started;
-         mutable bool has_database;
          mutable bool verbose;
          mutable int estimated_matches_number;
 };
