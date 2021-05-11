@@ -35,6 +35,26 @@ using zim::unittests::getDataFilePath;
 using zim::unittests::TempZimArchive;
 using zim::unittests::TestItem;
 
+std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
+  zim::Search search(archive);
+  search.set_suggestion_mode(false);
+  search.set_query(query);
+  search.set_range(0, range);
+  search.set_verbose(true);
+
+  std::vector<std::string> snippets;
+  for (auto entry = search.begin(); entry != search.end(); entry++) {
+    snippets.push_back(entry.get_snippet());
+  }
+  return snippets;
+}
+
+#define EXPECT_SNIPPET_EQ(archive, range, query, ...)           \
+  ASSERT_EQ(                                                    \
+    getSnippet(archive, query, range),                          \
+    std::vector<std::string>({__VA_ARGS__})                     \
+  )
+
 #if WITH_TEST_DATA
 TEST(Search, searchByTitle)
 {
@@ -78,6 +98,32 @@ TEST(Search, indexFullPath)
 
   ASSERT_EQ(search.begin().get_path(), "testPath");
   ASSERT_EQ(search.begin().get_dbData().substr(0, 2), "C/");
+}
+
+TEST(Search, fulltextSnippet)
+{
+  TempZimArchive tza("testZim");
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+
+  auto item = std::make_shared<TestItem>("testPath", "text/html", "Test Article", "this is the content of a random paragraph without any context");
+  creator.addItem(item);
+
+  creator.setMainPath("testPath");
+  creator.addMetadata("Title", "Test zim");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  EXPECT_SNIPPET_EQ(
+    archive,
+    1,
+    "random paragraph context",
+    {
+      "this is the content of a <b>random</b> <b>paragraph</b> without any <b>context</b>"
+    }
+  );
 }
 
 } // unnamed namespace

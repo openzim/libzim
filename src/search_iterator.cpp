@@ -155,6 +155,18 @@ std::string search_iterator::get_snippet() const {
     if ( ! internal ) {
         return "";
     }
+
+    // Generate title snippet for suggestion_mode
+    if ( internal->search->suggestion_mode )
+    {
+        try {
+            return internal->search->internal->results.snippet(get_title(), 500);
+        } catch(...) {
+            return "";
+        }
+    }
+
+    // Generate full text snippet
     if ( internal->search->valuesmap.empty() )
     {
         /* This is the old legacy version. Guess and try */
