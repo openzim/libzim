@@ -108,7 +108,6 @@ TEST(Search, fulltextSnippet)
   zim::writer::Creator creator;
   creator.configIndexing(true, "en");
   creator.startZimCreation(tza.getPath());
-
   auto item = std::make_shared<TestItem>("testPath", "text/html", "Test Article", "this is the content of a random paragraph without any context");
   creator.addItem(item);
 
@@ -126,6 +125,60 @@ TEST(Search, fulltextSnippet)
       "this is the content of a <b>random</b> <b>paragraph</b> without any <b>context</b>"
     }
   );
+}
+
+TEST(Search, multiSearch)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article"));
+  creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. For article1."));
+  creator.addItem(std::make_shared<TestItem>("path2", "text/html", "Test Article001", "This is a test article. Super."));
+  creator.addItem(std::make_shared<TestItem>("path3", "text/html", "Test Article2", "This is a test article. Super."));
+  creator.addItem(std::make_shared<TestItem>("path4", "text/html", "Test Article23", "This is a test article. bis."));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("test article", false);
+  auto search0 = searcher.search(query);
+
+  ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
+  auto result0 = search0.getResults(0, 2);
+  ASSERT_EQ(result0.size(), 2);
+  auto it0 = result0.begin();
+
+  auto result1 = search0.getResults(0, 5);
+  ASSERT_EQ(result1.size(), 5);
+  auto it1 = result1.begin();
+
+  ASSERT_EQ(it0.get_path(), it1.get_path());
+  it0++; it1++;
+  ASSERT_EQ(it0.get_path(), it1.get_path());
+  it0++; it1++;
+  ASSERT_EQ(it0, result0.end());
+  it1++;it1++;it1++;
+  ASSERT_EQ(it1, result1.end());
+
+  // Be able to do a different search using the same searcher.
+  query.setQuery("super", false);
+  auto search1 = searcher.search(query);
+  ASSERT_EQ(2, search1.getEstimatedMatches());
+
+  // Copy the searcher and do a suggestion query.
+  auto searcher2(searcher);
+  query.setQuery("Article0", true);
+  auto search2 = searcher2.search(query);
+  auto result = search2.getResults(0, search2.getEstimatedMatches());
+  ASSERT_EQ(3, search2.getEstimatedMatches()); // Xapian estimate the number of match to 3. To investigate
+  ASSERT_EQ(2, result.size());
 }
 
 } // unnamed namespace
