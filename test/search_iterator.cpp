@@ -69,6 +69,31 @@ TEST(search_iterator, end) {
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
 
+TEST(search_iterator, copy) {
+  TempZimArchive tza("testZim");
+
+  zim::Archive archive = tza.createZimFromTitles({
+    "item a",
+  });
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
+  auto result = search.getResults(0, archive.getEntryCount());
+
+  auto it = result.begin();
+
+  auto it2 = it;
+  ASSERT_EQ(it.get_title(), it2.get_title());
+
+  it = result.end();
+  it2 = it;
+  ASSERT_EQ(it, it2);
+  ASSERT_THROW(it.get_title(), std::runtime_error);
+  ASSERT_THROW(it2.get_title(), std::runtime_error);
+}
+
 TEST(search_iterator, functions) {
   TempZimArchive tza("testZim");
 

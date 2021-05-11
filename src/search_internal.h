@@ -93,7 +93,7 @@ struct search_iterator::InternalData {
         iterator = other.iterator;
         _document = other._document;
         document_fetched = other.document_fetched;
-        _entry.reset(new Entry(*other._entry.get()));
+        _entry.reset(other._entry ? new Entry(*other._entry) : nullptr);
       }
       return *this;
     }
