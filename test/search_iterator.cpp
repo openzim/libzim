@@ -43,6 +43,32 @@ TEST(search_iterator, uninitialized) {
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
 
+TEST(search_iterator, end) {
+  TempZimArchive tza("testZim");
+
+  zim::Archive archive = tza.createZimFromTitles({
+    "item a",
+  });
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
+  auto result = search.getResults(0, archive.getEntryCount());
+
+  auto it = result.end();
+
+  ASSERT_THROW(it.get_title(), std::runtime_error);
+  ASSERT_THROW(it.get_path(), std::runtime_error);
+  ASSERT_EQ(it.get_snippet(), "");
+//  ASSERT_EQ(it.get_score(), 0); Unspecified, may be 0 or 1. To fix.
+  ASSERT_EQ(it.get_fileIndex(), 0);
+  ASSERT_EQ(it.get_wordCount(), -1);
+  ASSERT_EQ(it.get_size(), -1);
+  ASSERT_THROW(*it, std::runtime_error);
+  ASSERT_THROW(it.operator->(), std::runtime_error);
+}
+
 TEST(search_iterator, functions) {
   TempZimArchive tza("testZim");
 

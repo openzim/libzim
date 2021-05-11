@@ -23,6 +23,7 @@
 #include <xapian.h>
 
 #include <zim/entry.h>
+#include <zim/error.h>
 
 namespace zim {
 
@@ -106,9 +107,10 @@ struct search_iterator::InternalData {
 
     Xapian::Document get_document() {
         if ( !document_fetched ) {
-            if (iterator != mp_mset->end()) {
-                _document = iterator.get_document();
+            if (iterator == mp_mset->end()) {
+                throw std::runtime_error("Cannot get entry for end iterator");
             }
+            _document = iterator.get_document();
             document_fetched = true;
         }
         return _document;
