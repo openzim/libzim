@@ -239,10 +239,16 @@ int search_iterator::get_fileIndex() const {
 }
 
 search_iterator::reference search_iterator::operator*() const {
+    if (! internal ) {
+        throw std::runtime_error("Cannot get a entry for a uninitialized iterator");
+    }
     return internal->get_entry();
 }
 
 search_iterator::pointer search_iterator::operator->() const {
+    if (! internal ) {
+        throw std::runtime_error("Cannot get a entry for a uninitialized iterator");
+    }
     return &internal->get_entry();
 }
 

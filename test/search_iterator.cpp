@@ -21,6 +21,7 @@
 #include <zim/archive.h>
 #include <zim/search.h>
 #include <zim/search_iterator.h>
+#include <zim/error.h>
 #include "tools.h"
 
 #include "gtest/gtest.h"
@@ -28,6 +29,19 @@
 namespace {
 
 using zim::unittests::TempZimArchive;
+
+TEST(search_iterator, uninitialized) {
+  zim::SearchResultSet::iterator it;
+  ASSERT_EQ(it.get_title(), "");
+  ASSERT_EQ(it.get_path(), "");
+  ASSERT_EQ(it.get_snippet(), "");
+  ASSERT_EQ(it.get_score(), 0);
+  ASSERT_EQ(it.get_fileIndex(), 0);
+  ASSERT_EQ(it.get_wordCount(), -1);
+  ASSERT_EQ(it.get_size(), -1);
+  ASSERT_THROW(*it, std::runtime_error);
+  ASSERT_THROW(it.operator->(), std::runtime_error);
+}
 
 TEST(search_iterator, functions) {
   TempZimArchive tza("testZim");
