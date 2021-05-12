@@ -110,6 +110,9 @@ namespace zim
 
       entry_index_t getNamespaceBeginOffset(char ch);
       entry_index_t getNamespaceEndOffset(char ch);
+      entry_index_t getNamespaceEntryCount(char ch) {
+        return getNamespaceEndOffset(ch) - getNamespaceBeginOffset(ch);
+      }
 
       entry_index_t getStartUserEntry() const { return m_startUserEntry; }
       entry_index_t getEndUserEntry() const { return m_endUserEntry; }
