@@ -21,6 +21,7 @@
 #include <zim/archive.h>
 #include <zim/search.h>
 #include <zim/search_iterator.h>
+#include <zim/error.h>
 #include "tools.h"
 
 #include "gtest/gtest.h"
@@ -29,6 +30,70 @@ namespace {
 
 using zim::unittests::TempZimArchive;
 
+TEST(search_iterator, uninitialized) {
+  zim::SearchResultSet::iterator it;
+  ASSERT_EQ(it.get_title(), "");
+  ASSERT_EQ(it.get_path(), "");
+  ASSERT_EQ(it.get_snippet(), "");
+  ASSERT_EQ(it.get_score(), 0);
+  ASSERT_EQ(it.get_fileIndex(), 0);
+  ASSERT_EQ(it.get_wordCount(), -1);
+  ASSERT_EQ(it.get_size(), -1);
+  ASSERT_THROW(*it, std::runtime_error);
+  ASSERT_THROW(it.operator->(), std::runtime_error);
+}
+
+TEST(search_iterator, end) {
+  TempZimArchive tza("testZim");
+
+  zim::Archive archive = tza.createZimFromTitles({
+    "item a",
+  });
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
+  auto result = search.getResults(0, archive.getEntryCount());
+
+  auto it = result.end();
+
+  ASSERT_THROW(it.get_title(), std::runtime_error);
+  ASSERT_THROW(it.get_path(), std::runtime_error);
+  ASSERT_EQ(it.get_snippet(), "");
+//  ASSERT_EQ(it.get_score(), 0); Unspecified, may be 0 or 1. To fix.
+  ASSERT_EQ(it.get_fileIndex(), 0);
+  ASSERT_EQ(it.get_wordCount(), -1);
+  ASSERT_EQ(it.get_size(), -1);
+  ASSERT_THROW(*it, std::runtime_error);
+  ASSERT_THROW(it.operator->(), std::runtime_error);
+}
+
+TEST(search_iterator, copy) {
+  TempZimArchive tza("testZim");
+
+  zim::Archive archive = tza.createZimFromTitles({
+    "item a",
+  });
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
+  auto result = search.getResults(0, archive.getEntryCount());
+
+  auto it = result.begin();
+
+  auto it2 = it;
+  ASSERT_EQ(it.get_title(), it2.get_title());
+
+  it = result.end();
+  it2 = it;
+  ASSERT_EQ(it, it2);
+  ASSERT_THROW(it.get_title(), std::runtime_error);
+  ASSERT_THROW(it2.get_title(), std::runtime_error);
+}
+
 TEST(search_iterator, functions) {
   TempZimArchive tza("testZim");
 
@@ -36,13 +101,13 @@ TEST(search_iterator, functions) {
     "item a",
   });
 
-  zim::Search search(archive);
-  search.set_suggestion_mode(true);
-  search.set_query("item");
-  search.set_range(0, archive.getEntryCount());
-  search.set_verbose(true);
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
+  auto result = search.getResults(0, archive.getEntryCount());
 
-  auto it = search.begin();
+  auto it = result.begin();
 
   // Test functions
   ASSERT_EQ(it.get_title(), "item a");
@@ -61,26 +126,26 @@ TEST(search_iterator, iteration) {
     "item b"
   });
 
-  zim::Search search(archive);
-  search.set_suggestion_mode(true);
-  search.set_query("item");
-  search.set_range(0, archive.getEntryCount());
-  search.set_verbose(true);
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("item", true);
+  auto search = searcher.search(query);
+  auto result = search.getResults(0, archive.getEntryCount());
 
-  auto it = search.begin();
-  ASSERT_EQ(it.get_title(), search.begin().get_title());
+  auto it = result.begin();
+  ASSERT_EQ(it.get_title(), result.begin().get_title());
 
   ASSERT_EQ(it.get_title(), "item a");
   it++;
   ASSERT_EQ(it.get_title(), "item b");
-  ASSERT_TRUE(it != search.begin());
+  ASSERT_TRUE(it != result.begin());
 
   it--;
   ASSERT_EQ(it.get_title(), "item a");
-  ASSERT_TRUE(search.begin() == it);
+  ASSERT_TRUE(result.begin() == it);
 
   it++; it++;
-  ASSERT_TRUE(it == search.end());
+  ASSERT_TRUE(it == result.end());
 }
 
 } // anonymous namespace

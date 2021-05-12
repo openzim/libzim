@@ -32,14 +32,15 @@ namespace {
   using zim::unittests::TestItem;
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
-    zim::Search search(archive);
-    search.set_suggestion_mode(true);
-    search.set_query(query);
-    search.set_range(0, range);
-    search.set_verbose(true);
+    zim::Searcher searcher(archive);
+    zim::Query _query;
+    _query.setQuery(query, true).setVerbose(true);
+    auto search = searcher.search(_query);
+
+    auto searchResult = search.getResults(0, range);
 
     std::vector<std::string> result;
-    for (auto entry = search.begin();entry!=search.end();entry++) {
+    for (auto entry = searchResult.begin();entry!=searchResult.end();entry++) {
       std::cout<<(*entry).getTitle()<<entry.get_score()<<std::endl;
       result.push_back((*entry).getTitle());
     }
@@ -48,14 +49,14 @@ namespace {
   }
 
   std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
-    zim::Search search(archive);
-    search.set_suggestion_mode(true);
-    search.set_query(query);
-    search.set_range(0, range);
-    search.set_verbose(true);
+    zim::Searcher searcher(archive);
+    zim::Query _query;
+    _query.setQuery(query, true);
+    auto search = searcher.search(_query);
+    auto result = search.getResults(0, range);
 
     std::vector<std::string> snippets;
-    for (auto entry = search.begin(); entry != search.end(); entry++) {
+    for (auto entry = result.begin(); entry != result.end(); entry++) {
       snippets.push_back(entry.get_snippet());
     }
     return snippets;
@@ -443,14 +444,14 @@ namespace {
 
     zim::Archive archive(tza.getPath());
 
-    zim::Search search(archive);
-    search.set_suggestion_mode(true);
-    search.set_query("Test Article");
-    search.set_range(0, archive.getEntryCount());
-    search.set_verbose(true);
+    zim::Searcher searcher(archive);
+    zim::Query query;
+    query.setQuery("Test Article", true);
+    auto search = searcher.search(query);
+    auto result = search.getResults(0, archive.getEntryCount());
 
-    ASSERT_EQ(search.begin().get_path(), "testPath");
-    ASSERT_EQ(search.begin().get_dbData().substr(0, 2), "C/");
+    ASSERT_EQ(result.begin().get_path(), "testPath");
+    ASSERT_EQ(result.begin().get_dbData().substr(0, 2), "C/");
   }
 
   TEST(Suggestion, nonWordCharacters) {

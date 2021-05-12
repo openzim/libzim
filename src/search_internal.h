@@ -23,24 +23,61 @@
 #include <xapian.h>
 
 #include <zim/entry.h>
+#include <zim/error.h>
 
 namespace zim {
 
-struct Search::InternalData {
-    std::vector<Xapian::Database> xapian_databases;
-    Xapian::Database database;
-    Xapian::MSet results;
+/**
+ * A class to encapsulate a xapian database and all the information we can gather from it.
+ */
+class InternalDataBase {
+  public: // methods
+    InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode);
+    bool hasDatabase() const;
+    bool hasValuesmap() const;
+    bool hasValue(const std::string& valueName) const;
+    int  valueSlot(const std::string&  valueName) const;
+
+    Xapian::Query parseQuery(const Query& query);
+
+  public: // data
+    // The (main) database we will search on (wrapping other xapian databases).
+    Xapian::Database m_database;
+
+    // The real databases.
+    std::vector<Xapian::Database> m_xapianDatabases;
+
+    // The archives we are searching on.
+    std::vector<Archive> m_archives;
+
+    // The valuesmap associated with the database.
+    std::map<std::string, int> m_valuesmap;
+
+    // The prefix to search on.
+    std::string m_prefix;
+
+    // Flags to use to parse the query.
+    unsigned int m_flags;
+
+    // If the database is open for suggestion.
+    // True even if the dabase has no newSuggestionformat.
+    bool m_suggestionMode;
+
+    // The query parser corresponding to the database.
+    Xapian::QueryParser m_queryParser;
 };
 
 struct search_iterator::InternalData {
-    const Search* search;
+    std::shared_ptr<InternalDataBase> mp_internalDb;
+    std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
     bool document_fetched;
     std::unique_ptr<Entry> _entry;
 
     InternalData(const InternalData& other) :
-      search(other.search),
+      mp_internalDb(other.mp_internalDb),
+      mp_mset(other.mp_mset),
       iterator(other.iterator),
       _document(other._document),
       document_fetched(other.document_fetched),
@@ -51,26 +88,29 @@ struct search_iterator::InternalData {
     InternalData& operator=(const InternalData& other)
     {
       if (this != &other) {
-        search = other.search;
+        mp_internalDb = other.mp_internalDb;
+        mp_mset = other.mp_mset;
         iterator = other.iterator;
         _document = other._document;
         document_fetched = other.document_fetched;
-        _entry.reset(new Entry(*other._entry.get()));
+        _entry.reset(other._entry ? new Entry(*other._entry) : nullptr);
       }
       return *this;
     }
 
-    InternalData(const Search* search, Xapian::MSetIterator iterator) :
-        search(search),
+    InternalData(std::shared_ptr<InternalDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
+        mp_internalDb(p_internalDb),
+        mp_mset(p_mset),
         iterator(iterator),
         document_fetched(false)
     {};
 
     Xapian::Document get_document() {
         if ( !document_fetched ) {
-            if (iterator != search->internal->results.end()) {
-                _document = iterator.get_document();
+            if (iterator == mp_mset->end()) {
+                throw std::runtime_error("Cannot get entry for end iterator");
             }
+            _document = iterator.get_document();
             document_fetched = true;
         }
         return _document;
@@ -78,16 +118,22 @@ struct search_iterator::InternalData {
 
     int get_databasenumber() {
         Xapian::docid docid = *iterator;
-        return (docid - 1) % search->m_archives.size();
+        return (docid - 1) % mp_internalDb->m_archives.size();
     }
 
     Entry& get_entry() {
         if ( !_entry ) {
             int databasenumber = get_databasenumber();
-            auto archive = search->m_archives.at(databasenumber);
+            auto archive = mp_internalDb->m_archives.at(databasenumber);
             _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
         }
         return *_entry.get();
+    }
+
+    bool operator==(const InternalData& other) const {
+        return (mp_internalDb == other.mp_internalDb
+            &&  mp_mset == other.mp_mset
+            &&  iterator == other.iterator);
     }
 };
 

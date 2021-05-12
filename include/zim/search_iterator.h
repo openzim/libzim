@@ -26,10 +26,10 @@
 
 namespace zim
 {
-class Search;
+class SearchResultSet;
 class search_iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
 {
-    friend class zim::Search;
+    friend class zim::SearchResultSet;
     public:
         search_iterator();
         search_iterator(const search_iterator& it);
@@ -68,6 +68,6 @@ class search_iterator : public std::iterator<std::bidirectional_iterator_tag, En
         bool is_end() const;
 };
 
-} // namespace ziç
+} // namespace zim
 
 #endif // ZIM_SEARCH_ITERATOR_H
