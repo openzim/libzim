@@ -13,6 +13,7 @@
 #include <zstd.h>
 
 #include "zim_types.h"
+#include "constants.h"
 
 //#define DEB(X) std::cerr << __func__ << " " << X << std::endl ;
 #define DEB(X)
@@ -83,7 +84,7 @@ template<typename INFO>
 class Uncompressor
 {
   public:
-    Uncompressor(size_t initial_size=1024*1024) :
+    Uncompressor(size_t initial_size) :
       ret_data(new char[initial_size]),
       data_size(initial_size)
     {}
@@ -164,8 +165,8 @@ std::unique_ptr<char[]> uncompress(const zim::Reader* reader, zim::offset_t star
   // Use a compressor to compress the data.
   // As we don't know the result size, neither the compressed size,
   // we have to do chunk by chunk until decompressor is happy.
-  // Let's assume it will be something like the minChunkSize used at creation
-  Uncompressor<INFO> runner(1024*1024);
+  // Let's assume it will be something like the default clusterSize used at creation
+  Uncompressor<INFO> runner(DEFAULT_CLUSTER_SIZE);
   // The input is a buffer of CHUNCK_SIZE char max. It may be less if the last chunk
   // is at the end of the reader and the reader size is not a multiple of CHUNCK_SIZE.
   std::vector<char> raw_data(CHUNCK_SIZE);

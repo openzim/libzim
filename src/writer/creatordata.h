@@ -61,7 +61,8 @@ namespace zim
 
         CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language,
-                       CompressionType compression);
+                       CompressionType compression,
+                       size_t clusterSize);
         virtual ~CreatorData();
 
         void addDirent(Dirent* dirent);
@@ -79,7 +80,6 @@ namespace zim
         uint16_t getMimeTypeIdx(const std::string& mimeType);
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
-        size_t minChunkSize = 1024-64;
 
         DirentPool  pool;
 
@@ -101,7 +101,7 @@ namespace zim
         std::string zimName;
         std::string tmpFileName;
         bool isEmpty = true;
-        zsize_t clustersSize;
+        size_t clusterSize;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
         int out_fd;
@@ -140,9 +140,6 @@ namespace zim
 
         entry_index_t itemCount() const
         { return entry_index_t(dirents.size()); }
-
-        size_t getMinChunkSize()    { return minChunkSize; }
-        void setMinChunkSize(size_t s)   { minChunkSize = s; }
     };
 
   }

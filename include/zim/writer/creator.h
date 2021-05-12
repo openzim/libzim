@@ -74,15 +74,23 @@ namespace zim
         Creator& configCompression(CompressionType comptype);
 
         /**
-         * Set the minimum size of the cluster.
+         * Set the size of the created clusters.
          *
-         * Creator will try to create cluster with this minimum size
-         * (uncompressed size).
+         * The creator will try to create cluster with (uncompressed) size
+         * as close as possible to targetSize without exceeding that limit.
+         * If not possible, the only such case being an item larger than targetSize,
+         * a separated cluster will be allocated for that oversized item.
          *
-         * @param size The minimum size of a cluster.
+         * Be carefull with this value.
+         * Bigger value means more content put together, so a better compression ratio.
+         * But it means also that more decompression has to be made when reading a blob.
+         * If you don't know which value to put, don't use this method and let libzim
+         * use the default value.
+         *
+         * @param targetSize The target size of a cluster (in byte).
          * @return a reference to itself.
          */
-        Creator& configMinClusterSize(zim::size_type size);
+        Creator& configClusterSize(zim::size_type targetSize);
 
         /**
          * Configure the fulltext indexing feature.
@@ -183,7 +191,7 @@ namespace zim
         bool m_verbose = false;
         CompressionType m_compression = zimcompZstd;
         bool m_withIndex = false;
-        size_t m_minClusterSize = 1024-64;
+        size_t m_clusterSize;
         std::string m_indexingLanguage;
         unsigned m_nbWorkers = 4;
 
