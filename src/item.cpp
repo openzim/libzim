@@ -17,6 +17,7 @@
  *
  */
 
+#define ZIM_PRIVATE
 #include <zim/item.h>
 #include "_dirent.h"
 #include "cluster.h"
@@ -95,4 +96,9 @@ std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
   auto part = first_part->second;
   const offset_type local_offset(full_offset - range.min);
   return std::make_pair(part->filename(), local_offset);
+}
+
+cluster_index_type Item::getClusterIndex() const
+{
+  return m_dirent->getClusterNumber().v;
 }

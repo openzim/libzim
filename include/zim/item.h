@@ -83,6 +83,10 @@ namespace zim
 
       entry_index_type getIndex() const   { return m_idx; }
 
+#ifdef ZIM_PRIVATE
+      cluster_index_type getClusterIndex() const;
+#endif
+
     private: // data
       std::shared_ptr<FileImpl> m_file;
       entry_index_type m_idx;
