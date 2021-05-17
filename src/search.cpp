@@ -157,8 +157,8 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
                 icu::Locale languageLocale(language.c_str());
                 /* Configuring language base steemming */
                 try {
-                    Xapian::Stem stemmer = Xapian::Stem(languageLocale.getLanguage());
-                    m_queryParser.set_stemmer(stemmer);
+                    m_stemmer = Xapian::Stem(languageLocale.getLanguage());
+                    m_queryParser.set_stemmer(m_stemmer);
                     m_queryParser.set_stemming_strategy(
                     hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
                 } catch (...) {

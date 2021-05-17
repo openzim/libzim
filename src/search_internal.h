@@ -65,6 +65,9 @@ class InternalDataBase {
 
     // The query parser corresponding to the database.
     Xapian::QueryParser m_queryParser;
+
+    // The stemmer used to parse queries
+    Xapian::Stem m_stemmer;
 };
 
 struct search_iterator::InternalData {
