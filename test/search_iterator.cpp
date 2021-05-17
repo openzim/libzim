@@ -39,6 +39,7 @@ TEST(search_iterator, uninitialized) {
   ASSERT_EQ(it.get_fileIndex(), 0);
   ASSERT_EQ(it.get_wordCount(), -1);
   ASSERT_EQ(it.get_size(), -1);
+  ASSERT_THROW(it.get_zimId(), std::runtime_error);
   ASSERT_THROW(*it, std::runtime_error);
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
@@ -114,6 +115,7 @@ TEST(search_iterator, functions) {
   ASSERT_EQ(it.get_path(), "dummyPathitem a");
   ASSERT_EQ(it.get_score(), 100);
   ASSERT_EQ(it.get_fileIndex(), 0);
+  ASSERT_EQ(it.get_zimId(), archive.getUuid());
   ASSERT_EQ(it.get_wordCount(), -1);            // Unimplemented
   ASSERT_EQ(it.get_size(), -1);                 // Unimplemented
 }

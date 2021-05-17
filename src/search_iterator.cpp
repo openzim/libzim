@@ -238,6 +238,13 @@ int search_iterator::get_fileIndex() const {
     return 0;
 }
 
+Uuid search_iterator::get_zimId() const {
+    if (! internal ) {
+        throw std::runtime_error("Cannot get zimId from uninitialized iterator");
+    }
+    return internal->mp_internalDb->m_archives.at(get_fileIndex()).getUuid();
+}
+
 search_iterator::reference search_iterator::operator*() const {
     if (! internal ) {
         throw std::runtime_error("Cannot get a entry for a uninitialized iterator");

@@ -23,6 +23,7 @@
 #include <memory>
 #include <iterator>
 #include "entry.h"
+#include "uuid.h"
 
 namespace zim
 {
@@ -53,6 +54,7 @@ class search_iterator : public std::iterator<std::bidirectional_iterator_tag, En
         int get_wordCount() const;
         int get_size() const;
         int get_fileIndex() const;
+        Uuid get_zimId() const;
         reference operator*() const;
         pointer operator->() const;
 
