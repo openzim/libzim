@@ -70,7 +70,7 @@ class InternalDataBase {
     Xapian::Stem m_stemmer;
 };
 
-struct search_iterator::InternalData {
+struct SearchIterator::InternalData {
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;

@@ -28,46 +28,46 @@
 namespace zim
 {
 class SearchResultSet;
-class search_iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
+class SearchIterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
 {
     friend class zim::SearchResultSet;
     public:
-        search_iterator();
-        search_iterator(const search_iterator& it);
-        search_iterator& operator=(const search_iterator& it);
-        search_iterator(search_iterator&& it);
-        search_iterator& operator=(search_iterator&& it);
-        ~search_iterator();
+        SearchIterator();
+        SearchIterator(const SearchIterator& it);
+        SearchIterator& operator=(const SearchIterator& it);
+        SearchIterator(SearchIterator&& it);
+        SearchIterator& operator=(SearchIterator&& it);
+        ~SearchIterator();
 
-        bool operator== (const search_iterator& it) const;
-        bool operator!= (const search_iterator& it) const;
+        bool operator== (const SearchIterator& it) const;
+        bool operator!= (const SearchIterator& it) const;
 
-        search_iterator& operator++();
-        search_iterator operator++(int);
-        search_iterator& operator--();
-        search_iterator operator--(int);
+        SearchIterator& operator++();
+        SearchIterator operator++(int);
+        SearchIterator& operator--();
+        SearchIterator operator--(int);
 
-        std::string get_path() const;
-        std::string get_title() const;
-        int get_score() const;
-        std::string get_snippet() const;
-        int get_wordCount() const;
-        int get_size() const;
-        int get_fileIndex() const;
-        Uuid get_zimId() const;
+        std::string getPath() const;
+        std::string getTitle() const;
+        int getScore() const;
+        std::string getSnippet() const;
+        int getWordCount() const;
+        int getSize() const;
+        int getFileIndex() const;
+        Uuid getZimId() const;
         reference operator*() const;
         pointer operator->() const;
 
 #ifdef ZIM_PRIVATE
-        std::string get_dbData() const;
+        std::string getDbData() const;
 #endif
 
     private:
         struct InternalData;
         std::unique_ptr<InternalData> internal;
-        search_iterator(InternalData* internal_data);
+        SearchIterator(InternalData* internal_data);
 
-        bool is_end() const;
+        bool isEnd() const;
 };
 
 } // namespace zim
