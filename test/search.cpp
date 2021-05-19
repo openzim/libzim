@@ -44,7 +44,7 @@ std::vector<std::string> getSnippet(const zim::Archive archive, std::string quer
 
   std::vector<std::string> snippets;
   for (auto entry = result.begin(); entry != result.end(); entry++) {
-    snippets.push_back(entry.get_snippet());
+    snippets.push_back(entry.getSnippet());
   }
   return snippets;
 }
@@ -68,7 +68,7 @@ TEST(Search, searchByTitle)
     auto search = searcher.search(query);
     ASSERT_NE(0, search.getEstimatedMatches());
     auto result = search.getResults(0, archive.getEntryCount());
-    ASSERT_EQ(mainItem.getPath(), result.begin().get_path());
+    ASSERT_EQ(mainItem.getPath(), result.begin().getPath());
   }
 }
 #endif
@@ -98,8 +98,8 @@ TEST(Search, indexFullPath)
 
   ASSERT_NE(0, search.getEstimatedMatches());
   auto result = search.getResults(0, archive.getEntryCount());
-  ASSERT_EQ(result.begin().get_path(), "testPath");
-  ASSERT_EQ(result.begin().get_dbData().substr(0, 2), "C/");
+  ASSERT_EQ(result.begin().getPath(), "testPath");
+  ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
 }
 
 TEST(Search, fulltextSnippet)
@@ -159,9 +159,9 @@ TEST(Search, multiSearch)
   ASSERT_EQ(result1.size(), 5);
   auto it1 = result1.begin();
 
-  ASSERT_EQ(it0.get_path(), it1.get_path());
+  ASSERT_EQ(it0.getPath(), it1.getPath());
   it0++; it1++;
-  ASSERT_EQ(it0.get_path(), it1.get_path());
+  ASSERT_EQ(it0.getPath(), it1.getPath());
   it0++; it1++;
   ASSERT_EQ(it0, result0.end());
   it1++;it1++;it1++;

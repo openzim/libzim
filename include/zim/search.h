@@ -198,7 +198,7 @@ class Search
 class SearchResultSet
 {
   public:
-    typedef search_iterator iterator;
+    typedef SearchIterator iterator;
 
     /** The begin iterator on the result range. */
     iterator begin() const;
