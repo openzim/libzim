@@ -41,7 +41,7 @@ namespace {
 
     std::vector<std::string> result;
     for (auto entry = searchResult.begin();entry!=searchResult.end();entry++) {
-      std::cout<<(*entry).getTitle()<<entry.get_score()<<std::endl;
+      std::cout<<(*entry).getTitle()<<entry.getScore()<<std::endl;
       result.push_back((*entry).getTitle());
     }
 
@@ -57,7 +57,7 @@ namespace {
 
     std::vector<std::string> snippets;
     for (auto entry = result.begin(); entry != result.end(); entry++) {
-      snippets.push_back(entry.get_snippet());
+      snippets.push_back(entry.getSnippet());
     }
     return snippets;
   }
@@ -450,8 +450,8 @@ namespace {
     auto search = searcher.search(query);
     auto result = search.getResults(0, archive.getEntryCount());
 
-    ASSERT_EQ(result.begin().get_path(), "testPath");
-    ASSERT_EQ(result.begin().get_dbData().substr(0, 2), "C/");
+    ASSERT_EQ(result.begin().getPath(), "testPath");
+    ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
   }
 
   TEST(Suggestion, nonWordCharacters) {

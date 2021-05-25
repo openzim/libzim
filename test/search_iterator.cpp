@@ -32,14 +32,14 @@ using zim::unittests::TempZimArchive;
 
 TEST(search_iterator, uninitialized) {
   zim::SearchResultSet::iterator it;
-  ASSERT_EQ(it.get_title(), "");
-  ASSERT_EQ(it.get_path(), "");
-  ASSERT_EQ(it.get_snippet(), "");
-  ASSERT_EQ(it.get_score(), 0);
-  ASSERT_EQ(it.get_fileIndex(), 0);
-  ASSERT_EQ(it.get_wordCount(), -1);
-  ASSERT_EQ(it.get_size(), -1);
-  ASSERT_THROW(it.get_zimId(), std::runtime_error);
+  ASSERT_EQ(it.getTitle(), "");
+  ASSERT_EQ(it.getPath(), "");
+  ASSERT_EQ(it.getSnippet(), "");
+  ASSERT_EQ(it.getScore(), 0);
+  ASSERT_EQ(it.getFileIndex(), 0);
+  ASSERT_EQ(it.getWordCount(), -1);
+  ASSERT_EQ(it.getSize(), -1);
+  ASSERT_THROW(it.getZimId(), std::runtime_error);
   ASSERT_THROW(*it, std::runtime_error);
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
@@ -59,13 +59,13 @@ TEST(search_iterator, end) {
 
   auto it = result.end();
 
-  ASSERT_THROW(it.get_title(), std::runtime_error);
-  ASSERT_THROW(it.get_path(), std::runtime_error);
-  ASSERT_EQ(it.get_snippet(), "");
-//  ASSERT_EQ(it.get_score(), 0); Unspecified, may be 0 or 1. To fix.
-  ASSERT_EQ(it.get_fileIndex(), 0);
-  ASSERT_EQ(it.get_wordCount(), -1);
-  ASSERT_EQ(it.get_size(), -1);
+  ASSERT_THROW(it.getTitle(), std::runtime_error);
+  ASSERT_THROW(it.getPath(), std::runtime_error);
+  ASSERT_EQ(it.getSnippet(), "");
+//  ASSERT_EQ(it.getScore(), 0); Unspecified, may be 0 or 1. To fix.
+  ASSERT_EQ(it.getFileIndex(), 0);
+  ASSERT_EQ(it.getWordCount(), -1);
+  ASSERT_EQ(it.getSize(), -1);
   ASSERT_THROW(*it, std::runtime_error);
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
@@ -86,13 +86,13 @@ TEST(search_iterator, copy) {
   auto it = result.begin();
 
   auto it2 = it;
-  ASSERT_EQ(it.get_title(), it2.get_title());
+  ASSERT_EQ(it.getTitle(), it2.getTitle());
 
   it = result.end();
   it2 = it;
   ASSERT_EQ(it, it2);
-  ASSERT_THROW(it.get_title(), std::runtime_error);
-  ASSERT_THROW(it2.get_title(), std::runtime_error);
+  ASSERT_THROW(it.getTitle(), std::runtime_error);
+  ASSERT_THROW(it2.getTitle(), std::runtime_error);
 }
 
 TEST(search_iterator, functions) {
@@ -111,13 +111,13 @@ TEST(search_iterator, functions) {
   auto it = result.begin();
 
   // Test functions
-  ASSERT_EQ(it.get_title(), "item a");
-  ASSERT_EQ(it.get_path(), "dummyPathitem a");
-  ASSERT_EQ(it.get_score(), 100);
-  ASSERT_EQ(it.get_fileIndex(), 0);
-  ASSERT_EQ(it.get_zimId(), archive.getUuid());
-  ASSERT_EQ(it.get_wordCount(), -1);            // Unimplemented
-  ASSERT_EQ(it.get_size(), -1);                 // Unimplemented
+  ASSERT_EQ(it.getTitle(), "item a");
+  ASSERT_EQ(it.getPath(), "dummyPathitem a");
+  ASSERT_EQ(it.getScore(), 100);
+  ASSERT_EQ(it.getFileIndex(), 0);
+  ASSERT_EQ(it.getZimId(), archive.getUuid());
+  ASSERT_EQ(it.getWordCount(), -1);            // Unimplemented
+  ASSERT_EQ(it.getSize(), -1);                 // Unimplemented
 }
 
 TEST(search_iterator, stemmedSearch) {
@@ -139,12 +139,12 @@ TEST(search_iterator, stemmedSearch) {
   auto search = searcher.search(query);
   auto result = search.getResults(0, 1);
 
-  ASSERT_EQ(result.begin().get_snippet(), "an <b>apple</b> a day, keeps the doctor away");
+  ASSERT_EQ(result.begin().getSnippet(), "an <b>apple</b> a day, keeps the doctor away");
 
   query.setQuery("chocolate factory", true);
   search = searcher.search(query);
   result = search.getResults(0, 1);
-  ASSERT_EQ(result.begin().get_snippet(), "charlie and the <b>chocolate</b> <b>factory</b>");
+  ASSERT_EQ(result.begin().getSnippet(), "charlie and the <b>chocolate</b> <b>factory</b>");
 }
 
 TEST(search_iterator, iteration) {
@@ -162,15 +162,15 @@ TEST(search_iterator, iteration) {
   auto result = search.getResults(0, archive.getEntryCount());
 
   auto it = result.begin();
-  ASSERT_EQ(it.get_title(), result.begin().get_title());
+  ASSERT_EQ(it.getTitle(), result.begin().getTitle());
 
-  ASSERT_EQ(it.get_title(), "item a");
+  ASSERT_EQ(it.getTitle(), "item a");
   it++;
-  ASSERT_EQ(it.get_title(), "item b");
+  ASSERT_EQ(it.getTitle(), "item b");
   ASSERT_TRUE(it != result.begin());
 
   it--;
-  ASSERT_EQ(it.get_title(), "item a");
+  ASSERT_EQ(it.getTitle(), "item a");
   ASSERT_TRUE(result.begin() == it);
 
   it++; it++;

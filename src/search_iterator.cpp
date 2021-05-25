@@ -29,24 +29,24 @@
 namespace zim {
 
 
-search_iterator::~search_iterator() = default;
-search_iterator::search_iterator(search_iterator&& it) = default;
-search_iterator& search_iterator::operator=(search_iterator&& it) = default;
+SearchIterator::~SearchIterator() = default;
+SearchIterator::SearchIterator(SearchIterator&& it) = default;
+SearchIterator& SearchIterator::operator=(SearchIterator&& it) = default;
 
-search_iterator::search_iterator() : search_iterator(nullptr)
+SearchIterator::SearchIterator() : SearchIterator(nullptr)
 {};
 
-search_iterator::search_iterator(InternalData* internal_data)
+SearchIterator::SearchIterator(InternalData* internal_data)
   : internal(internal_data)
 {}
 
-search_iterator::search_iterator(const search_iterator& it)
+SearchIterator::SearchIterator(const SearchIterator& it)
     : internal(nullptr)
 {
     if (it.internal) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
 }
 
-search_iterator & search_iterator::operator=(const search_iterator& it) {
+SearchIterator & SearchIterator::operator=(const SearchIterator& it) {
     if ( ! it.internal ) internal.reset();
     else if ( ! internal ) internal = std::unique_ptr<InternalData>(new InternalData(*it.internal));
     else *internal = *it.internal;
@@ -54,7 +54,7 @@ search_iterator & search_iterator::operator=(const search_iterator& it) {
     return *this;
 }
 
-bool search_iterator::operator==(const search_iterator& it) const {
+bool SearchIterator::operator==(const SearchIterator& it) const {
     if ( ! internal && ! it.internal) {
         return true;
     }
@@ -64,11 +64,11 @@ bool search_iterator::operator==(const search_iterator& it) const {
     return (*internal == *it.internal);
 }
 
-bool search_iterator::operator!=(const search_iterator& it) const {
+bool SearchIterator::operator!=(const SearchIterator& it) const {
     return ! (*this == it);
 }
 
-search_iterator& search_iterator::operator++() {
+SearchIterator& SearchIterator::operator++() {
     if ( ! internal ) {
         return *this;
     }
@@ -78,13 +78,13 @@ search_iterator& search_iterator::operator++() {
     return *this;
 }
 
-search_iterator search_iterator::operator++(int) {
-    search_iterator it = *this;
+SearchIterator SearchIterator::operator++(int) {
+    SearchIterator it = *this;
     operator++();
     return it;
 }
 
-search_iterator& search_iterator::operator--() {
+SearchIterator& SearchIterator::operator--() {
     if ( ! internal ) {
         return *this;
     }
@@ -94,19 +94,19 @@ search_iterator& search_iterator::operator--() {
     return *this;
 }
 
-search_iterator search_iterator::operator--(int) {
-    search_iterator it = *this;
+SearchIterator SearchIterator::operator--(int) {
+    SearchIterator it = *this;
     operator--();
     return it;
 }
 
-std::string search_iterator::get_path() const {
+std::string SearchIterator::getPath() const {
     if ( ! internal ) {
         return "";
     }
 
     std::string path = internal->get_document().get_data();
-    bool hasNewNamespaceScheme = internal->mp_internalDb->m_archives.at(get_fileIndex()).hasNewNamespaceScheme();
+    bool hasNewNamespaceScheme = internal->mp_internalDb->m_archives.at(getFileIndex()).hasNewNamespaceScheme();
 
     std::string dbDataType = internal->mp_internalDb->m_database.get_metadata("data");
     if (dbDataType.empty()) {
@@ -121,7 +121,7 @@ std::string search_iterator::get_path() const {
     return path;
 }
 
-std::string search_iterator::get_dbData() const {
+std::string SearchIterator::getDbData() const {
     if ( ! internal ) {
         return "";
     }
@@ -129,7 +129,7 @@ std::string search_iterator::get_dbData() const {
     return internal->get_document().get_data();
 }
 
-std::string search_iterator::get_title() const {
+std::string SearchIterator::getTitle() const {
     if ( ! internal ) {
         return "";
     }
@@ -145,14 +145,14 @@ std::string search_iterator::get_title() const {
     return "";
 }
 
-int search_iterator::get_score() const {
+int SearchIterator::getScore() const {
     if ( ! internal ) {
         return 0;
     }
     return internal->iterator.get_percent();
 }
 
-std::string search_iterator::get_snippet() const {
+std::string SearchIterator::getSnippet() const {
     if ( ! internal ) {
         return "";
     }
@@ -161,7 +161,7 @@ std::string search_iterator::get_snippet() const {
     if ( internal->mp_internalDb->m_suggestionMode )
     {
         try {
-            return internal->mp_mset->snippet(get_title(), 500, internal->mp_internalDb->m_stemmer);
+            return internal->mp_mset->snippet(getTitle(), 500, internal->mp_internalDb->m_stemmer);
         } catch(...) {
             return "";
         }
@@ -197,7 +197,7 @@ std::string search_iterator::get_snippet() const {
     }
 }
 
-int search_iterator::get_size() const {
+int SearchIterator::getSize() const {
     if ( ! internal ) {
         return -1;
     }
@@ -215,7 +215,7 @@ int search_iterator::get_size() const {
     return -1;
 }
 
-int search_iterator::get_wordCount() const      {
+int SearchIterator::getWordCount() const      {
     if ( ! internal ) {
         return -1;
     }
@@ -231,28 +231,28 @@ int search_iterator::get_wordCount() const      {
     return -1;
 }
 
-int search_iterator::get_fileIndex() const {
+int SearchIterator::getFileIndex() const {
     if ( internal ) {
         return internal->get_databasenumber();
     }
     return 0;
 }
 
-Uuid search_iterator::get_zimId() const {
+Uuid SearchIterator::getZimId() const {
     if (! internal ) {
         throw std::runtime_error("Cannot get zimId from uninitialized iterator");
     }
-    return internal->mp_internalDb->m_archives.at(get_fileIndex()).getUuid();
+    return internal->mp_internalDb->m_archives.at(getFileIndex()).getUuid();
 }
 
-search_iterator::reference search_iterator::operator*() const {
+SearchIterator::reference SearchIterator::operator*() const {
     if (! internal ) {
         throw std::runtime_error("Cannot get a entry for a uninitialized iterator");
     }
     return internal->get_entry();
 }
 
-search_iterator::pointer search_iterator::operator->() const {
+SearchIterator::pointer SearchIterator::operator->() const {
     return &**this;
 }
 

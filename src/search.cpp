@@ -429,7 +429,7 @@ SearchResultSet::iterator SearchResultSet::begin() const
     if ( ! mp_mset ) {
         return nullptr;
     }
-    return new search_iterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
+    return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
 }
 
 SearchResultSet::iterator SearchResultSet::end() const
@@ -437,7 +437,7 @@ SearchResultSet::iterator SearchResultSet::end() const
     if ( ! mp_mset ) {
         return nullptr;
     }
-    return new search_iterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
+    return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
 }
 
 } //namespace zim
