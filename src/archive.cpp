@@ -125,6 +125,29 @@ namespace zim
     throw EntryNotFound("Cannot find illustration item.");
   }
 
+  std::set<unsigned int> Archive::getIllustrationSizes() const {
+    std::set<unsigned int> ret;
+    for(auto r = m_impl->findx('M', "Illustration_").second;
+        /*No exit test*/;
+        r++
+       ) {
+      auto path = getEntryByPath(entry_index_type(r)).getPath();
+      if (path.find("Illustration_") != 0) {
+        break;
+      }
+      try {
+        ret.insert(parseIllustrationPathToSize(path));
+      } catch (...) {}
+    }
+    if (ret.find(48) == ret.end()) {
+      try {
+        auto r = findFavicon(*m_impl);
+        ret.insert(48);
+      } catch(EntryNotFound&) {}
+    }
+    return ret;
+  }
+
   bool Archive::hasIllustration(unsigned int size) const {
     try {
       getIllustrationItem(size);

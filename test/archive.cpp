@@ -200,6 +200,7 @@ TEST(ZimArchive, illustration)
       } else {
         ASSERT_EQ(illustrationItem.getPath(), "I/favicon.png") << ctx;
       }
+      ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48}));
     }
   }
 }

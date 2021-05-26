@@ -28,6 +28,7 @@
 #include <vector>
 #include <memory>
 #include <bitset>
+#include <set>
 
 
 namespace zim
@@ -149,6 +150,16 @@ namespace zim
        *  @exception EntryNotFound If no illustration item can be found.
        */
       Item getIllustrationItem(unsigned int size=48) const;
+
+      /** Return a list of available size for the illustations in the archive.
+       *
+       * Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
+       * An Archive may contains several illustration with different size.
+       * This method allow to know which illustration (size) is in the archive.
+       *
+       * @return A set of size.
+       */
+      std::set<unsigned int> getIllustrationSizes() const;
 
 
       /** Get an entry using its "path" index.
