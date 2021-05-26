@@ -24,6 +24,8 @@
 #include <zim/search.h>
 #include <zim/error.h>
 
+#include <zim/writer/creator.h>
+
 #include "tools.h"
 #include "../src/fs.h"
 
@@ -34,6 +36,8 @@ namespace
 
 using zim::unittests::makeTempFile;
 using zim::unittests::getDataFilePath;
+using zim::unittests::TempFile;
+using zim::unittests::TestItem;
 
 using TestContextImpl = std::vector<std::pair<std::string, std::string> >;
 struct TestContext : TestContextImpl {
@@ -133,6 +137,69 @@ TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
 
   zim::Archive archive(tmpfile->path());
   ASSERT_FALSE(archive.check());
+}
+
+
+TEST(ZimArchive, openCreatedArchive)
+{
+  TempFile temp("zimfile");
+  auto tempPath = temp.path();
+  zim::Uuid uuid;
+  // Force special char in the uuid to be sure they are not handled particularly.
+  uuid.data[5] = '\n';
+  uuid.data[10] = '\0';
+
+  zim::writer::Creator creator;
+  creator.setUuid(uuid);
+  creator.configIndexing(true, "eng");
+  creator.startZimCreation(tempPath);
+  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent");
+  creator.addItem(item);
+  // Be sure that title order is not the same that url order
+  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content");
+  creator.addItem(item);
+  creator.addMetadata("Title", "This is a title");
+  creator.addIllustration(48, "PNGBinaryContent48");
+  creator.addIllustration(96, "PNGBinaryContent96");
+  creator.setMainPath("foo");
+  creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
+  creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
+  creator.finishZimCreation();
+
+  zim::Archive archive(tempPath);
+  ASSERT_EQ(archive.getEntryCount(), 3);
+  ASSERT_EQ(archive.getUuid(), uuid);
+  ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
+  ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
+
+  ASSERT_EQ(archive.getMetadata("Title"), "This is a title");
+  ASSERT_EQ(archive.getMetadata("Counter"), "text/html=2");
+  auto illu48 = archive.getIllustrationItem(48);
+  ASSERT_EQ(illu48.getPath(), "Illustration_48x48@1");
+  ASSERT_EQ(std::string(illu48.getData()), "PNGBinaryContent48");
+  auto illu96 = archive.getIllustrationItem(96);
+  ASSERT_EQ(illu96.getPath(), "Illustration_96x96@1");
+  ASSERT_EQ(std::string(illu96.getData()), "PNGBinaryContent96");
+
+  auto foo = archive.getEntryByPath("foo");
+  ASSERT_EQ(foo.getPath(), "foo");
+  ASSERT_EQ(foo.getTitle(), "Foo");
+  ASSERT_EQ(std::string(foo.getItem().getData()), "FooContent");
+
+  auto foo2 = archive.getEntryByPath("foo2");
+  ASSERT_EQ(foo2.getPath(), "foo2");
+  ASSERT_EQ(foo2.getTitle(), "AFoo");
+  ASSERT_EQ(std::string(foo2.getItem().getData()), "Foo2Content");
+
+  auto foo3 = archive.getEntryByPath("foo3");
+  ASSERT_EQ(foo3.getPath(), "foo3");
+  ASSERT_EQ(foo3.getTitle(), "FooRedirection");
+  ASSERT_TRUE(foo3.isRedirect());
+  ASSERT_EQ(foo3.getRedirectEntry().getIndex(), foo.getIndex());
+
+  auto main = archive.getMainEntry();
+  ASSERT_TRUE(main.isRedirect());
+  ASSERT_EQ(main.getRedirectEntry().getIndex(), foo.getIndex());
 }
 
 #if WITH_TEST_DATA
