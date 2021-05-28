@@ -35,13 +35,19 @@ CompStatus LZMA_INFO::stream_run_decode(stream_t* stream, CompStep step) {
 CompStatus LZMA_INFO::stream_run(stream_t* stream, CompStep step)
 {
   auto errcode = lzma_code(stream, step==CompStep::STEP?LZMA_RUN:LZMA_FINISH);
-  if (errcode == LZMA_BUF_ERROR)
-    return CompStatus::BUF_ERROR;
-  if (errcode == LZMA_STREAM_END)
-    return CompStatus::STREAM_END;
-  if (errcode == LZMA_OK)
-    return CompStatus::OK;
-  return CompStatus::OTHER;
+  switch(errcode) {
+    case LZMA_BUF_ERROR:
+      return CompStatus::BUF_ERROR;
+    case LZMA_STREAM_END:
+      return CompStatus::STREAM_END;
+    case LZMA_OK:
+      return CompStatus::OK;
+    default: {
+      std::ostringstream ss;
+      ss << "Unexpected lzma status : " << errcode;
+      throw std::runtime_error(ss.str());
+    }
+  }
 }
 
 void LZMA_INFO::stream_end_decode(stream_t* stream)
@@ -115,7 +121,7 @@ CompStatus ZSTD_INFO::stream_run_encode(stream_t* stream, CompStep step) {
   stream->total_out += outBuf.pos;
 
   if (::ZSTD_isError(ret)) {
-    return CompStatus::OTHER;
+    throw std::runtime_error(::ZSTD_getErrorName(ret));
   }
 
   if ( step == CompStep::STEP ) {
@@ -149,7 +155,7 @@ CompStatus ZSTD_INFO::stream_run_decode(stream_t* stream, CompStep /*step*/) {
   stream->total_out += outBuf.pos;
 
   if (::ZSTD_isError(ret))
-    return CompStatus::OTHER;
+    throw std::runtime_error(::ZSTD_getErrorName(ret));
 
   if (ret == 0)
     return CompStatus::STREAM_END;

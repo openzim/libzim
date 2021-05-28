@@ -26,7 +26,6 @@ enum class CompStatus {
   OK,
   STREAM_END,
   BUF_ERROR,
-  OTHER
 };
 
 enum class RunnerStatus {
@@ -98,43 +97,49 @@ class Uncompressor
     RunnerStatus feed(char* data, size_t size, CompStep step = CompStep::STEP) {
       stream.next_in = (unsigned char*)data;
       stream.avail_in = size;
-      auto errcode = CompStatus::OTHER;
       while (true) {
-        errcode = INFO::stream_run_decode(&stream, step);
+        auto errcode = INFO::stream_run_decode(&stream, step);
         DEB((int)errcode)
-        if (errcode == CompStatus::BUF_ERROR) {
-          if (stream.avail_in == 0 && stream.avail_out != 0)  {
-            // End of input stream.
-            // compressor hasn't recognize the end of the input stream but there is
-            // no more input.
-            return RunnerStatus::NEED_MORE;
-          } else {
-            //Not enought output size
-            DEB("need memory " << data_size << " " << stream.avail_out << " " << stream.total_out)
-            data_size *= 2;
-            std::unique_ptr<char[]> new_ret_data(new char[data_size]);
-            memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
-            stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
-            stream.avail_out = data_size - stream.total_out;
-            DEB(data_size << " " << stream.avail_out << " " << stream.avail_in)
-            ret_data = std::move(new_ret_data);
-            continue;
-          }
-        }
-        if (errcode == CompStatus::STREAM_END)
-          break;
-        // On first call where lzma cannot progress (no output size).
-        // Lzma return OK. If we return NEED_MORE, then we will try to compress
-        // with new input data, but we should not as current one is not processed.
-        // We must do a second step to have te BUF_ERROR and handle thing correctly.
-        if (errcode == CompStatus::OK) {
-          if (stream.avail_in == 0)
+        switch (errcode) {
+          case CompStatus::BUF_ERROR:
+            if (stream.avail_in == 0 && stream.avail_out != 0)  {
+              // End of input stream.
+              // compressor hasn't recognize the end of the input stream but there is
+              // no more input.
+              return RunnerStatus::NEED_MORE;
+            } else {
+              // Not enought output size.
+              // Allocate more memory and continue the loop.
+              DEB("need memory " << data_size << " " << stream.avail_out << " " << stream.total_out)
+              data_size *= 2;
+              std::unique_ptr<char[]> new_ret_data(new char[data_size]);
+              memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
+              stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
+              stream.avail_out = data_size - stream.total_out;
+              DEB(data_size << " " << stream.avail_out << " " << stream.avail_in)
+              ret_data = std::move(new_ret_data);
+            }
             break;
-          continue;
+          case CompStatus::OK:
+            // On first call where lzma cannot progress (no output size).
+            // Lzma return OK. If we return NEED_MORE, then we will try to compress
+            // with new input data, but we should not as current one is not processed.
+            // We must do a second step to have te BUF_ERROR and handle thing correctly.
+            // If we have no more input, then we must ask for more.
+            if (stream.avail_in == 0) {
+              return RunnerStatus::NEED_MORE;
+            }
+            break;
+          case CompStatus::STREAM_END:
+            // End of compressed stream. Everything is ok.
+            return RunnerStatus::OK;
+          default:
+            // unreachable
+            return RunnerStatus::ERROR;
         }
-        return RunnerStatus::ERROR;
       };
-      return errcode==CompStatus::STREAM_END?RunnerStatus::OK:RunnerStatus::NEED_MORE;
+      // unreachable
+      return RunnerStatus::NEED_MORE;
     }
 
     std::unique_ptr<char[]> get_data(zim::zsize_t* size) {
@@ -215,16 +220,20 @@ class Compressor
     RunnerStatus feed(const char* data, size_t size, CompStep step=CompStep::STEP) {
       stream.next_in = (unsigned char*)data;
       stream.avail_in = size;
-      auto errcode = CompStatus::OTHER;
       while (true) {
-        errcode = INFO::stream_run_encode(&stream, step);
-        if (stream.avail_out == 0) {
-          if (errcode == CompStatus::OK) {
-            // lzma return a OK return status the first time it runs out of output memory.
-            // The BUF_ERROR is returned only the second time we call a lzma_code.
-            continue;
-          }
-          if (errcode == CompStatus::BUF_ERROR) {
+        auto errcode = INFO::stream_run_encode(&stream, step);
+        switch (errcode) {
+          case CompStatus::OK:
+            if (stream.avail_out == 0) {
+              // lzma return a OK return status the first time it runs out of output memory.
+              // The BUF_ERROR is returned only the second time we call a lzma_code.
+              continue;
+            } else {
+              return RunnerStatus::NEED_MORE;
+            }
+          case CompStatus::STREAM_END:
+            return RunnerStatus::NEED_MORE;
+          case CompStatus::BUF_ERROR: {
             //Not enought output size
             ret_size *= 2;
             std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
@@ -234,13 +243,13 @@ class Compressor
             ret_data = std::move(new_ret_data);
             continue;
           }
-        }
-        if (errcode == CompStatus::STREAM_END || errcode == CompStatus::OK) {
-          // Everything ok, quit the loop
           break;
-        }
-        return RunnerStatus::ERROR;
+          default:
+            // unreachable
+            return RunnerStatus::ERROR;
+        };
       };
+      // urreachable
       return RunnerStatus::NEED_MORE;
     }
 
