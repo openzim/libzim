@@ -67,7 +67,14 @@ public: // types
     const auto x = impl_.getOrPut(key, valuePromise.get_future().share());
     pthread_mutex_unlock(&lock_);
     if ( x.miss() ) {
-      valuePromise.set_value(f());
+      try {
+        valuePromise.set_value(f());
+      } catch (std::exception& e) {
+        pthread_mutex_lock(&lock_);
+        impl_.drop(key);
+        pthread_mutex_unlock(&lock_);
+        throw;
+      }
     }
 
     return x.value().get();
