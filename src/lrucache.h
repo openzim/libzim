@@ -117,6 +117,17 @@ public: // functions
     }
   }
 
+  bool drop(const key_t& key) {
+    try {
+      auto list_it = _cache_items_map.at(key);
+      _cache_items_list.erase(list_it);
+      _cache_items_map.erase(key);
+      return true;
+    } catch (std::out_of_range& e) {
+      return false;
+    }
+  }
+
   bool exists(const key_t& key) const {
     return _cache_items_map.find(key) != _cache_items_map.end();
   }
