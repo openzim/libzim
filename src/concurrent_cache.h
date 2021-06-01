@@ -70,14 +70,20 @@ public: // types
       try {
         valuePromise.set_value(f());
       } catch (std::exception& e) {
-        pthread_mutex_lock(&lock_);
-        impl_.drop(key);
-        pthread_mutex_unlock(&lock_);
+        drop(key);
         throw;
       }
     }
 
     return x.value().get();
+  }
+
+  bool drop(const Key& key)
+  {
+    pthread_mutex_lock(&lock_);
+    auto ret = impl_.drop(key);
+    pthread_mutex_unlock(&lock_);
+    return ret;
   }
 
 private: // data
