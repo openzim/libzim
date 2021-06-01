@@ -16,3 +16,7 @@
 #mesondefine ENABLE_USE_BUFFER_HEADER
 
 #mesondefine MMAP_SUPPORT_64
+
+#mesondefine ENV64BIT
+
+#mesondefine ENV32BIT

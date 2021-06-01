@@ -9,6 +9,7 @@ endif
 
 cpp = meson.get_compiler('cpp')
 sizeof_off_t = cpp.sizeof('off_t')
+sizeof_size_t = cpp.sizeof('size_t')
 
 conf = configuration_data()
 conf.set('VERSION', '"@0@"'.format(meson.project_version()))
@@ -17,6 +18,8 @@ conf.set('DIRENT_LOOKUP_CACHE_SIZE', get_option('DIRENT_LOOKUP_CACHE_SIZE'))
 conf.set('CLUSTER_CACHE_SIZE', get_option('CLUSTER_CACHE_SIZE'))
 conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
 conf.set10('MMAP_SUPPORT_64', sizeof_off_t==8)
+conf.set10('ENV64BIT', sizeof_size_t==8)
+conf.set10('ENV32BIT', sizeof_size_t==4)
 if target_machine.system() == 'windows'
     conf.set('ENABLE_USE_MMAP', false)
 else
