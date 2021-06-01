@@ -417,7 +417,26 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    return clusterCache.getOrPut(idx.v, [=](){ return readCluster(idx); });
+    auto cluster = clusterCache.getOrPut(idx.v, [=](){ return readCluster(idx); });
+#if ENV32BIT
+    // There was a bug in the way we create the zim files using ZSTD compression.
+    // We were using a too hight compression level and so a window of 128Mb.
+    // So at decompression, zstd reserve a 128Mb buffer.
+    // While this memory is not really used (thanks to lazy allocation of OS),
+    // we are still consumming address space. On 32bits this start to be a rare
+    // ressource when we reserved 128Mb at once.
+    // So we drop the cluster from the cache to avoid future memory allocation error.
+    if (cluster->getCompression() == zimcompZstd) {
+      // ZSTD compression starts to be used on version 5.0 of zim format.
+      // Recently after, we switch to 5.1 and itegrate the fix in zstd creation.
+      // 5.0 is not a perfect way to detect faulty zim file (it will generate false
+      // positives) but it should be enough.
+      if (header.getMajorVersion() == 5 && header.getMinorVersion() == 0) {
+        clusterCache.drop(idx.v);
+      }
+    }
+#endif
+    return cluster;
   }
 
   offset_t FileImpl::getClusterOffset(cluster_index_t idx) const
