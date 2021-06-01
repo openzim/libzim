@@ -80,6 +80,10 @@ private: // functions
     m_decoderState.avail_out = nbytes.v;
     while ( m_decoderState.avail_out != 0 )
     {
+      // We don't car of the return code of decodeMoreBytes.
+      // We feed (or stop feeding) the decoder based on what
+      // we need to decode and the `avail_in`.
+      // If there is a error somehow, a exception will be thrown.
       decodeMoreBytes();
     }
   }

@@ -66,7 +66,14 @@ public: // types
     const auto x = impl_.getOrPut(key, valuePromise.get_future().share());
     l.unlock();
     if ( x.miss() ) {
-      valuePromise.set_value(f());
+      try {
+        valuePromise.set_value(f());
+      } catch (std::exception& e) {
+        l.lock();
+        impl_.drop(key);
+        l.unlock();
+        throw;
+      }
     }
 
     return x.value().get();
