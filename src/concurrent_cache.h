@@ -69,14 +69,18 @@ public: // types
       try {
         valuePromise.set_value(f());
       } catch (std::exception& e) {
-        l.lock();
-        impl_.drop(key);
-        l.unlock();
+        drop(key);
         throw;
       }
     }
 
     return x.value().get();
+  }
+
+  bool drop(const Key& key)
+  {
+    std::unique_lock<std::mutex> l(lock_);
+    return impl_.drop(key);
   }
 
 private: // data
