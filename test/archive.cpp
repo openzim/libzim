@@ -167,7 +167,9 @@ TEST(ZimArchive, openCreatedArchive)
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);
+  ASSERT_EQ(archive.getAllEntryCount(), 12);
   ASSERT_EQ(archive.getEntryCount(), 3);
+  ASSERT_EQ(archive.getArticleCount(), 0);
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
