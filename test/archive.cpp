@@ -153,10 +153,10 @@ TEST(ZimArchive, openCreatedArchive)
   creator.setUuid(uuid);
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
-  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent");
+  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent", true);
   creator.addItem(item);
   // Be sure that title order is not the same that url order
-  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content");
+  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content", false);
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
   creator.addIllustration(48, "PNGBinaryContent48");
@@ -169,7 +169,7 @@ TEST(ZimArchive, openCreatedArchive)
   zim::Archive archive(tempPath);
   ASSERT_EQ(archive.getAllEntryCount(), 12);
   ASSERT_EQ(archive.getEntryCount(), 3);
-  ASSERT_EQ(archive.getArticleCount(), 0);
+  ASSERT_EQ(archive.getArticleCount(), 1);
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
