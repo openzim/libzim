@@ -54,9 +54,25 @@ namespace zim
     return m_impl->getFilesize().v;
   }
 
+  entry_index_type Archive::getAllEntryCount() const
+  {
+    return m_impl->getCountArticles().v;
+  }
+
   entry_index_type Archive::getEntryCount() const
   {
     return m_impl->getUserEntryCount().v;
+  }
+
+  entry_index_type Archive::getArticleCount() const
+  {
+    if (m_impl->hasFrontArticlesIndex()) {
+      return m_impl->getFrontEntryCount().v;
+    } else if (m_impl->hasNewNamespaceScheme()) {
+      return m_impl->getNamespaceEntryCount('C').v;
+    } else {
+      return m_impl->getNamespaceEntryCount('A').v;
+    }
   }
 
   Uuid Archive::getUuid() const
@@ -289,11 +305,26 @@ namespace zim
   {
     if (m_impl->hasFrontArticlesIndex()) {
       // We have a front articles index. We can "simply" loop over all front entries.
-      return EntryRange<EntryOrder::titleOrder>(m_impl, 0, m_impl->getFrontEntryCount().v);
-    } else  {
-      // We don't have an index listing only front entry. We have to loop over user entry.
-      // (`C` namespace in new zim scheme, all namespace in old ones)
-      return EntryRange<EntryOrder::titleOrder>(m_impl, m_impl->getStartUserEntry().v, m_impl->getEndUserEntry().v);
+      return EntryRange<EntryOrder::titleOrder>(
+        m_impl,
+        0,
+        m_impl->getFrontEntryCount().v
+      );
+    } else if (!m_impl->hasNewNamespaceScheme())  {
+      // We are a old zim archive with namespace, we have to iterate on 'A' namespace.
+      return EntryRange<EntryOrder::titleOrder>(
+        m_impl,
+        m_impl->getNamespaceBeginOffset('A').v,
+        m_impl->getNamespaceEndOffset('A').v
+      );
+    } else {
+      // We are a zim archive without namespace but without specific articles listing.
+      // We don't the choice here, iterate on all user entries.
+      return EntryRange<EntryOrder::titleOrder>(
+        m_impl,
+        m_impl->getStartUserEntry().v,
+        m_impl->getEndUserEntry().v
+      );
     }
   }
 
