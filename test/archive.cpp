@@ -167,7 +167,15 @@ TEST(ZimArchive, openCreatedArchive)
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);
-  ASSERT_EQ(archive.getAllEntryCount(), 12);
+#if !defined(ENABLE_XAPIAN)
+// 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
+#define ALL_ENTRY_COUNT 10
+#else
+// same as above + 2 xapian indexes.
+#define ALL_ENTRY_COUNT 12
+#endif
+  ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
+#undef ALL_ENTRY_COUNT
   ASSERT_EQ(archive.getEntryCount(), 3);
   ASSERT_EQ(archive.getArticleCount(), 1);
   ASSERT_EQ(archive.getUuid(), uuid);
