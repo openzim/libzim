@@ -98,10 +98,16 @@ TEST(IteratorTests, begin)
 // ByTitle
 TEST(IteratorTests, beginByTitle)
 {
-    std::vector<zim::entry_index_type> expected = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10};
+    std::vector<zim::entry_index_type> expected = { 5, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
-    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
+    for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
         zim::Archive archive (testfile.path);
+        std::vector<zim::entry_index_type> expected;
+        if (testfile.category == "withns") {
+          expected = { 5, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+        } else {
+          expected = { 41, 42, 43, 44, 45, 46, 47, 48, 49, 50};
+        }
 
         auto it = archive.iterByTitle().begin();
 
