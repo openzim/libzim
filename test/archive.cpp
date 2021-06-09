@@ -273,6 +273,59 @@ TEST(ZimArchive, illustration)
     }
   }
 }
+
+TEST(ZimArchive, articleNumber)
+{
+  const char* const zimfiles[] = {
+    "small.zim",
+    "wikibooks_be_all_nopic_2017-02.zim",
+    "wikibooks_be_all_nopic_2017-02_splitted.zim",
+    "wikipedia_en_climate_change_nopic_2020-01.zim"
+  };
+
+  for ( const std::string fname : zimfiles ) {
+    for (auto& testfile: getDataFilePath(fname)) {
+      const TestContext ctx{ {"path", testfile.path } };
+      const zim::Archive archive(testfile.path);
+      if (testfile.filename == "small.zim") {
+        if (testfile.category == "withns") {
+          // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
+          EXPECT_EQ( archive.getAllEntryCount(), 17 ) << ctx;
+          EXPECT_EQ( archive.getEntryCount(), 17 ) << ctx;
+        } else {
+          EXPECT_EQ( archive.getAllEntryCount(), 16 ) << ctx;
+          EXPECT_EQ( archive.getEntryCount(), 2 ) << ctx;
+        }
+        // There is always 1 article, whatever the article is in 'A' namespace or in specific index.
+        EXPECT_EQ( archive.getArticleCount(), 1 ) << ctx;
+      } else if (testfile.filename == "wikipedia_en_climate_change_nopic_2020-01.zim") {
+        if (testfile.category == "withns") {
+          // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
+          EXPECT_EQ( archive.getAllEntryCount(), 7646 ) << ctx;
+          EXPECT_EQ( archive.getEntryCount(), 7646 ) << ctx;
+          // Only 7253 entry in 'A' namespace.
+          EXPECT_EQ( archive.getArticleCount(), 7253 ) << ctx;
+        } else {
+          EXPECT_EQ( archive.getAllEntryCount(), 7649 ) << ctx;
+          EXPECT_EQ( archive.getEntryCount(), 7633 ) << ctx;
+          EXPECT_EQ( archive.getArticleCount(), 1837 ) << ctx;
+        }
+      } else {
+        if (testfile.category == "withns") {
+          // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
+          EXPECT_EQ( archive.getAllEntryCount(), 118) << ctx;
+          EXPECT_EQ( archive.getEntryCount(), 118 ) << ctx;
+          // Only 70 entry in 'A' namespace.
+          EXPECT_EQ( archive.getArticleCount(), 70 ) << ctx;
+        } else {
+          EXPECT_EQ( archive.getAllEntryCount(), 123 ) << ctx;
+          EXPECT_EQ( archive.getEntryCount(), 109 ) << ctx;
+          EXPECT_EQ( archive.getArticleCount(), 66 ) << ctx;
+        }
+      }
+    }
+  }
+}
 #endif
 
 class CapturedStderr
