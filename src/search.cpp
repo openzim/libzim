@@ -309,11 +309,8 @@ SuggestionSearch SuggestionSearcher::suggest(const Query& query)
 {
   if (!mp_internalDb) {
     initDatabase();
-    if (! mp_internalDb->m_xapianDatabases.empty()){
-      return SuggestionSearch(mp_internalDb, query);
-    }
   }
-  return SuggestionSearch(m_archive, query);
+  return SuggestionSearch(mp_internalDb, query);
 }
 
 void Searcher::initDatabase()
@@ -335,13 +332,6 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 
 SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
  : mp_internalDb(p_internalDb),
-   mp_enquire(nullptr),
-   m_query(query)
-{
-}
-
-SuggestionSearch::SuggestionSearch(const Query& query)
- : mp_internalDb(nullptr),
    mp_enquire(nullptr),
    m_query(query)
 {
@@ -410,6 +400,43 @@ Xapian::Enquire& Search::getEnquire() const
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
     enquire->set_query(query);
+
+    mp_enquire = std::move(enquire);
+    return *mp_enquire;
+}
+
+Xapian::Enquire& SuggestionSearch::getEnquire() const
+{
+    if ( mp_enquire ) {
+        return *mp_enquire;
+    }
+
+    auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
+
+    auto query = mp_internalDb->parseQuery(m_query, true);
+    if (m_query.m_verbose) {
+        std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
+    }
+    enquire->set_query(query);
+
+   /*
+    * In suggestion mode, we are searching over a separate title index. Default BM25 is not
+    * adapted for this case. WDF factor(k1) controls the effect of within document frequency.
+    * k1 = 0.001 reduces the effect of word repitition in document. In BM25, smaller documents
+    * get larger weights, so normalising the length of documents is necessary using b = 1.
+    * The document set is first sorted by their relevance score then by value so that suggestion
+    * results are closer to search string.
+    * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
+    */
+
+    enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
+    if (mp_internalDb->hasValue("title")) {
+      enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
+    }
+
+    if (mp_internalDb->hasValue("targetPath")) {
+      enquire->set_collapse_key(mp_internalDb->valueSlot("targetPath"));
+    }
 
     mp_enquire = std::move(enquire);
     return *mp_enquire;

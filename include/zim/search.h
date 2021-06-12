@@ -211,6 +211,29 @@ class Search
   friend class Searcher;
 };
 
+class SuggestionSearch
+{
+    public:
+        SuggestionSearch(SuggestionSearch&& s);
+        SuggestionSearch& operator=(SuggestionSearch&& s);
+        ~SuggestionSearch();
+
+        const SuggestionResultSet getResults(int start, int end) const;
+
+        int getEstimatedMatches() const;
+
+    private: // methods
+        SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query);
+        Xapian::Enquire& getEnquire() const;
+
+    private: // data
+         std::shared_ptr<InternalDataBase> mp_internalDb;
+         mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
+         Query m_query;
+
+  friend class SuggestionSearcher;
+};
+
 /**
  * The `SearchResult` represent a range of results corresponding to a `Search`.
  *
