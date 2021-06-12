@@ -313,11 +313,8 @@ SuggestionSearch SuggestionSearcher::suggest(const Query& query)
 {
   if (!mp_internalDb) {
     initDatabase();
-    if (! mp_internalDb->m_xapianDatabases.empty()){
-      return SuggestionSearch(mp_internalDb, query);
-    }
   }
-  return SuggestionSearch(m_archive, query);
+  return SuggestionSearch(mp_internalDb, query);
 }
 
 void Searcher::initDatabase()
@@ -339,13 +336,6 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 
 SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
  : mp_internalDb(p_internalDb),
-   mp_enquire(nullptr),
-   m_query(query)
-{
-}
-
-SuggestionSearch::SuggestionSearch(const Query& query)
- : mp_internalDb(nullptr),
    mp_enquire(nullptr),
    m_query(query)
 {
@@ -391,6 +381,23 @@ int Search::getEstimatedMatches() const
     }
 }
 
+int SuggestionSearch::getEstimatedMatches() const
+{
+  if (mp_internalDb->hasDatabase()) {
+    try {
+      auto enquire = getEnquire();
+      // Force xapian to check at least one document even if we ask for an empty mset.
+      // Else, the get_matches_estimated may be wrong and return 0 even if we have results.
+      auto mset = enquire.get_mset(0, 0, 1);
+      return mset.get_matches_estimated();
+    } catch(...) {
+      std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
+    }
+  }
+
+  return mp_internalDb->m_archives[0].findByTitle(m_query.m_query).size();
+}
+
 const SearchResultSet Search::getResults(int start, int end) const {
     try {
       auto enquire = getEnquire();
@@ -401,6 +408,20 @@ const SearchResultSet Search::getResults(int start, int end) const {
     }
 }
 
+const SuggestionResultSet SuggestionSearch::getResults(int start, int end) const {
+    if (mp_internalDb->hasDatabase())
+    {
+      try {
+        auto enquire = getEnquire();
+        auto mset = enquire.get_mset(start, end);
+        return SuggestionResultSet(SearchResultSet(mp_internalDb, std::move(mset)));
+      } catch(...) {
+        std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
+      }
+    }
+    return SuggestionResultSet(mp_internalDb->m_archives[0].findByTitle(m_query.m_query));
+}
+
 Xapian::Enquire& Search::getEnquire() const
 {
     if ( mp_enquire ) {
@@ -409,7 +430,25 @@ Xapian::Enquire& Search::getEnquire() const
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    auto query = mp_internalDb->parseQuery(m_query);
+    auto query = mp_internalDb->parseQuery(m_query, false);
+    if (m_query.m_verbose) {
+        std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
+    }
+    enquire->set_query(query);
+
+    mp_enquire = std::move(enquire);
+    return *mp_enquire;
+}
+
+Xapian::Enquire& SuggestionSearch::getEnquire() const
+{
+    if ( mp_enquire ) {
+        return *mp_enquire;
+    }
+
+    auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
+
+    auto query = mp_internalDb->parseQuery(m_query, true);
     if (m_query.m_verbose) {
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
@@ -424,15 +463,13 @@ Xapian::Enquire& Search::getEnquire() const
     * results are closer to search string.
     * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
     */
-    if (m_query.m_suggestionMode) {
-      enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
-      if (mp_internalDb->hasValue("title")) {
-        enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
-      }
+
+    enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
+    if (mp_internalDb->hasValue("title")) {
+      enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
     }
 
-
-    if (m_query.m_suggestionMode && mp_internalDb->hasValue("targetPath")) {
+    if (mp_internalDb->hasValue("targetPath")) {
       enquire->set_collapse_key(mp_internalDb->valueSlot("targetPath"));
     }
 
