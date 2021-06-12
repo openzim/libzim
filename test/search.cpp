@@ -24,14 +24,11 @@
 #include <zim/search.h>
 
 #include "tools.h"
-
-#include "tools.h"
 #include "gtest/gtest.h"
 
 namespace
 {
 
-using zim::unittests::getDataFilePath;
 using zim::unittests::TempZimArchive;
 using zim::unittests::TestItem;
 
@@ -54,24 +51,6 @@ std::vector<std::string> getSnippet(const zim::Archive archive, std::string quer
     getSnippet(archive, query, range),                          \
     std::vector<std::string>({__VA_ARGS__})                     \
   )
-
-#if WITH_TEST_DATA
-TEST(Search, searchByTitle)
-{
-  for(auto& testfile:getDataFilePath("small.zim")) {
-    const zim::Archive archive(testfile.path);
-    ASSERT_TRUE(archive.hasTitleIndex());
-    const auto mainItem = archive.getMainEntry().getItem(true);
-    zim::Searcher searcher(archive);
-    zim::Query query;
-    query.setQuery(mainItem.getTitle(), true);
-    auto search = searcher.search(query);
-    ASSERT_NE(0, search.getEstimatedMatches());
-    auto result = search.getResults(0, archive.getEntryCount());
-    ASSERT_EQ(mainItem.getPath(), result.begin().getPath());
-  }
-}
-#endif
 
 // To secure compatibity of new zim files with older kiwixes, we need to index
 // full path of the entries as data of documents.

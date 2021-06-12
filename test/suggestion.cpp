@@ -21,6 +21,7 @@
 
 #include <zim/archive.h>
 #include <zim/search.h>
+#include <zim/item.h>
 
 #include "tools.h"
 
@@ -30,33 +31,32 @@ namespace {
 
   using zim::unittests::TempZimArchive;
   using zim::unittests::TestItem;
+  using zim::unittests::getDataFilePath;
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
-    zim::Searcher searcher(archive);
+    zim::SuggestionSearcher suggestionSearcher(archive);
     zim::Query _query;
-    _query.setQuery(query, true).setVerbose(true);
-    auto search = searcher.search(_query);
+    _query.setQuery(query).setVerbose(true);
+    auto suggestionSearch = suggestionSearcher.suggest(_query);
 
-    auto searchResult = search.getResults(0, range);
+    auto suggestionResult = suggestionSearch.getResults(0, range);
 
     std::vector<std::string> result;
-    for (auto entry = searchResult.begin();entry!=searchResult.end();entry++) {
-      std::cout<<(*entry).getTitle()<<entry.getScore()<<std::endl;
-      result.push_back((*entry).getTitle());
+    for (auto entry : suggestionResult) {
+      result.push_back(entry.getTitle());
     }
-
     return result;
   }
 
   std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
-    zim::Searcher searcher(archive);
+    zim::SuggestionSearcher suggestionSearcher(archive);
     zim::Query _query;
-    _query.setQuery(query, true);
-    auto search = searcher.search(_query);
-    auto result = search.getResults(0, range);
+    _query.setQuery(query);
+    auto suggestionSearch = suggestionSearcher.suggest(_query);
+    auto result = suggestionSearch.getResults(0, range);
 
     std::vector<std::string> snippets;
-    for (auto entry = result.begin(); entry != result.end(); entry++) {
+    for (auto entry : result) {
       snippets.push_back(entry.getSnippet());
     }
     return snippets;
@@ -73,6 +73,25 @@ namespace {
     getSnippet(archive, query, range),                          \
     std::vector<std::string>({__VA_ARGS__})                     \
   )                                                             \
+
+#if WITH_TEST_DATA
+TEST(Suggestion, searchByTitle)
+{
+  for(auto& testfile:getDataFilePath("small.zim")) {
+    const zim::Archive archive(testfile.path);
+    ASSERT_TRUE(archive.hasTitleIndex());
+    const auto mainItem = archive.getMainEntry().getItem(true);
+    zim::SuggestionSearcher suggestionSearcher(archive);
+    zim::Query query;
+    query.setQuery(mainItem.getTitle());
+    auto suggestionSearch = suggestionSearcher.suggest(query);
+    ASSERT_NE(0, suggestionSearch.getEstimatedMatches());
+    auto result = suggestionSearch.getResults(0, archive.getEntryCount());
+    ASSERT_EQ(mainItem.getPath(), result.begin()->getPath());
+  }
+}
+#endif
+
 
   TEST(Suggestion, emptyQuery) {
     std::vector<std::string> titles = {
@@ -444,13 +463,13 @@ namespace {
 
     zim::Archive archive(tza.getPath());
 
-    zim::Searcher searcher(archive);
+    zim::SuggestionSearcher suggestionSearcher(archive);
     zim::Query query;
-    query.setQuery("Test Article", true);
-    auto search = searcher.search(query);
-    auto result = search.getResults(0, archive.getEntryCount());
+    query.setQuery("Test Article");
+    auto suggestionSearch = suggestionSearcher.suggest(query);
+    auto result = suggestionSearch.getResults(0, archive.getEntryCount());
 
-    ASSERT_EQ(result.begin().getPath(), "testPath");
+    ASSERT_EQ(result.begin()->getPath(), "testPath");
     ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
   }
 
