@@ -483,6 +483,8 @@ namespace zim
         { return iterator<order>(m_file, entry_index_type(m_begin)); }
       iterator<order> end() const
         { return iterator<order>(m_file, entry_index_type(m_end)); }
+      int size() const
+        { return m_end - m_begin; }
 private:
       std::shared_ptr<FileImpl> m_file;
       entry_index_type m_begin;
@@ -509,6 +511,16 @@ private:
         { return m_file == it.m_file && m_idx == it.m_idx; }
       bool operator!= (const iterator<order>& it) const
         { return !operator==(it); }
+
+      iterator<order>& operator=(iterator<order>&& it) = default;
+
+      iterator<order>& operator=(iterator<order>& it)
+      {
+        m_entry.reset();
+        m_idx = it.m_idx;
+        m_file = it.m_file;
+        return *this;
+      }
 
       iterator<order>& operator++()
       {
