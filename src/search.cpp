@@ -452,12 +452,30 @@ SearchResultSet::SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb)
   mp_mset(nullptr)
 {}
 
+SuggestionResultSet::SuggestionResultSet(SearchResultSet searchResultSet) :
+  mp_searchResultSet(std::unique_ptr<SearchResultSet>(new SearchResultSet(searchResultSet))),
+  mp_entryRange(nullptr)
+{}
+
+SuggestionResultSet::SuggestionResultSet(EntryRange entryRange) :
+  mp_searchResultSet(nullptr),
+  mp_entryRange(std::unique_ptr<EntryRange>(new EntryRange(entryRange)))
+{}
+
 int SearchResultSet::size() const
 {
   if (! mp_mset) {
       return 0;
   }
   return mp_mset->size();
+}
+
+int SuggestionResultSet::size() const
+{
+  if (! mp_entryRange) {
+      return mp_searchResultSet->size();
+  }
+  return mp_entryRange->size();
 }
 
 SearchResultSet::iterator SearchResultSet::begin() const
@@ -468,6 +486,14 @@ SearchResultSet::iterator SearchResultSet::begin() const
     return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
 }
 
+SuggestionResultSet::iterator SuggestionResultSet::begin() const
+{
+    if ( ! mp_entryRange ) {
+        return iterator(mp_searchResultSet->begin());
+    }
+    return iterator(mp_entryRange->begin());
+}
+
 SearchResultSet::iterator SearchResultSet::end() const
 {
     if ( ! mp_mset ) {
@@ -476,4 +502,11 @@ SearchResultSet::iterator SearchResultSet::end() const
     return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
 }
 
+SuggestionResultSet::iterator SuggestionResultSet::end() const
+{
+    if ( ! mp_entryRange ) {
+        return iterator(mp_searchResultSet->end());
+    }
+    return iterator(mp_entryRange->end());
+}
 } //namespace zim

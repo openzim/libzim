@@ -261,7 +261,32 @@ class SearchResultSet
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
   friend class Search;
+  friend class SuggestionSearch;
 };
+
+class SuggestionResultSet
+{
+  public:
+    typedef SuggestionIterator iterator;
+    typedef Archive::EntryRange<EntryOrder::titleOrder> EntryRange;
+
+    iterator begin() const;
+
+    iterator end() const;
+
+    int size() const;
+
+  private: // data
+    std::shared_ptr<SearchResultSet> mp_searchResultSet;
+    std::shared_ptr<EntryRange> mp_entryRange;
+
+  private:
+    SuggestionResultSet(SearchResultSet searchResultSet);
+    SuggestionResultSet(EntryRange entryRange);
+
+  friend class SuggestionSearch;
+};
+
 
 } //namespace zim
 
