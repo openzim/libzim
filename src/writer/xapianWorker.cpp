@@ -54,7 +54,7 @@ namespace zim
       try {
         stemmer = Xapian::Stem(mp_indexer->stemmer_language);
         indexer.set_stemmer(stemmer);
-        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL);
+        indexer.set_stemming_strategy(Xapian::TermGenerator::STEM_ALL_Z);
       } catch (...) {
         // No stemming for language.
       }

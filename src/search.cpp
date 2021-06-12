@@ -163,7 +163,7 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
                     m_stemmer = Xapian::Stem(languageLocale.getLanguage());
                     m_queryParser.set_stemmer(m_stemmer);
                     m_queryParser.set_stemming_strategy(
-                    hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
+                    (m_suggestionMode && hasNewSuggestionFormat) ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL_Z);
                 } catch (...) {
                     std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
                 }
