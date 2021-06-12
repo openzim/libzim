@@ -527,7 +527,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     zim::Searcher searcher1(archive1);
     zim::Searcher searcher2(archive2);
     zim::Query query;
-    query.setQuery(mainItem.getTitle(), true);
+    query.setQuery(mainItem.getTitle());
     auto search1 = searcher1.search(query);
     auto search2 = searcher2.search(query);
     ASSERT_NE(0, search1.getEstimatedMatches());
