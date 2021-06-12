@@ -38,7 +38,7 @@ class InternalDataBase {
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::Query parseQuery(const Query& query);
+    Xapian::Query parseQuery(const Query& query, bool suggestionMode);
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
@@ -52,9 +52,6 @@ class InternalDataBase {
 
     // The valuesmap associated with the database.
     std::map<std::string, int> m_valuesmap;
-
-    // The prefix to search on.
-    std::string m_prefix;
 
     // Flags to use to parse the query.
     unsigned int m_flags;

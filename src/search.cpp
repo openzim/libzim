@@ -106,6 +106,9 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
           r = impl->findx('Z', "/fulltextIndex/xapian");
         }
         if (!r.first) {
+            if (m_suggestionMode) {
+              m_archives.push_back(archive);
+            }
             continue;
         }
         auto xapianEntry = Entry(impl, entry_index_type(r.second));
@@ -176,10 +179,6 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
                 stopper->release();
                 m_queryParser.set_stopper(stopper);
             }
-            auto prefixes = database.get_metadata("prefixes");
-            if ( hasNewSuggestionFormat && prefixes.find("S") != std::string::npos ) {
-                m_prefix = "S";
-            }
         } else {
             std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
             if (m_valuesmap != valuesmap ) {
@@ -227,13 +226,13 @@ int InternalDataBase::valueSlot(const std::string& valueName) const
  * becomes A+B+C (normalised out of 100). So the documents closer to the query
  * gets a higher relevance.
  */
-Xapian::Query InternalDataBase::parseQuery(const Query& query)
+Xapian::Query InternalDataBase::parseQuery(const Query& query, bool suggestionMode)
 {
   Xapian::Query xquery;
 
-  xquery = m_queryParser.parse_query(query.m_query, m_flags, m_prefix);
+  xquery = m_queryParser.parse_query(query.m_query, m_flags);
 
-  if (query.m_suggestionMode && !query.m_query.empty()) {
+  if (suggestionMode && !query.m_query.empty()) {
     Xapian::QueryParser suggestionParser = m_queryParser;
     suggestionParser.set_default_op(Xapian::Query::op::OP_OR);
     suggestionParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
@@ -266,16 +265,19 @@ Xapian::Query InternalDataBase::parseQuery(const Query& query)
 
 Searcher::Searcher(const std::vector<Archive>& archives) :
     mp_internalDb(nullptr),
-    mp_internalSuggestionDb(nullptr),
     m_archives(archives)
 {}
 
 Searcher::Searcher(const Archive& archive) :
-    mp_internalDb(nullptr),
-    mp_internalSuggestionDb(nullptr)
+    mp_internalDb(nullptr)
 {
     m_archives.push_back(archive);
 }
+
+SuggestionSearcher::SuggestionSearcher(const Archive& archive) :
+    mp_internalDb(nullptr),
+    m_archive(archive)
+{}
 
 Searcher::Searcher(const Searcher& other) = default;
 Searcher& Searcher::operator=(const Searcher& other) = default;
@@ -283,35 +285,45 @@ Searcher::Searcher(Searcher&& other) = default;
 Searcher& Searcher::operator=(Searcher&& other) = default;
 Searcher::~Searcher() = default;
 
+SuggestionSearcher::SuggestionSearcher(const SuggestionSearcher& other) = default;
+SuggestionSearcher& SuggestionSearcher::operator=(const SuggestionSearcher& other) = default;
+SuggestionSearcher::SuggestionSearcher(SuggestionSearcher&& other) = default;
+SuggestionSearcher& SuggestionSearcher::operator=(SuggestionSearcher&& other) = default;
+SuggestionSearcher::~SuggestionSearcher() = default;
+
 Searcher& Searcher::add_archive(const Archive& archive) {
     m_archives.push_back(archive);
     mp_internalDb.reset();
-    mp_internalSuggestionDb.reset();
     return *this;
 }
 
 Search Searcher::search(const Query& query)
 {
-  if (query.m_suggestionMode) {
-    if (!mp_internalSuggestionDb) {
-      initDatabase(true);
-    }
-    return Search(mp_internalSuggestionDb, query);
-  } else {
-    if (!mp_internalDb) {
-      initDatabase(false);
-    }
-    return Search(mp_internalDb, query);
+  if (!mp_internalDb) {
+    initDatabase();
   }
+  return Search(mp_internalDb, query);
 }
 
-void Searcher::initDatabase(bool suggestionMode)
+SuggestionSearch SuggestionSearcher::suggest(const Query& query)
 {
-  if (suggestionMode) {
-    mp_internalSuggestionDb = std::make_shared<InternalDataBase>(m_archives, true);
-  } else {
-    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
+  if (!mp_internalDb) {
+    initDatabase();
+    if (! mp_internalDb->m_xapianDatabases.empty()){
+      return SuggestionSearch(mp_internalDb, query);
+    }
   }
+  return SuggestionSearch(m_archive, query);
+}
+
+void Searcher::initDatabase()
+{
+    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
+}
+
+void SuggestionSearcher::initDatabase()
+{
+    mp_internalDb = std::make_shared<InternalDataBase>(std::vector<Archive>{m_archive}, true);
 }
 
 Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
@@ -321,18 +333,36 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 {
 }
 
+SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
+ : mp_internalDb(p_internalDb),
+   mp_enquire(nullptr),
+   m_query(query)
+{
+}
+
+SuggestionSearch::SuggestionSearch(const Query& query)
+ : mp_internalDb(nullptr),
+   mp_enquire(nullptr),
+   m_query(query)
+{
+}
+
+
 Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
 Search::~Search() = default;
+
+SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
+SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
+SuggestionSearch::~SuggestionSearch() = default;
 
 Query& Query::setVerbose(bool verbose) {
     m_verbose = verbose;
     return *this;
 }
 
-Query& Query::setQuery(const std::string& query, bool suggestionMode) {
+Query& Query::setQuery(const std::string& query) {
     m_query = query;
-    m_suggestionMode = suggestionMode;
     return *this;
 }
 
@@ -375,32 +405,11 @@ Xapian::Enquire& Search::getEnquire() const
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    auto query = mp_internalDb->parseQuery(m_query);
+    auto query = mp_internalDb->parseQuery(m_query, false);
     if (m_query.m_verbose) {
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
     enquire->set_query(query);
-
-   /*
-    * In suggestion mode, we are searching over a separate title index. Default BM25 is not
-    * adapted for this case. WDF factor(k1) controls the effect of within document frequency.
-    * k1 = 0.001 reduces the effect of word repitition in document. In BM25, smaller documents
-    * get larger weights, so normalising the length of documents is necessary using b = 1.
-    * The document set is first sorted by their relevance score then by value so that suggestion
-    * results are closer to search string.
-    * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
-    */
-    if (m_query.m_suggestionMode) {
-      enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
-      if (mp_internalDb->hasValue("title")) {
-        enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
-      }
-    }
-
-
-    if (m_query.m_suggestionMode && mp_internalDb->hasValue("targetPath")) {
-      enquire->set_collapse_key(mp_internalDb->valueSlot("targetPath"));
-    }
 
     mp_enquire = std::move(enquire);
     return *mp_enquire;
