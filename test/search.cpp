@@ -35,7 +35,7 @@ using zim::unittests::TestItem;
 std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
   zim::Searcher searcher(archive);
   zim::Query _query;
-  _query.setQuery(query, false);
+  _query.setQuery(query);
   auto search = searcher.search(_query);
   auto result = search.getResults(0, range);
 
@@ -72,7 +72,7 @@ TEST(Search, indexFullPath)
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("test article", false);
+  query.setQuery("test article");
   auto search = searcher.search(query);
 
   ASSERT_NE(0, search.getEstimatedMatches());
@@ -113,9 +113,9 @@ TEST(Search, multiSearch)
   zim::writer::Creator creator;
   creator.configIndexing(true, "en");
   creator.startZimCreation(tza.getPath());
-  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article"));
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. temp0"));
   creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. For article1."));
-  creator.addItem(std::make_shared<TestItem>("path2", "text/html", "Test Article001", "This is a test article. Super."));
+  creator.addItem(std::make_shared<TestItem>("path2", "text/html", "Test Article001", "This is a test article. Super. temp0"));
   creator.addItem(std::make_shared<TestItem>("path3", "text/html", "Test Article2", "This is a test article. Super."));
   creator.addItem(std::make_shared<TestItem>("path4", "text/html", "Test Article23", "This is a test article. bis."));
 
@@ -126,7 +126,7 @@ TEST(Search, multiSearch)
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("test article", false);
+  query.setQuery("test article");
   auto search0 = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
@@ -155,16 +155,15 @@ TEST(Search, multiSearch)
   ASSERT_EQ(result3.size(), 3);
 
   // Be able to do a different search using the same searcher.
-  query.setQuery("super", false);
+  query.setQuery("super");
   auto search1 = searcher.search(query);
   ASSERT_EQ(2, search1.getEstimatedMatches());
 
-  // Copy the searcher and do a suggestion query.
   auto searcher2(searcher);
-  query.setQuery("Article0", true);
+  query.setQuery("temp0");
   auto search2 = searcher2.search(query);
   auto result = search2.getResults(0, search2.getEstimatedMatches());
-  ASSERT_EQ(3, search2.getEstimatedMatches()); // Xapian estimate the number of match to 3. To investigate
+  ASSERT_EQ(2, search2.getEstimatedMatches());
   ASSERT_EQ(2, result.size());
 }
 

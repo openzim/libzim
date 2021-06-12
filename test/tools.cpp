@@ -174,6 +174,24 @@ zim::Archive TempZimArchive::createZimFromTitles(std::vector<std::string> titles
   return zim::Archive(this->path());
 }
 
+zim::Archive TempZimArchive::createZimFromContent(std::vector<std::vector<std::string>> contents) {
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(this->path());
+
+  // add dummy items with given titles
+  for (auto content : contents) {
+    std::string path = "dummyPath" + content[0];
+    auto item = std::make_shared<TestItem>(path, "text/html", content[0], content[1]);
+    creator.addItem(item);
+  }
+
+  creator.addMetadata("Title", "This is a title");
+
+  creator.finishZimCreation();
+  return zim::Archive(this->path());
+}
+
 const std::string TempZimArchive::getPath() {
   return this->path();
 }

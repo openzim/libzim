@@ -47,13 +47,13 @@ TEST(search_iterator, uninitialized) {
 TEST(search_iterator, end) {
   TempZimArchive tza("testZim");
 
-  zim::Archive archive = tza.createZimFromTitles({
-    "item a",
+  zim::Archive archive = tza.createZimFromContent({
+    {"article 1", "item a"}
   });
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("item", true);
+  query.setQuery("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
@@ -64,7 +64,7 @@ TEST(search_iterator, end) {
   ASSERT_EQ(it.getSnippet(), "");
 //  ASSERT_EQ(it.getScore(), 0); Unspecified, may be 0 or 1. To fix.
   ASSERT_EQ(it.getFileIndex(), 0);
-  ASSERT_EQ(it.getWordCount(), -1);
+  ASSERT_THROW(it.getWordCount(), std::runtime_error);
   ASSERT_EQ(it.getSize(), -1);
   ASSERT_THROW(*it, std::runtime_error);
   ASSERT_THROW(it.operator->(), std::runtime_error);
@@ -73,13 +73,13 @@ TEST(search_iterator, end) {
 TEST(search_iterator, copy) {
   TempZimArchive tza("testZim");
 
-  zim::Archive archive = tza.createZimFromTitles({
-    "item a",
+  zim::Archive archive = tza.createZimFromContent({
+    {"article 1", "item a"}
   });
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("item", true);
+  query.setQuery("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
@@ -98,15 +98,15 @@ TEST(search_iterator, copy) {
 TEST(search_iterator, functions) {
   TempZimArchive tza("testZim");
 
-  zim::Archive archive = tza.createZimFromTitles({
-    "item a",
-    "Item B",
-    "iTem ć"
+  zim::Archive archive = tza.createZimFromContent({
+    {"item a", "item item item"},
+    {"Item B", "item item 2"},
+    {"iTem ć", "item number 3"}  // forcing an order using wdf
   });
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("item", true);
+  query.setQuery("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
@@ -118,7 +118,7 @@ TEST(search_iterator, functions) {
   ASSERT_EQ(it.getScore(), 100);
   ASSERT_EQ(it.getFileIndex(), 0);
   ASSERT_EQ(it.getZimId(), archive.getUuid());
-  ASSERT_EQ(it.getWordCount(), -1);            // Unimplemented
+  ASSERT_EQ(it.getWordCount(), 3);
   ASSERT_EQ(it.getSize(), -1);                 // Unimplemented
 
   // Check getTitle for accents/cased text
@@ -136,20 +136,20 @@ TEST(search_iterator, stemmedSearch) {
   // charlie -> charli
   // chocolate -> chocol
   // factory -> factori
-  zim::Archive archive = tza.createZimFromTitles({
-    "an apple a day, keeps the doctor away",
-    "charlie and the chocolate factory"
+  zim::Archive archive = tza.createZimFromContent({
+    {"article 1", "an apple a day, keeps the doctor away"},
+    {"article 2", "charlie and the chocolate factory"}
   });
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("apples", true);
+  query.setQuery("apples");
   auto search = searcher.search(query);
   auto result = search.getResults(0, 1);
 
   ASSERT_EQ(result.begin().getSnippet(), "an <b>apple</b> a day, keeps the doctor away");
 
-  query.setQuery("chocolate factory", true);
+  query.setQuery("chocolate factory");
   search = searcher.search(query);
   result = search.getResults(0, 1);
   ASSERT_EQ(result.begin().getSnippet(), "charlie and the <b>chocolate</b> <b>factory</b>");
@@ -158,27 +158,27 @@ TEST(search_iterator, stemmedSearch) {
 TEST(search_iterator, iteration) {
   TempZimArchive tza("testZim");
 
-  zim::Archive archive = tza.createZimFromTitles({
-    "item a",
-    "item b"
+  zim::Archive archive = tza.createZimFromContent({
+    {"article 1", "item a"},
+    {"article 2", "item b"}
   });
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("item", true);
+  query.setQuery("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
   auto it = result.begin();
   ASSERT_EQ(it.getTitle(), result.begin().getTitle());
 
-  ASSERT_EQ(it.getTitle(), "item a");
+  ASSERT_EQ(it.getTitle(), "article 1");
   it++;
-  ASSERT_EQ(it.getTitle(), "item b");
+  ASSERT_EQ(it.getTitle(), "article 2");
   ASSERT_TRUE(it != result.begin());
 
   it--;
-  ASSERT_EQ(it.getTitle(), "item a");
+  ASSERT_EQ(it.getTitle(), "article 1");
   ASSERT_TRUE(result.begin() == it);
 
   it++; it++;
