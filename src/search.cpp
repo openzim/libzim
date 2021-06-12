@@ -106,6 +106,9 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
           r = impl->findx('Z', "/fulltextIndex/xapian");
         }
         if (!r.first) {
+            if (m_suggestionMode) {
+              m_archives.push_back(archive);
+            }
             continue;
         }
         auto xapianEntry = Entry(impl, entry_index_type(r.second));
@@ -160,7 +163,7 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
                     m_stemmer = Xapian::Stem(languageLocale.getLanguage());
                     m_queryParser.set_stemmer(m_stemmer);
                     m_queryParser.set_stemming_strategy(
-                    hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL);
+                    hasNewSuggestionFormat ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL;
                 } catch (...) {
                     std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
                 }
@@ -227,13 +230,13 @@ int InternalDataBase::valueSlot(const std::string& valueName) const
  * becomes A+B+C (normalised out of 100). So the documents closer to the query
  * gets a higher relevance.
  */
-Xapian::Query InternalDataBase::parseQuery(const Query& query)
+Xapian::Query InternalDataBase::parseQuery(const Query& query, bool suggestionMode)
 {
   Xapian::Query xquery;
 
   xquery = m_queryParser.parse_query(query.m_query, m_flags, m_prefix);
 
-  if (query.m_suggestionMode && !query.m_query.empty()) {
+  if (suggestionMode && !query.m_query.empty()) {
     Xapian::QueryParser suggestionParser = m_queryParser;
     suggestionParser.set_default_op(Xapian::Query::op::OP_OR);
     suggestionParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
@@ -266,16 +269,19 @@ Xapian::Query InternalDataBase::parseQuery(const Query& query)
 
 Searcher::Searcher(const std::vector<Archive>& archives) :
     mp_internalDb(nullptr),
-    mp_internalSuggestionDb(nullptr),
     m_archives(archives)
 {}
 
 Searcher::Searcher(const Archive& archive) :
-    mp_internalDb(nullptr),
-    mp_internalSuggestionDb(nullptr)
+    mp_internalDb(nullptr)
 {
     m_archives.push_back(archive);
 }
+
+SuggestionSearcher::SuggestionSearcher(const Archive& archive) :
+    mp_internalDb(nullptr),
+    m_archive(archive)
+{}
 
 Searcher::Searcher(const Searcher& other) = default;
 Searcher& Searcher::operator=(const Searcher& other) = default;
@@ -283,35 +289,45 @@ Searcher::Searcher(Searcher&& other) = default;
 Searcher& Searcher::operator=(Searcher&& other) = default;
 Searcher::~Searcher() = default;
 
+SuggestionSearcher::SuggestionSearcher(const SuggestionSearcher& other) = default;
+SuggestionSearcher& SuggestionSearcher::operator=(const SuggestionSearcher& other) = default;
+SuggestionSearcher::SuggestionSearcher(SuggestionSearcher&& other) = default;
+SuggestionSearcher& SuggestionSearcher::operator=(SuggestionSearcher&& other) = default;
+SuggestionSearcher::~SuggestionSearcher() = default;
+
 Searcher& Searcher::add_archive(const Archive& archive) {
     m_archives.push_back(archive);
     mp_internalDb.reset();
-    mp_internalSuggestionDb.reset();
     return *this;
 }
 
 Search Searcher::search(const Query& query)
 {
-  if (query.m_suggestionMode) {
-    if (!mp_internalSuggestionDb) {
-      initDatabase(true);
-    }
-    return Search(mp_internalSuggestionDb, query);
-  } else {
-    if (!mp_internalDb) {
-      initDatabase(false);
-    }
-    return Search(mp_internalDb, query);
+  if (!mp_internalDb) {
+    initDatabase();
   }
+  return Search(mp_internalDb, query);
 }
 
-void Searcher::initDatabase(bool suggestionMode)
+SuggestionSearch SuggestionSearcher::suggest(const Query& query)
 {
-  if (suggestionMode) {
-    mp_internalSuggestionDb = std::make_shared<InternalDataBase>(m_archives, true);
-  } else {
-    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
+  if (!mp_internalDb) {
+    initDatabase();
+    if (! mp_internalDb->m_xapianDatabases.empty()){
+      return SuggestionSearch(mp_internalDb, query);
+    }
   }
+  return SuggestionSearch(m_archive, query);
+}
+
+void Searcher::initDatabase()
+{
+    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
+}
+
+void SuggestionSearcher::initDatabase()
+{
+    mp_internalDb = std::make_shared<InternalDataBase>(std::vector<Archive>{m_archive}, true);
 }
 
 Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
@@ -321,18 +337,36 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 {
 }
 
+SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
+ : mp_internalDb(p_internalDb),
+   mp_enquire(nullptr),
+   m_query(query)
+{
+}
+
+SuggestionSearch::SuggestionSearch(const Query& query)
+ : mp_internalDb(nullptr),
+   mp_enquire(nullptr),
+   m_query(query)
+{
+}
+
+
 Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
 Search::~Search() = default;
+
+SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
+SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
+SuggestionSearch::~SuggestionSearch() = default;
 
 Query& Query::setVerbose(bool verbose) {
     m_verbose = verbose;
     return *this;
 }
 
-Query& Query::setQuery(const std::string& query, bool suggestionMode) {
+Query& Query::setQuery(const std::string& query) {
     m_query = query;
-    m_suggestionMode = suggestionMode;
     return *this;
 }
 
