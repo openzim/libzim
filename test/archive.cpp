@@ -282,55 +282,46 @@ TEST(ZimArchive, illustration)
   }
 }
 
+struct ZimFileInfo {
+  zim::entry_index_type articleCount, entryCount, allEntryCount;
+};
+
+struct TestDataInfo {
+  const char* const name;
+  ZimFileInfo withnsInfo, nonsInfo;
+
+
+  const ZimFileInfo& getZimFileInfo(const std::string& category) const {
+    if (category == "nons") {
+      return nonsInfo;
+    } else if (category == "withns") {
+      return withnsInfo;
+    }
+    throw std::runtime_error("Unknown category");
+  }
+};
+
 TEST(ZimArchive, articleNumber)
 {
-  const char* const zimfiles[] = {
-    "small.zim",
-    "wikibooks_be_all_nopic_2017-02.zim",
-    "wikibooks_be_all_nopic_2017-02_splitted.zim",
-    "wikipedia_en_climate_change_nopic_2020-01.zim"
+  TestDataInfo zimfiles[] = {
+     // Name                                           withns                               nons
+     //                                               {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
+    {"small.zim",                                     { 1,       17,          17 },        { 1,       2,           16        }},
+    {"wikibooks_be_all_nopic_2017-02.zim",            { 70,      118,         118},        { 66,      109,         123       }},
+    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   { 70,      118,         118},        { 66,      109,         123       }},
+    {"wikipedia_en_climate_change_nopic_2020-01.zim", { 7253,    7646,        7646},       { 1837,    7633,        7649      }}
   };
+  // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
+  // for small.zim, there is always 1 article, whatever the article is in 'A' namespace or in specific index.
 
-  for ( const std::string fname : zimfiles ) {
-    for (auto& testfile: getDataFilePath(fname)) {
+  for ( const auto& testdata : zimfiles ) {
+    for (auto& testfile: getDataFilePath(testdata.name)) {
       const TestContext ctx{ {"path", testfile.path } };
+      const auto& testZimInfo = testdata.getZimFileInfo(testfile.category);
       const zim::Archive archive(testfile.path);
-      if (testfile.filename == "small.zim") {
-        if (testfile.category == "withns") {
-          // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
-          EXPECT_EQ( archive.getAllEntryCount(), 17 ) << ctx;
-          EXPECT_EQ( archive.getEntryCount(), 17 ) << ctx;
-        } else {
-          EXPECT_EQ( archive.getAllEntryCount(), 16 ) << ctx;
-          EXPECT_EQ( archive.getEntryCount(), 2 ) << ctx;
-        }
-        // There is always 1 article, whatever the article is in 'A' namespace or in specific index.
-        EXPECT_EQ( archive.getArticleCount(), 1 ) << ctx;
-      } else if (testfile.filename == "wikipedia_en_climate_change_nopic_2020-01.zim") {
-        if (testfile.category == "withns") {
-          // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
-          EXPECT_EQ( archive.getAllEntryCount(), 7646 ) << ctx;
-          EXPECT_EQ( archive.getEntryCount(), 7646 ) << ctx;
-          // Only 7253 entry in 'A' namespace.
-          EXPECT_EQ( archive.getArticleCount(), 7253 ) << ctx;
-        } else {
-          EXPECT_EQ( archive.getAllEntryCount(), 7649 ) << ctx;
-          EXPECT_EQ( archive.getEntryCount(), 7633 ) << ctx;
-          EXPECT_EQ( archive.getArticleCount(), 1837 ) << ctx;
-        }
-      } else {
-        if (testfile.category == "withns") {
-          // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
-          EXPECT_EQ( archive.getAllEntryCount(), 118) << ctx;
-          EXPECT_EQ( archive.getEntryCount(), 118 ) << ctx;
-          // Only 70 entry in 'A' namespace.
-          EXPECT_EQ( archive.getArticleCount(), 70 ) << ctx;
-        } else {
-          EXPECT_EQ( archive.getAllEntryCount(), 123 ) << ctx;
-          EXPECT_EQ( archive.getEntryCount(), 109 ) << ctx;
-          EXPECT_EQ( archive.getArticleCount(), 66 ) << ctx;
-        }
-      }
+      EXPECT_EQ( archive.getAllEntryCount(), testZimInfo.allEntryCount ) << ctx;
+      EXPECT_EQ( archive.getEntryCount(), testZimInfo.entryCount ) << ctx;
+      EXPECT_EQ( archive.getArticleCount(), testZimInfo.articleCount ) << ctx;
     }
   }
 }
