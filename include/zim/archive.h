@@ -118,7 +118,7 @@ namespace zim
        * Return the total number of entries in the archive, including
        * internal entries created by libzim itself, metadata, indexes, ...
        *
-       *  @return the number of user entries in the archive.
+       *  @return the number of all entries in the archive.
        */
       entry_index_type getAllEntryCount() const;
 
@@ -137,7 +137,7 @@ namespace zim
        *  On recent archives, this correspond to all entries marked as "FRONT_ARTICLE"
        *  at creaton time.
        *  On old archives, this correspond to all entries in 'A' namespace.
-       *  Few archives may have been created without namespace but also withuut specific
+       *  Few archives may have been created without namespace but also without specific
        *  article listing. In this case, articles are all user entries.
        *
        *  @return the number of articles in the archive.
@@ -335,7 +335,7 @@ namespace zim
        *  On recent archives, this correspond to all entries marked as "FRONT_ARTICLE"
        *  at creaton time.
        *  On old archives, this correspond to all entries in 'A' namespace.
-       *  Few archives may have been created without namespace but also withuut specific
+       *  Few archives may have been created without namespace but also without specific
        *  article listing. In this case, this iterate on all user entries.
        *
        *  ```
