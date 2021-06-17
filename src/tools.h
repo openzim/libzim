@@ -35,6 +35,9 @@ namespace zim {
 
   std::tuple<char, std::string> parseLongPath(const std::string& longPath);
 
+  // Parse a illustration path ("Illustration_<width>x<height>@1") to a size.
+  unsigned int parseIllustrationPathToSize(const std::string& s);
+
   /** Return a random number from range [0, max]
    *
    * This function is threadsafe

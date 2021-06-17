@@ -86,6 +86,77 @@ namespace zim
     return ret;
   }
 
+  zim::FileImpl::FindxResult findFavicon(FileImpl& impl)
+  {
+    for(auto ns:{'-', 'I'}) {
+      for (auto& path:{"favicon", "favicon.png"}) {
+        auto r = impl.findx(ns, path);
+        if (r.first) {
+          return r;
+        }
+      }
+    }
+    throw EntryNotFound("No favicon found.");
+  }
+
+  Item Archive::getIllustrationItem(unsigned int size) const {
+    std::ostringstream ss;
+    ss  << "Illustration_" << size << "x" << size << "@" << 1;
+    auto r = m_impl->findx('M', ss.str());
+    if (r.first) {
+      return getEntryByPath(entry_index_type(r.second)).getItem();
+    }
+    // We haven't found the exact entry. Let's "search" for a illustration and
+    // use the first one we found.
+#if 0
+    // We have decided to not implement fallback in case of wrong resolution for now.
+    // We keep this code for reference.
+    r = m_impl->findx('M', "Illustration");
+    auto entry = getEntryByPath(entry_index_type(r.second));
+    if (entry.getPath().find("Illustration") == 0) {
+      return entry.getItem();
+    }
+#endif
+    // For 48x48 illustration, return favicon for older zims.
+    if (size == 48) {
+      auto r = findFavicon(*m_impl);
+      return getEntryByPath(entry_index_type(r.second)).getItem(true);
+    }
+    throw EntryNotFound("Cannot find illustration item.");
+  }
+
+  std::set<unsigned int> Archive::getIllustrationSizes() const {
+    std::set<unsigned int> ret;
+    for(auto r = m_impl->findx('M', "Illustration_").second;
+        /*No exit test*/;
+        r++
+       ) {
+      auto path = getEntryByPath(entry_index_type(r)).getPath();
+      if (path.find("Illustration_") != 0) {
+        break;
+      }
+      try {
+        ret.insert(parseIllustrationPathToSize(path));
+      } catch (...) {}
+    }
+    if (ret.find(48) == ret.end()) {
+      try {
+        auto r = findFavicon(*m_impl);
+        ret.insert(48);
+      } catch(EntryNotFound&) {}
+    }
+    return ret;
+  }
+
+  bool Archive::hasIllustration(unsigned int size) const {
+    try {
+      getIllustrationItem(size);
+      return true;
+    } catch (EntryNotFound& e) {
+      return false;
+    }
+  }
+
   Entry Archive::getEntryByPath(entry_index_type idx) const
   {
     if (idx >= entry_index_type(m_impl->getCountArticles()))
@@ -163,29 +234,6 @@ namespace zim
 
   bool Archive::hasMainEntry() const {
     return m_impl->getFileheader().hasMainPage();
-  }
-
-  Entry Archive::getFaviconEntry() const {
-    // `-/favicon` is the standard path for the favicon, but older zims may have it
-    // on other path.
-    for(auto ns:{'W', '-', 'I'}) {
-      for (auto& path:{"favicon", "favicon.png"}) {
-        auto r = m_impl->findx(ns, path);
-        if (r.first) {
-          return getEntryByPath(entry_index_type(r.second));
-        }
-      }
-    }
-    throw EntryNotFound("Cannot find favicon entry");
-  }
-
-  bool Archive::hasFaviconEntry() const {
-    try {
-      getFaviconEntry();
-      return true;
-    } catch (EntryNotFound& e) {
-      return false;
-    }
   }
 
   Entry Archive::getRandomEntry() const {

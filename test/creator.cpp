@@ -198,6 +198,8 @@ TEST(ZimCreator, createZim)
   item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
+  creator.addIllustration(48, "PNGBinaryContent48");
+  creator.addIllustration(96, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
@@ -210,16 +212,18 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 10; // counter + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 12; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
+  int png_mimetype = 2;
+  int html_mimetype = 3;
+  int plain_mimetype = 4;
+#else
+  entry_index_type nb_entry = 10; // counter + 2*illustration + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  int listing_mimetype = 0;
+  int png_mimetype = 1;
   int html_mimetype = 2;
   int plain_mimetype = 3;
-#else
-  entry_index_type nb_entry = 8; // counter + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
-  int listing_mimetype = 0;
-  int html_mimetype = 1;
-  int plain_mimetype = 2;
 #endif
 
   ASSERT_EQ(header.getArticleCount(), nb_entry);
@@ -244,6 +248,14 @@ TEST(ZimCreator, createZim)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
   auto counterBlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'M', "Illustration_48x48@1", None, png_mimetype, cluster_index_t(1), None);
+  auto illustration48BlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'M', "Illustration_96x96@1", None, png_mimetype, cluster_index_t(1), None);
+  auto illustration96BlobIndex = dirent->getBlobNumber();
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Title", "Title", plain_mimetype, cluster_index_t(0), None);
@@ -308,10 +320,12 @@ TEST(ZimCreator, createZim)
     4, 0, 0, 0,
     5, 0, 0, 0,
     6, 0, 0, 0,
-    7, 0, 0, 0
+    7, 0, 0, 0,
+    8, 0, 0, 0,
+    9, 0, 0, 0
 #if defined(ENABLE_XAPIAN)
-    ,8, 0, 0, 0
-    ,9, 0, 0, 0
+    ,10, 0, 0, 0
+    ,11, 0, 0, 0
 #endif
     };
   ASSERT_EQ(blob0Data, expectedBlob0Data);
@@ -324,6 +338,12 @@ TEST(ZimCreator, createZim)
     0, 0, 0, 0
   };
   ASSERT_EQ(blob1Data, expectedBlob1Data);
+
+  blob = cluster->getBlob(illustration48BlobIndex);
+  ASSERT_EQ(std::string(blob), "PNGBinaryContent48");
+
+  blob = cluster->getBlob(illustration96BlobIndex);
+  ASSERT_EQ(std::string(blob), "PNGBinaryContent96");
 }
 
 

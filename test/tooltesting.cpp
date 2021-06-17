@@ -32,4 +32,26 @@ namespace {
     ASSERT_EQ(zim::countWords("One.Two\tThree"), 2);
   }
 
+
+  TEST(Tools, parseIllustrationPathToSize) {
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_0x0@1"), 0);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_1x1@1"), 1);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_01x01@1"), 1);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_64x64@1"), 64);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_128x128@1"), 128);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_1024x1024@1"), 1024);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illsration_64x64@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illstration_"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_64x@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_64x"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_64x64"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_64x64@1.5"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_128x64@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_-32x-32@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_ 64x64@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_64x 64@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_ 64x 64@1"), std::runtime_error);
+    ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_1 28x1 28@1"), std::runtime_error);
+  }
+
 }

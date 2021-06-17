@@ -28,6 +28,7 @@
 #include <vector>
 #include <memory>
 #include <bitset>
+#include <set>
 
 
 namespace zim
@@ -140,6 +141,27 @@ namespace zim
        */
       std::vector<std::string> getMetadataKeys() const;
 
+      /** Get the illustration item of the archive.
+       *
+       *  Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
+       *
+       *  @param size The size (width and height) of the illustration to get. Default to 48 (48x48px icon)
+       *  @return The illustration item.
+       *  @exception EntryNotFound If no illustration item can be found.
+       */
+      Item getIllustrationItem(unsigned int size=48) const;
+
+      /** Return a list of available size for the illustations in the archive.
+       *
+       * Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
+       * An Archive may contains several illustration with different size.
+       * This method allow to know which illustration (size) is in the archive.
+       *
+       * @return A set of size.
+       */
+      std::set<unsigned int> getIllustrationSizes() const;
+
+
       /** Get an entry using its "path" index.
        *
        *  Use the index of the entry to get the idx'th entry
@@ -205,14 +227,6 @@ namespace zim
        */
       Entry getMainEntry() const;
 
-      /** Get the favicon entry of the archive.
-       *
-       *  @return The favicon entry.
-       *  @exception EntryNotFound If no favicon entry has been specified in the archive.
-       */
-      Entry getFaviconEntry() const;
-
-
       /** Get a random entry.
        *
        * The entry is picked randomly from the front artice list.
@@ -254,9 +268,11 @@ namespace zim
 
       /** Check if archive has a favicon entry
        *
-       * @return True if the archive has a favicon entry.
+       * @param size The size (width and height) of the illustration to check. Default to 48 (48x48px icon)
+       * @return True if the archive has a corresponding illustration entry.
+       *         (Always True if the archive has no illustration, but a favicon)
        */
-      bool hasFaviconEntry() const;
+      bool hasIllustration(unsigned int size=48) const;
 
       /** Check if the archive has a fulltext index.
        *
