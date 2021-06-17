@@ -148,13 +148,29 @@ class TempZimArchive : zim::unittests::TempFile {
 
 class TestItem : public zim::writer::Item {
   public:
-    TestItem(const std::string& path, const std::string& mimetype = "text/html", const std::string& title = "Test Item", const std::string& content = "foo") :
-      path(path), title(title), content(content), mimetype(mimetype) {}
+    TestItem(
+        const std::string& path,
+        const std::string& mimetype = "text/html",
+        const std::string& title = "Test Item",
+        const std::string& content = "foo",
+        bool frontArticle = true) :
+      path(path),
+      title(title),
+      content(content),
+      mimetype(mimetype),
+      frontArticle(frontArticle)
+    {}
     virtual ~TestItem() = default;
 
     virtual std::string getPath() const { return path; };
     virtual std::string getTitle() const { return title; };
     virtual std::string getMimeType() const { return mimetype; };
+    virtual zim::writer::Hints getHints() const {
+      if (frontArticle) {
+        return zim::writer::Hints{{zim::writer::FRONT_ARTICLE, 1}};
+      }
+      return zim::writer::Hints();
+    }
 
     virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const {
       return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider(content));
@@ -164,6 +180,7 @@ class TestItem : public zim::writer::Item {
   std::string title;
   std::string content;
   std::string mimetype;
+  bool frontArticle;
 };
 
 } // namespace unittests

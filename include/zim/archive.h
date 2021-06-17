@@ -113,11 +113,36 @@ namespace zim
        */
       size_type getFilesize() const;
 
-      /** Return the number of entry in the archive.
+      /** Return the number of entries in the archive.
        *
-       *  @return the number of entry in the archive.
+       * Return the total number of entries in the archive, including
+       * internal entries created by libzim itself, metadata, indexes, ...
+       *
+       *  @return the number of all entries in the archive.
+       */
+      entry_index_type getAllEntryCount() const;
+
+      /** Return the number of user entries in the archive.
+       *
+       * If the notion of "user entries" doesn't exist in the zim archive,
+       * returns `getAllEntryCount()`.
+       *
+       *  @return the number of user entries in the archive.
        */
       entry_index_type getEntryCount() const;
+
+      /** Return the number of articles in the archive.
+       *
+       *  The definition of "article" depends of the zim archive.
+       *  On recent archives, this correspond to all entries marked as "FRONT_ARTICLE"
+       *  at creaton time.
+       *  On old archives, this correspond to all entries in 'A' namespace.
+       *  Few archives may have been created without namespace but also without specific
+       *  article listing. In this case, articles are all user entries.
+       *
+       *  @return the number of articles in the archive.
+       */
+      entry_index_type getArticleCount() const;
 
       /** The uuid of the archive.
        *
@@ -289,7 +314,9 @@ namespace zim
 
       /** Get a "iterable" by path order.
        *
-       *  This method allow to iterate hover the entries in a path order
+       *  This method allow to iterate on all user entries using a path order.
+       *  If the notion of "user entries" doesn't exists (for old zim archive),
+       *  this iterate on all entries in the zim file.
        *
        *  ```
        *  for(auto& entry:archive.iterByPath()) {
@@ -303,7 +330,13 @@ namespace zim
 
       /** Get a "iterable" by title order.
        *
-       *  This method allow to iterate hover the entries in a title order
+       *  This method allow to iterate on all articles using a title order.
+       *  The definition of "article" depends of the zim archive.
+       *  On recent archives, this correspond to all entries marked as "FRONT_ARTICLE"
+       *  at creaton time.
+       *  On old archives, this correspond to all entries in 'A' namespace.
+       *  Few archives may have been created without namespace but also without specific
+       *  article listing. In this case, this iterate on all user entries.
        *
        *  ```
        *  for(auto& entry:archive.iterByTitle()) {
@@ -317,7 +350,9 @@ namespace zim
 
       /** Get a "iterable" by a efficient order.
        *
-       *  This method allow to iterate hover the entries in a efficient order
+       *  This method allow to iterate on all user entries using a effictient order.
+       *  If the notion of "user entries" doesn't exists (for old zim archive),
+       *  this iterate on all entries in the zim file.
        *
        *  ```
        *  for(auto& entry:archive.iterEfficient()) {

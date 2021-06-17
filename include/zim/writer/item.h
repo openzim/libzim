@@ -154,20 +154,23 @@ namespace zim
          * @param mimetype the mimetype of the item.
          * @param title the title of the item.
          */
-        BasicItem(const std::string& path, const std::string& mimetype, const std::string& title)
+        BasicItem(const std::string& path, const std::string& mimetype, const std::string& title, Hints hints)
           : path(path),
             mimetype(mimetype),
-            title(title)
+            title(title),
+            hints(hints)
         {}
 
         std::string getPath() const { return path; }
         std::string getTitle() const { return title; }
         std::string getMimeType() const { return mimetype; }
+        Hints       getHints() const { return hints; }
 
       protected:
         std::string path;
         std::string mimetype;
         std::string title;
+        Hints hints;
     };
 
     /**
@@ -198,8 +201,8 @@ namespace zim
 
       private:
         StringItem(const std::string& path, const std::string& mimetype,
-                   const std::string& title, const std::string& content)
-          : BasicItem(path, mimetype, title),
+                   const std::string& title, Hints hints, const std::string& content)
+          : BasicItem(path, mimetype, title, hints),
             content(content)
         {}
 
@@ -222,8 +225,8 @@ namespace zim
          * @param filepath the path of the file in the filesystem.
          */
         FileItem(const std::string& path, const std::string& mimetype,
-                 const std::string& title, const std::string& filepath)
-          : BasicItem(path, mimetype, title),
+                 const std::string& title, Hints hints, const std::string& filepath)
+          : BasicItem(path, mimetype, title, hints),
             filepath(filepath)
         {}
 

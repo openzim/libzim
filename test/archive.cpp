@@ -153,10 +153,10 @@ TEST(ZimArchive, openCreatedArchive)
   creator.setUuid(uuid);
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
-  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent");
+  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent", true);
   creator.addItem(item);
   // Be sure that title order is not the same that url order
-  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content");
+  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content", false);
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
   creator.addIllustration(48, "PNGBinaryContent48");
@@ -167,7 +167,17 @@ TEST(ZimArchive, openCreatedArchive)
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);
+#if !defined(ENABLE_XAPIAN)
+// 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
+#define ALL_ENTRY_COUNT 10
+#else
+// same as above + 2 xapian indexes.
+#define ALL_ENTRY_COUNT 12
+#endif
+  ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
+#undef ALL_ENTRY_COUNT
   ASSERT_EQ(archive.getEntryCount(), 3);
+  ASSERT_EQ(archive.getArticleCount(), 1);
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
@@ -268,6 +278,50 @@ TEST(ZimArchive, illustration)
         ASSERT_EQ(illustrationItem.getPath(), "I/favicon.png") << ctx;
       }
       ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48}));
+    }
+  }
+}
+
+struct ZimFileInfo {
+  zim::entry_index_type articleCount, entryCount, allEntryCount;
+};
+
+struct TestDataInfo {
+  const char* const name;
+  ZimFileInfo withnsInfo, nonsInfo;
+
+
+  const ZimFileInfo& getZimFileInfo(const std::string& category) const {
+    if (category == "nons") {
+      return nonsInfo;
+    } else if (category == "withns") {
+      return withnsInfo;
+    }
+    throw std::runtime_error("Unknown category");
+  }
+};
+
+TEST(ZimArchive, articleNumber)
+{
+  TestDataInfo zimfiles[] = {
+     // Name                                           withns                               nons
+     //                                               {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
+    {"small.zim",                                     { 1,       17,          17 },        { 1,       2,           16        }},
+    {"wikibooks_be_all_nopic_2017-02.zim",            { 70,      118,         118},        { 66,      109,         123       }},
+    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   { 70,      118,         118},        { 66,      109,         123       }},
+    {"wikipedia_en_climate_change_nopic_2020-01.zim", { 7253,    7646,        7646},       { 1837,    7633,        7649      }}
+  };
+  // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
+  // for small.zim, there is always 1 article, whatever the article is in 'A' namespace or in specific index.
+
+  for ( const auto& testdata : zimfiles ) {
+    for (auto& testfile: getDataFilePath(testdata.name)) {
+      const TestContext ctx{ {"path", testfile.path } };
+      const auto& testZimInfo = testdata.getZimFileInfo(testfile.category);
+      const zim::Archive archive(testfile.path);
+      EXPECT_EQ( archive.getAllEntryCount(), testZimInfo.allEntryCount ) << ctx;
+      EXPECT_EQ( archive.getEntryCount(), testZimInfo.entryCount ) << ctx;
+      EXPECT_EQ( archive.getArticleCount(), testZimInfo.articleCount ) << ctx;
     }
   }
 }
