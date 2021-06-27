@@ -7,7 +7,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        distro: [debian-unstable, debian-bullseye, debian-buster, ubuntu-hirsute, ubuntu-groovy, ubuntu-focal, ubuntu-bionic]
+        distro:
+          - debian-unstable
+          - debian-bullseye
+          - debian-buster
+          - ubuntu-impish
+          - ubuntu-hirsute
+          - ubuntu-groovy
+          - ubuntu-focal
+          - ubuntu-bionic
     steps:
       - uses: actions/checkout@v2
 
@@ -50,6 +58,14 @@ jobs:
         id: build-debian-buster
         with:
           args: --no-sign
+
+      - uses: legoktm/gh-action-build-deb@ubuntu-impish
+        if: matrix.distro == 'ubuntu-impish'
+        name: Build package for ubuntu-impish
+        id: build-ubuntu-impish
+        with:
+          args: --no-sign
+          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: legoktm/gh-action-build-deb@ubuntu-hirsute
         if: matrix.distro == 'ubuntu-hirsute'
