@@ -47,6 +47,8 @@ namespace zim
       { return !(*this == other); }
     unsigned size() const  { return 16; }
 
+    explicit operator std::string() const;
+
     char data[16];
   };
 
