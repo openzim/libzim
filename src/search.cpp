@@ -274,22 +274,11 @@ Searcher::Searcher(const Archive& archive) :
     m_archives.push_back(archive);
 }
 
-SuggestionSearcher::SuggestionSearcher(const Archive& archive) :
-    mp_internalDb(nullptr),
-    m_archive(archive)
-{}
-
 Searcher::Searcher(const Searcher& other) = default;
 Searcher& Searcher::operator=(const Searcher& other) = default;
 Searcher::Searcher(Searcher&& other) = default;
 Searcher& Searcher::operator=(Searcher&& other) = default;
 Searcher::~Searcher() = default;
-
-SuggestionSearcher::SuggestionSearcher(const SuggestionSearcher& other) = default;
-SuggestionSearcher& SuggestionSearcher::operator=(const SuggestionSearcher& other) = default;
-SuggestionSearcher::SuggestionSearcher(SuggestionSearcher&& other) = default;
-SuggestionSearcher& SuggestionSearcher::operator=(SuggestionSearcher&& other) = default;
-SuggestionSearcher::~SuggestionSearcher() = default;
 
 Searcher& Searcher::add_archive(const Archive& archive) {
     m_archives.push_back(archive);
@@ -305,22 +294,9 @@ Search Searcher::search(const Query& query)
   return Search(mp_internalDb, query);
 }
 
-SuggestionSearch SuggestionSearcher::suggest(const Query& query)
-{
-  if (!mp_internalDb) {
-    initDatabase();
-  }
-  return SuggestionSearch(mp_internalDb, query);
-}
-
 void Searcher::initDatabase()
 {
     mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
-}
-
-void SuggestionSearcher::initDatabase()
-{
-    mp_internalDb = std::make_shared<InternalDataBase>(std::vector<Archive>{m_archive}, true);
 }
 
 Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
@@ -330,21 +306,9 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 {
 }
 
-SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
- : mp_internalDb(p_internalDb),
-   mp_enquire(nullptr),
-   m_query(query)
-{
-}
-
-
 Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
 Search::~Search() = default;
-
-SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
-SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
-SuggestionSearch::~SuggestionSearch() = default;
 
 Query& Query::setVerbose(bool verbose) {
     m_verbose = verbose;
@@ -405,42 +369,6 @@ Xapian::Enquire& Search::getEnquire() const
     return *mp_enquire;
 }
 
-Xapian::Enquire& SuggestionSearch::getEnquire() const
-{
-    if ( mp_enquire ) {
-        return *mp_enquire;
-    }
-
-    auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
-
-    auto query = mp_internalDb->parseQuery(m_query, true);
-    if (m_query.m_verbose) {
-        std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
-    }
-    enquire->set_query(query);
-
-   /*
-    * In suggestion mode, we are searching over a separate title index. Default BM25 is not
-    * adapted for this case. WDF factor(k1) controls the effect of within document frequency.
-    * k1 = 0.001 reduces the effect of word repitition in document. In BM25, smaller documents
-    * get larger weights, so normalising the length of documents is necessary using b = 1.
-    * The document set is first sorted by their relevance score then by value so that suggestion
-    * results are closer to search string.
-    * refer https://xapian.org/docs/apidoc/html/classXapian_1_1BM25Weight.html
-    */
-
-    enquire->set_weighting_scheme(Xapian::BM25Weight(0.001,0,1,1,0.5));
-    if (mp_internalDb->hasValue("title")) {
-      enquire->set_sort_by_relevance_then_value(mp_internalDb->valueSlot("title"), false);
-    }
-
-    if (mp_internalDb->hasValue("targetPath")) {
-      enquire->set_collapse_key(mp_internalDb->valueSlot("targetPath"));
-    }
-
-    mp_enquire = std::move(enquire);
-    return *mp_enquire;
-}
 
 SearchResultSet::SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb, Xapian::MSet&& mset) :
   mp_internalDb(p_internalDb),
@@ -452,30 +380,12 @@ SearchResultSet::SearchResultSet(std::shared_ptr<InternalDataBase> p_internalDb)
   mp_mset(nullptr)
 {}
 
-SuggestionResultSet::SuggestionResultSet(SearchResultSet searchResultSet) :
-  mp_searchResultSet(std::unique_ptr<SearchResultSet>(new SearchResultSet(searchResultSet))),
-  mp_entryRange(nullptr)
-{}
-
-SuggestionResultSet::SuggestionResultSet(EntryRange entryRange) :
-  mp_searchResultSet(nullptr),
-  mp_entryRange(std::unique_ptr<EntryRange>(new EntryRange(entryRange)))
-{}
-
 int SearchResultSet::size() const
 {
   if (! mp_mset) {
       return 0;
   }
   return mp_mset->size();
-}
-
-int SuggestionResultSet::size() const
-{
-  if (! mp_entryRange) {
-      return mp_searchResultSet->size();
-  }
-  return mp_entryRange->size();
 }
 
 SearchResultSet::iterator SearchResultSet::begin() const
@@ -486,14 +396,6 @@ SearchResultSet::iterator SearchResultSet::begin() const
     return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
 }
 
-SuggestionResultSet::iterator SuggestionResultSet::begin() const
-{
-    if ( ! mp_entryRange ) {
-        return iterator(mp_searchResultSet->begin());
-    }
-    return iterator(mp_entryRange->begin());
-}
-
 SearchResultSet::iterator SearchResultSet::end() const
 {
     if ( ! mp_mset ) {
@@ -502,11 +404,4 @@ SearchResultSet::iterator SearchResultSet::end() const
     return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
 }
 
-SuggestionResultSet::iterator SuggestionResultSet::end() const
-{
-    if ( ! mp_entryRange ) {
-        return iterator(mp_searchResultSet->end());
-    }
-    return iterator(mp_entryRange->end());
-}
 } //namespace zim

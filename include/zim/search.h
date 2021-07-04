@@ -38,11 +38,7 @@ class Archive;
 class InternalDataBase;
 class Query;
 class Search;
-class SuggestionSearch;
 class SearchResultSet;
-class SuggestionResultSet;
-class SuggestionIterator;
-
 
 /**
  * A Searcher is a object fulltext searching a set of Archives
@@ -100,28 +96,6 @@ class Searcher
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::vector<Archive> m_archives;
 };
-
-class SuggestionSearcher
-{
-  public:
-    explicit SuggestionSearcher(const Archive& archive);
-
-    SuggestionSearcher(const SuggestionSearcher& other);
-    SuggestionSearcher& operator=(const SuggestionSearcher& other);
-    SuggestionSearcher(SuggestionSearcher&& other);
-    SuggestionSearcher& operator=(SuggestionSearcher&& other);
-    ~SuggestionSearcher();
-
-    SuggestionSearch suggest(const Query& query);
-
-  private: // methods
-    void initDatabase();
-
-  private: // data
-    std::shared_ptr<InternalDataBase> mp_internalDb;
-    Archive m_archive;
-};
-
 
 /**
  * A Query represent a query.
@@ -211,29 +185,6 @@ class Search
   friend class Searcher;
 };
 
-class SuggestionSearch
-{
-    public:
-        SuggestionSearch(SuggestionSearch&& s);
-        SuggestionSearch& operator=(SuggestionSearch&& s);
-        ~SuggestionSearch();
-
-        const SuggestionResultSet getResults(int start, int end) const;
-
-        int getEstimatedMatches() const;
-
-    private: // methods
-        SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query);
-        Xapian::Enquire& getEnquire() const;
-
-    private: // data
-         std::shared_ptr<InternalDataBase> mp_internalDb;
-         mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
-         Query m_query;
-
-  friend class SuggestionSearcher;
-};
-
 /**
  * The `SearchResult` represent a range of results corresponding to a `Search`.
  *
@@ -263,30 +214,6 @@ class SearchResultSet
   friend class Search;
   friend class SuggestionSearch;
 };
-
-class SuggestionResultSet
-{
-  public:
-    typedef SuggestionIterator iterator;
-    typedef Archive::EntryRange<EntryOrder::titleOrder> EntryRange;
-
-    iterator begin() const;
-
-    iterator end() const;
-
-    int size() const;
-
-  private: // data
-    std::shared_ptr<SearchResultSet> mp_searchResultSet;
-    std::shared_ptr<EntryRange> mp_entryRange;
-
-  private:
-    SuggestionResultSet(SearchResultSet searchResultSet);
-    SuggestionResultSet(EntryRange entryRange);
-
-  friend class SuggestionSearch;
-};
-
 
 } //namespace zim
 

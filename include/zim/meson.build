@@ -17,6 +17,8 @@ if xapian_dep.found()
   install_headers(
     'search.h',
     'search_iterator.h',
+    'suggestion.h',
+    'suggestion_iterator.h',
     subdir:'zim'
   )
 endif
