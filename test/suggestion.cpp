@@ -20,7 +20,7 @@
 #define ZIM_PRIVATE
 
 #include <zim/archive.h>
-#include <zim/search.h>
+#include <zim/suggestion.h>
 #include <zim/item.h>
 
 #include "tools.h"
