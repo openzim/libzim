@@ -19,6 +19,7 @@
 
 #include <zim/uuid.h>
 #include <iostream>
+#include <sstream>
 #include <time.h>
 #include <zim/zim.h> // necessary to have the new types
 #include "log.h"
@@ -78,6 +79,13 @@ namespace zim
     log_debug("generated uuid: " << ret.data);
 
     return ret;
+  }
+
+  Uuid::operator std::string() const
+  {
+    std::ostringstream out;
+    zim::operator<<(out, *this);
+    return out.str();
   }
 
   std::ostream& operator<< (std::ostream& out, const Uuid& uuid)
