@@ -148,16 +148,6 @@ std::string SearchIterator::getSnippet() const {
         return "";
     }
 
-    // Generate title snippet for suggestion_mode
-    if ( internal->mp_internalDb->m_suggestionMode )
-    {
-        try {
-            return internal->mp_mset->snippet(getTitle(), 500, internal->mp_internalDb->m_stemmer);
-        } catch(...) {
-            return "";
-        }
-    }
-
     // Generate full text snippet
     if ( ! internal->mp_internalDb->hasValuesmap() )
     {

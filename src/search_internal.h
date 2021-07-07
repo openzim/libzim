@@ -32,13 +32,13 @@ namespace zim {
  */
 class InternalDataBase {
   public: // methods
-    InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode);
+    InternalDataBase(const std::vector<Archive>& archives);
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::Query parseQuery(const Query& query, bool suggestionMode);
+    Xapian::Query parseQuery(const Query& query);
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
@@ -52,9 +52,6 @@ class InternalDataBase {
 
     // The valuesmap associated with the database.
     std::map<std::string, int> m_valuesmap;
-
-    // Flags to use to parse the query.
-    unsigned int m_flags;
 
     // If the database is open for suggestion.
     // True even if the dabase has no newSuggestionformat.

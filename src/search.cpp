@@ -46,36 +46,20 @@
 namespace zim
 {
 
-InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode)
-  : m_suggestionMode(suggestionMode)
+InternalDataBase::InternalDataBase(const std::vector<Archive>& archives)
 {
     bool first = true;
-    bool hasNewSuggestionFormat = false;
     m_queryParser.set_database(m_database);
     m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
-    m_flags = Xapian::QueryParser::FLAG_DEFAULT;
-    if (suggestionMode) {
-        m_flags |= Xapian::QueryParser::FLAG_PARTIAL;
-    }
+
     for(auto& archive: archives) {
         auto impl = archive.getImpl();
         FileImpl::FindxResult r;
-        if (suggestionMode) {
-          r = impl->findx('X', "title/xapian");
-          if (r.first) {
-            hasNewSuggestionFormat = true;
-          }
-        }
-        if (!r.first) {
-          r = impl->findx('X', "fulltext/xapian");
-        }
+        r = impl->findx('X', "fulltext/xapian");
         if (!r.first) {
           r = impl->findx('Z', "/fulltextIndex/xapian");
         }
         if (!r.first) {
-            if (m_suggestionMode) {
-              m_archives.push_back(archive);
-            }
             continue;
         }
         auto xapianEntry = Entry(impl, entry_index_type(r.second));
@@ -108,14 +92,13 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
                 try {
                     m_stemmer = Xapian::Stem(languageLocale.getLanguage());
                     m_queryParser.set_stemmer(m_stemmer);
-                    m_queryParser.set_stemming_strategy(
-                    (m_suggestionMode && hasNewSuggestionFormat) ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL_Z);
+                    m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL_Z);
                 } catch (...) {
-                    std::cout << "No steemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+                    std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
                 }
             }
             auto stopwords = database.get_metadata("stopwords");
-            if ( !stopwords.empty() && !suggestionMode ){
+            if ( !stopwords.empty() ){
                 std::string stopWord;
                 std::istringstream file(stopwords);
                 Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
@@ -158,41 +141,11 @@ int InternalDataBase::valueSlot(const std::string& valueName) const
   return m_valuesmap.at(valueName);
 }
 
-/*
- * subquery_phrase: selects documents that have the terms in the order of the query
- * within a specified window.
- * subquery_anchored: selects documents that have the terms in the order of the
- * query within a specified window and starts from the beginning of the document.
- * subquery_and: selects documents that have all the terms in the query.
- *
- * subquery_phrase and subquery_anchored by themselves are quite exclusive. To
- * include more "similar" docs, we combine them with subquery_and using OP_OR
- * operator. If a particular document has a weight of A in subquery_and and B
- * in subquery_phrase and C in subquery_anchored, the net weight of that document
- * becomes A+B+C (normalised out of 100). So the documents closer to the query
- * gets a higher relevance.
- */
-Xapian::Query InternalDataBase::parseQuery(const Query& query, bool suggestionMode)
+Xapian::Query InternalDataBase::parseQuery(const Query& query)
 {
   Xapian::Query xquery;
 
-  xquery = m_queryParser.parse_query(query.m_query, m_flags);
-
-  if (suggestionMode && !query.m_query.empty()) {
-    Xapian::QueryParser suggestionParser = m_queryParser;
-    suggestionParser.set_default_op(Xapian::Query::op::OP_OR);
-    suggestionParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
-    Xapian::Query subquery_phrase = suggestionParser.parse_query(query.m_query);
-    // Force the OP_PHRASE window to be equal to the number of terms.
-    subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
-
-    auto qs = ANCHOR_TERM + query.m_query;
-    Xapian::Query subquery_anchored = suggestionParser.parse_query(qs);
-    subquery_anchored = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_anchored.get_terms_begin(), subquery_anchored.get_terms_end(), subquery_anchored.get_length());
-
-    xquery = Xapian::Query(Xapian::Query::OP_OR, xquery, subquery_phrase);
-    xquery = Xapian::Query(Xapian::Query::OP_OR, xquery, subquery_anchored);
-  }
+  xquery = m_queryParser.parse_query(query.m_query);
 
   if (query.m_geoquery && hasValue("geo.position")) {
     Xapian::GreatCircleMetric metric;
@@ -242,7 +195,7 @@ Search Searcher::search(const Query& query)
 
 void Searcher::initDatabase()
 {
-    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, false);
+    mp_internalDb = std::make_shared<InternalDataBase>(m_archives);
 }
 
 Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
@@ -305,7 +258,7 @@ Xapian::Enquire& Search::getEnquire() const
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    auto query = mp_internalDb->parseQuery(m_query, false);
+    auto query = mp_internalDb->parseQuery(m_query);
     if (m_query.m_verbose) {
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }

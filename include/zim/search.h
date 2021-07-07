@@ -212,7 +212,6 @@ class SearchResultSet
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
   friend class Search;
-  friend class SuggestionSearch;
 };
 
 } //namespace zim
