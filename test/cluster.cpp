@@ -108,6 +108,19 @@ TEST(ClusterTest, read_write_cluster)
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
 }
 
+TEST(ClusterTest, read_write_no_content)
+{
+  zim::writer::Cluster cluster(zim::zimcompNone);
+
+  cluster.close();
+  auto buffer = write_to_buffer(cluster, "\3garbage");
+  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
+  zim::Cluster& cluster2 = *cluster2shptr;
+  ASSERT_EQ(cluster2.getCompression(), zim::zimcompNone);
+  ASSERT_EQ(cluster2.isExtended, false);
+  ASSERT_EQ(cluster2.count().v, 0U);
+}
+
 TEST(ClusterTest, read_write_empty)
 {
   zim::writer::Cluster cluster(zim::zimcompNone);
