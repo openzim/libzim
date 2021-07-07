@@ -108,11 +108,12 @@ makeTempFile(const char* name, const std::string& content);
 
 
 template<typename T>
-zim::Buffer write_to_buffer(const T& object)
+zim::Buffer write_to_buffer(const T& object, const std::string& tail="")
 {
   TempFile tmpFile("test_temp_file");
   const auto tmp_fd = tmpFile.fd();
   object.write(tmp_fd);
+  write(tmp_fd, tail.data(), tail.size());
   auto size = LSEEK(tmp_fd, 0, SEEK_END);
 
   auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
