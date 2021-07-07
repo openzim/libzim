@@ -159,8 +159,8 @@ TEST(search_iterator, iteration) {
   TempZimArchive tza("testZim");
 
   zim::Archive archive = tza.createZimFromContent({
-    {"article 1", "item a"},
-    {"article 2", "item b"}
+    {"article 1", "item"},
+    {"article 2", "another item in article 2"}  // different wdf
   });
 
   zim::Searcher searcher(archive);

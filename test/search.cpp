@@ -23,6 +23,8 @@
 #include <zim/item.h>
 #include <zim/search.h>
 
+#include <xapian.h>
+
 #include "tools.h"
 #include "gtest/gtest.h"
 
@@ -127,6 +129,7 @@ TEST(Search, multiSearch)
   zim::Searcher searcher(archive);
   zim::Query query;
   query.setQuery("test article");
+  query.setVerbose(true);
   auto search0 = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
@@ -156,15 +159,98 @@ TEST(Search, multiSearch)
 
   // Be able to do a different search using the same searcher.
   query.setQuery("super");
+  query.setVerbose(true);
   auto search1 = searcher.search(query);
   ASSERT_EQ(2, search1.getEstimatedMatches());
 
   auto searcher2(searcher);
   query.setQuery("temp0");
+  query.setVerbose(true);
   auto search2 = searcher2.search(query);
   auto result = search2.getResults(0, search2.getEstimatedMatches());
   ASSERT_EQ(2, search2.getEstimatedMatches());
   ASSERT_EQ(2, result.size());
 }
 
+TEST(Search, noFTIndex)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(false, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. temp0"));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("test article");
+  query.setVerbose(true);
+  auto search = searcher.search(query);
+
+  // should we switch to a consistent std::runtime_error with proper message?
+  ASSERT_THROW(search.getEstimatedMatches(), Xapian::InvalidArgumentError);
+  ASSERT_THROW(search.getResults(0, 1), Xapian::InvalidArgumentError);
+}
+
+TEST(Search, noStemming)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "nostem");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. temp0"));
+  creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. For article1."));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(std::vector<zim::Archive>{});
+  searcher.add_archive(archive);
+
+  zim::Query query;
+  query.setQuery("test article");
+  query.setVerbose(true);
+  auto search = searcher.search(query);
+
+  ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+  auto result = search.getResults(0, 1);
+  ASSERT_EQ(result.begin().getTitle(), "Test Article0");
+}
+
+TEST(Search, geoQuery)
+{
+  TempZimArchive tza("testZim");
+
+  std::string content = R"(<html><head><meta name="keywords" content="some keyword important"><meta name="geo.position" content="45.000;10.000"></head><body>Test geoquery</body><html>)";
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article", content));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(archive);
+  searcher.setVerbose(true);
+
+  zim::Query query;
+  query.setQuery("geoquery");
+  query.setGeorange(45.000, 10.000, 100);
+  query.setVerbose(true);
+  auto search = searcher.search(query);
+
+  ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+  auto result = search.getResults(0, 1);
+  ASSERT_EQ(result.begin().getTitle(), "Test Article");
+}
 } // unnamed namespace

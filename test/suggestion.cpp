@@ -35,9 +35,8 @@ namespace {
 
   std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
     zim::SuggestionSearcher suggestionSearcher(archive);
-    zim::Query _query;
-    _query.setQuery(query).setVerbose(true);
-    auto suggestionSearch = suggestionSearcher.suggest(_query);
+    suggestionSearcher.setVerbose(true);
+    auto suggestionSearch = suggestionSearcher.suggest(query);
 
     auto suggestionResult = suggestionSearch.getResults(0, range);
 
@@ -50,9 +49,7 @@ namespace {
 
   std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
     zim::SuggestionSearcher suggestionSearcher(archive);
-    zim::Query _query;
-    _query.setQuery(query);
-    auto suggestionSearch = suggestionSearcher.suggest(_query);
+    auto suggestionSearch = suggestionSearcher.suggest(query);
     auto result = suggestionSearch.getResults(0, range);
 
     std::vector<std::string> snippets;
@@ -82,9 +79,7 @@ TEST(Suggestion, searchByTitle)
     ASSERT_TRUE(archive.hasTitleIndex());
     const auto mainItem = archive.getMainEntry().getItem(true);
     zim::SuggestionSearcher suggestionSearcher(archive);
-    zim::Query query;
-    query.setQuery(mainItem.getTitle());
-    auto suggestionSearch = suggestionSearcher.suggest(query);
+    auto suggestionSearch = suggestionSearcher.suggest(mainItem.getTitle());
     ASSERT_NE(0, suggestionSearch.getEstimatedMatches());
     auto result = suggestionSearch.getResults(0, archive.getEntryCount());
     ASSERT_EQ(mainItem.getPath(), result.begin()->getPath());
@@ -464,9 +459,7 @@ TEST(Suggestion, searchByTitle)
     zim::Archive archive(tza.getPath());
 
     zim::SuggestionSearcher suggestionSearcher(archive);
-    zim::Query query;
-    query.setQuery("Test Article");
-    auto suggestionSearch = suggestionSearcher.suggest(query);
+    auto suggestionSearch = suggestionSearcher.suggest("Test Article");
     auto result = suggestionSearch.getResults(0, archive.getEntryCount());
 
     ASSERT_EQ(result.begin()->getPath(), "testPath");
