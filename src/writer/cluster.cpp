@@ -179,7 +179,7 @@ void Cluster::write(int out_fd) const
   }
   clusterInfo += getCompression();
   if (_write(out_fd, &clusterInfo, 1) == -1) {
-    throw std::runtime_error("Error writng");
+    throw std::runtime_error("Error writing");
   }
 
   // Open a comprestion stream if needed
