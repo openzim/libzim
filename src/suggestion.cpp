@@ -18,11 +18,162 @@
  */
 
 #include <zim/suggestion.h>
-#include "search_internal.h"
+#include <zim/item.h>
+#include "suggestion_internal.h"
 #include <iostream>
+#include "fileimpl.h"
+#include "tools.h"
+#include "constants.h"
+
+#include <unicode/locid.h>
 
 namespace zim
 {
+
+SuggestionDataBase::SuggestionDataBase(const Archive& archive)
+  : m_archive(archive)
+{
+  bool hasNewSuggestionFormat = false;
+  m_queryParser.set_database(m_database);
+  m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
+  m_flags = Xapian::QueryParser::FLAG_DEFAULT | Xapian::QueryParser::FLAG_PARTIAL;
+
+  auto impl = archive.getImpl();
+  FileImpl::FindxResult r;
+
+  r = impl->findx('X', "title/xapian");
+  if (r.first) {
+    hasNewSuggestionFormat = true;
+  }
+
+  if (!r.first) {
+    return;
+  }
+
+  auto xapianEntry = Entry(impl, entry_index_type(r.second));
+  auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
+  if (accessInfo.second == 0) {
+      return;
+  }
+
+  DEFAULTFS::FD databasefd;
+  try {
+      databasefd = DEFAULTFS::openFile(accessInfo.first);
+  } catch (...) {
+      std::cerr << "Impossible to open " << accessInfo.first << std::endl;
+      std::cerr << strerror(errno) << std::endl;
+      return;
+  }
+  if (!databasefd.seek(offset_t(accessInfo.second))) {
+      std::cerr << "Something went wrong seeking databasedb "
+                << accessInfo.first << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+      return;
+  }
+
+  Xapian::Database database;
+  try {
+      database = Xapian::Database(databasefd.release());
+  } catch( Xapian::DatabaseError& e) {
+      std::cerr << "Something went wrong opening xapian database for zimfile "
+                << accessInfo.first << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+      std::cerr << "error = " << e.get_msg() << std::endl;
+      return;
+  }
+
+  m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
+  auto language = database.get_metadata("language");
+  if (language.empty() ) {
+      // Database created before 2017/03 has no language metadata.
+      // However, term were stemmed anyway and we need to stem our
+      // search query the same the database was created.
+      // So we need a language, let's use the one of the zim.
+      // If zimfile has no language metadata, we can't do lot more here :/
+      try {
+          language = archive.getMetadata("Language");
+      } catch(...) {}
+  }
+  if (!language.empty()) {
+      icu::Locale languageLocale(language.c_str());
+      /* Configuring language base steemming */
+      try {
+          m_stemmer = Xapian::Stem(languageLocale.getLanguage());
+          m_queryParser.set_stemmer(m_stemmer);
+          m_queryParser.set_stemming_strategy(
+          (hasNewSuggestionFormat) ? Xapian::QueryParser::STEM_SOME : Xapian::QueryParser::STEM_ALL_Z);
+      } catch (...) {
+          std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+      }
+  }
+
+  auto prefixes = database.get_metadata("prefixes");
+  if ( hasNewSuggestionFormat && prefixes.find("S") != std::string::npos ) {
+      m_prefix = "S";
+  }
+
+  m_database.add_database(database);
+}
+
+bool SuggestionDataBase::hasDatabase() const
+{
+  return !m_database.internal.empty();
+}
+
+bool SuggestionDataBase::hasValuesmap() const
+{
+  return !m_valuesmap.empty();
+}
+
+bool SuggestionDataBase::hasValue(const std::string& valueName) const
+{
+  return (m_valuesmap.find(valueName) != m_valuesmap.end());
+}
+
+int SuggestionDataBase::valueSlot(const std::string& valueName) const
+{
+  return m_valuesmap.at(valueName);
+}
+
+/*
+ * subquery_phrase: selects documents that have the terms in the order of the query
+ * within a specified window.
+ * subquery_anchored: selects documents that have the terms in the order of the
+ * query within a specified window and starts from the beginning of the document.
+ * subquery_and: selects documents that have all the terms in the query.
+ *
+ * subquery_phrase and subquery_anchored by themselves are quite exclusive. To
+ * include more "similar" docs, we combine them with subquery_and using OP_OR
+ * operator. If a particular document has a weight of A in subquery_and and B
+ * in subquery_phrase and C in subquery_anchored, the net weight of that document
+ * becomes A+B+C (normalised out of 100). So the documents closer to the query
+ * gets a higher relevance.
+ */
+Xapian::Query SuggestionDataBase::parseQuery(const SuggestionQuery& query)
+{
+  Xapian::Query xquery;
+
+  xquery = m_queryParser.parse_query(query.m_query, m_flags, m_prefix);
+
+  if (!query.m_query.empty()) {
+    Xapian::QueryParser suggestionParser = m_queryParser;
+    suggestionParser.set_default_op(Xapian::Query::op::OP_OR);
+    suggestionParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
+    Xapian::Query subquery_phrase = suggestionParser.parse_query(query.m_query);
+    // Force the OP_PHRASE window to be equal to the number of terms.
+    subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
+
+    auto qs = ANCHOR_TERM + query.m_query;
+    Xapian::Query subquery_anchored = suggestionParser.parse_query(qs);
+    subquery_anchored = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_anchored.get_terms_begin(), subquery_anchored.get_terms_end(), subquery_anchored.get_length());
+
+    xquery = Xapian::Query(Xapian::Query::OP_OR, xquery, subquery_phrase);
+    xquery = Xapian::Query(Xapian::Query::OP_OR, xquery, subquery_anchored);
+  }
+
+  return xquery;
+}
+
 
 SuggestionSearcher::SuggestionSearcher(const Archive& archive) :
     mp_internalDb(nullptr),
@@ -35,7 +186,7 @@ SuggestionSearcher::SuggestionSearcher(SuggestionSearcher&& other) = default;
 SuggestionSearcher& SuggestionSearcher::operator=(SuggestionSearcher&& other) = default;
 SuggestionSearcher::~SuggestionSearcher() = default;
 
-SuggestionSearch SuggestionSearcher::suggest(const Query& query)
+SuggestionSearch SuggestionSearcher::suggest(const SuggestionQuery& query)
 {
   if (!mp_internalDb) {
     initDatabase();
@@ -45,10 +196,10 @@ SuggestionSearch SuggestionSearcher::suggest(const Query& query)
 
 void SuggestionSearcher::initDatabase()
 {
-    mp_internalDb = std::make_shared<InternalDataBase>(std::vector<Archive>{m_archive}, true);
+    mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive);
 }
 
-SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
+SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const SuggestionQuery& query)
  : mp_internalDb(p_internalDb),
    mp_enquire(nullptr),
    m_query(query)
@@ -58,6 +209,16 @@ SuggestionSearch::SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalD
 SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
 SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
 SuggestionSearch::~SuggestionSearch() = default;
+
+SuggestionQuery& SuggestionQuery::setVerbose(bool verbose) {
+    m_verbose = verbose;
+    return *this;
+}
+
+SuggestionQuery& SuggestionQuery::setQuery(const std::string& query) {
+    m_query = query;
+    return *this;
+}
 
 int SuggestionSearch::getEstimatedMatches() const
 {
@@ -73,7 +234,7 @@ int SuggestionSearch::getEstimatedMatches() const
     }
   }
 
-  return mp_internalDb->m_archives[0].findByTitle(m_query.m_query).size();
+  return mp_internalDb->m_archive.findByTitle(m_query.m_query).size();
 }
 
 const SuggestionResultSet SuggestionSearch::getResults(int start, int end) const {
@@ -82,12 +243,12 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int end) const
       try {
         auto enquire = getEnquire();
         auto mset = enquire.get_mset(start, end);
-        return SuggestionResultSet(SearchResultSet(mp_internalDb, std::move(mset)));
+        return SuggestionResultSet(mp_internalDb, std::move(mset));
       } catch(...) {
         std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
       }
     }
-    return SuggestionResultSet(mp_internalDb->m_archives[0].findByTitle(m_query.m_query));
+    return SuggestionResultSet(mp_internalDb->m_archive.findByTitle(m_query.m_query));
 }
 
 Xapian::Enquire& SuggestionSearch::getEnquire() const
@@ -98,7 +259,7 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    auto query = mp_internalDb->parseQuery(m_query, true);
+    auto query = mp_internalDb->parseQuery(m_query);
     if (m_query.m_verbose) {
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
@@ -127,20 +288,21 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
     return *mp_enquire;
 }
 
-SuggestionResultSet::SuggestionResultSet(SearchResultSet searchResultSet) :
-  mp_searchResultSet(std::unique_ptr<SearchResultSet>(new SearchResultSet(searchResultSet))),
-  mp_entryRange(nullptr)
+SuggestionResultSet::SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset) :
+  mp_internalDb(p_internalDb),
+  mp_mset(std::make_shared<Xapian::MSet>(mset))
 {}
 
 SuggestionResultSet::SuggestionResultSet(EntryRange entryRange) :
-  mp_searchResultSet(nullptr),
+  mp_internalDb(nullptr),
+  mp_mset(nullptr),
   mp_entryRange(std::unique_ptr<EntryRange>(new EntryRange(entryRange)))
 {}
 
 int SuggestionResultSet::size() const
 {
   if (! mp_entryRange) {
-      return mp_searchResultSet->size();
+      return mp_mset->size();
   }
   return mp_entryRange->size();
 }
@@ -148,7 +310,7 @@ int SuggestionResultSet::size() const
 SuggestionResultSet::iterator SuggestionResultSet::begin() const
 {
     if ( ! mp_entryRange ) {
-        return iterator(mp_searchResultSet->begin());
+        return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin());
     }
     return iterator(mp_entryRange->begin());
 }
@@ -156,7 +318,7 @@ SuggestionResultSet::iterator SuggestionResultSet::begin() const
 SuggestionResultSet::iterator SuggestionResultSet::end() const
 {
     if ( ! mp_entryRange ) {
-        return iterator(mp_searchResultSet->end());
+        return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end());
     }
     return iterator(mp_entryRange->end());
 }

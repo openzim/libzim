@@ -56,13 +56,17 @@ class SuggestionIterator
         const SuggestionItem* operator->();
 
     private: // data
+        struct SuggestionInternalData;
         std::unique_ptr<RangeIterator> mp_rangeIterator;
-        std::unique_ptr<SearchIterator> mp_searchIterator;
+        std::unique_ptr<SuggestionInternalData> mp_internal;
         std::unique_ptr<SuggestionItem> m_suggestionItem;
 
     private: // methods
+        std::string getIndexPath() const;
+        std::string getIndexTitle() const;
+        std::string getIndexSnippet() const;
         SuggestionIterator(RangeIterator rangeIterator);
-        SuggestionIterator(SearchIterator searchIterator);
+        SuggestionIterator(SuggestionInternalData* internal_data);
 };
 
 class SuggestionItem

@@ -21,8 +21,12 @@
 #define ZIM_SUGGESTION_H
 
 #include "suggestion_iterator.h"
-#include "search.h"
 #include "archive.h"
+
+namespace Xapian {
+  class Enquire;
+  class MSet;
+};
 
 namespace zim
 {
@@ -30,6 +34,8 @@ namespace zim
 class SuggestionSearcher;
 class SuggestionSearch;
 class SuggestionIterator;
+class SuggestionDataBase;
+class SuggestionQuery;
 
 class SuggestionSearcher
 {
@@ -42,14 +48,27 @@ class SuggestionSearcher
     SuggestionSearcher& operator=(SuggestionSearcher&& other);
     ~SuggestionSearcher();
 
-    SuggestionSearch suggest(const Query& query);
+    SuggestionSearch suggest(const SuggestionQuery& query);
 
   private: // methods
     void initDatabase();
 
   private: // data
-    std::shared_ptr<InternalDataBase> mp_internalDb;
+    std::shared_ptr<SuggestionDataBase> mp_internalDb;
     Archive m_archive;
+};
+
+class SuggestionQuery
+{
+  public:
+    SuggestionQuery() = default;
+
+    SuggestionQuery& setVerbose(bool verbose);
+
+    SuggestionQuery& setQuery(const std::string& query);
+
+    bool m_verbose { false };
+    std::string m_query { "" };
 };
 
 class SuggestionSearch
@@ -64,13 +83,13 @@ class SuggestionSearch
         int getEstimatedMatches() const;
 
     private: // methods
-        SuggestionSearch(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query);
+        SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const SuggestionQuery& query);
         Xapian::Enquire& getEnquire() const;
 
     private: // data
-         std::shared_ptr<InternalDataBase> mp_internalDb;
+         std::shared_ptr<SuggestionDataBase> mp_internalDb;
          mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
-         Query m_query;
+         SuggestionQuery m_query;
 
   friend class SuggestionSearcher;
 };
@@ -88,11 +107,12 @@ class SuggestionResultSet
     int size() const;
 
   private: // data
-    std::shared_ptr<SearchResultSet> mp_searchResultSet;
+    std::shared_ptr<SuggestionDataBase> mp_internalDb;
+    std::shared_ptr<Xapian::MSet> mp_mset;
     std::shared_ptr<EntryRange> mp_entryRange;
 
   private:
-    SuggestionResultSet(SearchResultSet searchResultSet);
+    SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset);
     SuggestionResultSet(EntryRange entryRange);
 
   friend class SuggestionSearch;
