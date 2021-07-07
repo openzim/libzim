@@ -121,8 +121,6 @@ class Query
     /** Set the textual query of the Query.
      *
      * @param query The string to search for.
-     * @param suggestionMode If we should search on title (suggestionMode)
-     *                       or on fulltext index.
      */
     Query& setQuery(const std::string& query);
 
@@ -214,7 +212,6 @@ class SearchResultSet
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
   friend class Search;
-  friend class SuggestionSearch;
 };
 
 } //namespace zim
