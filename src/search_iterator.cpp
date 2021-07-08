@@ -133,16 +133,7 @@ std::string SearchIterator::getTitle() const {
     if ( ! internal ) {
         return "";
     }
-    if ( ! internal->mp_internalDb->hasValuesmap() )
-    {
-        /* This is the old legacy version. Guess and try */
-        return internal->get_document().get_value(0);
-    }
-    else if ( internal->mp_internalDb->hasValue("title") )
-    {
-        return internal->get_document().get_value(internal->mp_internalDb->valueSlot("title"));
-    }
-    return "";
+    return internal->get_entry().getTitle();
 }
 
 int SearchIterator::getScore() const {
