@@ -29,7 +29,8 @@ namespace zim
 {
 
 /**
- * A class to encapsulate a xapian title index and all the information we can gather from it.
+ * A class to encapsulate a xapian title index and it's archive and all the
+ * information we can gather from it.
  */
 class SuggestionDataBase {
   public: // methods

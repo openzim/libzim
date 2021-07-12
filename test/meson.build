@@ -22,7 +22,7 @@ tests = [
 ]
 
 if xapian_dep.found()
-    tests += ['search', 'suggestion', 'defaultIndexdata', 'search_iterator']
+    tests += ['search', 'suggestion', 'defaultIndexdata', 'search_iterator', 'suggestion_iterator']
 endif
 
 datadir = get_option('test_data_dir')

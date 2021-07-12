@@ -51,10 +51,16 @@ SuggestionIterator::SuggestionIterator(const SuggestionIterator& it)
     else if (it.mp_rangeIterator) mp_rangeIterator = std::unique_ptr<RangeIterator>(new RangeIterator(*it.mp_rangeIterator));
 }
 
-SuggestionIterator & SuggestionIterator::operator=(const SuggestionIterator& it) {
-    *mp_rangeIterator = *it.mp_rangeIterator;
-    *mp_internal = *it.mp_internal;
-    *m_suggestionItem = *it.m_suggestionItem;
+SuggestionIterator& SuggestionIterator::operator=(const SuggestionIterator& it) {
+    if (!it.mp_rangeIterator) mp_rangeIterator.reset();
+    else if (!mp_rangeIterator) mp_rangeIterator = std::unique_ptr<RangeIterator>(new RangeIterator(*it.mp_rangeIterator));
+    else *mp_rangeIterator = *it.mp_rangeIterator;
+
+    if (!it.mp_internal) mp_internal.reset();
+    else if (!mp_internal) mp_internal = std::unique_ptr<SuggestionInternalData>(new SuggestionInternalData(*it.mp_internal));
+    else *mp_internal = *it.mp_internal;
+
+    m_suggestionItem.reset();
     return *this;
 }
 
@@ -111,6 +117,15 @@ std::string SuggestionIterator::getDbData() const {
     }
 
     return mp_internal->get_document().get_data();
+}
+
+Entry SuggestionIterator::getEntry() const {
+    if (mp_internal) {
+        return mp_internal->get_entry();
+    } else if (mp_rangeIterator) {
+        return **mp_rangeIterator;
+    }
+    throw std::runtime_error("Cannot dereference iterator");
 }
 
 std::string SuggestionIterator::getIndexPath() const

@@ -20,6 +20,8 @@
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/error.h>
+#include <zim/suggestion_iterator.h>
+#include <zim/item.h>
 
 #include "tools.h"
 #include "gtest/gtest.h"
@@ -139,6 +141,31 @@ TEST(IteratorTests, beginByPath)
         }
     }
 }
+
+TEST(IteartorTests, iteratorFunctions)
+{
+    for(auto& testfile:getDataFilePath("wikipedia_en_climate_change_nopic_2020-01.zim")) {
+        const zim::Archive archive(testfile.path);
+        ASSERT_TRUE(archive.hasTitleIndex());
+        const auto mainItem = archive.getMainEntry().getItem(true);
+        auto range = archive.findByTitle(mainItem.getTitle());
+        ASSERT_EQ(range.size(), 1);
+        auto it1 = range.begin();
+        ASSERT_EQ(it1->getTitle(), mainItem.getTitle());
+
+        auto it2 = range.begin();
+        it2 = it1;   // test operator
+        ASSERT_EQ(it2->getTitle(), mainItem.getTitle());
+
+        it1++;
+        ASSERT_EQ(it1, range.end());
+        ASSERT_NO_THROW(it1->getTitle());
+
+        it1--;
+        ASSERT_EQ(it1->getTitle(), mainItem.getTitle());
+  }
+}
+
 #endif
 
 } // namespace

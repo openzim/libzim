@@ -51,6 +51,7 @@ class SuggestionIterator
 #ifdef ZIM_PRIVATE
         std::string getDbData() const;
 #endif
+        Entry getEntry() const;
 
         const SuggestionItem& operator*();
         const SuggestionItem* operator->();

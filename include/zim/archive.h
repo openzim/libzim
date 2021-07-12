@@ -497,14 +497,13 @@ private:
     public:
       explicit iterator(const std::shared_ptr<FileImpl> file, entry_index_type idx)
         : m_file(file),
-          m_idx(idx),
-          m_entry(nullptr)
+          m_idx(idx)
       {}
 
       iterator(const iterator<order>& other)
         : m_file(other.m_file),
           m_idx(other.m_idx),
-          m_entry(new Entry(*other.m_entry))
+          m_entry(new Entry(*other))
       {}
 
       bool operator== (const iterator<order>& it) const

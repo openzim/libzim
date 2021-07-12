@@ -17,6 +17,8 @@
  *
  */
 
+#define ZIM_PRIVATE
+
 #include <zim/suggestion.h>
 #include <zim/item.h>
 #include "suggestion_internal.h"
@@ -251,6 +253,10 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int end) const
     return SuggestionResultSet(mp_internalDb->m_archive.findByTitle(m_query.m_query));
 }
 
+const SuggestionResultSet SuggestionSearch::testRangeBased(Archive::EntryRange<EntryOrder::titleOrder> entryRange) const {
+    return SuggestionResultSet(entryRange);
+}
+
 Xapian::Enquire& SuggestionSearch::getEnquire() const
 {
     if ( mp_enquire ) {
@@ -298,6 +304,7 @@ SuggestionResultSet::SuggestionResultSet(EntryRange entryRange) :
   mp_mset(nullptr),
   mp_entryRange(std::unique_ptr<EntryRange>(new EntryRange(entryRange)))
 {}
+
 
 int SuggestionResultSet::size() const
 {
