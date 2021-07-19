@@ -126,7 +126,7 @@ unsigned int zim::parseIllustrationPathToSize(const std::string& s)
   int nw(0), nh(0), nEnd(0);
   long int w(-1), h(-1);
   if ( sscanf(s.c_str(), "Illustration_%n%ldx%n%ld@1%n)", &nw, &w, &nh, &h, &nEnd) == 2
-     && nEnd == s.size() && !isspace(s[nw]) && !isspace(s[nh]) && w == h && w >= 0) {
+     && (unsigned int) nEnd == s.size() && !isspace(s[nw]) && !isspace(s[nh]) && w == h && w >= 0) {
     return (unsigned int)w;
   }
   throw std::runtime_error("");
@@ -141,3 +141,35 @@ uint32_t zim::randomNumber(uint32_t max)
   std::lock_guard<std::mutex> l(mutex);
   return ((double)random() / random.max()) * max;
 }
+
+/* Split string in a token array */
+std::vector<std::string> zim::split(const std::string & str,
+                                const std::string & delims)
+{
+  std::string::size_type lastPos = str.find_first_not_of(delims, 0);
+  std::string::size_type pos = str.find_first_of(delims, lastPos);
+  std::vector<std::string> tokens;
+
+  while (std::string::npos != pos || std::string::npos != lastPos)
+    {
+      tokens.push_back(str.substr(lastPos, pos - lastPos));
+      lastPos = str.find_first_not_of(delims, pos);
+      pos     = str.find_first_of(delims, lastPos);
+    }
+
+  return tokens;
+}
+
+std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
+    std::map<std::string, int> result;
+    std::vector<std::string> elems = split(s, ";");
+    for(std::vector<std::string>::iterator elem = elems.begin();
+        elem != elems.end();
+        elem++)
+    {
+        std::vector<std::string> tmp_elems = split(*elem, ":");
+        result.insert( std::pair<std::string, int>(tmp_elems[0], atoi(tmp_elems[1].c_str())) );
+    }
+    return result;
+}
+

@@ -47,6 +47,8 @@ endif
 xapian_sources = [
     'search.cpp',
     'search_iterator.cpp',
+    'suggestion.cpp',
+    'suggestion_iterator.cpp',
     'xapian/htmlparse.cc',
     'xapian/myhtmlparse.cc',
     'writer/xapianIndexer.cpp',

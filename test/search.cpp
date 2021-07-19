@@ -23,7 +23,7 @@
 #include <zim/item.h>
 #include <zim/search.h>
 
-#include "tools.h"
+#include <xapian.h>
 
 #include "tools.h"
 #include "gtest/gtest.h"
@@ -31,14 +31,13 @@
 namespace
 {
 
-using zim::unittests::getDataFilePath;
 using zim::unittests::TempZimArchive;
 using zim::unittests::TestItem;
 
 std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
   zim::Searcher searcher(archive);
   zim::Query _query;
-  _query.setQuery(query, false);
+  _query.setQuery(query);
   auto search = searcher.search(_query);
   auto result = search.getResults(0, range);
 
@@ -54,24 +53,6 @@ std::vector<std::string> getSnippet(const zim::Archive archive, std::string quer
     getSnippet(archive, query, range),                          \
     std::vector<std::string>({__VA_ARGS__})                     \
   )
-
-#if WITH_TEST_DATA
-TEST(Search, searchByTitle)
-{
-  for(auto& testfile:getDataFilePath("small.zim")) {
-    const zim::Archive archive(testfile.path);
-    ASSERT_TRUE(archive.hasTitleIndex());
-    const auto mainItem = archive.getMainEntry().getItem(true);
-    zim::Searcher searcher(archive);
-    zim::Query query;
-    query.setQuery(mainItem.getTitle(), true);
-    auto search = searcher.search(query);
-    ASSERT_NE(0, search.getEstimatedMatches());
-    auto result = search.getResults(0, archive.getEntryCount());
-    ASSERT_EQ(mainItem.getPath(), result.begin().getPath());
-  }
-}
-#endif
 
 // To secure compatibity of new zim files with older kiwixes, we need to index
 // full path of the entries as data of documents.
@@ -93,7 +74,7 @@ TEST(Search, indexFullPath)
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("test article", false);
+  query.setQuery("test article");
   auto search = searcher.search(query);
 
   ASSERT_NE(0, search.getEstimatedMatches());
@@ -134,9 +115,9 @@ TEST(Search, multiSearch)
   zim::writer::Creator creator;
   creator.configIndexing(true, "en");
   creator.startZimCreation(tza.getPath());
-  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article"));
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. temp0"));
   creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. For article1."));
-  creator.addItem(std::make_shared<TestItem>("path2", "text/html", "Test Article001", "This is a test article. Super."));
+  creator.addItem(std::make_shared<TestItem>("path2", "text/html", "Test Article001", "This is a test article. Super. temp0"));
   creator.addItem(std::make_shared<TestItem>("path3", "text/html", "Test Article2", "This is a test article. Super."));
   creator.addItem(std::make_shared<TestItem>("path4", "text/html", "Test Article23", "This is a test article. bis."));
 
@@ -147,7 +128,8 @@ TEST(Search, multiSearch)
 
   zim::Searcher searcher(archive);
   zim::Query query;
-  query.setQuery("test article", false);
+  query.setQuery("test article");
+  query.setVerbose(true);
   auto search0 = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
@@ -168,17 +150,99 @@ TEST(Search, multiSearch)
   ASSERT_EQ(it1, result1.end());
 
   // Be able to do a different search using the same searcher.
-  query.setQuery("super", false);
+  query.setQuery("super");
+  query.setVerbose(true);
   auto search1 = searcher.search(query);
   ASSERT_EQ(2, search1.getEstimatedMatches());
 
   // Copy the searcher and do a suggestion query.
   auto searcher2(searcher);
-  query.setQuery("Article0", true);
+  query.setQuery("temp0");
+  query.setVerbose(true);
   auto search2 = searcher2.search(query);
   auto result = search2.getResults(0, search2.getEstimatedMatches());
-  ASSERT_EQ(3, search2.getEstimatedMatches()); // Xapian estimate the number of match to 3. To investigate
+  ASSERT_EQ(2, search2.getEstimatedMatches()); // Xapian estimate the number of match to 2. To investigate
   ASSERT_EQ(2, result.size());
 }
 
+TEST(Search, noFTIndex)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(false, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. temp0"));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(archive);
+  zim::Query query;
+  query.setQuery("test article");
+  query.setVerbose(true);
+  auto search = searcher.search(query);
+
+  // should we switch to a consistent std::runtime_error with proper message?
+  ASSERT_THROW(search.getEstimatedMatches(), Xapian::InvalidArgumentError);
+  ASSERT_THROW(search.getResults(0, 1), Xapian::InvalidArgumentError);
+}
+
+TEST(Search, noStemming)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "nostem");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. temp0"));
+  creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. For article1."));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(std::vector<zim::Archive>{});  // test add_archive
+  searcher.add_archive(archive);
+
+  zim::Query query;
+  query.setQuery("test article");
+  query.setVerbose(true);
+  auto search = searcher.search(query);
+
+  ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+  auto result = search.getResults(0, 1);
+  ASSERT_EQ(result.begin().getTitle(), "Test Article0");
+}
+
+TEST(Search, geoQuery)
+{
+  TempZimArchive tza("testZim");
+
+  std::string content = R"(<html><head><meta name="keywords" content="some keyword important"><meta name="geo.position" content="45.000;10.000"></head><body>Test geoquery</body><html>)";
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article", content));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(archive);  // test add_archive
+
+  zim::Query query;
+  query.setQuery("geoquery");
+  query.setGeorange(45.000, 10.000, 100);
+  query.setVerbose(true);
+  auto search = searcher.search(query);
+
+  ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+  auto result = search.getResults(0, 1);
+  ASSERT_EQ(result.begin().getTitle(), "Test Article");
+}
 } // unnamed namespace

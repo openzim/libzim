@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2021 Maneesh P M <manu.pm55@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,38 +17,37 @@
  *
  */
 
-#ifndef ZIM_SEARCH_INTERNAL_H
-#define ZIM_SEARCH_INTERNAL_H
+#ifndef ZIM_SUGGESTION_INTERNAL_H
+#define ZIM_SUGGESTION_INTERNAL_H
+
+#include "zim/suggestion.h"
+#include "zim/archive.h"
 
 #include <xapian.h>
 
-#include <zim/entry.h>
-#include <zim/error.h>
-
-namespace zim {
+namespace zim
+{
 
 /**
- * A class to encapsulate a xapian database and all the information we can gather from it.
+ * A class to encapsulate a xapian title index and it's archive and all the
+ * information we can gather from it.
  */
-class InternalDataBase {
+class SuggestionDataBase {
   public: // methods
-    InternalDataBase(const std::vector<Archive>& archives);
+    SuggestionDataBase(const Archive& archive);
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::Query parseQuery(const Query& query);
+    Xapian::Query parseQuery(const SuggestionQuery& query);
 
   public: // data
+    // The archive to get suggestions from.
+    Archive m_archive;
+
     // The (main) database we will search on (wrapping other xapian databases).
     Xapian::Database m_database;
-
-    // The real databases.
-    std::vector<Xapian::Database> m_xapianDatabases;
-
-    // The archives we are searching on.
-    std::vector<Archive> m_archives;
 
     // The valuesmap associated with the database.
     std::map<std::string, int> m_valuesmap;
@@ -59,10 +58,6 @@ class InternalDataBase {
     // Flags to use to parse the query.
     unsigned int m_flags;
 
-    // If the database is open for suggestion.
-    // True even if the dabase has no newSuggestionformat.
-    bool m_suggestionMode;
-
     // The query parser corresponding to the database.
     Xapian::QueryParser m_queryParser;
 
@@ -70,15 +65,15 @@ class InternalDataBase {
     Xapian::Stem m_stemmer;
 };
 
-struct SearchIterator::InternalData {
-    std::shared_ptr<InternalDataBase> mp_internalDb;
+struct SuggestionIterator::SuggestionInternalData {
+    std::shared_ptr<SuggestionDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
     bool document_fetched;
     std::unique_ptr<Entry> _entry;
 
-    InternalData(const InternalData& other) :
+    SuggestionInternalData(const SuggestionInternalData& other) :
       mp_internalDb(other.mp_internalDb),
       mp_mset(other.mp_mset),
       iterator(other.iterator),
@@ -88,7 +83,7 @@ struct SearchIterator::InternalData {
     {
     }
 
-    InternalData& operator=(const InternalData& other)
+    SuggestionInternalData& operator=(const SuggestionInternalData& other)
     {
       if (this != &other) {
         mp_internalDb = other.mp_internalDb;
@@ -101,7 +96,7 @@ struct SearchIterator::InternalData {
       return *this;
     }
 
-    InternalData(std::shared_ptr<InternalDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
+    SuggestionInternalData(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
         mp_internalDb(p_internalDb),
         mp_mset(p_mset),
         iterator(iterator),
@@ -119,21 +114,14 @@ struct SearchIterator::InternalData {
         return _document;
     }
 
-    int get_databasenumber() {
-        Xapian::docid docid = *iterator;
-        return (docid - 1) % mp_internalDb->m_archives.size();
-    }
-
     Entry& get_entry() {
-        if ( !_entry ) {
-            int databasenumber = get_databasenumber();
-            auto archive = mp_internalDb->m_archives.at(databasenumber);
-            _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
+        if (!_entry || !document_fetched) {
+            _entry.reset(new Entry(mp_internalDb->m_archive.getEntryByPath(get_document().get_data())));
         }
         return *_entry.get();
     }
 
-    bool operator==(const InternalData& other) const {
+    bool operator==(const SuggestionInternalData& other) const {
         return (mp_internalDb == other.mp_internalDb
             &&  mp_mset == other.mp_mset
             &&  iterator == other.iterator);
@@ -141,7 +129,6 @@ struct SearchIterator::InternalData {
 };
 
 
+}
 
-}; //namespace zim
-
-#endif //ZIM_SEARCH_INTERNAL_H
+#endif // ZIM_SUGGESTION_INTERNAL_H

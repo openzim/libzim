@@ -157,7 +157,6 @@ namespace zim
     }
     if (ret.find(48) == ret.end()) {
       try {
-        auto r = findFavicon(*m_impl);
         ret.insert(48);
       } catch(EntryNotFound&) {}
     }
