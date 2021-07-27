@@ -100,6 +100,8 @@ TEST(search_iterator, functions) {
 
   zim::Archive archive = tza.createZimFromTitles({
     "item a",
+    "Item B",
+    "iTem ć"
   });
 
   zim::Searcher searcher(archive);
@@ -118,6 +120,12 @@ TEST(search_iterator, functions) {
   ASSERT_EQ(it.getZimId(), archive.getUuid());
   ASSERT_EQ(it.getWordCount(), -1);            // Unimplemented
   ASSERT_EQ(it.getSize(), -1);                 // Unimplemented
+
+  // Check getTitle for accents/cased text
+  it++;
+  ASSERT_EQ(it.getTitle(), "Item B");
+  it++;
+  ASSERT_EQ(it.getTitle(), "iTem ć");
 }
 
 TEST(search_iterator, stemmedSearch) {
