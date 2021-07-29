@@ -23,6 +23,7 @@
 #include "fileimpl.h"
 #include "search_internal.h"
 #include "fs.h"
+#include "tools.h"
 
 #include <sstream>
 
@@ -44,40 +45,6 @@
 
 namespace zim
 {
-
-namespace {
-/* Split string in a token array */
-std::vector<std::string> split(const std::string & str,
-                                const std::string & delims=" *-")
-{
-  std::string::size_type lastPos = str.find_first_not_of(delims, 0);
-  std::string::size_type pos = str.find_first_of(delims, lastPos);
-  std::vector<std::string> tokens;
-
-  while (std::string::npos != pos || std::string::npos != lastPos)
-    {
-      tokens.push_back(str.substr(lastPos, pos - lastPos));
-      lastPos = str.find_first_not_of(delims, pos);
-      pos     = str.find_first_of(delims, lastPos);
-    }
-
-  return tokens;
-}
-
-std::map<std::string, int> read_valuesmap(const std::string &s) {
-    std::map<std::string, int> result;
-    std::vector<std::string> elems = split(s, ";");
-    for(std::vector<std::string>::iterator elem = elems.begin();
-        elem != elems.end();
-        elem++)
-    {
-        std::vector<std::string> tmp_elems = split(*elem, ":");
-        result.insert( std::pair<std::string, int>(tmp_elems[0], atoi(tmp_elems[1].c_str())) );
-    }
-    return result;
-}
-
-} // end of anonymous namespace
 
 InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool suggestionMode)
   : m_suggestionMode(suggestionMode)

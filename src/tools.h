@@ -23,6 +23,8 @@
 
 #include <string>
 #include <tuple>
+#include <map>
+#include <vector>
 #include "config.h"
 
 namespace zim {
@@ -43,6 +45,11 @@ namespace zim {
    * This function is threadsafe
    **/
   uint32_t randomNumber(uint32_t max);
+
+  std::vector<std::string> split(const std::string & str,
+                                const std::string & delims=" *-");
+
+  std::map<std::string, int> read_valuesmap(const std::string& s);
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H
