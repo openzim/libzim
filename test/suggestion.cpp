@@ -37,7 +37,6 @@ namespace {
     zim::SuggestionSearcher suggestionSearcher(archive);
     suggestionSearcher.setVerbose(true);
     auto suggestionSearch = suggestionSearcher.suggest(query);
-
     auto suggestionResult = suggestionSearch.getResults(0, range);
 
     std::vector<std::string> result;

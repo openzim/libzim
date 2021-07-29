@@ -32,7 +32,7 @@ namespace zim {
  */
 class InternalDataBase {
   public: // methods
-    InternalDataBase(const std::vector<Archive>& archives);
+    InternalDataBase(const std::vector<Archive>& archives, bool verbose);
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
@@ -62,6 +62,9 @@ class InternalDataBase {
 
     // The stemmer used to parse queries
     Xapian::Stem m_stemmer;
+
+    // Verbosity of operations.
+    bool m_verbose;
 };
 
 struct SearchIterator::InternalData {

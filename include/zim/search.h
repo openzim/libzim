@@ -89,12 +89,19 @@ class Searcher
      */
     Search search(const Query& query);
 
+    /** Set the verbosity of search operations.
+     *
+     * @param verbose The verbose mode to set
+     */
+    void setVerbose(bool verbose);
+
   private: // methods
     void initDatabase();
 
   private: // data
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::vector<Archive> m_archives;
+    bool m_verbose;
 };
 
 /**
@@ -111,12 +118,6 @@ class Query
      * Create a empty query.
      */
     Query() = default;
-
-    /** Set the verbosity of the Query.
-     *
-     * @param verbose If the query must be verbose or not.
-     */
-    Query& setVerbose(bool verbose);
 
     /** Set the textual query of the Query.
      *
@@ -135,7 +136,6 @@ class Query
      */
     Query& setGeorange(float latitude, float longitude, float distance);
 
-    bool m_verbose { false };
     std::string m_query { "" };
 
     bool m_geoquery { false };

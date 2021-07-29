@@ -34,7 +34,7 @@ namespace zim
  */
 class SuggestionDataBase {
   public: // methods
-    SuggestionDataBase(const Archive& archive);
+    SuggestionDataBase(const Archive& archive, bool verbose);
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
@@ -57,6 +57,9 @@ class SuggestionDataBase {
 
     // The stemmer used to parse queries
     Xapian::Stem m_stemmer;
+
+    // Verbosity of operations.
+    bool m_verbose;
 };
 
 struct SuggestionIterator::SuggestionInternalData {

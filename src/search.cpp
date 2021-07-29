@@ -46,7 +46,8 @@
 namespace zim
 {
 
-InternalDataBase::InternalDataBase(const std::vector<Archive>& archives)
+InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool verbose)
+  : m_verbose(verbose)
 {
     bool first = true;
     m_queryParser.set_database(m_database);
@@ -164,11 +165,13 @@ Xapian::Query InternalDataBase::parseQuery(const Query& query)
 
 Searcher::Searcher(const std::vector<Archive>& archives) :
     mp_internalDb(nullptr),
-    m_archives(archives)
+    m_archives(archives),
+    m_verbose(false)
 {}
 
 Searcher::Searcher(const Archive& archive) :
-    mp_internalDb(nullptr)
+    mp_internalDb(nullptr),
+    m_verbose(false)
 {
     m_archives.push_back(archive);
 }
@@ -193,9 +196,14 @@ Search Searcher::search(const Query& query)
   return Search(mp_internalDb, query);
 }
 
+void Searcher::setVerbose(bool verbose)
+{
+  m_verbose = verbose;
+}
+
 void Searcher::initDatabase()
 {
-    mp_internalDb = std::make_shared<InternalDataBase>(m_archives);
+    mp_internalDb = std::make_shared<InternalDataBase>(m_archives, m_verbose);
 }
 
 Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& query)
@@ -208,11 +216,6 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
 Search::~Search() = default;
-
-Query& Query::setVerbose(bool verbose) {
-    m_verbose = verbose;
-    return *this;
-}
 
 Query& Query::setQuery(const std::string& query) {
     m_query = query;
@@ -259,7 +262,7 @@ Xapian::Enquire& Search::getEnquire() const
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
     auto query = mp_internalDb->parseQuery(m_query);
-    if (m_query.m_verbose) {
+    if (mp_internalDb->m_verbose) {
         std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
     }
     enquire->set_query(query);

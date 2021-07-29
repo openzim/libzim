@@ -127,9 +127,9 @@ TEST(Search, multiSearch)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(archive);
+  searcher.setVerbose(true);
   zim::Query query;
   query.setQuery("test article");
-  query.setVerbose(true);
   auto search0 = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
@@ -159,13 +159,12 @@ TEST(Search, multiSearch)
 
   // Be able to do a different search using the same searcher.
   query.setQuery("super");
-  query.setVerbose(true);
   auto search1 = searcher.search(query);
   ASSERT_EQ(2, search1.getEstimatedMatches());
 
   auto searcher2(searcher);
+  searcher2.setVerbose(true);
   query.setQuery("temp0");
-  query.setVerbose(true);
   auto search2 = searcher2.search(query);
   auto result = search2.getResults(0, search2.getEstimatedMatches());
   ASSERT_EQ(2, search2.getEstimatedMatches());
@@ -187,9 +186,9 @@ TEST(Search, noFTIndex)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(archive);
+  searcher.setVerbose(true);
   zim::Query query;
   query.setQuery("test article");
-  query.setVerbose(true);
   auto search = searcher.search(query);
 
   // should we switch to a consistent std::runtime_error with proper message?
@@ -214,10 +213,10 @@ TEST(Search, noStemming)
 
   zim::Searcher searcher(std::vector<zim::Archive>{});
   searcher.add_archive(archive);
+  searcher.setVerbose(true);
 
   zim::Query query;
   query.setQuery("test article");
-  query.setVerbose(true);
   auto search = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
@@ -246,7 +245,6 @@ TEST(Search, geoQuery)
   zim::Query query;
   query.setQuery("geoquery");
   query.setGeorange(45.000, 10.000, 100);
-  query.setVerbose(true);
   auto search = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());

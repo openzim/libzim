@@ -32,8 +32,9 @@
 namespace zim
 {
 
-SuggestionDataBase::SuggestionDataBase(const Archive& archive)
-  : m_archive(archive)
+SuggestionDataBase::SuggestionDataBase(const Archive& archive, bool verbose)
+  : m_archive(archive),
+    m_verbose(verbose)
 {
   m_queryParser.set_database(m_database);
   m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
@@ -147,7 +148,8 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
 
 SuggestionSearcher::SuggestionSearcher(const Archive& archive) :
     mp_internalDb(nullptr),
-    m_archive(archive)
+    m_archive(archive),
+    m_verbose(false)
 {}
 
 SuggestionSearcher::SuggestionSearcher(const SuggestionSearcher& other) = default;
@@ -164,9 +166,14 @@ SuggestionSearch SuggestionSearcher::suggest(const std::string& query)
   return SuggestionSearch(mp_internalDb, query);
 }
 
+void SuggestionSearcher::setVerbose(bool verbose)
+{
+  m_verbose = verbose;
+}
+
 void SuggestionSearcher::initDatabase()
 {
-    mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive);
+    mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
 }
 
 SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)
@@ -226,10 +233,9 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
     auto query = mp_internalDb->parseQuery(m_query);
-    // Verbose will be moved out of query in a further commit
-    // if (m_query.m_verbose) {
-    //     std::cout << "Parsed query '" << m_query.m_query << "' to " << query.get_description() << std::endl;
-    // }
+    if (mp_internalDb->m_verbose) {
+        std::cout << "Parsed query '" << m_query << "' to " << query.get_description() << std::endl;
+    }
     enquire->set_query(query);
 
    /*

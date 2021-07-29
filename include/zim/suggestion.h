@@ -73,12 +73,19 @@ class SuggestionSearcher
      */
     SuggestionSearch suggest(const std::string& query);
 
+    /** Set the verbosity of search operations.
+     *
+     * @param verbose The verbose mode to set
+     */
+    void setVerbose(bool verbose);
+
   private: // methods
     void initDatabase();
 
   private: // data
     std::shared_ptr<SuggestionDataBase> mp_internalDb;
     Archive m_archive;
+    bool m_verbose;
 };
 
 /**
