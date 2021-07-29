@@ -84,30 +84,9 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool su
             continue;
         }
 
-        DEFAULTFS::FD databasefd;
-        try {
-            databasefd = DEFAULTFS::openFile(accessInfo.first);
-        } catch (...) {
-            std::cerr << "Impossible to open " << accessInfo.first << std::endl;
-            std::cerr << strerror(errno) << std::endl;
-            continue;
-        }
-        if (!databasefd.seek(offset_t(accessInfo.second))) {
-            std::cerr << "Something went wrong seeking databasedb "
-                      << accessInfo.first << std::endl;
-            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
-            continue;
-        }
-
         Xapian::Database database;
-        try {
-            database = Xapian::Database(databasefd.release());
-        } catch( Xapian::DatabaseError& e) {
-            std::cerr << "Something went wrong opening xapian database for zimfile "
-                      << accessInfo.first << std::endl;
-            std::cerr << "dbOffest = " << accessInfo.second << std::endl;
-            std::cerr << "error = " << e.get_msg() << std::endl;
-            continue;
+        if (!getDbFromAccessInfo(accessInfo, database)) {
+          continue;
         }
 
         if ( first ) {

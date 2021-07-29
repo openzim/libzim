@@ -19,8 +19,8 @@
 
 #define ZIM_PRIVATE
 
-#include "../include/zim/suggestion_iterator.h"
-#include "../include/zim/search_iterator.h"
+#include "zim/suggestion_iterator.h"
+#include "suggestion_internal.h"
 
 namespace zim
 {
@@ -31,39 +31,38 @@ SuggestionIterator& SuggestionIterator::operator=(SuggestionIterator&& it) = def
 
 SuggestionIterator::SuggestionIterator()
   : mp_rangeIterator(nullptr),
-    mp_searchIterator(nullptr)
+    mp_internal(nullptr)
 {}
 
 SuggestionIterator::SuggestionIterator(RangeIterator rangeIterator)
   : mp_rangeIterator(std::unique_ptr<RangeIterator>(new RangeIterator(rangeIterator))),
-    mp_searchIterator(nullptr)
+    mp_internal(nullptr)
 {}
 
-SuggestionIterator::SuggestionIterator(SearchIterator searchIterator)
+SuggestionIterator::SuggestionIterator(SuggestionInternalData* internal)
   : mp_rangeIterator(nullptr),
-    mp_searchIterator(std::unique_ptr<SearchIterator>(new SearchIterator(searchIterator)))
+    mp_internal(internal)
 {}
 
 SuggestionIterator::SuggestionIterator(const SuggestionIterator& it)
-    : mp_rangeIterator(nullptr), mp_searchIterator(nullptr)
+    : mp_rangeIterator(nullptr), mp_internal(nullptr)
 {
-    if (it.mp_searchIterator) {
-        mp_searchIterator = std::unique_ptr<SearchIterator>(new SearchIterator(*it.mp_searchIterator));
-    }
-    else if (it.mp_rangeIterator) {
+    if (it.mp_internal) {
+        mp_internal = std::unique_ptr<SuggestionInternalData>(new SuggestionInternalData(*it.mp_internal));
+    } else if (it.mp_rangeIterator) {
         mp_rangeIterator = std::unique_ptr<RangeIterator>(new RangeIterator(*it.mp_rangeIterator));
     }
 }
 
-SuggestionIterator & SuggestionIterator::operator=(const SuggestionIterator& it) {
+SuggestionIterator& SuggestionIterator::operator=(const SuggestionIterator& it) {
     mp_rangeIterator.reset();
     if (it.mp_rangeIterator) {
         mp_rangeIterator.reset(new RangeIterator(*it.mp_rangeIterator));
     }
 
-    mp_searchIterator.reset();
-    if (it.mp_searchIterator) {
-        mp_searchIterator.reset(new SearchIterator(*it.mp_searchIterator));
+    mp_internal.reset();
+    if (it.mp_internal) {
+        mp_internal.reset(new SuggestionInternalData(*it.mp_internal));
     }
 
     m_suggestionItem.reset();
@@ -73,8 +72,8 @@ SuggestionIterator & SuggestionIterator::operator=(const SuggestionIterator& it)
 bool SuggestionIterator::operator==(const SuggestionIterator& it) const {
     if (mp_rangeIterator && it.mp_rangeIterator) {
         return (*mp_rangeIterator == *it.mp_rangeIterator);
-    } else if (mp_searchIterator && it.mp_searchIterator) {
-        return (*mp_searchIterator == *it.mp_searchIterator);
+    } else if (mp_internal && it.mp_internal) {
+        return (*mp_internal == *it.mp_internal);
     }
     return false;
 }
@@ -84,8 +83,10 @@ bool SuggestionIterator::operator!=(const SuggestionIterator& it) const {
 }
 
 SuggestionIterator& SuggestionIterator::operator++() {
-    if (mp_searchIterator) {
-        ++(*mp_searchIterator);
+    if (mp_internal) {
+        ++(mp_internal->iterator);
+        mp_internal->_entry.reset();
+        mp_internal->document_fetched = false;
     } else if (mp_rangeIterator) {
         ++(*mp_rangeIterator);
     }
@@ -100,8 +101,10 @@ SuggestionIterator SuggestionIterator::operator++(int) {
 }
 
 SuggestionIterator& SuggestionIterator::operator--() {
-    if (mp_searchIterator) {
-        --(*mp_searchIterator);
+    if (mp_internal) {
+        --(mp_internal->iterator);
+        mp_internal->_entry.reset();
+        mp_internal->document_fetched = false;
     } else if (mp_rangeIterator) {
         --(*mp_rangeIterator);
     }
@@ -116,11 +119,65 @@ SuggestionIterator SuggestionIterator::operator--(int) {
 }
 
 std::string SuggestionIterator::getDbData() const {
-    if (! mp_searchIterator) {
+    if (! mp_internal) {
         return "";
     }
 
-    return mp_searchIterator->getDbData();
+    return mp_internal->get_document().get_data();
+}
+
+Entry SuggestionIterator::getEntry() const {
+    if (mp_internal) {
+        return mp_internal->get_entry();
+    } else if (mp_rangeIterator) {
+        return **mp_rangeIterator;
+    }
+    throw std::runtime_error("Cannot dereference iterator");
+}
+
+std::string SuggestionIterator::getIndexPath() const
+{
+    if (! mp_internal) {
+        return "";
+    }
+
+    std::string path = mp_internal->get_document().get_data();
+    bool hasNewNamespaceScheme = mp_internal->mp_internalDb->m_archive.hasNewNamespaceScheme();
+
+    std::string dbDataType = mp_internal->mp_internalDb->m_database.get_metadata("data");
+    if (dbDataType.empty()) {
+        dbDataType = "fullPath";
+    }
+
+    // If the archive has new namespace scheme and the type of its indexed data
+    // is `fullPath` we return only the `path` without namespace
+    if (hasNewNamespaceScheme && dbDataType == "fullPath") {
+        path = path.substr(2);
+    }
+    return path;
+}
+
+std::string SuggestionIterator::getIndexTitle() const {
+    if ( ! mp_internal) {
+        return "";
+    }
+    try {
+        return mp_internal->get_entry().getTitle();
+    } catch (...) {
+        return "";
+    }
+}
+
+std::string SuggestionIterator::getIndexSnippet() const {
+    if (! mp_internal) {
+        return "";
+    }
+
+    try {
+        return mp_internal->mp_mset->snippet(getIndexTitle(), 500, mp_internal->mp_internalDb->m_stemmer);
+    } catch(...) {
+        return "";
+    }
 }
 
 const SuggestionItem& SuggestionIterator::operator*() {
@@ -128,9 +185,9 @@ const SuggestionItem& SuggestionIterator::operator*() {
         return *m_suggestionItem;
     }
 
-    if (mp_searchIterator) {
-        m_suggestionItem.reset(new SuggestionItem((*mp_searchIterator)->getTitle(),
-                mp_searchIterator->getPath(), mp_searchIterator->getSnippet()));
+    if (mp_internal) {
+        m_suggestionItem.reset(new SuggestionItem(getIndexTitle(),
+                getIndexPath(), getIndexSnippet()));
     } else if (mp_rangeIterator) {
         m_suggestionItem.reset(new SuggestionItem((*mp_rangeIterator)->getTitle(),
                                                 (*mp_rangeIterator)->getPath()));

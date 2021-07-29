@@ -40,7 +40,7 @@ class SuggestionDataBase {
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::Query parseQuery(const SuggestionQuery& query);
+    Xapian::Query parseQuery(const std::string& query);
 
   public: // data
     // The archive to get suggestions from.
@@ -51,12 +51,6 @@ class SuggestionDataBase {
 
     // The valuesmap associated with the database.
     std::map<std::string, int> m_valuesmap;
-
-    // The prefix to search on.
-    std::string m_prefix;
-
-    // Flags to use to parse the query.
-    unsigned int m_flags;
 
     // The query parser corresponding to the database.
     Xapian::QueryParser m_queryParser;

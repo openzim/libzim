@@ -27,6 +27,11 @@
 #include <vector>
 #include "config.h"
 
+#include <zim/item.h>
+
+namespace Xapian {
+  class Database;
+}
 namespace zim {
   bool isCompressibleMimetype(const std::string& mimetype);
 #if defined(ENABLE_XAPIAN)
@@ -50,6 +55,8 @@ namespace zim {
                                 const std::string & delims=" *-");
 
   std::map<std::string, int> read_valuesmap(const std::string& s);
+
+  bool getDbFromAccessInfo(Item::DirectAccessInfo accessInfo, Xapian::Database& database);
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H

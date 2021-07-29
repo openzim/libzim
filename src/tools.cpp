@@ -19,6 +19,8 @@
  */
 
 #include "tools.h"
+#include "fs.h"
+#include "xapian.h"
 
 #include <sys/types.h>
 #include <string.h>
@@ -173,3 +175,31 @@ std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
     return result;
 }
 
+bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Database& database) {
+  zim::DEFAULTFS::FD databasefd;
+  try {
+      databasefd = zim::DEFAULTFS::openFile(accessInfo.first);
+  } catch (...) {
+      std::cerr << "Impossible to open " << accessInfo.first << std::endl;
+      std::cerr << strerror(errno) << std::endl;
+      return false;
+  }
+  if (!databasefd.seek(zim::offset_t(accessInfo.second))) {
+      std::cerr << "Something went wrong seeking databasedb "
+                << accessInfo.first << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+      return false;
+  }
+
+  try {
+      database = Xapian::Database(databasefd.release());
+  } catch( Xapian::DatabaseError& e) {
+      std::cerr << "Something went wrong opening xapian database for zimfile "
+                << accessInfo.first << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+      std::cerr << "error = " << e.get_msg() << std::endl;
+      return false;
+  }
+
+  return true;
+}
