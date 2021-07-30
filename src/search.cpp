@@ -357,10 +357,10 @@ int Search::getEstimatedMatches() const
     }
 }
 
-const SearchResultSet Search::getResults(int start, int end) const {
+const SearchResultSet Search::getResults(int start, int maxResults) const {
     try {
       auto enquire = getEnquire();
-      auto mset = enquire.get_mset(start, end);
+      auto mset = enquire.get_mset(start, maxResults);
       return SearchResultSet(mp_internalDb, std::move(mset));
     } catch(Xapian::QueryParserError& e) {
       return SearchResultSet(mp_internalDb);
