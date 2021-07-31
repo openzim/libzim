@@ -30,7 +30,7 @@ namespace zim
 class SearchResultSet;
 class SearchIterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
 {
-    friend class zim::SearchResultSet;
+    friend class SearchResultSet;
     public:
         SearchIterator();
         SearchIterator(const SearchIterator& it);

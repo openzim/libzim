@@ -139,14 +139,14 @@ class Query
      */
     Query& setGeorange(float latitude, float longitude, float distance);
 
-    bool m_verbose { false };
-    std::string m_query { "" };
-    bool m_suggestionMode { false };
+    bool m_verbose = false;
+    std::string m_query = "";
+    bool m_suggestionMode = false;
 
-    bool m_geoquery { false };
-    float m_latitude { 0 };
-    float m_longitude { 0 };
-    float m_distance { 0 } ;
+    bool m_geoquery = false;
+    float m_latitude = 0;
+    float m_longitude = 0;
+    float m_distance = 0;
 };
 
 
