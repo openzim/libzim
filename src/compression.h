@@ -234,16 +234,19 @@ class Compressor
             }
           case CompStatus::STREAM_END:
             return RunnerStatus::NEED_MORE;
-          case CompStatus::BUF_ERROR: {
-            //Not enought output size
-            ret_size *= 2;
-            std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
-            memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
-            stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
-            stream.avail_out = ret_size - stream.total_out;
-            ret_data = std::move(new_ret_data);
-            continue;
-          }
+          case CompStatus::BUF_ERROR:
+            if (stream.avail_out == 0) {
+              //Not enought output size
+              ret_size *= 2;
+              std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
+              memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
+              stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
+              stream.avail_out = ret_size - stream.total_out;
+              ret_data = std::move(new_ret_data);
+              continue;
+            } else {
+              return RunnerStatus::ERROR;
+            }
           break;
           default:
             // unreachable
