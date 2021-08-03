@@ -23,11 +23,15 @@
 #include <memory>
 #include <iterator>
 #include "entry.h"
+#include "archive.h"
 #include "uuid.h"
 
 namespace zim
 {
 class SearchResultSet;
+class SuggestionResultSet;
+class SuggestionItem;
+
 class SearchIterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
 {
     friend class zim::SearchResultSet;
@@ -68,6 +72,66 @@ class SearchIterator : public std::iterator<std::bidirectional_iterator_tag, Ent
         SearchIterator(InternalData* internal_data);
 
         bool isEnd() const;
+};
+
+class SuggestionIterator
+{
+    typedef Archive::iterator<EntryOrder::titleOrder> RangeIterator;
+    friend class SuggestionResultSet;
+    public:
+        SuggestionIterator();
+        SuggestionIterator(const SuggestionIterator& it);
+        SuggestionIterator& operator=(const SuggestionIterator& it);
+        SuggestionIterator(SuggestionIterator&& it);
+        SuggestionIterator& operator=(SuggestionIterator&& it);
+        ~SuggestionIterator();
+
+        bool operator== (const SuggestionIterator& it) const;
+        bool operator!= (const SuggestionIterator& it) const;
+
+        SuggestionIterator& operator++();
+        SuggestionIterator operator++(int);
+        SuggestionIterator& operator--();
+        SuggestionIterator operator--(int);
+
+#ifdef ZIM_PRIVATE
+        std::string getDbData() const;
+#endif
+
+        const SuggestionItem& operator*();
+        const SuggestionItem* operator->();
+
+    private: // data
+        std::unique_ptr<RangeIterator> mp_rangeIterator;
+        std::unique_ptr<SearchIterator> mp_searchIterator;
+        std::unique_ptr<SuggestionItem> m_suggestionItem;
+
+    private: // methods
+        SuggestionIterator(RangeIterator rangeIterator);
+        SuggestionIterator(SearchIterator searchIterator);
+};
+
+class SuggestionItem
+{
+    public: // methods
+        std::string getTitle() const { return title; }
+        std::string getPath() const { return path; }
+        std::string getSnippet() const { return snippet; }
+
+        bool hasSnippet() const { return !snippet.empty(); }
+
+    private: // data
+        std::string title;
+        std::string path;
+        std::string snippet;
+
+    private: // methods
+        explicit SuggestionItem(std::string title, std::string path, std::string snippet = "")
+        :   title(title),
+            path(path),
+            snippet(snippet) {}
+
+    friend class SuggestionIterator;
 };
 
 } // namespace zim

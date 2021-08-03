@@ -525,6 +525,16 @@ private:
       bool operator!= (const iterator<order>& it) const
         { return !operator==(it); }
 
+      iterator<order>& operator=(iterator<order>&& it) = default;
+
+      iterator<order>& operator=(iterator<order>& it)
+      {
+        m_entry.reset();
+        m_idx = it.m_idx;
+        m_file = it.m_file;
+        return *this;
+      }
+
       iterator<order>& operator++()
       {
         ++m_idx;
