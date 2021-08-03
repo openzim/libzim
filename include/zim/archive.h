@@ -502,7 +502,7 @@ private:
       iterator(const iterator<order>& other)
         : m_file(other.m_file),
           m_idx(other.m_idx),
-          m_entry(new Entry(*other.m_entry))
+          m_entry(new Entry(*other))
       {}
 
       bool operator== (const iterator<order>& it) const
