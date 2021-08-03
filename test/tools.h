@@ -122,8 +122,8 @@ zim::Buffer write_to_buffer(const T& object, const std::string& tail="")
   while ( size != 0 ) {
     const auto size_to_read = std::min(size_type(size), size_type(INT_MAX));
     const auto n = read(tmp_fd, p, size_to_read);
-    if ( n == -1)
-      throw std::runtime_error("Cannot read");
+    if ( n == -1 )
+      throw std::runtime_error("Cannot read " + tmpFile.path());
     p += n;
     size -= n;
   }
