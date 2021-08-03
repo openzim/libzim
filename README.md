@@ -113,19 +113,23 @@ xapian by testing the define `LIBZIM_WITH_XAPIAN`.
 Testing
 -------
 
-ZIM files needed by unit-tests are not inculded in this
-repository. You must tell Meson where the test data is located.
-
-By default, Meson will use an internal directory in your build directory.
-But you can specify another directory with option `test_data_dir`:
+ZIM files needed by unit-tests are not included in this repository. By
+default, Meson will use an internal directory in your build directory,
+but you can specify another directory with option `test_data_dir`:
 ```bash
 meson . build -Dtest_data_dir=<A_DIR_WITH_TEST_DATA>
 ```
 
-Whatever you specify a directory or not, you need a extra step to download the data. At choice:
-* Get the data from the repository [openzim/zim-testing-suite](https://github.com/openzim/zim-testing-suite) and put it yourself in the directory.
-* Use the script [download_test_data.py](scripts/download_test_data.py) which will download and extract the data for you.
-* As `ninja` to do it for you with `ninja download_test_data` once the project is configured.
+Whatever you specify a directory or not, you need a extra step to
+download the data. At choice:
+* Get the data from the repository
+  [openzim/zim-testing-suite](https://github.com/openzim/zim-testing-suite)
+  and put it yourself in the directory.
+* Use the script
+  [download_test_data.py](scripts/download_test_data.py) which will
+  download and extract the data for you.
+* As `ninja` to do it for you with `ninja download_test_data` once the
+  project is configured.
 
 The simple workflow is:
 ```bash
