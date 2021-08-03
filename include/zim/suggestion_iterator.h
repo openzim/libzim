@@ -34,7 +34,7 @@ class SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag,
     typedef Archive::iterator<EntryOrder::titleOrder> RangeIterator;
     friend class SuggestionResultSet;
     public:
-        SuggestionIterator();
+        SuggestionIterator() = delete;
         SuggestionIterator(const SuggestionIterator& it);
         SuggestionIterator& operator=(const SuggestionIterator& it);
         SuggestionIterator(SuggestionIterator&& it);

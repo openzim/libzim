@@ -30,14 +30,6 @@ namespace {
 
 using zim::unittests::TempZimArchive;
 
-TEST(suggestion_iterator, uninitialized) {
-  zim::SuggestionResultSet::iterator it;
-
-  ASSERT_THROW(it.getEntry(), std::runtime_error);
-  ASSERT_THROW(*it, std::runtime_error);
-  ASSERT_THROW(it.operator->(), std::runtime_error);
-}
-
 TEST(suggestion_iterator, end) {
   TempZimArchive tza("testZim");
 
@@ -114,8 +106,7 @@ TEST(suggestion_iterator, iteration) {
   auto result = search.getResults(0, archive.getEntryCount());
   auto it1 = result.begin();
 
-  zim::SuggestionIterator it;
-  it = it1;   // test operator
+  zim::SuggestionIterator it = it1;
   ASSERT_EQ(it->getTitle(), result.begin()->getTitle());
 
   ASSERT_EQ(it->getTitle(), "article a");

@@ -29,11 +29,6 @@ SuggestionIterator::~SuggestionIterator() = default;
 SuggestionIterator::SuggestionIterator(SuggestionIterator&& it) = default;
 SuggestionIterator& SuggestionIterator::operator=(SuggestionIterator&& it) = default;
 
-SuggestionIterator::SuggestionIterator()
-  : mp_rangeIterator(nullptr),
-    mp_internal(nullptr)
-{}
-
 SuggestionIterator::SuggestionIterator(RangeIterator rangeIterator)
   : mp_rangeIterator(std::unique_ptr<RangeIterator>(new RangeIterator(rangeIterator))),
     mp_internal(nullptr)
