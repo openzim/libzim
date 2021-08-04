@@ -167,6 +167,14 @@ TEST(Search, multiSearch)
   it1++;it1++;it1++;
   ASSERT_EQ(it1, result1.end());
 
+  // Check result retrieval in start ranges
+  auto result2 = search0.getResults(0, 3);    // Should return 3 results
+  ASSERT_EQ(result2.size(), 3);
+
+  // Check result retrieval in middle ranges
+  auto result3 = search0.getResults(2, 3);    // Should Return 3 result
+  ASSERT_EQ(result3.size(), 3);
+
   // Be able to do a different search using the same searcher.
   query.setQuery("super", false);
   auto search1 = searcher.search(query);

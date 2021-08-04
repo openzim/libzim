@@ -167,10 +167,10 @@ class Search
          *
          * @param start The begining of the range to get
          *              (offset of the first result).
-         * @param end   The end of the range to get
-         *              (offset of the result past the end of the range).
+         * @param maxResults The maximum number of results to return
+         *                   (offset of last result from the start of range).
          */
-        const SearchResultSet getResults(int start, int end) const;
+        const SearchResultSet getResults(int start, int maxResults) const;
 
         /** Get the number of estimated results for this search.
          *
