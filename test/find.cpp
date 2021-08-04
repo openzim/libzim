@@ -90,6 +90,46 @@ TEST(FindTests, ByTitle)
           ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
         }
         ASSERT_EQ(count, 5);
+
+        // Offset from end
+        auto range2 = archive.findByTitle("Украінская");
+        range2 = range2.offset(0, 2);
+        count = 0;
+        for(auto& entry: range2) {
+          count++;
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+        }
+        ASSERT_EQ(count, 2);
+
+        // Offset from start
+        auto range3 = archive.findByTitle("Украінская");
+        range3 = range3.offset(1, 4);
+        count = 0;
+        for(auto& entry: range3) {
+          count++;
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+        }
+        ASSERT_EQ(count, 4);
+
+        // Offset with more max results greater than the number of results
+        auto range4 = archive.findByTitle("Украінская");
+        range4 = range4.offset(0, 10);
+        count = 0;
+        for(auto& entry: range4) {
+          count++;
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+        }
+        ASSERT_EQ(count, 5);
+
+        // Offset with start greater than the number of results
+        auto range5 = archive.findByTitle("Украінская");
+        range5 = range5.offset(10, 5);
+        count = 0;
+        for(auto& entry: range5) {
+          count++;
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+        }
+        ASSERT_EQ(count, 0);
     }
 }
 
