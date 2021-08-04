@@ -114,13 +114,13 @@ zim::Buffer write_to_buffer(const T& object, const std::string& tail="")
   const auto tmp_fd = tmpFile.fd();
   object.write(tmp_fd);
   write(tmp_fd, tail.data(), tail.size());
-  auto size = LSEEK(tmp_fd, 0, SEEK_END);
+  size_type size = LSEEK(tmp_fd, 0, SEEK_END);
 
   auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));
   LSEEK(tmp_fd, 0, SEEK_SET);
   char* p = const_cast<char*>(buf.data());
   while ( size != 0 ) {
-    const auto size_to_read = std::min(size_type(size), size_type(INT_MAX));
+    const auto size_to_read = std::min(size, size_type{1024*1024});
     const auto n = read(tmp_fd, p, size_to_read);
     if ( n == -1 )
       throw std::runtime_error("Cannot read " + tmpFile.path());
