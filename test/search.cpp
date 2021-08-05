@@ -189,11 +189,7 @@ TEST(Search, noFTIndex)
   searcher.setVerbose(true);
   zim::Query query;
   query.setQuery("test article");
-  auto search = searcher.search(query);
-
-  // should we switch to a consistent std::runtime_error with proper message?
-  ASSERT_THROW(search.getEstimatedMatches(), Xapian::InvalidArgumentError);
-  ASSERT_THROW(search.getResults(0, 1), Xapian::InvalidArgumentError);
+  ASSERT_THROW(searcher.search(query), std::runtime_error);
 }
 
 TEST(Search, noStemming)

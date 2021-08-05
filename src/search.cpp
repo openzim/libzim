@@ -193,6 +193,11 @@ Search Searcher::search(const Query& query)
   if (!mp_internalDb) {
     initDatabase();
   }
+
+  if (!mp_internalDb->hasDatabase()) {
+    throw(std::runtime_error("Cannot create Search without FT Xapian index"));
+  }
+
   return Search(mp_internalDb, query);
 }
 

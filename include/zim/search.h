@@ -86,6 +86,9 @@ class Searcher
      * The search is made on all archives added to the Searcher.
      *
      * @param query The Query to search.
+     *
+     * @throws std::runtime_error if the searcher does not have a valid
+     *         FT database.
      */
     Search search(const Query& query);
 
