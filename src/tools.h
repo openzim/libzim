@@ -29,14 +29,13 @@
 
 #include <zim/item.h>
 
+#if defined(ENABLE_XAPIAN)
 namespace Xapian {
   class Database;
 }
+#endif  // ENABLE_XAPIAN
 namespace zim {
   bool isCompressibleMimetype(const std::string& mimetype);
-#if defined(ENABLE_XAPIAN)
-  std::string removeAccents(const std::string& text);
-#endif
   uint32_t countWords(const std::string& text);
   void microsleep(int microseconds);
 
@@ -56,7 +55,11 @@ namespace zim {
 
   std::map<std::string, int> read_valuesmap(const std::string& s);
 
+// Xapian based tools
+#if defined(ENABLE_XAPIAN)
+  std::string removeAccents(const std::string& text);
   bool getDbFromAccessInfo(Item::DirectAccessInfo accessInfo, Xapian::Database& database);
+#endif
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H

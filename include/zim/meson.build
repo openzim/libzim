@@ -9,6 +9,8 @@ install_headers(
     'entry.h',
     'uuid.h',
     'zim.h',
+    'suggestion.h',
+    'suggestion_iterator.h',
     zim_config,
     subdir:'zim'
 )
@@ -17,8 +19,6 @@ if xapian_dep.found()
   install_headers(
     'search.h',
     'search_iterator.h',
-    'suggestion.h',
-    'suggestion_iterator.h',
     subdir:'zim'
   )
 endif

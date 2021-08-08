@@ -23,10 +23,12 @@
 #include "suggestion_iterator.h"
 #include "archive.h"
 
+#if defined(LIBZIM_WITH_XAPIAN)
 namespace Xapian {
   class Enquire;
   class MSet;
 };
+#endif
 
 namespace zim
 {
@@ -113,21 +115,29 @@ class SuggestionSearch
          */
         int getEstimatedMatches() const;
 
-#ifdef ZIM_PRIVATE
-    // Close Xapian db to force range based search
-    const void closeXapianIndex();
-#endif
-
     private: // methods
         SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query);
-        Xapian::Enquire& getEnquire() const;
 
     private: // data
          std::shared_ptr<SuggestionDataBase> mp_internalDb;
-         mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
          std::string m_query;
 
   friend class SuggestionSearcher;
+
+#ifdef ZIM_PRIVATE
+    public:
+        // Close Xapian db to force range based search
+        const void forceRangeSuggestion();
+#endif
+
+// Xapian based methods and data
+#if defined(LIBZIM_WITH_XAPIAN)
+    private: // Xapian based methods
+        Xapian::Enquire& getEnquire() const;
+
+    private: // Xapian based data
+        mutable std::unique_ptr<Xapian::Enquire> mp_enquire;
+#endif  // LIBZIM_WITH_XAPIAN
 };
 
 /**
@@ -152,14 +162,23 @@ class SuggestionResultSet
 
   private: // data
     std::shared_ptr<SuggestionDataBase> mp_internalDb;
-    std::shared_ptr<Xapian::MSet> mp_mset;
     std::shared_ptr<EntryRange> mp_entryRange;
 
   private:
-    SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset);
     SuggestionResultSet(EntryRange entryRange);
 
   friend class SuggestionSearch;
+
+// Xapian based methods and data
+#if defined(LIBZIM_WITH_XAPIAN)
+
+  private: // Xapian based methods
+    SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset);
+
+  private: // Xapian based data
+    std::shared_ptr<Xapian::MSet> mp_mset;
+
+#endif  // LIBZIM_WITH_XAPIAN
 };
 
 } // namespace zim

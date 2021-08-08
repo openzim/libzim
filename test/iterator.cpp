@@ -20,7 +20,6 @@
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/error.h>
-#include <zim/suggestion_iterator.h>
 #include <zim/item.h>
 
 #include "tools.h"

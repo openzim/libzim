@@ -20,7 +20,6 @@
 
 #include "tools.h"
 #include "fs.h"
-#include "xapian.h"
 
 #include <sys/types.h>
 #include <string.h>
@@ -59,24 +58,6 @@ bool zim::isCompressibleMimetype(const std::string& mimetype)
       || mimetype == "application/javascript"
       || mimetype == "application/json";
 }
-
-#if defined(ENABLE_XAPIAN)
-
-#include <unicode/translit.h>
-#include <unicode/ucnv.h>
-std::string zim::removeAccents(const std::string& text)
-{
-  ucnv_setDefaultName("UTF-8");
-  static UErrorCode status = U_ZERO_ERROR;
-  static std::unique_ptr<icu::Transliterator> removeAccentsTrans(icu::Transliterator::createInstance(
-      "Lower; NFD; [:M:] remove; NFC", UTRANS_FORWARD, status));
-  icu::UnicodeString ustring(text.c_str());
-  removeAccentsTrans->transliterate(ustring);
-  std::string unaccentedText;
-  ustring.toUTF8String(unaccentedText);
-  return unaccentedText;
-}
-#endif
 
 uint32_t zim::countWords(const std::string& text)
 {
@@ -175,6 +156,26 @@ std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
     return result;
 }
 
+// Xapian based tools
+#if defined(ENABLE_XAPIAN)
+
+#include "xapian.h"
+
+#include <unicode/translit.h>
+#include <unicode/ucnv.h>
+std::string zim::removeAccents(const std::string& text)
+{
+  ucnv_setDefaultName("UTF-8");
+  static UErrorCode status = U_ZERO_ERROR;
+  static std::unique_ptr<icu::Transliterator> removeAccentsTrans(icu::Transliterator::createInstance(
+      "Lower; NFD; [:M:] remove; NFC", UTRANS_FORWARD, status));
+  icu::UnicodeString ustring(text.c_str());
+  removeAccentsTrans->transliterate(ustring);
+  std::string unaccentedText;
+  ustring.toUTF8String(unaccentedText);
+  return unaccentedText;
+}
+
 bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Database& database) {
   zim::DEFAULTFS::FD databasefd;
   try {
@@ -203,3 +204,4 @@ bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Da
 
   return true;
 }
+#endif

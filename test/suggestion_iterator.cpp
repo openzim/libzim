@@ -30,6 +30,8 @@ namespace {
 
 using zim::unittests::TempZimArchive;
 
+#if defined(ENABLE_XAPIAN)
+
 TEST(suggestion_iterator, end) {
   TempZimArchive tza("testZim");
 
@@ -122,6 +124,8 @@ TEST(suggestion_iterator, iteration) {
   ASSERT_TRUE(it == result.end());
 }
 
+#endif  // ENABLE_XAPIAN
+
 TEST(suggestion_iterator, rangeBased) {
   TempZimArchive tza("testZim");
 
@@ -133,7 +137,10 @@ TEST(suggestion_iterator, rangeBased) {
 
   zim::SuggestionSearcher searcher(archive);
   auto search = searcher.suggest("article");
-  search.closeXapianIndex();    // Close xapian db to force rangeBased search
+
+#if defined(ENABLE_XAPIAN)
+  search.forceRangeSuggestion();    // Close xapian db to force rangeBased search
+#endif  // ENABLE_XAPIAN
 
   ASSERT_EQ(search.getEstimatedMatches(), 2);
   auto srs = search.getResults(0, archive.getEntryCount());

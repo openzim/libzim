@@ -27,7 +27,9 @@
 #include "tools.h"
 #include "constants.h"
 
+#if defined(ENABLE_XAPIAN)
 #include <unicode/locid.h>
+#endif  // ENABLE_XAPIAN
 
 namespace zim
 {
@@ -36,10 +38,18 @@ SuggestionDataBase::SuggestionDataBase(const Archive& archive, bool verbose)
   : m_archive(archive),
     m_verbose(verbose)
 {
+// Initialize Xapian DB if it is enabled
+#if defined(ENABLE_XAPIAN)
+  initXapianDb();
+#endif  // ENABLE_XAPIAN
+}
+
+#if defined(ENABLE_XAPIAN)
+void SuggestionDataBase::initXapianDb() {
   m_queryParser.set_database(m_database);
   m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
 
-  auto impl = archive.getImpl();
+  auto impl = m_archive.getImpl();
   FileImpl::FindxResult r;
 
   r = impl->findx('X', "title/xapian");
@@ -67,7 +77,7 @@ SuggestionDataBase::SuggestionDataBase(const Archive& archive, bool verbose)
       // So we need a language, let's use the one of the zim.
       // If zimfile has no language metadata, we can't do lot more here :/
       try {
-          language = archive.getMetadata("Language");
+          language = m_archive.getMetadata("Language");
       } catch(...) {}
   }
   if (!language.empty()) {
@@ -145,6 +155,7 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
   return xquery;
 }
 
+#endif  // ENABLE_XAPIAN
 
 SuggestionSearcher::SuggestionSearcher(const Archive& archive) :
     mp_internalDb(nullptr),
@@ -178,10 +189,11 @@ void SuggestionSearcher::initDatabase()
 
 SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)
  : mp_internalDb(p_internalDb),
-   mp_enquire(nullptr),
    m_query(query)
-{
-}
+#if defined(ENABLE_XAPIAN)
+   , mp_enquire(nullptr)
+#endif  // ENABLE_XAPIAN
+{}
 
 SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
 SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
@@ -189,6 +201,7 @@ SuggestionSearch::~SuggestionSearch() = default;
 
 int SuggestionSearch::getEstimatedMatches() const
 {
+#if defined(ENABLE_XAPIAN)
   if (mp_internalDb->hasDatabase()) {
     try {
       auto enquire = getEnquire();
@@ -200,11 +213,13 @@ int SuggestionSearch::getEstimatedMatches() const
       std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
     }
   }
+#endif  // ENABLE_XAPIAN
 
   return mp_internalDb->m_archive.findByTitle(m_query).size();
 }
 
 const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults) const {
+#if defined(ENABLE_XAPIAN)
     if (mp_internalDb->hasDatabase())
     {
       try {
@@ -215,15 +230,20 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults
         std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
       }
     }
+#endif  // ENABLE_XAPIAN
+
     auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
     entryRange.offset(start, maxResults);
     return SuggestionResultSet(entryRange);
 }
 
-const void SuggestionSearch::closeXapianIndex() {
+const void SuggestionSearch::forceRangeSuggestion() {
+#if defined(ENABLE_XAPIAN)
   mp_internalDb->m_database.close();
+#endif  // ENABLE_XAPIAN
 }
 
+#if defined(ENABLE_XAPIAN)
 Xapian::Enquire& SuggestionSearch::getEnquire() const
 {
     if ( mp_enquire ) {
@@ -263,37 +283,49 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
 
 SuggestionResultSet::SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset) :
   mp_internalDb(p_internalDb),
-  mp_mset(std::make_shared<Xapian::MSet>(mset)),
-  mp_entryRange(nullptr)
+  mp_entryRange(nullptr),
+  mp_mset(std::make_shared<Xapian::MSet>(mset))
 {}
+#endif  // ENABLE_XAPIAN
 
 SuggestionResultSet::SuggestionResultSet(EntryRange entryRange) :
   mp_internalDb(nullptr),
-  mp_mset(nullptr),
   mp_entryRange(std::unique_ptr<EntryRange>(new EntryRange(entryRange)))
+#if defined(ENABLE_XAPIAN)
+  , mp_mset(nullptr)
+#endif  // ENABLE_XAPIAN
 {}
 
 int SuggestionResultSet::size() const
 {
+#if defined(ENABLE_XAPIAN)
   if (! mp_entryRange) {
       return mp_mset->size();
   }
+#endif  // ENABLE_XAPIAN
+
   return mp_entryRange->size();
 }
 
 SuggestionResultSet::iterator SuggestionResultSet::begin() const
 {
+#if defined(ENABLE_XAPIAN)
     if ( ! mp_entryRange ) {
         return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin());
     }
+#endif  // ENABLE_XAPIAN
+
     return iterator(mp_entryRange->begin());
 }
 
 SuggestionResultSet::iterator SuggestionResultSet::end() const
 {
+#if defined(ENABLE_XAPIAN)
     if ( ! mp_entryRange ) {
         return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end());
     }
+#endif  // ENABLE_XAPIAN
+
     return iterator(mp_entryRange->end());
 }
 

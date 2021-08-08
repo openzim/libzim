@@ -23,7 +23,9 @@
 #include "zim/suggestion.h"
 #include "zim/archive.h"
 
+#if defined(LIBZIM_WITH_XAPIAN)
 #include <xapian.h>
+#endif
 
 namespace zim
 {
@@ -35,6 +37,17 @@ namespace zim
 class SuggestionDataBase {
   public: // methods
     SuggestionDataBase(const Archive& archive, bool verbose);
+
+  public: // data
+    // The archive to get suggestions from.
+    Archive m_archive;
+
+    // Verbosity of operations.
+    bool m_verbose;
+
+#if defined(LIBZIM_WITH_XAPIAN)
+
+  public: // xapian based methods
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
@@ -42,10 +55,7 @@ class SuggestionDataBase {
 
     Xapian::Query parseQuery(const std::string& query);
 
-  public: // data
-    // The archive to get suggestions from.
-    Archive m_archive;
-
+  public: // xapian based data
     // The Xapian database we will search on.
     Xapian::Database m_database;
 
@@ -58,10 +68,12 @@ class SuggestionDataBase {
     // The stemmer used to parse queries
     Xapian::Stem m_stemmer;
 
-    // Verbosity of operations.
-    bool m_verbose;
+  private:
+    void initXapianDb();
+#endif  // LIBZIM_WITH_XAPIAN
 };
 
+#if defined(LIBZIM_WITH_XAPIAN)
 struct SuggestionIterator::SuggestionInternalData {
     std::shared_ptr<SuggestionDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
@@ -124,7 +136,7 @@ struct SuggestionIterator::SuggestionInternalData {
             &&  iterator == other.iterator);
     }
 };
-
+#endif  // LIBZIM_WITH_XAPIAN
 
 }
 

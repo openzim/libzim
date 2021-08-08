@@ -18,11 +18,12 @@ tests = [
     'bufferstreamer',
     'parseLongPath',
     'random',
-    'tooltesting'
+    'tooltesting',
+    'suggestion_iterator'
 ]
 
 if xapian_dep.found()
-    tests += ['search', 'suggestion', 'defaultIndexdata', 'search_iterator', 'suggestion_iterator']
+    tests += ['search', 'defaultIndexdata', 'search_iterator', 'suggestion']
 endif
 
 datadir = get_option('test_data_dir')

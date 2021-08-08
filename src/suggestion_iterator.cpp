@@ -21,6 +21,7 @@
 
 #include "zim/suggestion_iterator.h"
 #include "suggestion_internal.h"
+#include <stdexcept>
 
 namespace zim
 {
@@ -30,21 +31,30 @@ SuggestionIterator::SuggestionIterator(SuggestionIterator&& it) = default;
 SuggestionIterator& SuggestionIterator::operator=(SuggestionIterator&& it) = default;
 
 SuggestionIterator::SuggestionIterator(RangeIterator rangeIterator)
-  : mp_rangeIterator(std::unique_ptr<RangeIterator>(new RangeIterator(rangeIterator))),
-    mp_internal(nullptr)
+  : mp_rangeIterator(std::unique_ptr<RangeIterator>(new RangeIterator(rangeIterator)))
+#if defined(LIBZIM_WITH_XAPIAN)
+    , mp_internal(nullptr)
+#endif  // LIBZIM_WITH_XAPIAN
 {}
 
+#if defined(LIBZIM_WITH_XAPIAN)
 SuggestionIterator::SuggestionIterator(SuggestionInternalData* internal)
   : mp_rangeIterator(nullptr),
     mp_internal(internal)
 {}
+#endif  // LIBZIM_WITH_XAPIAN
 
 SuggestionIterator::SuggestionIterator(const SuggestionIterator& it)
-    : mp_rangeIterator(nullptr), mp_internal(nullptr)
+    : mp_rangeIterator(nullptr)
 {
+#if defined(LIBZIM_WITH_XAPIAN)
+    mp_internal.reset(nullptr);
     if (it.mp_internal) {
         mp_internal = std::unique_ptr<SuggestionInternalData>(new SuggestionInternalData(*it.mp_internal));
-    } else if (it.mp_rangeIterator) {
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    if (it.mp_rangeIterator) {
         mp_rangeIterator = std::unique_ptr<RangeIterator>(new RangeIterator(*it.mp_rangeIterator));
     }
 }
@@ -55,10 +65,12 @@ SuggestionIterator& SuggestionIterator::operator=(const SuggestionIterator& it) 
         mp_rangeIterator.reset(new RangeIterator(*it.mp_rangeIterator));
     }
 
+#if defined(LIBZIM_WITH_XAPIAN)
     mp_internal.reset();
     if (it.mp_internal) {
         mp_internal.reset(new SuggestionInternalData(*it.mp_internal));
     }
+#endif  // LIBZIM_WITH_XAPIAN
 
     m_suggestionItem.reset();
     return *this;
@@ -67,9 +79,14 @@ SuggestionIterator& SuggestionIterator::operator=(const SuggestionIterator& it) 
 bool SuggestionIterator::operator==(const SuggestionIterator& it) const {
     if (mp_rangeIterator && it.mp_rangeIterator) {
         return (*mp_rangeIterator == *it.mp_rangeIterator);
-    } else if (mp_internal && it.mp_internal) {
+    }
+
+#if defined(LIBZIM_WITH_XAPIAN)
+    if (mp_internal && it.mp_internal) {
         return (*mp_internal == *it.mp_internal);
     }
+#endif  // LIBZIM_WITH_XAPIAN
+
     return false;
 }
 
@@ -78,11 +95,15 @@ bool SuggestionIterator::operator!=(const SuggestionIterator& it) const {
 }
 
 SuggestionIterator& SuggestionIterator::operator++() {
+#if defined(LIBZIM_WITH_XAPIAN)
     if (mp_internal) {
         ++(mp_internal->iterator);
         mp_internal->_entry.reset();
         mp_internal->document_fetched = false;
-    } else if (mp_rangeIterator) {
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    if (mp_rangeIterator) {
         ++(*mp_rangeIterator);
     }
     m_suggestionItem.reset();
@@ -96,11 +117,15 @@ SuggestionIterator SuggestionIterator::operator++(int) {
 }
 
 SuggestionIterator& SuggestionIterator::operator--() {
+#if defined(LIBZIM_WITH_XAPIAN)
     if (mp_internal) {
         --(mp_internal->iterator);
         mp_internal->_entry.reset();
         mp_internal->document_fetched = false;
-    } else if (mp_rangeIterator) {
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    if (mp_rangeIterator) {
         --(*mp_rangeIterator);
     }
     m_suggestionItem.reset();
@@ -113,21 +138,26 @@ SuggestionIterator SuggestionIterator::operator--(int) {
     return it;
 }
 
+Entry SuggestionIterator::getEntry() const {
+#if defined(LIBZIM_WITH_XAPIAN)
+    if (mp_internal) {
+        return mp_internal->get_entry();
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    if (mp_rangeIterator) {
+        return **mp_rangeIterator;
+    }
+    throw std::runtime_error("Cannot dereference iterator");
+}
+
+#if defined(LIBZIM_WITH_XAPIAN)
 std::string SuggestionIterator::getDbData() const {
     if (! mp_internal) {
         return "";
     }
 
     return mp_internal->get_document().get_data();
-}
-
-Entry SuggestionIterator::getEntry() const {
-    if (mp_internal) {
-        return mp_internal->get_entry();
-    } else if (mp_rangeIterator) {
-        return **mp_rangeIterator;
-    }
-    throw std::runtime_error("Cannot dereference iterator");
 }
 
 std::string SuggestionIterator::getIndexPath() const
@@ -174,16 +204,21 @@ std::string SuggestionIterator::getIndexSnippet() const {
         return "";
     }
 }
+#endif  // LIBZIM_WITH_XAPIAN
 
 const SuggestionItem& SuggestionIterator::operator*() {
     if (m_suggestionItem) {
         return *m_suggestionItem;
     }
 
+#if defined(LIBZIM_WITH_XAPIAN)
     if (mp_internal) {
         m_suggestionItem.reset(new SuggestionItem(getIndexTitle(),
                 getIndexPath(), getIndexSnippet()));
-    } else if (mp_rangeIterator) {
+    } else
+#endif  // LIBZIM_WITH_XAPIAN
+
+    if (mp_rangeIterator) {
         m_suggestionItem.reset(new SuggestionItem((*mp_rangeIterator)->getTitle(),
                                                 (*mp_rangeIterator)->getPath()));
     }

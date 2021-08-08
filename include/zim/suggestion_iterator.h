@@ -49,9 +49,6 @@ class SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag,
         SuggestionIterator& operator--();
         SuggestionIterator operator--(int);
 
-#ifdef ZIM_PRIVATE
-        std::string getDbData() const;
-#endif
         Entry getEntry() const;
 
         const SuggestionItem& operator*();
@@ -60,15 +57,26 @@ class SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag,
     private: // data
         struct SuggestionInternalData;
         std::unique_ptr<RangeIterator> mp_rangeIterator;
-        std::unique_ptr<SuggestionInternalData> mp_internal;
         std::unique_ptr<SuggestionItem> m_suggestionItem;
 
     private: // methods
+        SuggestionIterator(RangeIterator rangeIterator);
+
+// Xapian based methods and data
+#if defined(LIBZIM_WITH_XAPIAN)
+#ifdef ZIM_PRIVATE
+    public:
+        std::string getDbData() const;
+#endif
+    private: // xapian based data
+        std::unique_ptr<SuggestionInternalData> mp_internal;
+
+    private: // xapian based methods
         std::string getIndexPath() const;
         std::string getIndexTitle() const;
         std::string getIndexSnippet() const;
-        SuggestionIterator(RangeIterator rangeIterator);
         SuggestionIterator(SuggestionInternalData* internal_data);
+#endif  // LIBZIM_WITH_XAPIAN
 };
 
 class SuggestionItem
