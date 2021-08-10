@@ -207,6 +207,7 @@ namespace zim
         std::string m_mainPath;
         Uuid m_uuid = Uuid::generate();
 
+        void quitAllThreads();
         void fillHeader(Fileheader* header) const;
         void writeLastParts() const;
     };
