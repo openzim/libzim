@@ -208,7 +208,7 @@ namespace zim
         Uuid m_uuid = Uuid::generate();
 
         void fillHeader(Fileheader* header) const;
-        void write() const;
+        void writeLastParts() const;
     };
   }
 

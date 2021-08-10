@@ -293,7 +293,7 @@ namespace zim
       TINFO(data->clustersList.size() << " clusters created");
 
       TINFO("write zimfile :");
-      write();
+      writeLastParts();
       ::close(data->out_fd);
 
       TINFO("rename tmpfile to final one.");
@@ -322,7 +322,7 @@ namespace zim
       header->setClusterCount( data->clustersList.size() );
     }
 
-    void Creator::write() const
+    void Creator::writeLastParts() const
     {
       Fileheader header;
       fillHeader(&header);
