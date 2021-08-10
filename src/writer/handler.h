@@ -47,15 +47,18 @@ class Dirent;
  * The workflow is the following:
  * - Start the handler with `start()`.
  * - Pass dirents to handle using `handle()`.
- * - Get the dirent associated to the handler using `createDirent()`.
  *   If a handler has to handle itself, it has to do it itself before (in start/stop, ...)
- *   The handlers will NOT have dirents of other hanlders passed.
+ *   The handlers will NOT have dirents of other handlers passed.
+ *   (Exception made for titleListingHandle)
+ * - Get the dirent associated to the handler using `createDirent()`.
+ *   Handler must create a dirent if a entry associated to it must be created.
+ *   It may return a nullptr if no entry must be created (empty listing,...).
  * - All dirents are correctly set (redirect resolved, index and mimetype set, ...)
  * - Stop the handler with `stop()`.
  * - Content of the handler is taken using `getContentProvider`
  *
  *  While it seems that DirentHandler is dynamically (de)activated by user it is not.
- *  This is purelly a internal structur to simplify the internal architecture of the writer.
+ *  This is purelly a internal structure to simplify the internal architecture of the writer.
  */
 class DirentHandler {
   public:
@@ -66,8 +69,9 @@ class DirentHandler {
     virtual void stop() = 0;
     virtual bool isCompressible() = 0;
     Dirent* getDirent() {
-      if (!mp_dirent) {
+      if (!m_direntCreated) {
         mp_dirent = createDirent();
+        m_direntCreated = true;
       }
       return mp_dirent;
     }
@@ -87,6 +91,7 @@ class DirentHandler {
 
   private:
     Dirent* mp_dirent {0};
+    bool m_direntCreated {false};
 };
 
 }

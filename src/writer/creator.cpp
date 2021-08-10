@@ -235,9 +235,11 @@ namespace zim
 
       // mp_titleListingHandler is a special case, it have to handle all dirents (including itself)
       for(auto& handler:data->m_direntHandlers) {
-        // This silently create all the needed dirents
+        // This silently create all the needed dirents.
         auto dirent = handler->getDirent();
-        data->mp_titleListingHandler->handle(dirent, Hints());
+        if (dirent) {
+          data->mp_titleListingHandler->handle(dirent, Hints());
+        }
       }
 
       // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
@@ -255,6 +257,9 @@ namespace zim
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
         auto dirent = handler->getDirent();
+        if (dirent == nullptr) {
+          continue;
+        }
         auto provider = handler->getContentProvider();
         data->addItemData(dirent, std::move(provider), handler->isCompressible());
         if (handler == data->mp_titleListingHandler) {
