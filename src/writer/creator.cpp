@@ -281,6 +281,8 @@ namespace zim
 
       quitAllThreads();
 
+      // Delete all handler (they will clean there own data)
+      data->m_direntHandlers.clear();
 
       TINFO(data->dirents.size() << " title index created");
       TINFO(data->clustersList.size() << " clusters created");
