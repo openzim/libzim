@@ -113,17 +113,7 @@ TEST(ZimCreator, createEmptyZim)
   Fileheader header;
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
-#if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 3; // counter + xapiantitleIndex + titleListIndexesv0
-  int xapian_mimetype = 0;
-  int listing_mimetype = 1;
-  int plain_mimetype = 2;
-#else
-  entry_index_type nb_entry = 2; // counter + titleListIndexesv0
-  int listing_mimetype = 0;
-  int plain_mimetype = 1;
-#endif
-  ASSERT_EQ(header.getArticleCount(), nb_entry);
+  ASSERT_EQ(header.getArticleCount(), 2); // counter + titleListIndexesv0
 
   //Read the only one item existing.
   auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
@@ -131,24 +121,19 @@ TEST(ZimCreator, createEmptyZim)
   std::shared_ptr<const Dirent> dirent;
 
   dirent = direntAccessor.getDirent(entry_index_t(0));
-  test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
+  test_article_dirent(dirent, 'M', "Counter", None, 1, cluster_index_t(0), None);
 
   dirent = direntAccessor.getDirent(entry_index_t(1));
-  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(1), None);
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, 0, cluster_index_t(1), None);
   auto v0BlobIndex = dirent->getBlobNumber();
-
-#if defined(ENABLE_XAPIAN)
-  dirent = direntAccessor.getDirent(entry_index_t(3));
-  test_article_dirent(dirent, 'X', "title/xapian", None, xapian_mimetype, cluster_index_t(1), None);
-#endif
 
   auto clusterPtrPos = header.getClusterPtrPos();
   auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos+8)));
   auto cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), CompressionType::zimcompNone);
-  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-1)); // 1 entry is not compressed
+  ASSERT_EQ(cluster->count(), blob_index_t(1)); // Only titleListIndexesv0
   auto blob = cluster->getBlob(v0BlobIndex);
-  ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
+  ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
 }
 
 

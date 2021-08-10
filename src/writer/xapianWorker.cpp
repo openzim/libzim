@@ -104,6 +104,7 @@ namespace zim
 
       std::lock_guard<std::mutex> l(s_dbaccessLock);
       mp_indexer->writableDatabase.add_document(document);
+      mp_indexer->empty = false;
     }
   }
 }
