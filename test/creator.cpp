@@ -114,12 +114,12 @@ TEST(ZimCreator, createEmptyZim)
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 4; // counter + xapiantitleIndex and titleListIndexes (*2)
+  entry_index_type nb_entry = 3; // counter + xapiantitleIndex + titleListIndexesv0
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
   int plain_mimetype = 2;
 #else
-  entry_index_type nb_entry = 3; // counter + titleListIndexes (*2)
+  entry_index_type nb_entry = 2; // counter + titleListIndexesv0
   int listing_mimetype = 0;
   int plain_mimetype = 1;
 #endif
@@ -137,10 +137,6 @@ TEST(ZimCreator, createEmptyZim)
   test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(1), None);
   auto v0BlobIndex = dirent->getBlobNumber();
 
-  dirent = direntAccessor.getDirent(entry_index_t(2));
-  test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(1), None);
-  auto v1BlobIndex = dirent->getBlobNumber();
-
 #if defined(ENABLE_XAPIAN)
   dirent = direntAccessor.getDirent(entry_index_t(3));
   test_article_dirent(dirent, 'X', "title/xapian", None, xapian_mimetype, cluster_index_t(1), None);
@@ -153,8 +149,6 @@ TEST(ZimCreator, createEmptyZim)
   ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-1)); // 1 entry is not compressed
   auto blob = cluster->getBlob(v0BlobIndex);
   ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
-  blob = cluster->getBlob(v1BlobIndex);
-  ASSERT_EQ(blob.size(), 0);
 }
 
 

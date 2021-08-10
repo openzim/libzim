@@ -92,6 +92,9 @@ void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 }
 
 Dirent* TitleListingHandlerV1::createDirent() const {
+  if (m_dirents.empty()) {
+    return nullptr;
+  }
   return mp_creatorData->createDirent('X', "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
 }
 
