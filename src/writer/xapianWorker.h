@@ -48,6 +48,8 @@ class IndexTask : public Task {
       --waiting_task;
     }
 
+    static void waitNoMoreTask();
+
     virtual void run(CreatorData* data);
     static std::atomic<unsigned long> waiting_task;
 

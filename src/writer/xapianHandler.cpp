@@ -40,11 +40,7 @@ void FullTextXapianHandler::start() {
 void FullTextXapianHandler::stop() {
   // We need to wait that all indexation tasks have been done before closing the
   // xapian database.
-  unsigned int wait = 0;
-  do {
-    microsleep(wait);
-    wait += 10;
-  } while (IndexTask::waiting_task.load() > 0);
+  IndexTask::waitNoMoreTask();
   mp_indexer->indexingPostlude();
 }
 
