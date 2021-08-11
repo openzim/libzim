@@ -46,11 +46,13 @@ class XapianIndexer
   void indexingPrelude();
   void flush();
   void indexingPostlude();
+  bool is_empty() { return empty; }
 
   void indexTitle(const std::string& path, const std::string& title, const std::string& targetPath = "");
 
  protected:
   Xapian::WritableDatabase writableDatabase;
+  bool empty {true};
   std::string stemmer_language;
   Xapian::SimpleStopper stopper;
   std::string indexPath;

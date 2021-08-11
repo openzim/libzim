@@ -40,6 +40,14 @@ namespace zim
       return contentLength / 500 + 1;
     }
 
+    void IndexTask::waitNoMoreTask() {
+    unsigned int wait = 0;
+      do {
+        microsleep(wait);
+        wait += 10;
+      } while (waiting_task.load() > 0);
+    }
+
     void IndexTask::run(CreatorData* data) {
       Xapian::Stem stemmer;
       Xapian::TermGenerator indexer;
@@ -96,6 +104,7 @@ namespace zim
 
       std::lock_guard<std::mutex> l(s_dbaccessLock);
       mp_indexer->writableDatabase.add_document(document);
+      mp_indexer->empty = false;
     }
   }
 }

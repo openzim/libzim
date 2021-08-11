@@ -150,6 +150,7 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
 
   /* add to the database */
   writableDatabase.add_document(currentDocument);
+  empty = false;
 }
 
 void XapianIndexer::flush()

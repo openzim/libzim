@@ -40,15 +40,16 @@ void FullTextXapianHandler::start() {
 void FullTextXapianHandler::stop() {
   // We need to wait that all indexation tasks have been done before closing the
   // xapian database.
-  unsigned int wait = 0;
-  do {
-    microsleep(wait);
-    wait += 10;
-  } while (IndexTask::waiting_task.load() > 0);
+  IndexTask::waitNoMoreTask();
   mp_indexer->indexingPostlude();
 }
 
 Dirent* FullTextXapianHandler::createDirent() const {
+  // Wait for all task to be done before checking if we are empty.
+  IndexTask::waitNoMoreTask();
+  if (mp_indexer->is_empty()) {
+    return nullptr;
+  }
   return mp_creatorData->createDirent('X', "fulltext/xapian", "application/octet-stream+xapian", "");
 }
 
@@ -86,6 +87,9 @@ void TitleXapianHandler::stop() {
 }
 
 Dirent* TitleXapianHandler::createDirent() const {
+  if (mp_indexer->is_empty()) {
+    return nullptr;
+  }
   return mp_creatorData->createDirent('X', "title/xapian", "application/octet-stream+xapian", "");
 }
 
