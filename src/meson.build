@@ -35,7 +35,9 @@ common_sources = [
     'writer/workers.cpp',
     'writer/clusterWorker.cpp',
     'writer/titleListingHandler.cpp',
-    'writer/counterHandler.cpp'
+    'writer/counterHandler.cpp',
+    'suggestion.cpp',
+    'suggestion_iterator.cpp'
 ]
 
 if host_machine.system() == 'windows'

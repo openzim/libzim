@@ -19,6 +19,7 @@
  */
 
 #include "tools.h"
+#include "fs.h"
 
 #include <sys/types.h>
 #include <string.h>
@@ -57,24 +58,6 @@ bool zim::isCompressibleMimetype(const std::string& mimetype)
       || mimetype == "application/javascript"
       || mimetype == "application/json";
 }
-
-#if defined(ENABLE_XAPIAN)
-
-#include <unicode/translit.h>
-#include <unicode/ucnv.h>
-std::string zim::removeAccents(const std::string& text)
-{
-  ucnv_setDefaultName("UTF-8");
-  static UErrorCode status = U_ZERO_ERROR;
-  static std::unique_ptr<icu::Transliterator> removeAccentsTrans(icu::Transliterator::createInstance(
-      "Lower; NFD; [:M:] remove; NFC", UTRANS_FORWARD, status));
-  icu::UnicodeString ustring(text.c_str());
-  removeAccentsTrans->transliterate(ustring);
-  std::string unaccentedText;
-  ustring.toUTF8String(unaccentedText);
-  return unaccentedText;
-}
-#endif
 
 uint32_t zim::countWords(const std::string& text)
 {
@@ -141,3 +124,84 @@ uint32_t zim::randomNumber(uint32_t max)
   std::lock_guard<std::mutex> l(mutex);
   return ((double)random() / random.max()) * max;
 }
+
+/* Split string in a token array */
+std::vector<std::string> zim::split(const std::string & str,
+                                const std::string & delims)
+{
+  std::string::size_type lastPos = str.find_first_not_of(delims, 0);
+  std::string::size_type pos = str.find_first_of(delims, lastPos);
+  std::vector<std::string> tokens;
+
+  while (std::string::npos != pos || std::string::npos != lastPos)
+    {
+      tokens.push_back(str.substr(lastPos, pos - lastPos));
+      lastPos = str.find_first_not_of(delims, pos);
+      pos     = str.find_first_of(delims, lastPos);
+    }
+
+  return tokens;
+}
+
+std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
+    std::map<std::string, int> result;
+    std::vector<std::string> elems = split(s, ";");
+    for(std::vector<std::string>::iterator elem = elems.begin();
+        elem != elems.end();
+        elem++)
+    {
+        std::vector<std::string> tmp_elems = split(*elem, ":");
+        result.insert( std::pair<std::string, int>(tmp_elems[0], atoi(tmp_elems[1].c_str())) );
+    }
+    return result;
+}
+
+// Xapian based tools
+#if defined(ENABLE_XAPIAN)
+
+#include "xapian.h"
+
+#include <unicode/translit.h>
+#include <unicode/ucnv.h>
+std::string zim::removeAccents(const std::string& text)
+{
+  ucnv_setDefaultName("UTF-8");
+  static UErrorCode status = U_ZERO_ERROR;
+  static std::unique_ptr<icu::Transliterator> removeAccentsTrans(icu::Transliterator::createInstance(
+      "Lower; NFD; [:M:] remove; NFC", UTRANS_FORWARD, status));
+  icu::UnicodeString ustring(text.c_str());
+  removeAccentsTrans->transliterate(ustring);
+  std::string unaccentedText;
+  ustring.toUTF8String(unaccentedText);
+  return unaccentedText;
+}
+
+bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Database& database) {
+  zim::DEFAULTFS::FD databasefd;
+  try {
+      databasefd = zim::DEFAULTFS::openFile(accessInfo.first);
+  } catch (...) {
+      std::cerr << "Impossible to open " << accessInfo.first << std::endl;
+      std::cerr << strerror(errno) << std::endl;
+      return false;
+  }
+  if (!databasefd.seek(zim::offset_t(accessInfo.second))) {
+      std::cerr << "Something went wrong seeking databasedb "
+                << accessInfo.first << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+      return false;
+  }
+
+  try {
+      database = Xapian::Database(databasefd.release());
+  } catch( Xapian::DatabaseError& e) {
+      std::cerr << "Something went wrong opening xapian database for zimfile "
+                << accessInfo.first << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+      std::cerr << "error = " << e.get_msg() << std::endl;
+      return false;
+  }
+
+  return true;
+}
+#endif

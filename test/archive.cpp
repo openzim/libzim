@@ -22,6 +22,7 @@
 #include <zim/archive.h>
 #include <zim/item.h>
 #include <zim/search.h>
+#include <zim/suggestion.h>
 #include <zim/error.h>
 
 #include <zim/writer/creator.h>
@@ -181,6 +182,7 @@ TEST(ZimArchive, openCreatedArchive)
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
+  ASSERT_TRUE(archive.hasMainEntry());
 
   ASSERT_EQ(archive.getMetadata("Title"), "This is a title");
   ASSERT_EQ(archive.getMetadata("Counter"), "text/html=2");
@@ -210,6 +212,7 @@ TEST(ZimArchive, openCreatedArchive)
   auto main = archive.getMainEntry();
   ASSERT_TRUE(main.isRedirect());
   ASSERT_EQ(main.getRedirectEntry().getIndex(), foo.getIndex());
+  ASSERT_EQ(archive.getMainEntryIndex(), main.getIndex());
 }
 
 #if WITH_TEST_DATA
@@ -524,23 +527,21 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
   {
     // Resolve any potential redirect.
     auto mainItem = mainEntry.getItem(true);
-    zim::Searcher searcher1(archive1);
-    zim::Searcher searcher2(archive2);
-    zim::Query query;
-    query.setQuery(mainItem.getTitle(), true);
-    auto search1 = searcher1.search(query);
-    auto search2 = searcher2.search(query);
+    zim::SuggestionSearcher searcher1(archive1);
+    zim::SuggestionSearcher searcher2(archive2);
+    std::string query = mainItem.getTitle();
+    auto search1 = searcher1.suggest(query);
+    auto search2 = searcher2.suggest(query);
     ASSERT_NE(0, search1.getEstimatedMatches());
     ASSERT_EQ(search1.getEstimatedMatches(), search2.getEstimatedMatches());
 
     auto result1 = search1.getResults(0, archive1.getEntryCount());
     auto result2 = search2.getResults(0, archive2.getEntryCount());
-    auto firstSearchItem1 = result1.begin()->getItem(true);
-    auto firstSearchItem2 = result2.begin()->getItem(true);
+    auto firstSearchItem1 = result1.begin().getEntry().getItem(true);
+    auto firstSearchItem2 = result2.begin().getEntry().getItem(true);
     ASSERT_EQ(mainItem.getPath(), firstSearchItem1.getPath());
     ASSERT_EQ(mainItem.getPath(), firstSearchItem2.getPath());
-    ASSERT_EQ(std::distance(result1.begin(), result1.end()),
-              std::distance(result2.begin(), result2.end()));
+    ASSERT_EQ(result1.size(), result2.size());
   }
 #endif
 }

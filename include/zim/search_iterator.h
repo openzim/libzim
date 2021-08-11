@@ -23,11 +23,13 @@
 #include <memory>
 #include <iterator>
 #include "entry.h"
+#include "archive.h"
 #include "uuid.h"
 
 namespace zim
 {
 class SearchResultSet;
+
 class SearchIterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
 {
     friend class zim::SearchResultSet;

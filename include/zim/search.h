@@ -21,6 +21,7 @@
 #define ZIM_SEARCH_H
 
 #include "search_iterator.h"
+#include "archive.h"
 #include <vector>
 #include <string>
 #include <map>
@@ -39,9 +40,8 @@ class Query;
 class Search;
 class SearchResultSet;
 
-
 /**
- * A Searcher is a object searching a set of Archives
+ * A Searcher is a object fulltext searching a set of Archives
  *
  * A Searcher is mainly used to create new `Search`
  * Internaly, this is mainly a wrapper around a Xapian database.
@@ -86,18 +86,26 @@ class Searcher
      * The search is made on all archives added to the Searcher.
      *
      * @param query The Query to search.
+     *
+     * @throws std::runtime_error if the searcher does not have a valid
+     *         FT database.
      */
     Search search(const Query& query);
 
+    /** Set the verbosity of search operations.
+     *
+     * @param verbose The verbose mode to set
+     */
+    void setVerbose(bool verbose);
+
   private: // methods
-    void initDatabase(bool suggestionMode);
+    void initDatabase();
 
   private: // data
     std::shared_ptr<InternalDataBase> mp_internalDb;
-    std::shared_ptr<InternalDataBase> mp_internalSuggestionDb;
     std::vector<Archive> m_archives;
+    bool m_verbose;
 };
-
 
 /**
  * A Query represent a query.
@@ -114,19 +122,11 @@ class Query
      */
     Query() = default;
 
-    /** Set the verbosity of the Query.
-     *
-     * @param verbose If the query must be verbose or not.
-     */
-    Query& setVerbose(bool verbose);
-
     /** Set the textual query of the Query.
      *
      * @param query The string to search for.
-     * @param suggestionMode If we should search on title (suggestionMode)
-     *                       or on fulltext index.
      */
-    Query& setQuery(const std::string& query, bool suggestionMode);
+    Query& setQuery(const std::string& query);
 
     /** Set the geographical query of the Query.
      *
@@ -139,9 +139,7 @@ class Query
      */
     Query& setGeorange(float latitude, float longitude, float distance);
 
-    bool m_verbose { false };
     std::string m_query { "" };
-    bool m_suggestionMode { false };
 
     bool m_geoquery { false };
     float m_latitude { 0 };

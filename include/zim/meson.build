@@ -9,6 +9,8 @@ install_headers(
     'entry.h',
     'uuid.h',
     'zim.h',
+    'suggestion.h',
+    'suggestion_iterator.h',
     zim_config,
     subdir:'zim'
 )
