@@ -128,33 +128,6 @@ TEST(search_iterator, functions) {
   ASSERT_EQ(it.getTitle(), "iTem ć");
 }
 
-TEST(search_iterator, stemmedSearch) {
-  TempZimArchive tza("testZim");
-
-  // The following stemming occurs
-  // apple -> appl
-  // charlie -> charli
-  // chocolate -> chocol
-  // factory -> factori
-  zim::Archive archive = tza.createZimFromContent({
-    {"article 1", "an apple a day, keeps the doctor away"},
-    {"article 2", "charlie and the chocolate factory"}
-  });
-
-  zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("apples");
-  auto search = searcher.search(query);
-  auto result = search.getResults(0, 1);
-
-  ASSERT_EQ(result.begin().getSnippet(), "an <b>apple</b> a day, keeps the doctor away");
-
-  query.setQuery("chocolate factory");
-  search = searcher.search(query);
-  result = search.getResults(0, 1);
-  ASSERT_EQ(result.begin().getSnippet(), "charlie and the <b>chocolate</b> <b>factory</b>");
-}
-
 TEST(search_iterator, iteration) {
   TempZimArchive tza("testZim");
 

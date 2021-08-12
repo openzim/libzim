@@ -93,7 +93,7 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
                 try {
                     m_stemmer = Xapian::Stem(languageLocale.getLanguage());
                     m_queryParser.set_stemmer(m_stemmer);
-                    m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL_Z);
+                    m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
                 } catch (...) {
                     std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
                 }

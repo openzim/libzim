@@ -169,4 +169,30 @@ TEST(suggestion_iterator, rangeBased) {
   ASSERT_EQ(it2->getTitle(), "random c");
 }
 
+#if defined(ENABLE_XAPIAN)
+TEST(search_iterator, stemmedSearch) {
+  TempZimArchive tza("testZim");
+
+  // The following stemming occurs
+  // apple -> appl
+  // charlie -> charli
+  // chocolate -> chocol
+  // factory -> factori
+  zim::Archive archive = tza.createZimFromTitles({
+    "an apple a day, keeps the doctor away",
+    "charlie and the chocolate factory"
+  });
+
+  zim::SuggestionSearcher searcher(archive);
+  auto search = searcher.suggest("apples");
+  auto result = search.getResults(0, 1);
+
+  ASSERT_EQ(result.begin()->getSnippet(), "an <b>apple</b> a day, keeps the doctor away");
+
+  search = searcher.suggest("chocolate factory");
+  result = search.getResults(0, 1);
+  ASSERT_EQ(result.begin()->getSnippet(), "charlie and the <b>chocolate</b> <b>factory</b>");
+}
+#endif  // ENABLE_XAPIAN
+
 } // anonymous namespace
