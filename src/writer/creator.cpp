@@ -300,24 +300,6 @@ namespace zim
       TINFO("finish");
     }
 
-    void CreatorData::quitAllThreads() {
-      // Quit all workerThreads
-      for (auto i=0U; i< workerThreads.size(); i++) {
-        taskList.pushToQueue(nullptr);
-      }
-      for(auto& thread: workerThreads) {
-        thread.join();
-      }
-      workerThreads.clear();
-
-      // Wait for writerThread to finish.
-      if (writerThread.joinable()) {
-        clusterToWrite.pushToQueue(nullptr);
-        writerThread.join();
-      }
-    }
-
-
     void Creator::fillHeader(Fileheader* header) const
     {
       header->setMainPage(
@@ -487,6 +469,23 @@ namespace zim
         delete cluster;
       }
       quitAllThreads();
+    }
+
+    void CreatorData::quitAllThreads() {
+      // Quit all workerThreads
+      for (auto i=0U; i< workerThreads.size(); i++) {
+        taskList.pushToQueue(nullptr);
+      }
+      for(auto& thread: workerThreads) {
+        thread.join();
+      }
+      workerThreads.clear();
+
+      // Wait for writerThread to finish.
+      if (writerThread.joinable()) {
+        clusterToWrite.pushToQueue(nullptr);
+        writerThread.join();
+      }
     }
 
     void CreatorData::addDirent(Dirent* dirent)
