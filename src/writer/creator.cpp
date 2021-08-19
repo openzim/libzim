@@ -99,9 +99,7 @@ namespace zim
     Creator::Creator()
       : m_clusterSize(DEFAULT_CLUSTER_SIZE)
     {}
-    Creator::~Creator() {
-      quitAllThreads();
-    };
+    Creator::~Creator() = default;
 
     Creator& Creator::configVerbose(bool verbose)
     {
@@ -284,7 +282,7 @@ namespace zim
         wait += 10;
       } while(ClusterTask::waiting_task.load() > 0);
 
-      quitAllThreads();
+      data->quitAllThreads();
 
       // Delete all handler (they will clean there own data)
       data->m_direntHandlers.clear();
@@ -302,20 +300,20 @@ namespace zim
       TINFO("finish");
     }
 
-    void Creator::quitAllThreads() {
+    void CreatorData::quitAllThreads() {
       // Quit all workerThreads
-      for (auto i=0U; i< m_nbWorkers; i++) {
-        data->taskList.pushToQueue(nullptr);
+      for (auto i=0U; i< workerThreads.size(); i++) {
+        taskList.pushToQueue(nullptr);
       }
-      for(auto& thread: data->workerThreads) {
+      for(auto& thread: workerThreads) {
         thread.join();
       }
-      data->workerThreads.clear();
+      workerThreads.clear();
 
       // Wait for writerThread to finish.
-      if (data->writerThread.joinable()) {
-        data->clusterToWrite.pushToQueue(nullptr);
-        data->writerThread.join();
+      if (writerThread.joinable()) {
+        clusterToWrite.pushToQueue(nullptr);
+        writerThread.join();
       }
     }
 
@@ -488,6 +486,7 @@ namespace zim
       for(auto& cluster: clustersList) {
         delete cluster;
       }
+      quitAllThreads();
     }
 
     void CreatorData::addDirent(Dirent* dirent)
