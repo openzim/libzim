@@ -10,4 +10,6 @@ Welcome to libzim's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   usage
+   6to7
    api/ref_api

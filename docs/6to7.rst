@@ -1,0 +1,369 @@
+
+Libzim 7 transition guide
+=========================
+
+
+Libzim7 change a lot of things in the API and in the way we use namespaces (reflected in the API changes).
+This part is a document helping to do the transition from libzim6 to libzim7.
+
+Namespace handling
+------------------
+
+In libzim6 namespaces were exposed to the user. It was to the user to handle them correctly.
+Libzim6 was not doing any assumption about the namespaces.
+However, the usage (mainly from libkiwix) was to store metadata in ``M`` namespace, articles in ``A`` and image/video in ``I``.
+
+On the opposite side, libzim7 hides the concept of namespace and handle it for the user.
+While namespaces are still present and used in the zim format, they have vanished from the libzim api.
+For information (but it is not important to use libzim), we now store all "user content" in ``C`` namespace.
+Metadata are stored in ``M`` namespace and we use few other (``X``, ``W``) for some internal content.
+
+"User content" are accessed using "classic" method to get content.
+Metadata, illustration and such are accessed using specific method.
+
+An article stored in ``A`` namespace before ("A/index.html") is now accessed simply using "index.html".
+(It is stored in "C/index.html" in new format, but you must not specify the namespace in the new api).
+
+Compatibility
+-------------
+
+libzim6 is agnostic about the namespaces. They are exposed to the user, whatever if we are
+reading a new or old zim file. It is up to the user to correctly handle namespaces
+(mainly, content are now in ``C`` instead of ``A``/``I``).
+
+libzim7 tries to be smart about the transition. It will look in the right namespace, depending
+of the zim file.
+Accessing "index.html" should work whatever if we use old or new namespace scheme.
+
+Accessing article/entry
+-----------------------
+
+Getting one entry
+.................
+
+
+In libzim6 accessing an ``Article`` was done using a ``File`` instance.
+You then had to check for the `Article` validity before using it.
+
+ .. code-block:: c++
+
+    auto f = zim::File("foo.zim");
+    auto a = f.getArticleByUrl("A/index.html");
+    if (!a.good()) {
+      std::cerr << "No article "A/index.html" << std::endl;
+    }
+
+In libzim7 you access a |Entry| using a |Archive| instance.
+If there the entry is not found, a exception is raised.
+
+ .. code-block:: c++
+
+    auto a = zim::Archive("foo.zim");
+    try {
+      auto e = a.getEntryByPath("index.html");
+    } catch (zim::EntryNotFound& e) {
+      std::cerr << "No entry "index.html" << std::endl;
+    }
+
+
+Redirection
+...........
+
+
+Article in libzim6 may be a redirection to another article or a article containing data.
+You had to check the kind of the article before using the right set of method.
+Using a method on a wrong kind was undefined behavior.
+
+ .. code-block:: c++
+
+    auto article = [...];
+    if (article.isRedirect()) {
+      auto target = article.getRedirectArticle();
+    } else {
+      auto blob = article.getData();
+    }
+
+
+In libzim7, |Entry| is a kind of intermediate structure, either redirecting to another entry or a item.
+A |Item| is the structure containing the data.
+
+ .. code-block:: c++
+
+    auto entry = [...];
+    if (entry.isRedirect()) {
+      auto target = entry.getRedirectEntry();
+    } else {
+      auto item = entry.getItem();
+      auto blob = item.getData();
+    }
+
+
+As a common usage is to get the item associated to the entry while resolving the redirection chain,
+it is possible to do this easily :
+
+.. code-block:: c++
+
+    auto entry = [...];
+    // Resolve any redirection chain and return the final item.
+    auto item = entry.getItem(true);
+    auto blob = item.getData()
+
+Iteration
+.........
+
+To iterate on article with libzim6 you had to use the ``begin*`` method to get a iterator.
+You may iterate until ``end()`` was reached.
+
+ .. code-block:: c++
+
+    auto file = [...];
+    for(auto it = file.beginByUrl(); it!=file.end(); it++) {
+      auto article = *it;
+      [...]
+    }
+
+
+If you wanted to iterate on article starting by a url prefix it was a bit more complex :
+
+ .. code-block:: c++
+
+    auto file = [...];
+    auto it = file.find("A/ind");
+    while(!it.is_end() && it->getUrl().startWith("A/ind")) {
+      auto article = *it;
+      [...]
+      it++;
+    }
+
+
+In libzim7 you get |EntryRange| on which you can easily iterate on:
+
+ .. code-block:: c++
+
+    auto archive = [...];
+    for(auto entry : archive.iterByPath()) {
+      [...]
+    }
+
+ .. code-block:: c++
+
+    auto archive = [...];
+    for(auto entry : archive.findByPath("ind")) {
+      [...]
+    }
+
+Searching
+---------
+
+In libzim6 searching was made the only class ``Search``
+
+ .. code-block:: c++
+
+    auto f = zim::File("foo.zim");
+    auto search = zim::Search(&f);
+    search.set_query("bar");
+    search.set_range(10, 30);
+    for (auto it =search.begin(); it!=search.end(); it++)
+    {
+      std::cout << "Found result " << it.get_url() << std::endl;
+    }
+
+In libzim7 you search starting from a |Searcher|.
+
+ .. code-block:: c++
+
+    // Create a searcher, something to search on an archive
+    zim::Searcher searcher(archive);
+
+    // We need a query to specify what to search for
+    zim::Query query;
+    query.setQuery("bar");
+
+    // Create a search for the specified query
+    zim::Search search = searcher.search(query);
+
+    // Now we can get some result from the search.
+    // 20 results starting from offset 10 (from 10 to 30)
+    zim::SearchResultSet results = search.getResults(10, 20);
+
+    // SearchResultSet is iterable
+    for(auto entry: results) {
+      std::cout << entry.getPath() << std::endl;
+    }
+
+While it may seems a bit more complex (and it is), it has the main advantage to allow
+reusing of the different instance :
+
+- |Searcher| is what we are searching on, we can do several search on it without recreating a internal xapian database.
+- |Query| is what we are searching for.
+- |Search| is a specific search.
+- |SearchResultSet| is a set of result for a |Search|, it allow getting particular results without having to search several times.
+
+Suggestion
+----------
+
+In libzim6 suggestion was made using the same class ``Search`` but by setting the suggestion mode before
+iterating on the results.
+
+ .. code-block:: c++
+
+    auto f = zim::File("foo.zim");
+    auto search = zim::Search(&f);
+    search.set_query("bar");
+    search.set_range(10, 30);
+    search.set_suggestion_mode(true); // <<<
+    for (auto it =search.begin(); it!=search.end(); it++)
+    {
+      std::cout << "Found result " << it.get_url() << std::endl;
+    }
+
+If the zim file had no suggestion database, the suggestion search was made on full text database
+(with variable results).
+
+In libzim7 you do suggestion using |SuggestionSearcher| API :
+
+ .. code-block:: c++
+
+    // Create a searcher, something to search on an archive
+    zim::SuggestionSearcher searcher(archive);
+
+    // Create a search for the specified query
+    zim::SuggestionSearch search = searcher.search("bar");
+
+    // Now we can get some result from the search.
+    // 20 results starting from offset 10 (from 10 to 30)
+    zim::SuggestionResultSet results = search.getResults(10, 20);
+
+    // SearchResultSet is iterable
+    for(auto entry: results) {
+      std::cout << entry.getPath() << std::endl;
+    }
+
+
+Creating a zim file
+-------------------
+
+Creating a zim file with libzim6 was pretty complex.
+One had to inherit the ``zim::writer::Creator`` to provide the main url.
+Then it had to inherit from ``zim::writer::Article`` to be able to add different kind of article to the zim file.
+
+ .. code-block:: c++
+
+    class MyCreator: public zim::writer::Creator {
+      Url getMainUrl() const { return Url('A', "index.html"); }
+    };
+
+    class RedirectArticle : public zim::writer::Article {
+      public:
+        RedirectArticle(const std::string& title, const std::string& url, const std::string& target) 
+          : title(title),
+            url(url),
+            target(target)
+            {}
+
+        bool isRedirect() const { return true; }
+        zim::writer::Url getUrl() const { return url; }
+        std::string getTitle() const { return title; }
+       zim::writer::Url getRedirectUrl()  const { return target; }
+
+      private:
+        std::string title;
+        std::string url;
+        std::string target;
+    };
+
+    class ContentArticle: public zim::writer::Article {
+      ContentArticle(const std::string& title, const std::string& url, const std::string& mimetype, const std::string& content)
+            : title(title),
+            url(url),
+            mimetype(mimetype),
+            content(content)
+            {}
+
+        bool isRedirect() const { return false; }
+        zim::writer::Url getUrl() const { return url; }
+        std::string getTitle() const { return title; }
+        std::string getMimeType() const { return mimetype; }
+        Blob getData() const { return Blob(content.data(), content.size()); }
+      private:
+        std::string title;
+        std::string url;
+        std::string mimetype;
+        std::string content;
+    };
+
+    int main() {
+      MyCreator creator();
+      creator.startZimCreation("out_file.zim");
+      std::shared_ptr<zim::writer::Article> article = std::make_shared<ContentArticle>("A article", "A/article", "text/html", "A content");
+      creator.addArticle(article);
+      std::shared_ptr<zim::writer::Article> redirect = std::make_shared<RedirectArticle>("A redirect", "A/redirect", "A/article");
+      creator.addArticle(redirect);
+      creator.finishZimCreation();
+    }
+
+On libzim7, you don't have to inherit the |Creator|.
+Redirect and metadata are added using |addRedirection| and |addMetadata|.
+You still may have to inherit |WriterItem| but default implementation
+are provided (|StringItem|, |FileItem|).
+
+ .. code-block:: c++
+
+    int main() {
+      zim::writer::Creator creator;
+      creator.startZimCreation();
+      creator.addRedirection("A/redirect", "A redirect", "A/article");
+      std::shared_ptr<zim::writer::Item> item = std::make_shared<StringItem>("article", "text/html", "A article", {}, "A content");
+      creator.addItem(item);
+      creator.finishZimCreation();
+    }
+
+Metadata and Illustration
+.........................
+
+Metadata are adding using |addMetadata|.
+You don't have to create a specific item in ``M`` namespace.
+
+The creator now create the ``M/Counter`` metadata for you. You don't have (and must not) add a ``M/Counter`` yourself.
+
+Favicon has been deprecated in favor of Illustration.
+In libzim6, you had to add a file in ``I`` namespace and add a ``-/favicon`` redirection to the file.
+In libzim7, you have to use the |addIllustration| method.
+
+
+Hints
+.....
+
+Hints are a new concept in libzim7.
+This is a generic way to pass information to the creator about how to handle item/redirection.
+
+An almost mandatory hint to pass is the hint ``FRONT_ARTICLE`` (|HintKeys|).
+``FRONT_ARTICLE`` mark entry (item or redirection) as main article for the reader
+(typically a html page in opposition to a resource file as css, js, ...).
+Random and suggestion feature will search only in entries marked as ``FRONT_ARTICLE``.
+If no entry are marked as ``FRONT_ARTICLE``, all entries will be used.
+
+ .. Declare some replacement helpers
+
+ .. |Archive| replace:: :class:`zim::Archive`
+ .. |EntryRange| replace:: :class:`zim::Archive::EntryRange`
+ .. |Entry| replace:: :class:`zim::Entry`
+ .. |Item| replace:: :class:`zim::Item`
+ .. |EntryNotFound| replace:: :class:`zim::EntryNotFound`
+ .. |Searcher| replace:: :class:`zim::Searcher`
+ .. |Search| replace:: :class:`zim::Search`
+ .. |Query| replace:: :class:`zim::Query`
+ .. |SearchResultSet| replace:: :class:`zim::SearchResultSet`
+ .. |SuggestionSearcher| replace:: :class:`zim::SuggestionSearcher`
+ .. |getEntryByPath| replace:: :func:`getEntryByPath<void zim::Archive::getEntryByPath(const std::string&) const>`
+ .. |getEntryByTitle| replace:: :func:`getEntryByTitle<void zim::Archive::getEntryByTitle(const std::string&) const>`
+ .. |findByPath| replace:: :func:`findByPath<zim::Archive::findByPath>`
+ .. |findByTitle| replace:: :func:`findByTitle<zim::Archive::findByTitle>`
+ .. |Creator| replace:: :class:`zim::writer::Creator`
+ .. |WriterItem| replace:: :class:`zim::writer::Item`
+ .. |StringItem| replace:: :class:`zim::writer::StringItem`
+ .. |FileItem| replace:: :class:`zim::writer::FileItem`
+ .. |addMetadata| replace:: :func:`addMetadata<zim::writer::Creator::addMetadata>`
+ .. |addRedirection| replace:: :func:`addRedirection<zim::writer::Creator::addRedirection>`
+ .. |addIllustration| replace:: :func:`addIllustration<zim::writer::Creator::addIllustration>`
+ .. |HintKeys| replace:: :enum:`zim::writer::HintKeys`
