@@ -80,6 +80,7 @@ namespace zim
         uint16_t getMimeTypeIdx(const std::string& mimeType);
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
+        void quitAllThreads();
 
         DirentPool  pool;
 

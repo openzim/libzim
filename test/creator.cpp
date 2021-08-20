@@ -93,6 +93,12 @@ void test_redirect_dirent(
   target.check(dirent->getRedirectIndex());
 }
 
+TEST(ZimCreator, DoNothing)
+{
+  // Creating a creator instance and do nothing on it should not crash.
+  writer::Creator creator;
+}
+
 TEST(ZimCreator, createEmptyZim)
 {
   unittests::TempFile temp("emptyzimfile");
