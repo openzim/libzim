@@ -25,7 +25,7 @@ struct REAL_TYPEDEF{
   inline REAL_TYPEDEF<B> operator++(int)
   { return REAL_TYPEDEF<B>(v++); }
 
-};
+} __attribute__((packed));
 
 template<typename T> inline T& operator+= (T& lhs, const T& rhs)
 {
@@ -83,7 +83,7 @@ std::ostream& operator<<(std::ostream& os, const REAL_TYPEDEF<B>& obj)
 namespace zim {
 
 #define TYPEDEF(NAME, TYPE) struct NAME : public REAL_TYPEDEF<TYPE> { \
-explicit NAME(TYPE v=0) : REAL_TYPEDEF<TYPE>(v) {}; }; \
+explicit NAME(TYPE v=0) : REAL_TYPEDEF<TYPE>(v) {}; } __attribute__((packed)); \
 static_assert(sizeof(NAME) == sizeof(TYPE), "");
 
 TYPEDEF(entry_index_t, entry_index_type)

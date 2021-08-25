@@ -118,44 +118,35 @@ namespace zim
           return std::string(m_data+title_start, m_size-title_start);
         }
       }
-    };
-
-    struct DirectInfo {
-      DirectInfo() :
-        blobNumber(0),
-        cluster(nullptr)
-      {};
-      blob_index_t     blobNumber;
-      Cluster*         cluster;
-    };
+    } __attribute__((packed));
 
     struct DirentInfo {
       struct Direct {
         Direct() :
-          blobNumber(0),
-          cluster(nullptr)
+          cluster(nullptr),
+          blobNumber(0)
         {};
-        blob_index_t     blobNumber;
         Cluster*         cluster;
-      };
+        blob_index_t     blobNumber;
+      } __attribute__((packed));
 
       struct Redirect {
         Redirect(char ns, const std::string& target) :
-          ns(ns),
-          targetPath(target)
+          targetPath(target),
+          ns(ns)
         {};
         Redirect(Redirect&& r) = default;
         ~Redirect() {};
-        char ns;
         TinyString targetPath;
-      };
+        char ns;
+      } __attribute__((packed));
 
       struct Resolved {
         Resolved(const Dirent* target) :
           targetDirent(target)
         {};
         const Dirent* targetDirent;
-      };
+      } __attribute__((packed));
 
       ~DirentInfo() {
         switch(tag) {
@@ -171,16 +162,16 @@ namespace zim
         }
       };
       DirentInfo(Direct&& d):
-        tag(DirentInfo::DIRECT),
-        direct(std::move(d))
+        direct(std::move(d)),
+        tag(DirentInfo::DIRECT)
       {}
       DirentInfo(Redirect&& r):
-        tag(DirentInfo::REDIRECT),
-        redirect(std::move(r))
+        redirect(std::move(r)),
+        tag(DirentInfo::REDIRECT)
       {}
       DirentInfo(Resolved&& r):
-        tag(DirentInfo::RESOLVED),
-        resolved(std::move(r))
+        resolved(std::move(r)),
+        tag(DirentInfo::RESOLVED)
       {}
       DirentInfo::Direct& getDirect() {
         ASSERT(tag, ==, DIRECT);
@@ -206,14 +197,15 @@ namespace zim
         ASSERT(tag, ==, RESOLVED);
         return resolved;
       }
-      enum : char {DIRECT, REDIRECT, RESOLVED} tag;
       private:
-      union {
-        Direct direct;
-        Redirect redirect;
-        Resolved resolved;
-      };
-    };
+        union {
+          Direct direct;
+          Redirect redirect;
+          Resolved resolved;
+        } __attribute__((packed));
+      public:
+        enum : char {DIRECT, REDIRECT, RESOLVED} tag;
+    } __attribute__((packed));
 
     class Dirent
     {
@@ -222,10 +214,10 @@ namespace zim
 
         PathTitleTinyString pathTitle;
         uint16_t mimeType;
-        char ns;
-        DirentInfo info;
         entry_index_t idx = entry_index_t(0);
+        DirentInfo info;
         offset_t offset;
+        char ns;
         bool removed;
 
       public:
@@ -311,7 +303,7 @@ namespace zim
          // A default constructor, used by the pool.
         Dirent();
         friend class DirentPool;
-    };
+    } __attribute__((packed));
 
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)

@@ -38,28 +38,34 @@ namespace zim {
 namespace writer {
 
 Dirent::Dirent()
-  : mimeType(0),
-    ns(0),
-    pathTitle(),
+  : pathTitle(),
+    mimeType(0),
+    idx(0),
     info(DirentInfo::Direct()),
+    offset(0),
+    ns(0),
     removed(false)
 {}
 
 // Creator for a "classic" dirent
 Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype)
-  : mimeType(mimetype),
-    ns(ns),
-    pathTitle(path, title),
+  : pathTitle(path, title),
+    mimeType(mimetype),
+    idx(0),
     info(DirentInfo::Direct()),
+    offset(0),
+    ns(ns),
     removed(false)
 {}
 
 // Creator for a "redirection" dirent
 Dirent::Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
-  : mimeType(redirectMimeType),
+  : pathTitle(path, title),
+    mimeType(redirectMimeType),
+    idx(0),
+    info(std::move(DirentInfo::Redirect(targetNs, targetPath))),
+    offset(0),
     ns(ns),
-    pathTitle(path, title),
-    info(DirentInfo::Redirect(targetNs, targetPath)),
     removed(false)
 {}
 
