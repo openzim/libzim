@@ -77,6 +77,49 @@ namespace zim
       uint16_t m_size;
     } __attribute__((packed));
 
+    struct PathTitleTinyString : TinyString {
+      PathTitleTinyString() : TinyString() {}
+      PathTitleTinyString(const std::string& path, const std::string& title)
+        : TinyString(PathTitleTinyString::concat(path, title))
+      {}
+
+      static std::string concat(const std::string& path, const std::string& title) {
+        std::string result(path.data(), path.size()+1);
+        if ( title != path ) {
+          result += title;
+        }
+        return result;
+      }
+      std::string getPath() const {
+        if (m_size == 0) {
+          return std::string();
+        }
+        return std::string(m_data);
+      }
+      std::string getTitle() const {
+        if (m_size == 0) {
+          return std::string();
+        }
+        auto title_start = std::strlen(m_data) + 1;
+        if (title_start == m_size) {
+          return std::string(m_data); // return the path as a title
+        } else {
+          return std::string(m_data+title_start, m_size-title_start);
+        }
+      }
+      std::string getStoredTitle() const {
+        if (m_size == 0) {
+          return std::string();
+        }
+        auto title_start = std::strlen(m_data) + 1;
+        if (title_start == m_size) {
+          return std::string(); // return empty title
+        } else {
+          return std::string(m_data+title_start, m_size-title_start);
+        }
+      }
+    };
+
     struct DirectInfo {
       DirectInfo() :
         blobNumber(0),
@@ -177,10 +220,9 @@ namespace zim
         static const uint16_t redirectMimeType = 0xffff;
         static const uint32_t version = 0;
 
+        PathTitleTinyString pathTitle;
         uint16_t mimeType;
         char ns;
-        TinyString path;
-        TinyString title;
         DirentInfo info;
         entry_index_t idx = entry_index_t(0);
         offset_t offset;
@@ -201,9 +243,9 @@ namespace zim
           { }
 
         char getNamespace() const                { return ns; }
-        std::string getTitle() const      { return title.empty() ? path : title; }
-        std::string getRealTitle() const  { return title; }
-        std::string getPath() const       { return path; }
+        std::string getTitle() const      { return pathTitle.getTitle(); }
+        std::string getRealTitle() const      { return pathTitle.getStoredTitle(); }
+        std::string getPath() const       { return pathTitle.getPath(); }
 
         uint32_t getVersion() const            { return version; }
 
@@ -251,10 +293,7 @@ namespace zim
         }
         size_t getDirentSize() const
         {
-          size_t ret = (isRedirect() ? 12 : 16) + path.size() + 2;
-          if (title != path)
-            ret += title.size();
-          return ret;
+          return (isRedirect() ? 12 : 16) + pathTitle.size() + 1;
         }
 
         offset_t getOffset() const { return offset; }
@@ -277,7 +316,7 @@ namespace zim
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns || (d1->ns == d2->ns && d1->path < d2->path);
+      return d1->ns < d2->ns || (d1->ns == d2->ns && d1->getPath() < d2->getPath());
     }
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {

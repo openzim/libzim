@@ -40,8 +40,7 @@ namespace writer {
 Dirent::Dirent()
   : mimeType(0),
     ns(0),
-    path(),
-    title(),
+    pathTitle(),
     info(DirentInfo::Direct()),
     removed(false)
 {}
@@ -50,8 +49,7 @@ Dirent::Dirent()
 Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype)
   : mimeType(mimetype),
     ns(ns),
-    path(path),
-    title(title),
+    pathTitle(path, title),
     info(DirentInfo::Direct()),
     removed(false)
 {}
@@ -60,8 +58,7 @@ Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint1
 Dirent::Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
   : mimeType(redirectMimeType),
     ns(ns),
-    path(path),
-    title(title),
+    pathTitle(path, title),
     info(DirentInfo::Redirect(targetNs, targetPath)),
     removed(false)
 {}
@@ -102,11 +99,7 @@ void Dirent::write(int out_fd) const
     _write(out_fd, header.d, 16);
   }
 
-  _write(out_fd, path.data(), path.size());
-  _write(out_fd, &zero, 1);
-
-  if (title != path)
-    _write(out_fd, title.data(), title.size());
+  _write(out_fd, pathTitle.data(), pathTitle.size());
   _write(out_fd, &zero, 1);
 
 }
