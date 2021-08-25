@@ -76,6 +76,7 @@ std::string Dirent::getRedirectPath() const {
 
 void Dirent::write(int out_fd) const
 {
+  const static char zero = 0;
   union
   {
     char d[16];
@@ -101,13 +102,12 @@ void Dirent::write(int out_fd) const
     _write(out_fd, header.d, 16);
   }
 
-  _write(out_fd, path.c_str(), path.size()+1);
+  _write(out_fd, path.data(), path.size());
+  _write(out_fd, &zero, 1);
 
-  std::string t = getTitle();
-  if (t != path)
-    _write(out_fd, t.c_str(), t.size());
-  char c = 0;
-  _write(out_fd, &c, 1);
+  if (title != path)
+    _write(out_fd, title.data(), title.size());
+  _write(out_fd, &zero, 1);
 
 }
 

@@ -29,6 +29,63 @@ namespace zim
   namespace writer {
     class Dirent;
 
+    struct TinyString {
+      TinyString() :
+        m_data(nullptr),
+        m_size(0)
+      {}
+      TinyString(const std::string& s) :
+        m_data(new char[(uint16_t)s.size()]),
+        m_size(s.size())
+      {
+        if (s.size() >= 0xFFFF) {
+          throw std::runtime_error("String len is too big");
+        }
+        std::memcpy(m_data, s.data(), m_size);
+      }
+      TinyString(TinyString&& t):
+        m_data(t.m_data),
+        m_size(t.m_size)
+      {
+        t.m_data = nullptr;
+        t.m_size = 0;
+      };
+      TinyString(const TinyString& t) = delete;
+      ~TinyString() {
+        if (m_data) {
+          delete[] m_data;
+          m_data = nullptr;
+        }
+      }
+      operator std::string() const { return std::string(m_data, m_size); }
+      bool empty() const { return m_size == 0; }
+      size_t size() const { return m_size; }
+      const char* const data() const { return m_data; }
+      bool operator==(const TinyString& other) const {
+        return (m_size == other.m_size) && (std::memcmp(m_data, other.m_data, m_size) == 0);
+      }
+      bool operator<(const TinyString& other) const {
+        auto min_size = std::min(m_size, other.m_size);
+        auto ret = std::memcmp(m_data, other.m_data, min_size);
+        if (ret == 0) {
+          return m_size < other.m_size;
+        } else {
+          return ret < 0;
+        }
+      }
+      char* m_data;
+      uint16_t m_size;
+    } __attribute__((packed));
+
+    struct DirectInfo {
+      DirectInfo() :
+        blobNumber(0),
+        cluster(nullptr)
+      {};
+      blob_index_t     blobNumber;
+      Cluster*         cluster;
+    };
+
     struct DirentInfo {
       struct Direct {
         Direct() :
@@ -44,9 +101,10 @@ namespace zim
           ns(ns),
           targetPath(target)
         {};
+        Redirect(Redirect&& r) = default;
         ~Redirect() {};
         char ns;
-        std::string targetPath;
+        TinyString targetPath;
       };
 
       struct Resolved {
@@ -69,17 +127,17 @@ namespace zim
             break;
         }
       };
-      DirentInfo(Direct d):
+      DirentInfo(Direct&& d):
         tag(DirentInfo::DIRECT),
-        direct(d)
+        direct(std::move(d))
       {}
-      DirentInfo(Redirect r):
+      DirentInfo(Redirect&& r):
         tag(DirentInfo::REDIRECT),
-        redirect(r)
+        redirect(std::move(r))
       {}
-      DirentInfo(Resolved r):
+      DirentInfo(Resolved&& r):
         tag(DirentInfo::RESOLVED),
-        resolved(r)
+        resolved(std::move(r))
       {}
       DirentInfo::Direct& getDirect() {
         ASSERT(tag, ==, DIRECT);
@@ -105,7 +163,7 @@ namespace zim
         ASSERT(tag, ==, RESOLVED);
         return resolved;
       }
- enum : char {DIRECT, REDIRECT, RESOLVED} tag;
+      enum : char {DIRECT, REDIRECT, RESOLVED} tag;
       private:
       union {
         Direct direct;
@@ -121,8 +179,8 @@ namespace zim
 
         uint16_t mimeType;
         char ns;
-        std::string path;
-        std::string title;
+        TinyString path;
+        TinyString title;
         DirentInfo info;
         entry_index_t idx = entry_index_t(0);
         offset_t offset;
@@ -143,9 +201,9 @@ namespace zim
           { }
 
         char getNamespace() const                { return ns; }
-        const std::string& getTitle() const      { return title.empty() ? path : title; }
-        const std::string& getRealTitle() const  { return title; }
-        const std::string& getPath() const       { return path; }
+        std::string getTitle() const      { return title.empty() ? path : title; }
+        std::string getRealTitle() const  { return title; }
+        std::string getPath() const       { return path; }
 
         uint32_t getVersion() const            { return version; }
 
