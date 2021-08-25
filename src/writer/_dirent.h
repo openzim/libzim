@@ -28,22 +28,90 @@ namespace zim
 {
   namespace writer {
     class Dirent;
-    struct DirectInfo {
-      DirectInfo() :
-        clusterNumber(0),
-        blobNumber(0)
-      {};
-      cluster_index_t  clusterNumber;
-      blob_index_t     blobNumber;
-    };
 
-    struct RedirectInfo {
-      const Dirent* redirectDirent = nullptr;
-    };
+    struct DirentInfo {
+      struct Direct {
+        Direct() :
+          blobNumber(0),
+          cluster(nullptr)
+        {};
+        blob_index_t     blobNumber;
+        Cluster*         cluster;
+      };
 
-    union DirentInfo {
-      DirectInfo d;
-      RedirectInfo r;
+      struct Redirect {
+        Redirect(char ns, const std::string& target) :
+          ns(ns),
+          targetPath(target)
+        {};
+        ~Redirect() {};
+        char ns;
+        std::string targetPath;
+      };
+
+      struct Resolved {
+        Resolved(const Dirent* target) :
+          targetDirent(target)
+        {};
+        const Dirent* targetDirent;
+      };
+
+      ~DirentInfo() {
+        switch(tag) {
+          case DIRECT:
+            direct.~Direct();
+            break;
+          case REDIRECT:
+            redirect.~Redirect();
+            break;
+          case RESOLVED:
+            resolved.~Resolved();
+            break;
+        }
+      };
+      DirentInfo(Direct d):
+        tag(DirentInfo::DIRECT),
+        direct(d)
+      {}
+      DirentInfo(Redirect r):
+        tag(DirentInfo::REDIRECT),
+        redirect(r)
+      {}
+      DirentInfo(Resolved r):
+        tag(DirentInfo::RESOLVED),
+        resolved(r)
+      {}
+      DirentInfo::Direct& getDirect() {
+        ASSERT(tag, ==, DIRECT);
+        return direct;
+      }
+      DirentInfo::Redirect& getRedirect() {
+        ASSERT(tag, ==, REDIRECT);
+        return redirect;
+      }
+      DirentInfo::Resolved& getResolved() {
+        ASSERT(tag, ==, RESOLVED);
+        return resolved;
+      }
+      const DirentInfo::Direct& getDirect() const {
+        ASSERT(tag, ==, DIRECT);
+        return direct;
+      }
+      const DirentInfo::Redirect& getRedirect() const {
+        ASSERT(tag, ==, REDIRECT);
+        return redirect;
+      }
+      const DirentInfo::Resolved& getResolved() const {
+        ASSERT(tag, ==, RESOLVED);
+        return resolved;
+      }
+ enum : char {DIRECT, REDIRECT, RESOLVED} tag;
+      private:
+      union {
+        Direct direct;
+        Redirect redirect;
+        Resolved resolved;
+      };
     };
 
     class Dirent
@@ -52,13 +120,10 @@ namespace zim
         static const uint32_t version = 0;
 
         uint16_t mimeType;
-        DirentInfo info {};
         char ns;
         std::string path;
         std::string title;
-        Cluster* cluster = nullptr;
-        char redirectNs;
-        std::string redirectPath;
+        DirentInfo info;
         entry_index_t idx = entry_index_t(0);
         offset_t offset;
         bool removed;
@@ -84,17 +149,15 @@ namespace zim
 
         uint32_t getVersion() const            { return version; }
 
-        char getRedirectNs() { return redirectNs; }
-        const std::string& getRedirectPath() const         { return redirectPath; }
+        char getRedirectNs() const;
+        std::string getRedirectPath() const;
         void setRedirect(const Dirent* target) {
-          info.r.redirectDirent = target;
-          mimeType = redirectMimeType;
+          ASSERT(info.tag, ==, DirentInfo::REDIRECT);
+          info.~DirentInfo();
+          new(&info) DirentInfo(DirentInfo::Resolved(target));
         }
-        entry_index_t getRedirectIndex() const      { return isRedirect() ? info.r.redirectDirent->getIdx() : entry_index_t(0); }
-
-        void setMimeType(uint16_t mime)
-        {
-          mimeType = mime;
+        entry_index_t getRedirectIndex() const      {
+          return info.getResolved().targetDirent->getIdx();
         }
 
         void setIdx(entry_index_t idx_)      { idx = idx_; }
@@ -103,26 +166,31 @@ namespace zim
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
-          ASSERT(isItem(), ==, true);
-          cluster = _cluster;
-          info.d.blobNumber = _cluster->count();
+          auto& direct = info.getDirect();
+          direct.cluster = _cluster;
+          direct.blobNumber = _cluster->count();
         }
 
         zim::writer::Cluster* getCluster()
         {
-          return cluster;
+          return info.getDirect().cluster;
         }
 
         cluster_index_t getClusterNumber() const {
-          return cluster ? cluster->getClusterIndex() : info.d.clusterNumber;
+          auto& direct = info.getDirect();
+          return direct.cluster ? direct.cluster->getClusterIndex() : cluster_index_t(0);
         }
         blob_index_t  getBlobNumber() const {
-          return isRedirect() ? blob_index_t(0) : info.d.blobNumber;
+          return info.getDirect().blobNumber;
         }
 
         bool isRedirect() const                 { return mimeType == redirectMimeType; }
         bool isItem() const                     { return !isRedirect(); }
         uint16_t getMimeType() const            { return mimeType; }
+        void setMimeType(uint16_t m) {
+          ASSERT(info.tag, ==, DirentInfo::DIRECT);
+          mimeType = m;
+        }
         size_t getDirentSize() const
         {
           size_t ret = (isRedirect() ? 12 : 16) + path.size() + 2;
@@ -133,14 +201,6 @@ namespace zim
 
         offset_t getOffset() const { return offset; }
         void setOffset(offset_t o) { offset = o; }
-
-        void setItem(uint16_t mimeType_, cluster_index_t clusterNumber_, blob_index_t blobNumber_)
-        {
-          ASSERT(mimeType, ==, 0);
-          mimeType = mimeType_;
-          info.d.clusterNumber = clusterNumber_;
-          info.d.blobNumber = blobNumber_;
-        }
 
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }

@@ -42,8 +42,7 @@ Dirent::Dirent()
     ns(0),
     path(),
     title(),
-    redirectNs(),
-    redirectPath(),
+    info(DirentInfo::Direct()),
     removed(false)
 {}
 
@@ -53,13 +52,9 @@ Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint1
     ns(ns),
     path(path),
     title(title),
-    redirectNs(),
-    redirectPath(),
+    info(DirentInfo::Direct()),
     removed(false)
-{
-  info.d.clusterNumber = cluster_index_t(0);
-  info.d.blobNumber = blob_index_t(0);
-}
+{}
 
 // Creator for a "redirection" dirent
 Dirent::Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
@@ -67,11 +62,16 @@ Dirent::Dirent(char ns, const std::string& path, const std::string& title, char 
     ns(ns),
     path(path),
     title(title),
-    redirectNs(targetNs),
-    redirectPath(targetPath),
+    info(DirentInfo::Redirect(targetNs, targetPath)),
     removed(false)
-{
-  info.r.redirectDirent = nullptr;
+{}
+
+char Dirent::getRedirectNs() const {
+  return info.getRedirect().ns;
+}
+
+std::string Dirent::getRedirectPath() const {
+  return info.getRedirect().targetPath;
 }
 
 void Dirent::write(int out_fd) const

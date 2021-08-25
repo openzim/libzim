@@ -75,7 +75,6 @@ TEST(DirentTest, set_get_data_dirent)
   ASSERT_EQ(dirent.getUrl(), "Bar");
   ASSERT_EQ(dirent.getTitle(), "Bar");
   ASSERT_EQ(dirent.getParameter(), "");
-  ASSERT_EQ(dirent.getClusterNumber().v, 45U);
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
   ASSERT_EQ(dirent.getVersion(), 54346U);
 
@@ -88,15 +87,18 @@ TEST(DirentTest, set_get_data_dirent)
 
 TEST(DirentTest, read_write_article_dirent)
 {
-  zim::writer::Dirent dirent('A', "Bar", "Foo", 0);
-  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
+  zim::writer::Dirent dirent('A', "Bar", "Foo", 17);
+  zim::writer::Cluster cluster(zim::CompressionType::zimcompNone);
+  cluster.addContent(""); // Add a dummy content
+  cluster.setClusterIndex(zim::cluster_index_t(45));
+  dirent.setCluster(&cluster);
 
-  ASSERT_TRUE(!dirent.isRedirect());
+  ASSERT_TRUE(dirent.isItem());
   ASSERT_EQ(dirent.getNamespace(), 'A');
   ASSERT_EQ(dirent.getPath(), "Bar");
   ASSERT_EQ(dirent.getTitle(), "Foo");
   ASSERT_EQ(dirent.getClusterNumber().v, 45U);
-  ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
+  ASSERT_EQ(dirent.getBlobNumber().v, 1U);
   ASSERT_EQ(dirent.getVersion(), 0U);
 
   auto buffer = write_to_buffer(dirent);
@@ -107,21 +109,24 @@ TEST(DirentTest, read_write_article_dirent)
   ASSERT_EQ(dirent2.getTitle(), "Foo");
   ASSERT_EQ(dirent2.getParameter(), "");
   ASSERT_EQ(dirent2.getClusterNumber().v, 45U);
-  ASSERT_EQ(dirent2.getBlobNumber().v, 1234U);
+  ASSERT_EQ(dirent2.getBlobNumber().v, 1U);
   ASSERT_EQ(dirent2.getVersion(), 0U);
 }
 
 TEST(DirentTest, read_write_article_dirent_unicode)
 {
-  zim::writer::Dirent dirent('A', "L\xc3\xbcliang", "", 0);
-  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
+  zim::writer::Dirent dirent('A', "L\xc3\xbcliang", "", 17);
+  zim::writer::Cluster cluster(zim::CompressionType::zimcompNone);
+  cluster.addContent(""); // Add a dummy content
+  cluster.setClusterIndex(zim::cluster_index_t(45));
+  dirent.setCluster(&cluster);
 
-  ASSERT_TRUE(!dirent.isRedirect());
+  ASSERT_TRUE(dirent.isItem());
   ASSERT_EQ(dirent.getNamespace(), 'A');
   ASSERT_EQ(dirent.getPath(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent.getTitle(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent.getClusterNumber().v, 45U);
-  ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
+  ASSERT_EQ(dirent.getBlobNumber().v, 1U);
 
   auto buffer = write_to_buffer(dirent);
   zim::Dirent dirent2(read_from_buffer(buffer));
@@ -132,7 +137,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
   ASSERT_EQ(dirent2.getTitle(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent2.getParameter(), "");
   ASSERT_EQ(dirent2.getClusterNumber().v, 45U);
-  ASSERT_EQ(dirent2.getBlobNumber().v, 1234U);
+  ASSERT_EQ(dirent2.getBlobNumber().v, 1U);
 }
 
 TEST(DirentTest, read_write_redirect_dirent)
