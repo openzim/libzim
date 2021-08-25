@@ -64,38 +64,27 @@ namespace zim
         bool removed;
 
       public:
-        Dirent()
-          : mimeType(0),
-            ns(),
-            path(),
-            title(),
-            redirectNs(),
-            redirectPath(),
-            removed(false)
-        {
-          info.d.clusterNumber = cluster_index_t(0);
-          info.d.blobNumber = blob_index_t(0);
-        }
+        // Creator for a "classic" dirent
+        Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype);
 
-        explicit Dirent(char ns_, std::string path_ )
-          : Dirent()
-          { ns = ns_; path = path_; }
+        // Creator for a "redirection" dirent
+        Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath);
+
+        // Creator for "temporary" dirent, used to search for dirent in container.
+        // We use them in url ordered container so we only need to set the namespace and the path.
+        // Other value are irrelevant.
+        Dirent(char ns, const std::string& path)
+          : Dirent(ns, path, "", 0)
+          { }
 
         char getNamespace() const                { return ns; }
-        void setNamespace(char ns_)              { ns = ns_; }
         const std::string& getTitle() const      { return title.empty() ? path : title; }
         const std::string& getRealTitle() const  { return title; }
-        void setTitle(const std::string& title_) { title = title_; }
         const std::string& getPath() const       { return path; }
-        void setPath(const std::string& path_) {
-          path = path_;
-        }
 
         uint32_t getVersion() const            { return version; }
 
-        void setRedirectNs(char redirectNs_)      { redirectNs = redirectNs_; }
         char getRedirectNs() { return redirectNs; }
-        void setRedirectPath(const std::string& redirectPath_)     { redirectPath = redirectPath_; }
         const std::string& getRedirectPath() const         { return redirectPath; }
         void setRedirect(const Dirent* target) {
           info.r.redirectDirent = target;
@@ -160,6 +149,11 @@ namespace zim
 
         friend bool compareUrl(const Dirent* d1, const Dirent* d2);
         friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
+
+      private:
+         // A default constructor, used by the pool.
+        Dirent();
+        friend class DirentPool;
     };
 
 

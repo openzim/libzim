@@ -88,10 +88,7 @@ TEST(DirentTest, set_get_data_dirent)
 
 TEST(DirentTest, read_write_article_dirent)
 {
-  zim::writer::Dirent dirent;
-  dirent.setNamespace('A');
-  dirent.setPath("Bar");
-  dirent.setTitle("Foo");
+  zim::writer::Dirent dirent('A', "Bar", "Foo", 0);
   dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
 
   ASSERT_TRUE(!dirent.isRedirect());
@@ -116,9 +113,7 @@ TEST(DirentTest, read_write_article_dirent)
 
 TEST(DirentTest, read_write_article_dirent_unicode)
 {
-  zim::writer::Dirent dirent;
-  dirent.setNamespace('A');
-  dirent.setPath("L\xc3\xbcliang");
+  zim::writer::Dirent dirent('A', "L\xc3\xbcliang", "", 0);
   dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
 
   ASSERT_TRUE(!dirent.isRedirect());
@@ -142,11 +137,11 @@ TEST(DirentTest, read_write_article_dirent_unicode)
 
 TEST(DirentTest, read_write_redirect_dirent)
 {
-  zim::writer::Dirent targetDirent;
+  zim::writer::Dirent targetDirent('A', "Foo", "", 17);
   targetDirent.setIdx(zim::entry_index_t(321));
-  zim::writer::Dirent dirent;
-  dirent.setNamespace('A');
-  dirent.setPath("Bar");
+  zim::writer::Dirent dirent('A', "Bar", "", 'A', "Foo");
+  ASSERT_EQ(dirent.getRedirectNs(), 'A');
+  ASSERT_EQ(dirent.getRedirectPath(), "Foo");
   dirent.setRedirect(&targetDirent);
 
   ASSERT_TRUE(dirent.isRedirect());
@@ -166,31 +161,20 @@ TEST(DirentTest, read_write_redirect_dirent)
 
 TEST(DirentTest, dirent_size)
 {
-  zim::writer::Dirent dirent;
-  std::string s;
-  dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
-  dirent.setNamespace('A');
-  dirent.setPath("Bar");
-
   // case url set, title empty, extralen empty
+  zim::writer::Dirent dirent('A', "Bar", "", 17);
   ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
 
   // case url set, title set, extralen empty
-  dirent.setTitle("Foo");
-  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
-
-  // case url set, title empty
-  dirent.setTitle(std::string());
-  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
+  zim::writer::Dirent dirent2('A', "Bar", "Foo", 17);
+  ASSERT_EQ(dirent2.getDirentSize(), writenDirentSize(dirent2));
 }
 
 TEST(DirentTest, redirect_dirent_size)
 {
-  zim::writer::Dirent targetDirent;
+   zim::writer::Dirent targetDirent('A', "Foo", "", 17);
   targetDirent.setIdx(zim::entry_index_t(321));
-  zim::writer::Dirent dirent;
-  dirent.setNamespace('A');
-  dirent.setPath("Bar");
+  zim::writer::Dirent dirent('A', "Bar", "", 'A', "Foo");
   dirent.setRedirect(&targetDirent);
 
   ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));

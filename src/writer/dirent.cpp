@@ -34,7 +34,47 @@
 
 log_define("zim.dirent")
 
-void zim::writer::Dirent::write(int out_fd) const
+namespace zim {
+namespace writer {
+
+Dirent::Dirent()
+  : mimeType(0),
+    ns(0),
+    path(),
+    title(),
+    redirectNs(),
+    redirectPath(),
+    removed(false)
+{}
+
+// Creator for a "classic" dirent
+Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype)
+  : mimeType(mimetype),
+    ns(ns),
+    path(path),
+    title(title),
+    redirectNs(),
+    redirectPath(),
+    removed(false)
+{
+  info.d.clusterNumber = cluster_index_t(0);
+  info.d.blobNumber = blob_index_t(0);
+}
+
+// Creator for a "redirection" dirent
+Dirent::Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
+  : mimeType(redirectMimeType),
+    ns(ns),
+    path(path),
+    title(title),
+    redirectNs(targetNs),
+    redirectPath(targetPath),
+    removed(false)
+{
+  info.r.redirectDirent = nullptr;
+}
+
+void Dirent::write(int out_fd) const
 {
   union
   {
@@ -69,4 +109,7 @@ void zim::writer::Dirent::write(int out_fd) const
   char c = 0;
   _write(out_fd, &c, 1);
 
+}
+
+}
 }

@@ -46,11 +46,22 @@ namespace zim
           }
         }
 
-        Dirent* getDirent() {
+        Dirent* getClassicDirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype) {
           if (direntIndex == 0xFFFF) {
             allocate_new_pool();
           }
-          return pools.back() + direntIndex++;
+          auto dirent = pools.back() + direntIndex++;
+          new (dirent) Dirent(ns, path, title, mimetype);
+          return dirent;
+        }
+
+        Dirent* getRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath) {
+          if (direntIndex == 0xFFFF) {
+            allocate_new_pool();
+          }
+          auto dirent = pools.back() + direntIndex++;
+          new (dirent) Dirent(ns, path, title, targetNs, targetPath);
+          return dirent;
         }
     };
   }
