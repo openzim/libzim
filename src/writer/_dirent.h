@@ -75,7 +75,7 @@ namespace zim
       }
       char* m_data;
       uint16_t m_size;
-    } __attribute__((packed));
+    } PACKED;
 
     struct PathTitleTinyString : TinyString {
       PathTitleTinyString() : TinyString() {}
@@ -118,7 +118,7 @@ namespace zim
           return std::string(m_data+title_start, m_size-title_start);
         }
       }
-    } __attribute__((packed));
+    } PACKED;
 
     struct DirentInfo {
       struct Direct {
@@ -128,7 +128,7 @@ namespace zim
         {};
         Cluster*         cluster;
         blob_index_t     blobNumber;
-      } __attribute__((packed));
+      } PACKED;
 
       struct Redirect {
         Redirect(char ns, const std::string& target) :
@@ -139,14 +139,14 @@ namespace zim
         ~Redirect() {};
         TinyString targetPath;
         char ns;
-      } __attribute__((packed));
+      } PACKED;
 
       struct Resolved {
         Resolved(const Dirent* target) :
           targetDirent(target)
         {};
         const Dirent* targetDirent;
-      } __attribute__((packed));
+      } PACKED;
 
       ~DirentInfo() {
         switch(tag) {
@@ -202,10 +202,10 @@ namespace zim
           Direct direct;
           Redirect redirect;
           Resolved resolved;
-        } __attribute__((packed));
+        } PACKED;
       public:
         enum : char {DIRECT, REDIRECT, RESOLVED} tag;
-    } __attribute__((packed));
+    } PACKED;
 
     class Dirent
     {
@@ -303,7 +303,7 @@ namespace zim
          // A default constructor, used by the pool.
         Dirent();
         friend class DirentPool;
-    } __attribute__((packed));
+    } PACKED;
 
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)
