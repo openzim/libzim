@@ -30,90 +30,94 @@ namespace zim
   namespace writer {
     class Dirent;
 
-    struct DirentInfo {
-      struct Direct {
-        Direct() :
-          cluster(nullptr),
-          blobNumber(0)
-        {};
-        Cluster*         cluster;
-        blob_index_t     blobNumber;
-      } PACKED;
+    class DirentInfo {
+      public: // structures
+        struct Direct {
+          Direct() :
+            cluster(nullptr),
+            blobNumber(0)
+          {};
+          Cluster*         cluster;
+          blob_index_t     blobNumber;
+        } PACKED;
 
-      struct Redirect {
-        Redirect(char ns, const std::string& target) :
-          targetPath(target),
-          ns(ns)
-        {};
-        Redirect(Redirect&& r) = default;
-        ~Redirect() {};
-        TinyString targetPath;
-        char ns;
-      } PACKED;
+        struct Redirect {
+          Redirect(char ns, const std::string& target) :
+            targetPath(target),
+            ns(ns)
+          {};
+          Redirect(Redirect&& r) = default;
+          ~Redirect() {};
+          TinyString targetPath;
+          char ns;
+        } PACKED;
 
-      struct Resolved {
-        Resolved(const Dirent* target) :
-          targetDirent(target)
-        {};
-        const Dirent* targetDirent;
-      } PACKED;
+        struct Resolved {
+          Resolved(const Dirent* target) :
+            targetDirent(target)
+          {};
+          const Dirent* targetDirent;
+        } PACKED;
 
-      ~DirentInfo() {
-        switch(tag) {
-          case DIRECT:
-            direct.~Direct();
-            break;
-          case REDIRECT:
-            redirect.~Redirect();
-            break;
-          case RESOLVED:
-            resolved.~Resolved();
-            break;
+      public: // functions
+        ~DirentInfo() {
+          switch(tag) {
+            case DIRECT:
+             direct.~Direct();
+              break;
+            case REDIRECT:
+              redirect.~Redirect();
+              break;
+            case RESOLVED:
+              resolved.~Resolved();
+              break;
+          }
+        };
+        DirentInfo(Direct&& d):
+          direct(std::move(d)),
+          tag(DirentInfo::DIRECT)
+        {}
+        DirentInfo(Redirect&& r):
+          redirect(std::move(r)),
+          tag(DirentInfo::REDIRECT)
+        {}
+        DirentInfo(Resolved&& r):
+          resolved(std::move(r)),
+          tag(DirentInfo::RESOLVED)
+        {}
+        DirentInfo::Direct& getDirect() {
+          ASSERT(tag, ==, DIRECT);
+          return direct;
         }
-      };
-      DirentInfo(Direct&& d):
-        direct(std::move(d)),
-        tag(DirentInfo::DIRECT)
-      {}
-      DirentInfo(Redirect&& r):
-        redirect(std::move(r)),
-        tag(DirentInfo::REDIRECT)
-      {}
-      DirentInfo(Resolved&& r):
-        resolved(std::move(r)),
-        tag(DirentInfo::RESOLVED)
-      {}
-      DirentInfo::Direct& getDirect() {
-        ASSERT(tag, ==, DIRECT);
-        return direct;
-      }
-      DirentInfo::Redirect& getRedirect() {
-        ASSERT(tag, ==, REDIRECT);
-        return redirect;
-      }
-      DirentInfo::Resolved& getResolved() {
-        ASSERT(tag, ==, RESOLVED);
-        return resolved;
-      }
-      const DirentInfo::Direct& getDirect() const {
-        ASSERT(tag, ==, DIRECT);
-        return direct;
-      }
-      const DirentInfo::Redirect& getRedirect() const {
-        ASSERT(tag, ==, REDIRECT);
-        return redirect;
-      }
-      const DirentInfo::Resolved& getResolved() const {
-        ASSERT(tag, ==, RESOLVED);
-        return resolved;
-      }
-      private:
+        DirentInfo::Redirect& getRedirect() {
+          ASSERT(tag, ==, REDIRECT);
+          return redirect;
+        }
+        DirentInfo::Resolved& getResolved() {
+          ASSERT(tag, ==, RESOLVED);
+          return resolved;
+        }
+        const DirentInfo::Direct& getDirect() const {
+          ASSERT(tag, ==, DIRECT);
+          return direct;
+        }
+        const DirentInfo::Redirect& getRedirect() const {
+          ASSERT(tag, ==, REDIRECT);
+          return redirect;
+        }
+        const DirentInfo::Resolved& getResolved() const {
+          ASSERT(tag, ==, RESOLVED);
+          return resolved;
+        }
+
+      private: // members
         union {
           Direct direct;
           Redirect redirect;
           Resolved resolved;
         } PACKED;
-      public:
+
+      public: // members
         enum : char {DIRECT, REDIRECT, RESOLVED} tag;
     } PACKED;
 
