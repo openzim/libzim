@@ -97,24 +97,17 @@ namespace zim
           }
           return std::string(m_data);
         }
-        std::string getTitle() const {
+        std::string getTitle(bool storedOnly) const {
           if (m_size == 0) {
             return std::string();
           }
           auto title_start = std::strlen(m_data) + 1;
           if (title_start == m_size) {
-            return std::string(m_data); // return the path as a title
-          } else {
-            return std::string(m_data+title_start, m_size-title_start);
-          }
-        }
-        std::string getStoredTitle() const {
-          if (m_size == 0) {
-            return std::string();
-          }
-          auto title_start = std::strlen(m_data) + 1;
-          if (title_start == m_size) {
-            return std::string(); // return empty title
+            if (storedOnly) {
+              return std::string(); // return empty title
+            } else {
+              return std::string(m_data); // return the path as a title
+            }
           } else {
             return std::string(m_data+title_start, m_size-title_start);
           }

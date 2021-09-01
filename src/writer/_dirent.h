@@ -149,8 +149,8 @@ namespace zim
           { }
 
         char getNamespace() const                { return ns; }
-        std::string getTitle() const      { return pathTitle.getTitle(); }
-        std::string getRealTitle() const      { return pathTitle.getStoredTitle(); }
+        std::string getTitle() const      { return pathTitle.getTitle(false); }
+        std::string getRealTitle() const      { return pathTitle.getTitle(true); }
         std::string getPath() const       { return pathTitle.getPath(); }
 
         uint32_t getVersion() const            { return version; }

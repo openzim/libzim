@@ -83,8 +83,8 @@ TEST(PathTitleTinyString, none)
   ASSERT_EQ((std::string)s, "");
   ASSERT_EQ(s, TinyString());
   ASSERT_EQ(s.getPath(), "");
-  ASSERT_EQ(s.getTitle(), "");
-  ASSERT_EQ(s.getStoredTitle(), "");
+  ASSERT_EQ(s.getTitle(false), "");
+  ASSERT_EQ(s.getTitle(true), "");
 }
 
 TEST(PathTitleTinyString, empty)
@@ -95,8 +95,8 @@ TEST(PathTitleTinyString, empty)
   ASSERT_EQ(s.size(), 1);
   ASSERT_EQ((std::string)s, std::string("", 1));
   ASSERT_EQ(s.getPath(), "");
-  ASSERT_EQ(s.getTitle(), "");
-  ASSERT_EQ(s.getStoredTitle(), "");
+  ASSERT_EQ(s.getTitle(false), "");
+  ASSERT_EQ(s.getTitle(true), "");
 }
 
 TEST(PathTitleTinyString, no_title)
@@ -107,8 +107,8 @@ TEST(PathTitleTinyString, no_title)
   ASSERT_EQ(s.size(), 4);
   ASSERT_EQ((std::string)s, std::string("FOO\0", 4));
   ASSERT_EQ(s.getPath(), "FOO");
-  ASSERT_EQ(s.getTitle(), "FOO");
-  ASSERT_EQ(s.getStoredTitle(), "");
+  ASSERT_EQ(s.getTitle(false), "FOO");
+  ASSERT_EQ(s.getTitle(true), "");
 }
 
 TEST(PathTitleTinyString, no_path)
@@ -119,8 +119,8 @@ TEST(PathTitleTinyString, no_path)
   ASSERT_EQ(s.size(), 4);
   ASSERT_EQ((std::string)s, std::string("\0BAR", 4));
   ASSERT_EQ(s.getPath(), "");
-  ASSERT_EQ(s.getTitle(), "BAR");
-  ASSERT_EQ(s.getStoredTitle(), "BAR");
+  ASSERT_EQ(s.getTitle(false), "BAR");
+  ASSERT_EQ(s.getTitle(true), "BAR");
 }
 
 TEST(PathTitleTinyString, path_title)
@@ -131,8 +131,8 @@ TEST(PathTitleTinyString, path_title)
   ASSERT_EQ(s.size(), 7);
   ASSERT_EQ((std::string)s, std::string("FOO\0BAR", 7));
   ASSERT_EQ(s.getPath(), "FOO");
-  ASSERT_EQ(s.getTitle(), "BAR");
-  ASSERT_EQ(s.getStoredTitle(), "BAR");
+  ASSERT_EQ(s.getTitle(false), "BAR");
+  ASSERT_EQ(s.getTitle(true), "BAR");
 }
 
 TEST(PathTitleTinyString, equal_path_title)
@@ -143,7 +143,7 @@ TEST(PathTitleTinyString, equal_path_title)
   ASSERT_EQ(s.size(), 4);
   ASSERT_EQ((std::string)s, std::string("FOO\0", 4));
   ASSERT_EQ(s.getPath(), "FOO");
-  ASSERT_EQ(s.getTitle(), "FOO");
-  ASSERT_EQ(s.getStoredTitle(), "");
+  ASSERT_EQ(s.getTitle(false), "FOO");
+  ASSERT_EQ(s.getTitle(true), "");
 }
 }  // namespace
