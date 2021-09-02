@@ -27,16 +27,12 @@ namespace zim
   {
     std::shared_ptr<IndexData> Item::getIndexData() const
     {
-      if (mp_defaultIndexData) {
-        return mp_defaultIndexData;
-      }
       if (getMimeType().find("text/html")!=0) {
         return nullptr;
       }
 
       auto provider = getContentProvider();
-      mp_defaultIndexData = std::shared_ptr<IndexData>(new DefaultIndexData(std::move(provider), getTitle()));
-      return mp_defaultIndexData;
+      return std::make_shared<DefaultIndexData>(std::move(provider), getTitle());
     }
 
     Hints Item::getHints() const {

@@ -133,9 +133,6 @@ namespace zim
          */
         virtual Hints getHints() const;
         virtual ~Item() = default;
-
-      private:
-        mutable std::shared_ptr<IndexData> mp_defaultIndexData;
     };
 
     /**
