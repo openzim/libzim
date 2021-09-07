@@ -17,14 +17,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
-      - name: Setup python 3.6
+      - name: Setup python 3.9
         uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.9'
       - name: Install packages
         run: |
           brew update
-          brew install gcovr pkg-config ninja
+          brew install gcovr pkg-config ninja || brew link --overwrite python@3.9
       - name: Install python modules
         run: pip3 install meson==0.52.1 pytest
       - name: Install deps

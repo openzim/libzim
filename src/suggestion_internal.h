@@ -23,6 +23,8 @@
 #include "zim/suggestion.h"
 #include "zim/archive.h"
 
+#include <stdexcept>
+
 #if defined(LIBZIM_WITH_XAPIAN)
 #include <xapian.h>
 #endif
