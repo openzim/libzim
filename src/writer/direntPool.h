@@ -40,6 +40,8 @@ namespace zim
         DirentPool() :
           direntIndex(0xFFFF)
         {}
+        DirentPool(const DirentPool&) = delete;
+        DirentPool& operator=(const DirentPool&) = delete;
         ~DirentPool() {
           for(auto direntArray: pools) {
             delete[] direntArray;
