@@ -37,16 +37,6 @@ log_define("zim.dirent")
 namespace zim {
 namespace writer {
 
-Dirent::Dirent()
-  : pathTitle(),
-    mimeType(0),
-    idx(0),
-    info(DirentInfo::Direct()),
-    offset(0),
-    ns(0),
-    removed(false)
-{}
-
 // Creator for a "classic" dirent
 Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype)
   : pathTitle(path, title),

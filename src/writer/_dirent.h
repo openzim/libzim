@@ -212,11 +212,6 @@ namespace zim
 
         friend bool compareUrl(const Dirent* d1, const Dirent* d2);
         friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
-
-      private:
-         // A default constructor, used by the pool.
-        Dirent();
-        friend class DirentPool;
     } PACKED;
 
 

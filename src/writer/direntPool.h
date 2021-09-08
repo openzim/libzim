@@ -32,7 +32,7 @@ namespace zim
         uint16_t direntIndex;
 
         void allocate_new_pool() {
-          pools.push_back(new Dirent[0xFFFF]);
+          pools.push_back(reinterpret_cast<Dirent*>(new char[sizeof(Dirent)*0xFFFF]));
           direntIndex = 0;
         }
 
@@ -43,9 +43,28 @@ namespace zim
         DirentPool(const DirentPool&) = delete;
         DirentPool& operator=(const DirentPool&) = delete;
         ~DirentPool() {
-          for(auto direntArray: pools) {
-            delete[] direntArray;
+          auto nbPools = pools.size();
+          if (nbPools == 0) {
+            return;
           }
+          // Delete all but last pools (add call the destructors of the dirents)
+          for (auto i = 0U; i<nbPools-1; i++) {
+            auto pool = pools[i];
+            for (auto j = 0U; j < 0xFFFF; j++) {
+              try {
+                pool[j].~Dirent();
+              } catch (...){ /*discard */ }
+            }
+            delete [] (reinterpret_cast<char*>(pool));
+          }
+          // On the last pool, only `direntIndex` are really constructed.
+          auto lastPool = pools[nbPools-1];
+          for (auto j = 0U; j<direntIndex; j++) {
+            try {
+              lastPool[j].~Dirent();
+            } catch (...){ /* discard */ }
+          }
+          delete [] (reinterpret_cast<char*>(lastPool));
         }
 
         Dirent* getClassicDirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype) {
