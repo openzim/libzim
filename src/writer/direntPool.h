@@ -35,6 +35,15 @@ namespace zim
           pools.push_back(reinterpret_cast<Dirent*>(new char[sizeof(Dirent)*0xFFFF]));
           direntIndex = 0;
         }
+        static void destroyPoolBlock(Dirent* pool, uint16_t count=0xFFFF) {
+          for (auto i = 0U; i < count; i++) {
+            try {
+              pool[i].~Dirent();
+            } catch (...){ /*discard*/ }
+          }
+          delete [] (reinterpret_cast<char*>(pool));
+        }
+
 
       public:
         DirentPool() :
@@ -49,22 +58,10 @@ namespace zim
           }
           // Delete all but last pools (add call the destructors of the dirents)
           for (auto i = 0U; i<nbPools-1; i++) {
-            auto pool = pools[i];
-            for (auto j = 0U; j < 0xFFFF; j++) {
-              try {
-                pool[j].~Dirent();
-              } catch (...){ /*discard */ }
-            }
-            delete [] (reinterpret_cast<char*>(pool));
+            destroyPoolBlock(pools[i]);
           }
           // On the last pool, only `direntIndex` are really constructed.
-          auto lastPool = pools[nbPools-1];
-          for (auto j = 0U; j<direntIndex; j++) {
-            try {
-              lastPool[j].~Dirent();
-            } catch (...){ /* discard */ }
-          }
-          delete [] (reinterpret_cast<char*>(lastPool));
+          destroyPoolBlock(pools[nbPools-1], direntIndex);
         }
 
         Dirent* getClassicDirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype) {
