@@ -34,8 +34,42 @@
 
 log_define("zim.dirent")
 
-void zim::writer::Dirent::write(int out_fd) const
+namespace zim {
+namespace writer {
+
+// Creator for a "classic" dirent
+Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype)
+  : pathTitle(path, title),
+    mimeType(mimetype),
+    idx(0),
+    info(DirentInfo::Direct()),
+    offset(0),
+    ns(ns),
+    removed(false)
+{}
+
+// Creator for a "redirection" dirent
+Dirent::Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
+  : pathTitle(path, title),
+    mimeType(redirectMimeType),
+    idx(0),
+    info(std::move(DirentInfo::Redirect(targetNs, targetPath))),
+    offset(0),
+    ns(ns),
+    removed(false)
+{}
+
+char Dirent::getRedirectNs() const {
+  return info.getRedirect().ns;
+}
+
+std::string Dirent::getRedirectPath() const {
+  return info.getRedirect().targetPath;
+}
+
+void Dirent::write(int out_fd) const
 {
+  const static char zero = 0;
   union
   {
     char d[16];
@@ -61,12 +95,10 @@ void zim::writer::Dirent::write(int out_fd) const
     _write(out_fd, header.d, 16);
   }
 
-  _write(out_fd, path.c_str(), path.size()+1);
+  _write(out_fd, pathTitle.data(), pathTitle.size());
+  _write(out_fd, &zero, 1);
 
-  std::string t = getTitle();
-  if (t != path)
-    _write(out_fd, t.c_str(), t.size());
-  char c = 0;
-  _write(out_fd, &c, 1);
+}
 
+}
 }

@@ -550,11 +550,7 @@ namespace zim
 
     Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
     {
-      auto dirent = pool.getDirent();
-      dirent->setNamespace(ns);
-      dirent->setPath(path);
-      dirent->setMimeType(getMimeTypeIdx(mimetype));
-      dirent->setTitle(title);
+      auto dirent = pool.getClassicDirent(ns, path, title, getMimeTypeIdx(mimetype));
       addDirent(dirent);
       return dirent;
     }
@@ -572,13 +568,7 @@ namespace zim
 
     Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
     {
-      auto dirent = pool.getDirent();
-      dirent->setNamespace(ns);
-      dirent->setPath(path);
-      dirent->setTitle(title);
-      dirent->setRedirectNs(targetNs);
-      dirent->setRedirectPath(targetPath);
-      dirent->setRedirect(nullptr);
+      auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
       addDirent(dirent);
       return dirent;
     }

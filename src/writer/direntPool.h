@@ -32,25 +32,54 @@ namespace zim
         uint16_t direntIndex;
 
         void allocate_new_pool() {
-          pools.push_back(new Dirent[0xFFFF]);
+          pools.push_back(reinterpret_cast<Dirent*>(new char[sizeof(Dirent)*0xFFFF]));
           direntIndex = 0;
         }
+        static void destroyPoolBlock(Dirent* pool, uint16_t count=0xFFFF) {
+          for (auto i = 0U; i < count; i++) {
+            try {
+              pool[i].~Dirent();
+            } catch (...){ /*discard*/ }
+          }
+          delete [] (reinterpret_cast<char*>(pool));
+        }
+
 
       public:
         DirentPool() :
           direntIndex(0xFFFF)
         {}
+        DirentPool(const DirentPool&) = delete;
+        DirentPool& operator=(const DirentPool&) = delete;
         ~DirentPool() {
-          for(auto direntArray: pools) {
-            delete[] direntArray;
+          auto nbPools = pools.size();
+          if (nbPools == 0) {
+            return;
           }
+          // Delete all but last pools (add call the destructors of the dirents)
+          for (auto i = 0U; i<nbPools-1; i++) {
+            destroyPoolBlock(pools[i]);
+          }
+          // On the last pool, only `direntIndex` are really constructed.
+          destroyPoolBlock(pools[nbPools-1], direntIndex);
         }
 
-        Dirent* getDirent() {
+        Dirent* getClassicDirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype) {
           if (direntIndex == 0xFFFF) {
             allocate_new_pool();
           }
-          return pools.back() + direntIndex++;
+          auto dirent = pools.back() + direntIndex++;
+          new (dirent) Dirent(ns, path, title, mimetype);
+          return dirent;
+        }
+
+        Dirent* getRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath) {
+          if (direntIndex == 0xFFFF) {
+            allocate_new_pool();
+          }
+          auto dirent = pools.back() + direntIndex++;
+          new (dirent) Dirent(ns, path, title, targetNs, targetPath);
+          return dirent;
         }
     };
   }

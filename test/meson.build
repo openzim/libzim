@@ -19,6 +19,7 @@ tests = [
     'parseLongPath',
     'random',
     'tooltesting',
+    'tinyString',
     'suggestion_iterator'
 ]
 
