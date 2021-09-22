@@ -239,9 +239,9 @@ int Search::getEstimatedMatches() const
 {
     try {
       auto enquire = getEnquire();
-      // Force xapian to check at least one document even if we ask for an empty mset.
+      // Force xapian to check at least 10 documents even if we ask for an empty mset.
       // Else, the get_matches_estimated may be wrong and return 0 even if we have results.
-      auto mset = enquire.get_mset(0, 0, 1);
+      auto mset = enquire.get_mset(0, 0, 10);
       return mset.get_matches_estimated();
     } catch(Xapian::QueryParserError& e) {
       return 0;
