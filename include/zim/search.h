@@ -120,7 +120,7 @@ class Query
      *
      * Create a empty query.
      */
-    Query() = default;
+    Query(const std::string& query = "");
 
     /** Set the textual query of the Query.
      *

@@ -57,8 +57,7 @@ TEST(suggestion_iterator, copy) {
   });
 
   zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("item");
+  zim::Query query("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 

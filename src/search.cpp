@@ -222,6 +222,10 @@ Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
 Search::~Search() = default;
 
+Query::Query(const std::string& query) :
+  m_query(query)
+{}
+
 Query& Query::setQuery(const std::string& query) {
     m_query = query;
     return *this;
