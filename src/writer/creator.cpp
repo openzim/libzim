@@ -452,7 +452,6 @@ namespace zim
 
       mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
       m_direntHandlers.push_back(mp_titleListingHandler);
-      m_direntHandlers.push_back(std::make_shared<TitleListingHandlerV1>(this));
       m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
       for(auto& handler:m_direntHandlers) {

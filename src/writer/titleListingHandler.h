@@ -34,6 +34,9 @@ struct TitleCompare {
   }
 };
 
+// This handler is in charge of handling titles.
+// It will create the "classic" old V0 title listing (for ALL entries) but also
+// the V1 title listing (for front article only).
 class TitleListingHandler : public DirentHandler {
   public:
     explicit TitleListingHandler(CreatorData* data);
@@ -50,17 +53,8 @@ class TitleListingHandler : public DirentHandler {
     Dirents createDirents() const override;
     CreatorData* mp_creatorData;
     Dirents m_handledDirents;
+    bool m_hasFrontArticles;
 };
-
-class TitleListingHandlerV1 : public TitleListingHandler {
-  public:
-    explicit TitleListingHandlerV1(CreatorData* data) : TitleListingHandler(data) {};
-    void handle(Dirent* dirent, const Hints& hints) override;
-
-  protected:
-    Dirents createDirents() const override;
-};
-
 }
 }
 

@@ -55,7 +55,8 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
     info(DirentInfo::Direct()),
     offset(0),
     _ns(static_cast<uint8_t>(ns)),
-    removed(false)
+    removed(false),
+    frontArticle(false)
 {}
 
 // Creator for a "redirection" dirent
@@ -66,7 +67,8 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
     info(std::move(DirentInfo::Redirect(targetNs, targetPath))),
     offset(0),
     _ns(static_cast<uint8_t>(ns)),
-    removed(false)
+    removed(false),
+    frontArticle(false)
 {}
 
 NS Dirent::getRedirectNs() const {
