@@ -54,7 +54,7 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
     idx(0),
     info(DirentInfo::Direct()),
     offset(0),
-    ns(ns),
+    _ns(static_cast<uint8_t>(ns)),
     removed(false)
 {}
 
@@ -65,7 +65,7 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
     idx(0),
     info(std::move(DirentInfo::Redirect(targetNs, targetPath))),
     offset(0),
-    ns(ns),
+    _ns(static_cast<uint8_t>(ns)),
     removed(false)
 {}
 

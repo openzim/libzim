@@ -31,7 +31,7 @@ namespace zim
     class Dirent;
 
     // Be sure that enum value are sorted by "alphabetical" order
-    enum class NS {
+    enum class NS: uint8_t {
       C = 0,
       M = 1,
       W = 2,
@@ -141,7 +141,7 @@ namespace zim
         entry_index_t idx = entry_index_t(0);
         DirentInfo info;
         offset_t offset;
-        NS ns;
+        uint8_t _ns : 2;
         bool removed;
 
       public:
@@ -158,7 +158,7 @@ namespace zim
           : Dirent(ns, path, "", 0)
           { }
 
-        NS getNamespace() const                { return ns; }
+        NS getNamespace() const           { return static_cast<NS>(_ns); }
         std::string getTitle() const      { return pathTitle.getTitle(false); }
         std::string getRealTitle() const      { return pathTitle.getTitle(true); }
         std::string getPath() const       { return pathTitle.getPath(); }
@@ -227,12 +227,13 @@ namespace zim
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns || (d1->ns == d2->ns && d1->getPath() < d2->getPath());
+      return d1->getNamespace() < d2->getNamespace()
+        || (d1->getNamespace() == d2->getNamespace() && d1->getPath() < d2->getPath());
     }
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns
-        || (d1->ns == d2->ns && d1->getTitle() < d2->getTitle());
+      return d1->getNamespace() < d2->getNamespace()
+        || (d1->getNamespace() == d2->getNamespace() && d1->getTitle() < d2->getTitle());
     }
   }
 }
