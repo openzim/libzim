@@ -49,10 +49,15 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
 {
   uint8_t clusterInfo = zimReader.read(offset);
   // Very old zim files used 0 as a "default" compression, which means no compression.
-  if(clusterInfo&0x0F == 0) {
+  uint8_t compInfo = clusterInfo & 0x0F;
+  if(compInfo == 0) {
     *comp = zimcompNone;
+  } else if (compInfo == 2 /* Zip compression */) {
+    throw std::runtime_error("zlib not enabled in this library");
+  } else if (compInfo == 3 /* Bzip2 compression */) {
+    throw std::runtime_error("bzip2 not enabled in this library");
   } else {
-    *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
+    *comp = static_cast<CompressionType>(compInfo);
   }
   *extended = clusterInfo & 0x10;
   auto subReader = std::shared_ptr<const Reader>(zimReader.sub_reader(offset+offset_t(1)));
@@ -64,10 +69,6 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
       return std::unique_ptr<IStreamReader>(new DecoderStreamReader<LZMA_INFO>(subReader));
     case zimcompZstd:
       return std::unique_ptr<IStreamReader>(new DecoderStreamReader<ZSTD_INFO>(subReader));
-    case zimcompZip:
-      throw std::runtime_error("zlib not enabled in this library");
-    case zimcompBzip2:
-      throw std::runtime_error("bzip2 not enabled in this library");
     default:
       throw ZimFileFormatError("Invalid compression flag");
   }

@@ -109,19 +109,10 @@ namespace zim
 
     Creator& Creator::configCompression(CompressionType comptype)
     {
-      switch(comptype) {
-        case zim::zimcompBzip2:
-        case zim::zimcompZip:
-          throw std::runtime_error("Compression method not enabled in this library");
-
-        case zimcompLzma:
-          std::cerr << "WARNING: LZMA compression method is deprecated."
-                    << " Support for it will be dropped from libzim soon."
-                    << std::endl;
-          break;
-
-        default:
-          break;
+      if(comptype == zimcompLzma) {
+        std::cerr << "WARNING: LZMA compression method is deprecated."
+                  << " Support for it will be dropped from libzim soon."
+                  << std::endl;
       }
       m_compression = comptype;
       return *this;

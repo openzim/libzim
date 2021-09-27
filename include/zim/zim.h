@@ -54,10 +54,8 @@ namespace zim
   enum CompressionType
   {
     zimcompNone = 1,
-    zimcompZip, // Not supported anymore in the libzim
-    zimcompBzip2, // Not supported anymore in the libzim
-    zimcompLzma,
-    zimcompZstd
+    zimcompLzma = 4,
+    zimcompZstd = 5
   };
 
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";

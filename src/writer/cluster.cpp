@@ -126,13 +126,6 @@ void Cluster::compress()
 {
   auto comp = getCompression();
   switch(comp) {
-    case zim::zimcompBzip2:
-    case zim::zimcompZip:
-      {
-        throw std::runtime_error("Compression method not enabled in this library");
-        break;
-      }
-
     case zim::zimcompLzma:
       {
         _compress<LZMA_INFO>();
@@ -203,8 +196,6 @@ void Cluster::write(int out_fd) const
       break;
     }
 
-    case zim::zimcompZip:
-    case zim::zimcompBzip2:
     case zim::zimcompLzma:
     case zim::zimcompZstd:
       {
