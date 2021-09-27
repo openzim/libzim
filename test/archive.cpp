@@ -556,8 +556,8 @@ TEST(ZimArchive, multipart)
   for(auto i=0UL; i < nonSplittedZims.size(); i++) {
     const zim::Archive archive1(nonSplittedZims[i].path);
     const zim::Archive archive2(splittedZims[i].path);
-    ASSERT_FALSE(archive1.is_multiPart());
-    ASSERT_TRUE (archive2.is_multiPart());
+    ASSERT_FALSE(archive1.isMultiPart());
+    ASSERT_TRUE (archive2.isMultiPart());
 
     checkEquivalence(archive1, archive2);
   }

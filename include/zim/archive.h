@@ -423,7 +423,7 @@ namespace zim
        *
        *  @return True if the archive is split in different file (foo.zimaa, foo.zimbb).
        */
-      bool is_multiPart() const;
+      bool isMultiPart() const;
 
       /** Get if the zim archive uses the new namespace scheme.
        *

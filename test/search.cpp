@@ -204,7 +204,7 @@ TEST(Search, noStemming)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(std::vector<zim::Archive>{});
-  searcher.add_archive(archive);
+  searcher.addArchive(archive);
   searcher.setVerbose(true);
 
   zim::Query query("test article");

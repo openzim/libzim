@@ -182,7 +182,7 @@ Searcher::Searcher(Searcher&& other) = default;
 Searcher& Searcher::operator=(Searcher&& other) = default;
 Searcher::~Searcher() = default;
 
-Searcher& Searcher::add_archive(const Archive& archive) {
+Searcher& Searcher::addArchive(const Archive& archive) {
     m_archives.push_back(archive);
     mp_internalDb.reset();
     return *this;

@@ -443,7 +443,7 @@ namespace zim
     return m_impl->verify();
   }
 
-  bool Archive::is_multiPart() const
+  bool Archive::isMultiPart() const
   {
     return m_impl->is_multiPart();
   }
