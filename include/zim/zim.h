@@ -53,8 +53,7 @@ namespace zim
 
   enum CompressionType
   {
-    zimcompDefault,
-    zimcompNone,
+    zimcompNone = 1,
     zimcompZip, // Not supported anymore in the libzim
     zimcompBzip2, // Not supported anymore in the libzim
     zimcompLzma,

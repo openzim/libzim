@@ -48,12 +48,16 @@ std::unique_ptr<IStreamReader>
 getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp, bool* extended)
 {
   uint8_t clusterInfo = zimReader.read(offset);
-  *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
+  // Very old zim files used 0 as a "default" compression, which means no compression.
+  if(clusterInfo&0x0F == 0) {
+    *comp = zimcompNone;
+  } else {
+    *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
+  }
   *extended = clusterInfo & 0x10;
   auto subReader = std::shared_ptr<const Reader>(zimReader.sub_reader(offset+offset_t(1)));
 
   switch (*comp) {
-    case zimcompDefault:
     case zimcompNone:
       return std::unique_ptr<IStreamReader>(new RawStreamReader(subReader));
     case zimcompLzma:

@@ -66,7 +66,7 @@ namespace zim
     public:
       Cluster(std::unique_ptr<IStreamReader> reader, CompressionType comp, bool isExtended);
       CompressionType getCompression() const   { return compression; }
-      bool isCompressed() const                { return compression != zimcompDefault && compression != zimcompNone; }
+      bool isCompressed() const                { return compression != zimcompNone; }
 
       blob_index_t count() const               { return blob_index_t(m_blobOffsets.size() - 1); }
 

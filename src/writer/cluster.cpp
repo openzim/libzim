@@ -75,9 +75,7 @@ void Cluster::clear_compressed_data() {
 }
 
 void Cluster::close() {
-  if (getCompression() != zim::zimcompDefault
-    && getCompression() != zim::zimcompNone) {
-
+  if (getCompression() != zim::zimcompNone) {
     // We must compress the content in a buffer.
     compress();
     clear_raw_data();
@@ -185,7 +183,6 @@ void Cluster::write(int out_fd) const
   // Open a comprestion stream if needed
   switch(getCompression())
   {
-    case zim::zimcompDefault:
     case zim::zimcompNone:
     {
       auto writer = [=](const Blob& data) -> void {
