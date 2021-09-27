@@ -225,8 +225,7 @@ namespace zim
       // mp_titleListingHandler is a special case, it have to handle all dirents (including itself)
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents.
-        auto dirent = handler->getDirent();
-        if (dirent) {
+        for(auto dirent:handler->getDirents()) {
           data->mp_titleListingHandler->handle(dirent, Hints());
         }
       }
@@ -243,18 +242,28 @@ namespace zim
       data->resolveMimeTypes();
 
       // We can now stop the direntHandlers, and get their content
+      bool titleListDirentSeen = false;
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
-        auto dirent = handler->getDirent();
-        if (dirent == nullptr) {
+        const auto& dirents = handler->getDirents();
+        if (dirents.empty()) {
           continue;
         }
-        auto provider = handler->getContentProvider();
-        data->addItemData(dirent, std::move(provider), handler->isCompressible());
-        if (handler == data->mp_titleListingHandler) {
-          // We have to get the offset of the titleList in the cluster before
-          // we close the cluster. Once the cluster is close, the offset information is dropped.
-          data->m_titleListBlobOffset = data->uncompCluster->getBlobOffset(dirent->getBlobNumber());
+        auto providers = handler->getContentProviders();
+        ASSERT(dirents.size(), ==, providers.size());
+        auto provider_it = providers.begin();
+        for(auto& dirent:dirents) {
+          // As we use a "handler level" isCompressible, all content of the same handler
+          // must have the same compression.
+          data->addItemData(dirent, std::move(*provider_it), handler->isCompressible());
+          if (handler == data->mp_titleListingHandler && !titleListDirentSeen) {
+            // We have to get the offset of the titleList in the cluster before
+            // we close the cluster. Once the cluster is close, the offset information is dropped.
+            // This works only if titleListingHandler create the full (V0) titlelist in its first dirent.
+            data->m_titleListBlobOffset = data->uncompCluster->getBlobOffset(dirent->getBlobNumber());
+            titleListDirentSeen = true;
+          }
+          provider_it++;
         }
       }
 
@@ -304,7 +313,8 @@ namespace zim
 
       header->setMimeListPos( Fileheader::size );
 
-      auto cluster = data->mp_titleListingHandler->getDirent()->getCluster();
+      // We assume here that titleListingHandler create the V0 listing in its first dirent.
+      auto cluster = data->mp_titleListingHandler->getDirents()[0]->getCluster();
       header->setTitleIdxPos(
         offset_type(cluster->getOffset() + cluster->getDataOffset() + data->m_titleListBlobOffset));
 

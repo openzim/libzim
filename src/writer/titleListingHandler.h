@@ -36,22 +36,20 @@ struct TitleCompare {
 
 class TitleListingHandler : public DirentHandler {
   public:
-    typedef std::vector<Dirent*> Dirents;
-
     explicit TitleListingHandler(CreatorData* data);
     virtual ~TitleListingHandler();
 
     void start() override;
     void stop() override;
     bool isCompressible() override { return false; }
-    std::unique_ptr<ContentProvider> getContentProvider() const override;
+    ContentProviders getContentProviders() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
     void handle(Dirent* dirent, const Hints& hints) override;
 
   protected:
-    Dirent* createDirent() const override;
+    Dirents createDirents() const override;
     CreatorData* mp_creatorData;
-    Dirents m_dirents;
+    Dirents m_handledDirents;
 };
 
 class TitleListingHandlerV1 : public TitleListingHandler {
@@ -60,7 +58,7 @@ class TitleListingHandlerV1 : public TitleListingHandler {
     void handle(Dirent* dirent, const Hints& hints) override;
 
   protected:
-    Dirent* createDirent() const override;
+    Dirents createDirents() const override;
 };
 
 }

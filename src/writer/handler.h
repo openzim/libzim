@@ -22,6 +22,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include <zim/writer/item.h>
 
@@ -50,12 +51,14 @@ class Dirent;
  *   If a handler has to handle itself, it has to do it itself before (in start/stop, ...)
  *   The handlers will NOT have dirents of other handlers passed.
  *   (Exception made for titleListingHandle)
- * - Get the dirent associated to the handler using `createDirent()`.
- *   Handler must create a dirent if a entry associated to it must be created.
- *   It may return a nullptr if no entry must be created (empty listing,...).
+ * - Get the dirents associated to the handler using `createDirents()`.
+ *   Handler must created dirents if entry/entries associated to it must be created.
+ *   It may create several dirents if several entries must be created.
+ *   It may return a empty vector (no dirent) if no entry must be created (empty listing,...).
  * - All dirents are correctly set (redirect resolved, index and mimetype set, ...)
  * - Stop the handler with `stop()`.
- * - Content of the handler is taken using `getContentProvider`
+ * - Get the content of the handler is taken using `getContentProviders`.
+ *   Handle MUST returns the same number of contentProvider that the number of dirents it has returned.
  *
  *  While it seems that DirentHandler is dynamically (de)activated by user it is not.
  *  This is purelly a internal structure to simplify the internal architecture of the writer.
@@ -64,18 +67,20 @@ class DirentHandler {
   public:
     explicit DirentHandler(CreatorData* data);
     virtual ~DirentHandler() = default;
+    using ContentProviders = std::vector<std::unique_ptr<ContentProvider>>;
+    using Dirents = std::vector<Dirent*>;
 
     virtual void start() = 0;
     virtual void stop() = 0;
     virtual bool isCompressible() = 0;
-    Dirent* getDirent() {
-      if (!m_direntCreated) {
-        mp_dirent = createDirent();
-        m_direntCreated = true;
+    const Dirents& getDirents() {
+      if (!m_direntsCreated) {
+        m_dirents = createDirents();
+        m_direntsCreated = true;
       }
-      return mp_dirent;
+      return m_dirents;
     }
-    virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
+    virtual ContentProviders getContentProviders() const = 0;
 
     /*
      * Handle a dirent/item.
@@ -86,12 +91,12 @@ class DirentHandler {
     virtual void handle(Dirent* dirent, const Hints& hints) = 0;
 
   protected:
-    virtual Dirent* createDirent() const = 0;
+    virtual Dirents createDirents() const = 0;
     DirentHandler() = default;
 
   private:
-    Dirent* mp_dirent {0};
-    bool m_direntCreated {false};
+    Dirents m_dirents;
+    bool m_direntsCreated {false};
 };
 
 }

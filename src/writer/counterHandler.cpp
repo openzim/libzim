@@ -37,11 +37,14 @@ void CounterHandler::start() {
 void CounterHandler::stop() {
 }
 
-Dirent* CounterHandler::createDirent() const {
-  return mp_creatorData->createDirent(NS::M, "Counter", "text/plain", "");
+DirentHandler::Dirents CounterHandler::createDirents() const {
+  Dirents ret;
+  ret.push_back(mp_creatorData->createDirent(NS::M, "Counter", "text/plain", ""));
+  return ret;
 }
 
-std::unique_ptr<ContentProvider> CounterHandler::getContentProvider() const {
+DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
+  ContentProviders ret;
   std::stringstream ss;
   bool first = true;
   for(auto pair: m_mimetypeCounter) {
@@ -51,7 +54,8 @@ std::unique_ptr<ContentProvider> CounterHandler::getContentProvider() const {
     ss << pair.first << "=" << pair.second;
     first = false;
   }
-  return std::unique_ptr<ContentProvider>(new StringProvider(ss.str()));
+  ret.push_back(std::unique_ptr<ContentProvider>(new StringProvider(ss.str())));
+  return ret;
 }
 
 void CounterHandler::handle(Dirent* dirent, const Hints& hints)

@@ -67,18 +67,22 @@ void TitleListingHandler::start() {
 }
 
 void TitleListingHandler::stop() {
-  m_dirents.erase(
-    std::remove_if(m_dirents.begin(), m_dirents.end(), [](const Dirent* d) { return d->isRemoved(); }),
-    m_dirents.end());
-  std::sort(m_dirents.begin(), m_dirents.end(), TitleCompare());
+  m_handledDirents.erase(
+    std::remove_if(m_handledDirents.begin(), m_handledDirents.end(), [](const Dirent* d) { return d->isRemoved(); }),
+    m_handledDirents.end());
+  std::sort(m_handledDirents.begin(), m_handledDirents.end(), TitleCompare());
 }
 
-Dirent* TitleListingHandler::createDirent() const {
-  return mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v0", "application/octet-stream+zimlisting", "");
+DirentHandler::Dirents TitleListingHandler::createDirents() const {
+  Dirents ret;
+  ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v0", "application/octet-stream+zimlisting", ""));
+  return ret;
 }
 
-std::unique_ptr<ContentProvider> TitleListingHandler::getContentProvider() const {
-  return std::unique_ptr<ContentProvider>(new ListingProvider(&m_dirents));
+DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const {
+  ContentProviders ret;
+  ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents)));
+  return ret;
 }
 
 void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
@@ -88,14 +92,15 @@ void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  m_dirents.push_back(dirent);
+  m_handledDirents.push_back(dirent);
 }
 
-Dirent* TitleListingHandlerV1::createDirent() const {
-  if (m_dirents.empty()) {
-    return nullptr;
+DirentHandler::Dirents TitleListingHandlerV1::createDirents() const {
+  Dirents ret;
+  if (!m_handledDirents.empty()) {
+    ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", ""));
   }
-  return mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
+  return ret;
 }
 
 void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints)
@@ -105,7 +110,7 @@ void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints)
     isFront = bool(hints.at(FRONT_ARTICLE));
   } catch(std::out_of_range&) {}
   if (isFront) {
-    m_dirents.push_back(dirent);
+    m_handledDirents.push_back(dirent);
   }
 }
 

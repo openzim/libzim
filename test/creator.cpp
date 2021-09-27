@@ -296,6 +296,8 @@ TEST(ZimCreator, createZim)
   ASSERT_EQ(cluster->getCompression(), Compression::None);
   ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-6)); // 6 entries are either compressed or redirections
 
+  ASSERT_EQ(header.getTitleIdxPos(), (clusterOffset+cluster->getBlobOffset(v0BlobIndex)).v);
+
   blob = cluster->getBlob(v0BlobIndex);
   ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
   std::vector<char> blob0Data(blob.data(), blob.end());

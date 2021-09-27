@@ -44,17 +44,20 @@ void FullTextXapianHandler::stop() {
   mp_indexer->indexingPostlude();
 }
 
-Dirent* FullTextXapianHandler::createDirent() const {
+DirentHandler::Dirents FullTextXapianHandler::createDirents() const {
   // Wait for all task to be done before checking if we are empty.
+  Dirents ret;
   IndexTask::waitNoMoreTask();
-  if (mp_indexer->is_empty()) {
-    return nullptr;
+  if (!mp_indexer->is_empty()) {
+    ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
   }
-  return mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", "");
+  return ret;
 }
 
-std::unique_ptr<ContentProvider> FullTextXapianHandler::getContentProvider() const {
-  return std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath()));
+DirentHandler::ContentProviders FullTextXapianHandler::getContentProviders() const {
+  ContentProviders ret;
+  ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath())));
+  return ret;
 }
 
 void FullTextXapianHandler::handle(Dirent* dirent, const Hints& hints)
@@ -86,15 +89,18 @@ void TitleXapianHandler::stop() {
   mp_indexer->indexingPostlude();
 }
 
-Dirent* TitleXapianHandler::createDirent() const {
-  if (mp_indexer->is_empty()) {
-    return nullptr;
+DirentHandler::Dirents TitleXapianHandler::createDirents() const {
+  Dirents ret;
+  if (!mp_indexer->is_empty()) {
+    ret.push_back(mp_creatorData->createDirent(NS::X, "title/xapian", "application/octet-stream+xapian", ""));
   }
-  return mp_creatorData->createDirent(NS::X, "title/xapian", "application/octet-stream+xapian", "");
+  return ret;
 }
 
-std::unique_ptr<ContentProvider> TitleXapianHandler::getContentProvider() const {
-  return std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath()));
+DirentHandler::ContentProviders TitleXapianHandler::getContentProviders() const {
+  ContentProviders ret;
+  ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath())));
+  return ret;
 }
 
 void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
