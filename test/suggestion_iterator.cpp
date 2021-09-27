@@ -56,21 +56,20 @@ TEST(suggestion_iterator, copy) {
     {"article 1", "item a"}
   });
 
-  zim::Searcher searcher(archive);
-  zim::Query query("item");
-  auto search = searcher.search(query);
+  zim::SuggestionSearcher searcher(archive);
+  auto search = searcher.suggest("article");
   auto result = search.getResults(0, archive.getEntryCount());
 
   auto it = result.begin();
 
   auto it2 = it;
-  ASSERT_EQ(it.getTitle(), it2.getTitle());
+  ASSERT_EQ(it->getTitle(), it2->getTitle());
 
   it = result.end();
   it2 = it;
   ASSERT_EQ(it, it2);
-  ASSERT_THROW(it.getTitle(), std::runtime_error);
-  ASSERT_THROW(it2.getTitle(), std::runtime_error);
+  ASSERT_THROW(it->getTitle(), std::runtime_error);
+  ASSERT_THROW(it2->getTitle(), std::runtime_error);
 }
 
 TEST(suggestion_iterator, functions) {
