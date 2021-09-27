@@ -43,7 +43,7 @@ const zim::size_type MAX_WRITE_SIZE(4UL*1024*1024*1024-1);
 namespace zim {
 namespace writer {
 
-Cluster::Cluster(CompressionType compression)
+Cluster::Cluster(Compression compression)
   : compression(compression),
     isExtended(false),
     _size(0)
@@ -75,7 +75,7 @@ void Cluster::clear_compressed_data() {
 }
 
 void Cluster::close() {
-  if (getCompression() != zim::zimcompNone) {
+  if (getCompression() != Compression::None) {
     // We must compress the content in a buffer.
     compress();
     clear_raw_data();
@@ -126,13 +126,13 @@ void Cluster::compress()
 {
   auto comp = getCompression();
   switch(comp) {
-    case zim::zimcompLzma:
+    case Compression::Lzma:
       {
         _compress<LZMA_INFO>();
         break;
       }
 
-    case zim::zimcompZstd:
+    case Compression::Zstd:
       {
         _compress<ZSTD_INFO>();
         break;
@@ -168,7 +168,7 @@ void Cluster::write(int out_fd) const
   if (isExtended) {
     clusterInfo = 0x10;
   }
-  clusterInfo += getCompression();
+  clusterInfo += static_cast<uint8_t>(getCompression());
   if (_write(out_fd, &clusterInfo, 1) == -1) {
     throw std::runtime_error("Error writing");
   }
@@ -176,7 +176,7 @@ void Cluster::write(int out_fd) const
   // Open a comprestion stream if needed
   switch(getCompression())
   {
-    case zim::zimcompNone:
+    case Compression::None:
     {
       auto writer = [=](const Blob& data) -> void {
         // Ideally we would simply have to do :
@@ -196,8 +196,8 @@ void Cluster::write(int out_fd) const
       break;
     }
 
-    case zim::zimcompLzma:
-    case zim::zimcompZstd:
+    case Compression::Lzma:
+    case Compression::Zstd:
       {
         log_debug("compress data");
         if (_write(out_fd, compressed_data.data(), compressed_data.size()) == -1) {
@@ -208,7 +208,7 @@ void Cluster::write(int out_fd) const
 
     default:
       std::ostringstream msg;
-      msg << "invalid compression flag " << getCompression();
+      msg << "invalid compression flag " << static_cast<uint8_t>(getCompression());
       log_error(msg.str());
       throw std::runtime_error(msg.str());
   }

@@ -43,7 +43,7 @@ namespace zim
       typedef std::vector<std::unique_ptr<const Reader>> BlobReaders;
 
     public:
-      const CompressionType compression;
+      const Compression compression;
       const bool isExtended;
 
     private:
@@ -64,9 +64,9 @@ namespace zim
       const Reader& getReader(blob_index_t n) const;
 
     public:
-      Cluster(std::unique_ptr<IStreamReader> reader, CompressionType comp, bool isExtended);
-      CompressionType getCompression() const   { return compression; }
-      bool isCompressed() const                { return compression != zimcompNone; }
+      Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended);
+      Compression getCompression() const   { return compression; }
+      bool isCompressed() const                { return compression != Compression::None; }
 
       blob_index_t count() const               { return blob_index_t(m_blobOffsets.size() - 1); }
 

@@ -51,11 +51,11 @@ namespace zim
   // An offset.
   typedef uint64_t offset_type;
 
-  enum CompressionType
+  enum class Compression
   {
-    zimcompNone = 1,
-    zimcompLzma = 4,
-    zimcompZstd = 5
+    None = 1,
+    Lzma = 4,
+    Zstd = 5
   };
 
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";

@@ -71,7 +71,7 @@ namespace zim
          * @param comptype the compression algorithm to use.
          * @return a reference to itself.
          */
-        Creator& configCompression(CompressionType comptype);
+        Creator& configCompression(Compression compression);
 
         /**
          * Set the size of the created clusters.
@@ -197,7 +197,7 @@ namespace zim
 
         // configuration
         bool m_verbose = false;
-        CompressionType m_compression = zimcompZstd;
+        Compression m_compression = Compression::Zstd;
         bool m_withIndex = false;
         size_t m_clusterSize;
         std::string m_indexingLanguage;
