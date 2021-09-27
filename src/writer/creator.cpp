@@ -182,7 +182,7 @@ namespace zim
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
       auto compressContent = isCompressibleMimetype(mimetype);
-      auto dirent = data->createDirent('M', name, mimetype, "");
+      auto dirent = data->createDirent(NS::M, name, mimetype, "");
       data->addItemData(dirent, std::move(provider), compressContent);
       data->handle(dirent);
     }
@@ -202,7 +202,7 @@ namespace zim
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
-      auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
+      auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
@@ -216,7 +216,7 @@ namespace zim
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
-        data->mainPageDirent = data->createRedirectDirent('W', "mainPage", "", 'C', m_mainPath);
+        data->mainPageDirent = data->createRedirectDirent(NS::W, "mainPage", "", NS::C, m_mainPath);
         data->handle(data->mainPageDirent);
       }
 
@@ -489,7 +489,7 @@ namespace zim
           dirents.erase(ret.first);
           dirents.insert(dirent);
         } else {
-          std::cerr << "Impossible to add " << dirent->getNamespace() << "/" << dirent->getPath() << std::endl;
+          std::cerr << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
           std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
           return;
@@ -539,7 +539,7 @@ namespace zim
 
     }
 
-    Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
+    Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
     {
       auto dirent = pool.getClassicDirent(ns, path, title, getMimeTypeIdx(mimetype));
       addDirent(dirent);
@@ -554,10 +554,10 @@ namespace zim
         std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
         mimetype = "application/octet-stream";
       }
-      return createDirent('C', item->getPath(), mimetype, item->getTitle());
+      return createDirent(NS::C, item->getPath(), mimetype, item->getTitle());
     }
 
-    Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
+    Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
     {
       auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
       addDirent(dirent);
@@ -611,9 +611,9 @@ namespace zim
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
           INFO("Invalid redirection "
-              << dirent->getNamespace() << '/' << dirent->getPath()
+              << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
               << " redirecting to (missing) "
-              << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
+              << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
           dirent->markRemoved();
           if (dirent == mainPageDirent) {

@@ -50,7 +50,7 @@ Dirent* FullTextXapianHandler::createDirent() const {
   if (mp_indexer->is_empty()) {
     return nullptr;
   }
-  return mp_creatorData->createDirent('X', "fulltext/xapian", "application/octet-stream+xapian", "");
+  return mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", "");
 }
 
 std::unique_ptr<ContentProvider> FullTextXapianHandler::getContentProvider() const {
@@ -64,7 +64,7 @@ void FullTextXapianHandler::handle(Dirent* dirent, const Hints& hints)
 
 void FullTextXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  if (dirent->getNamespace() != 'C') {
+  if (dirent->getNamespace() != NS::C) {
     // We should always have namespace == 'C' but let's be careful.
     return;
   }
@@ -90,7 +90,7 @@ Dirent* TitleXapianHandler::createDirent() const {
   if (mp_indexer->is_empty()) {
     return nullptr;
   }
-  return mp_creatorData->createDirent('X', "title/xapian", "application/octet-stream+xapian", "");
+  return mp_creatorData->createDirent(NS::X, "title/xapian", "application/octet-stream+xapian", "");
 }
 
 std::unique_ptr<ContentProvider> TitleXapianHandler::getContentProvider() const {
@@ -101,7 +101,7 @@ void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
 {
   // We have no items to get the title from. So it is a redirect
   // We assume that if the redirect has a title, we must index it.
-  if (dirent->getNamespace() != 'C') {
+  if (dirent->getNamespace() != NS::C) {
     // We should always have namespace == 'C' but let's be careful.
     return;
   }
@@ -118,7 +118,7 @@ void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
 void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
   // We have a item. And items have indexData. We must use it.
-  if (dirent->getNamespace() != 'C') {
+  if (dirent->getNamespace() != NS::C) {
     // We should always have namespace == 'C' but let's be careful.
     return;
   }

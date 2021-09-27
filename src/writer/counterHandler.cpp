@@ -38,7 +38,7 @@ void CounterHandler::stop() {
 }
 
 Dirent* CounterHandler::createDirent() const {
-  return mp_creatorData->createDirent('M', "Counter", "text/plain", "");
+  return mp_creatorData->createDirent(NS::M, "Counter", "text/plain", "");
 }
 
 std::unique_ptr<ContentProvider> CounterHandler::getContentProvider() const {
@@ -60,7 +60,7 @@ void CounterHandler::handle(Dirent* dirent, const Hints& hints)
 
 void CounterHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  if (dirent->getNamespace() != 'C') {
+  if (dirent->getNamespace() != NS::C) {
     return;
   }
   auto mimetype = item->getMimeType();

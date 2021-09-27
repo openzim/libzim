@@ -74,7 +74,7 @@ void TitleListingHandler::stop() {
 }
 
 Dirent* TitleListingHandler::createDirent() const {
-  return mp_creatorData->createDirent('X', "listing/titleOrdered/v0", "application/octet-stream+zimlisting", "");
+  return mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v0", "application/octet-stream+zimlisting", "");
 }
 
 std::unique_ptr<ContentProvider> TitleListingHandler::getContentProvider() const {
@@ -95,7 +95,7 @@ Dirent* TitleListingHandlerV1::createDirent() const {
   if (m_dirents.empty()) {
     return nullptr;
   }
-  return mp_creatorData->createDirent('X', "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
+  return mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
 }
 
 void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints)
