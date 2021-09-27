@@ -41,7 +41,7 @@ namespace zim
     }
 
     void IndexTask::waitNoMoreTask() {
-    unsigned int wait = 0;
+      unsigned int wait = 0;
       do {
         microsleep(wait);
         wait += 10;
@@ -60,10 +60,6 @@ namespace zim
       }
       indexer.set_stopper(&mp_indexer->stopper);
       indexer.set_stopper_strategy(Xapian::TermGenerator::STOP_ALL);
-
-      if (!mp_indexData || !mp_indexData->hasIndexData()) {
-        return;
-      }
 
       Xapian::Document document;
       indexer.set_document(document);

@@ -35,10 +35,10 @@ class IndexTask : public Task {
   public:
     IndexTask(const IndexTask&) = delete;
     IndexTask& operator=(const IndexTask&) = delete;
-    IndexTask(std::shared_ptr<Item> item, XapianIndexer* indexer) :
-      mp_indexData(item->getIndexData()),
-      m_path(item->getPath()),
-      m_title(item->getTitle()),
+    IndexTask(std::shared_ptr<IndexData> indexData, const std::string& path, const std::string& title, XapianIndexer* indexer) :
+      mp_indexData(indexData),
+      m_path(path),
+      m_title(title),
       mp_indexer(indexer)
     {
       ++waiting_task;

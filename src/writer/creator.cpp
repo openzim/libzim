@@ -442,12 +442,8 @@ namespace zim
       uncompCluster = new Cluster(Compression::None);
 
 #if defined(ENABLE_XAPIAN)
-      auto titleIndexer = std::make_shared<TitleXapianHandler>(this);
-      m_direntHandlers.push_back(titleIndexer);
-      if (withIndex) {
-        auto fulltextIndexer = std::make_shared<FullTextXapianHandler>(this);
-        m_direntHandlers.push_back(fulltextIndexer);
-      }
+      auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
+      m_direntHandlers.push_back(xapianIndexer);
 #endif
 
       mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);

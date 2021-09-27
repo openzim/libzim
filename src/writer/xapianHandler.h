@@ -27,10 +27,10 @@ namespace writer {
 
 class XapianIndexer;
 
-class FullTextXapianHandler : public DirentHandler {
+class XapianHandler : public DirentHandler {
   public:
-    explicit FullTextXapianHandler(CreatorData* data);
-    virtual ~FullTextXapianHandler();
+    XapianHandler(CreatorData* data, bool withFullTextIndex);
+    virtual ~XapianHandler();
 
     void start() override;
     void stop() override;
@@ -43,30 +43,8 @@ class FullTextXapianHandler : public DirentHandler {
     Dirents createDirents() const override;
 
   private:
-    std::unique_ptr<XapianIndexer> mp_indexer;
-    CreatorData* mp_creatorData;
-};
-
-class TitleXapianHandler : public DirentHandler {
-  public:
-    explicit TitleXapianHandler(CreatorData* data);
-    virtual ~TitleXapianHandler();
-
-    void start() override;
-    void stop() override;
-    bool isCompressible() override { return false; }
-    ContentProviders getContentProviders() const override;
-    void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
-    void handle(Dirent* dirent, const Hints& hints) override;
-
-  protected:
-    Dirents createDirents() const override;
-
-  private: // function
-    void handle_dirent(Dirent* dirent);
-
-  private: // data
-    std::unique_ptr<XapianIndexer> mp_indexer;
+    std::unique_ptr<XapianIndexer> mp_fulltextIndexer;
+    std::unique_ptr<XapianIndexer> mp_titleIndexer;
     CreatorData* mp_creatorData;
 };
 

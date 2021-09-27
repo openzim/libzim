@@ -26,84 +26,58 @@
 
 using namespace zim::writer;
 
-FullTextXapianHandler::FullTextXapianHandler(CreatorData* data)
-  : mp_indexer(new XapianIndexer(data->zimName+"_fulltext.idx", data->indexingLanguage, IndexingMode::FULL, true)),
+XapianHandler::XapianHandler(CreatorData* data, bool withFulltextIndex)
+  : mp_fulltextIndexer(withFulltextIndex ? new XapianIndexer(data->zimName+"_fulltext.idx", data->indexingLanguage, IndexingMode::FULL, true) : nullptr),
+    mp_titleIndexer(new XapianIndexer(data->zimName+"_title.idx", data->indexingLanguage, IndexingMode::TITLE, true)),
     mp_creatorData(data)
 {}
 
-FullTextXapianHandler::~FullTextXapianHandler() = default;
+XapianHandler::~XapianHandler() = default;
 
-void FullTextXapianHandler::start() {
-  mp_indexer->indexingPrelude();
+void XapianHandler::start() {
+  if (mp_fulltextIndexer) {
+    mp_fulltextIndexer->indexingPrelude();
+  }
+  mp_titleIndexer->indexingPrelude();
 }
 
-void FullTextXapianHandler::stop() {
+void XapianHandler::stop() {
   // We need to wait that all indexation tasks have been done before closing the
   // xapian database.
-  IndexTask::waitNoMoreTask();
-  mp_indexer->indexingPostlude();
+  if (mp_fulltextIndexer) {
+    IndexTask::waitNoMoreTask();
+    mp_fulltextIndexer->indexingPostlude();
+  }
+  mp_titleIndexer->indexingPostlude();
 }
 
-DirentHandler::Dirents FullTextXapianHandler::createDirents() const {
+DirentHandler::Dirents XapianHandler::createDirents() const {
   // Wait for all task to be done before checking if we are empty.
   Dirents ret;
-  IndexTask::waitNoMoreTask();
-  if (!mp_indexer->is_empty()) {
-    ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
+  if (mp_fulltextIndexer) {
+    IndexTask::waitNoMoreTask();
+    if (!mp_fulltextIndexer->is_empty()) {
+      ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
+    }
   }
-  return ret;
-}
-
-DirentHandler::ContentProviders FullTextXapianHandler::getContentProviders() const {
-  ContentProviders ret;
-  ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath())));
-  return ret;
-}
-
-void FullTextXapianHandler::handle(Dirent* dirent, const Hints& hints)
-{
-  // We have nothing to do.
-}
-
-void FullTextXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
-{
-  if (dirent->getNamespace() != NS::C) {
-    // We should always have namespace == 'C' but let's be careful.
-    return;
-  }
-  mp_creatorData->taskList.pushToQueue(new IndexTask(item, mp_indexer.get()));
-}
-
-TitleXapianHandler::TitleXapianHandler(CreatorData* data)
-  : mp_indexer(new XapianIndexer(data->zimName+"_title.idx", data->indexingLanguage, IndexingMode::TITLE, true)),
-    mp_creatorData(data)
-{}
-
-TitleXapianHandler::~TitleXapianHandler() = default;
-
-void TitleXapianHandler::start() {
-  mp_indexer->indexingPrelude();
-}
-
-void TitleXapianHandler::stop() {
-  mp_indexer->indexingPostlude();
-}
-
-DirentHandler::Dirents TitleXapianHandler::createDirents() const {
-  Dirents ret;
-  if (!mp_indexer->is_empty()) {
+  if (!mp_titleIndexer->is_empty()) {
     ret.push_back(mp_creatorData->createDirent(NS::X, "title/xapian", "application/octet-stream+xapian", ""));
   }
   return ret;
 }
 
-DirentHandler::ContentProviders TitleXapianHandler::getContentProviders() const {
+DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
   ContentProviders ret;
-  ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_indexer->getIndexPath())));
+  if (mp_fulltextIndexer && !mp_fulltextIndexer->is_empty()) {
+    ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_fulltextIndexer->getIndexPath())));
+  }
+  if (!mp_titleIndexer->is_empty()) {
+    ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_titleIndexer->getIndexPath())));
+  }
   return ret;
 }
 
-void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
+void XapianHandler::handle(Dirent* dirent, const Hints& hints)
 {
   // We have no items to get the title from. So it is a redirect
   // We assume that if the redirect has a title, we must index it.
@@ -118,26 +92,27 @@ void TitleXapianHandler::handle(Dirent* dirent, const Hints& hints)
   }
   auto path = dirent->getPath();
   auto redirectPath = dirent->getRedirectPath();
-  mp_indexer->indexTitle(path, title, redirectPath);
+  mp_titleIndexer->indexTitle(path, title, redirectPath);
 }
 
-void TitleXapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  // We have a item. And items have indexData. We must use it.
   if (dirent->getNamespace() != NS::C) {
     // We should always have namespace == 'C' but let's be careful.
     return;
   }
-
   auto indexData = item->getIndexData();
   if (!indexData || !indexData->hasIndexData()) {
     return;
   }
   auto title = indexData->getTitle();
-  if (title.empty()) {
-    return;
-  }
   auto path = dirent->getPath();
-  mp_indexer->indexTitle(path, title);
+  if (mp_fulltextIndexer) {
+    mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, title, mp_fulltextIndexer.get()));
+  }
+
+  if (!title.empty()) {
+    mp_titleIndexer->indexTitle(path, title);
+  }
 }
 
