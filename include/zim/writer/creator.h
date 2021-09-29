@@ -152,14 +152,15 @@ namespace zim
          * @param content the content of the illustration (must be a png content)
          */
         void addIllustration(unsigned int size, const std::string& content);
+
         /**
          * Add illustration to the archive.
          *
          * @param size the size (width and height) of the illustration.
          * @param provider the provider of the content of the illustration (must be a png content)
          */
-
         void addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider);
+
         /**
          * Add a redirection to the archive.
          *
