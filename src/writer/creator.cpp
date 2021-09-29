@@ -1,4 +1,7 @@
 /*
+ * Copyright (C) 2019-2021 Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (C) 2021 Maneesh P M <manu.pm55@gmail.com>
+ * Copyright (C) 2021 Veloman Yunkan
  * Copyright (C) 2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or

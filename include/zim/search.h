@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2017-2021 Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (C) 2021 Maneesh P M <manu.pm55@gmail.com>
  * Copyright (C) 2007 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
