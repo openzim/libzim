@@ -124,7 +124,7 @@ namespace zim
       return *this;
     }
 
-    Creator& Creator::configIndexing(bool indexing, std::string language)
+    Creator& Creator::configIndexing(bool indexing, const std::string& language)
     {
       m_withIndex = indexing;
       m_indexingLanguage = language;

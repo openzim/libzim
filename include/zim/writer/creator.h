@@ -99,7 +99,7 @@ namespace zim
          * @param language Language to use for the indexation.
          * @return a reference to itself.
          */
-        Creator& configIndexing(bool indexing, std::string language);
+        Creator& configIndexing(bool indexing, const std::string& language);
 
         /**
          * Set the number of thread to use for the internal worker.
