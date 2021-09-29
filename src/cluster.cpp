@@ -45,25 +45,30 @@ namespace
 {
 
 std::unique_ptr<IStreamReader>
-getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp, bool* extended)
+getClusterReader(const Reader& zimReader, offset_t offset, Compression* comp, bool* extended)
 {
   uint8_t clusterInfo = zimReader.read(offset);
-  *comp = static_cast<CompressionType>(clusterInfo & 0x0F);
+  // Very old zim files used 0 as a "default" compression, which means no compression.
+  uint8_t compInfo = clusterInfo & 0x0F;
+  if(compInfo == 0) {
+    *comp = Compression::None;
+  } else if (compInfo == 2 /* Zip compression */) {
+    throw std::runtime_error("zlib not enabled in this library");
+  } else if (compInfo == 3 /* Bzip2 compression */) {
+    throw std::runtime_error("bzip2 not enabled in this library");
+  } else {
+    *comp = static_cast<Compression>(compInfo);
+  }
   *extended = clusterInfo & 0x10;
   auto subReader = std::shared_ptr<const Reader>(zimReader.sub_reader(offset+offset_t(1)));
 
   switch (*comp) {
-    case zimcompDefault:
-    case zimcompNone:
+    case Compression::None:
       return std::unique_ptr<IStreamReader>(new RawStreamReader(subReader));
-    case zimcompLzma:
+    case Compression::Lzma:
       return std::unique_ptr<IStreamReader>(new DecoderStreamReader<LZMA_INFO>(subReader));
-    case zimcompZstd:
+    case Compression::Zstd:
       return std::unique_ptr<IStreamReader>(new DecoderStreamReader<ZSTD_INFO>(subReader));
-    case zimcompZip:
-      throw std::runtime_error("zlib not enabled in this library");
-    case zimcompBzip2:
-      throw std::runtime_error("bzip2 not enabled in this library");
     default:
       throw ZimFileFormatError("Invalid compression flag");
   }
@@ -73,13 +78,13 @@ getClusterReader(const Reader& zimReader, offset_t offset, CompressionType* comp
 
   std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset)
   {
-    CompressionType comp;
+    Compression comp;
     bool extended;
     auto reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
     return std::make_shared<Cluster>(std::move(reader), comp, extended);
   }
 
-  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, CompressionType comp, bool isExtended)
+  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, Compression comp, bool isExtended)
     : compression(comp),
       isExtended(isExtended),
       m_reader(std::move(reader_))

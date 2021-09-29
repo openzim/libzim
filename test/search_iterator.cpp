@@ -52,8 +52,7 @@ TEST(search_iterator, end) {
   });
 
   zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("item");
+  zim::Query query("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
@@ -78,8 +77,7 @@ TEST(search_iterator, copy) {
   });
 
   zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("item");
+  zim::Query query(std::string("item"));
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
@@ -105,8 +103,7 @@ TEST(search_iterator, functions) {
   });
 
   zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("item");
+  zim::Query query("item");
   auto search = searcher.search(query);
   auto result = search.getResults(0, archive.getEntryCount());
 
@@ -137,9 +134,7 @@ TEST(search_iterator, iteration) {
   });
 
   zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("item");
-  auto search = searcher.search(query);
+  auto search = searcher.search(std::string("item"));
   auto result = search.getResults(0, archive.getEntryCount());
 
   auto it = result.begin();

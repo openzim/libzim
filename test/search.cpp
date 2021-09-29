@@ -36,8 +36,7 @@ using zim::unittests::TestItem;
 
 std::vector<std::string> getSnippet(const zim::Archive archive, std::string query, int range) {
   zim::Searcher searcher(archive);
-  zim::Query _query;
-  _query.setQuery(query);
+  zim::Query _query(query);
   auto search = searcher.search(_query);
   auto result = search.getResults(0, range);
 
@@ -73,8 +72,7 @@ TEST(Search, indexFullPath)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(archive);
-  zim::Query query;
-  query.setQuery("test article");
+  zim::Query query("test article");
   auto search = searcher.search(query);
 
   ASSERT_NE(0, search.getEstimatedMatches());
@@ -128,8 +126,7 @@ TEST(Search, multiSearch)
 
   zim::Searcher searcher(archive);
   searcher.setVerbose(true);
-  zim::Query query;
-  query.setQuery("test article");
+  zim::Query query("test article");
   auto search0 = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
@@ -187,8 +184,7 @@ TEST(Search, noFTIndex)
 
   zim::Searcher searcher(archive);
   searcher.setVerbose(true);
-  zim::Query query;
-  query.setQuery("test article");
+  zim::Query query("test article");
   ASSERT_THROW(searcher.search(query), std::runtime_error);
 }
 
@@ -208,11 +204,10 @@ TEST(Search, noStemming)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(std::vector<zim::Archive>{});
-  searcher.add_archive(archive);
+  searcher.addArchive(archive);
   searcher.setVerbose(true);
 
-  zim::Query query;
-  query.setQuery("test article");
+  zim::Query query("test article");
   auto search = searcher.search(query);
 
   ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
@@ -238,8 +233,7 @@ TEST(Search, geoQuery)
   zim::Searcher searcher(archive);
   searcher.setVerbose(true);
 
-  zim::Query query;
-  query.setQuery("geoquery");
+  zim::Query query("geoquery");
   query.setGeorange(45.000, 10.000, 100);
   auto search = searcher.search(query);
 

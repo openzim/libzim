@@ -426,7 +426,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     // we are still consumming address space. On 32bits this start to be a rare
     // ressource when we reserved 128Mb at once.
     // So we drop the cluster from the cache to avoid future memory allocation error.
-    if (cluster->getCompression() == zimcompZstd) {
+    if (cluster->getCompression() == Compression::Zstd) {
       // ZSTD compression starts to be used on version 5.0 of zim format.
       // Recently after, we switch to 5.1 and itegrate the fix in zstd creation.
       // 5.0 is not a perfect way to detect faulty zim file (it will generate false

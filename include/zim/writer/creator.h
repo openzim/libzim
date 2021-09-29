@@ -71,7 +71,7 @@ namespace zim
          * @param comptype the compression algorithm to use.
          * @return a reference to itself.
          */
-        Creator& configCompression(CompressionType comptype);
+        Creator& configCompression(Compression compression);
 
         /**
          * Set the size of the created clusters.
@@ -99,7 +99,7 @@ namespace zim
          * @param language Language to use for the indexation.
          * @return a reference to itself.
          */
-        Creator& configIndexing(bool indexing, std::string language);
+        Creator& configIndexing(bool indexing, const std::string& language);
 
         /**
          * Set the number of thread to use for the internal worker.
@@ -152,14 +152,15 @@ namespace zim
          * @param content the content of the illustration (must be a png content)
          */
         void addIllustration(unsigned int size, const std::string& content);
+
         /**
          * Add illustration to the archive.
          *
          * @param size the size (width and height) of the illustration.
          * @param provider the provider of the content of the illustration (must be a png content)
          */
-
         void addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider);
+
         /**
          * Add a redirection to the archive.
          *
@@ -197,7 +198,7 @@ namespace zim
 
         // configuration
         bool m_verbose = false;
-        CompressionType m_compression = zimcompZstd;
+        Compression m_compression = Compression::Zstd;
         bool m_withIndex = false;
         size_t m_clusterSize;
         std::string m_indexingLanguage;

@@ -44,11 +44,11 @@ class Cluster {
 
 
   public:
-    Cluster(CompressionType compression);
+    Cluster(Compression compression);
     virtual ~Cluster();
 
-    void setCompression(CompressionType c) { compression = c; }
-    CompressionType getCompression() const { return compression; }
+    void setCompression(Compression c) { compression = c; }
+    Compression getCompression() const { return compression; }
 
     void addContent(std::unique_ptr<ContentProvider> provider);
     void addContent(const std::string& data);
@@ -77,7 +77,7 @@ class Cluster {
     void write(int out_fd) const;
 
   protected:
-    CompressionType compression;
+    Compression compression;
     cluster_index_t index;
     bool isExtended;
     Offsets blobOffsets;

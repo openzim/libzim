@@ -79,7 +79,7 @@ class Searcher
      *
      * Adding a archive to a searcher do not invalidate already created search.
      */
-    Searcher& add_archive(const Archive& archive);
+    Searcher& addArchive(const Archive& archive);
 
     /** Create a search for a specific query.
      *
@@ -120,7 +120,7 @@ class Query
      *
      * Create a empty query.
      */
-    Query() = default;
+    Query(const std::string& query = "");
 
     /** Set the textual query of the Query.
      *

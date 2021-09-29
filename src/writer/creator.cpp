@@ -107,23 +107,14 @@ namespace zim
       return *this;
     }
 
-    Creator& Creator::configCompression(CompressionType comptype)
+    Creator& Creator::configCompression(Compression compression)
     {
-      switch(comptype) {
-        case zim::zimcompBzip2:
-        case zim::zimcompZip:
-          throw std::runtime_error("Compression method not enabled in this library");
-
-        case zimcompLzma:
-          std::cerr << "WARNING: LZMA compression method is deprecated."
-                    << " Support for it will be dropped from libzim soon."
-                    << std::endl;
-          break;
-
-        default:
-          break;
+      if(compression == Compression::Lzma) {
+        std::cerr << "WARNING: LZMA compression method is deprecated."
+                  << " Support for it will be dropped from libzim soon."
+                  << std::endl;
       }
-      m_compression = comptype;
+      m_compression = compression;
       return *this;
     }
 
@@ -133,7 +124,7 @@ namespace zim
       return *this;
     }
 
-    Creator& Creator::configIndexing(bool indexing, std::string language)
+    Creator& Creator::configIndexing(bool indexing, const std::string& language)
     {
       m_withIndex = indexing;
       m_indexingLanguage = language;
@@ -395,7 +386,7 @@ namespace zim
                                    bool verbose,
                                    bool withIndex,
                                    std::string language,
-                                   CompressionType c,
+                                   Compression c,
                                    size_t clusterSize)
       : mainPageDirent(nullptr),
         compression(c),
@@ -438,7 +429,7 @@ namespace zim
       // to track the dirents currently in each, so we can fix up the
       // cluster index if the other one ends up written first.
       compCluster = new Cluster(compression);
-      uncompCluster = new Cluster(zimcompNone);
+      uncompCluster = new Cluster(Compression::None);
 
 #if defined(ENABLE_XAPIAN)
       auto titleIndexer = std::make_shared<TitleXapianHandler>(this);
@@ -594,7 +585,7 @@ namespace zim
       {
         cluster = compCluster = new Cluster(compression);
       } else {
-        cluster = uncompCluster = new Cluster(zimcompNone);
+        cluster = uncompCluster = new Cluster(Compression::None);
       }
       return cluster;
     }

@@ -182,7 +182,7 @@ Searcher::Searcher(Searcher&& other) = default;
 Searcher& Searcher::operator=(Searcher&& other) = default;
 Searcher::~Searcher() = default;
 
-Searcher& Searcher::add_archive(const Archive& archive) {
+Searcher& Searcher::addArchive(const Archive& archive) {
     m_archives.push_back(archive);
     mp_internalDb.reset();
     return *this;
@@ -221,6 +221,10 @@ Search::Search(std::shared_ptr<InternalDataBase> p_internalDb, const Query& quer
 Search::Search(Search&& s) = default;
 Search& Search::operator=(Search&& s) = default;
 Search::~Search() = default;
+
+Query::Query(const std::string& query) :
+  m_query(query)
+{}
 
 Query& Query::setQuery(const std::string& query) {
     m_query = query;
