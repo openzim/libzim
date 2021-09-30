@@ -133,7 +133,7 @@ namespace zim
          * @param mimetype the mimetype of the metadata.
          *                 Only used to detect if the metadata must be compressed or not.
          */
-        void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain");
+        void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain;charset=utf-8");
 
         /**
          * Add a metadata to the archive using a contentProvider instead of plain string.

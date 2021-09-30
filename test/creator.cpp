@@ -203,12 +203,14 @@ TEST(ZimCreator, createZim)
   int png_mimetype = 2;
   int html_mimetype = 3;
   int plain_mimetype = 4;
+  int plainutf8_mimetype = 5;
 #else
   entry_index_type nb_entry = 10; // counter + 2*illustration + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
   int listing_mimetype = 0;
   int png_mimetype = 1;
   int html_mimetype = 2;
   int plain_mimetype = 3;
+  int plainutf8_mimetype = 4;
 #endif
 
   ASSERT_EQ(header.getArticleCount(), nb_entry);
@@ -243,7 +245,7 @@ TEST(ZimCreator, createZim)
   auto illustration96BlobIndex = dirent->getBlobNumber();
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
-  test_article_dirent(dirent, 'M', "Title", "Title", plain_mimetype, cluster_index_t(0), None);
+  test_article_dirent(dirent, 'M', "Title", "Title", plainutf8_mimetype, cluster_index_t(0), None);
   auto titleBlobIndex = dirent->getBlobNumber();
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
