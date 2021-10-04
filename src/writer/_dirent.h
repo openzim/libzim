@@ -142,7 +142,7 @@ namespace zim
         DirentInfo info;
         offset_t offset;
         uint8_t _ns : 2;
-        bool removed;
+        bool removed : 1;
 
       public:
         // Creator for a "classic" dirent
