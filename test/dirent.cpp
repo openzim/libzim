@@ -64,6 +64,18 @@ size_t writenDirentSize(const zim::writer::Dirent& dirent)
   return size;
 }
 
+TEST(DirentTest, size)
+{
+#ifdef _WIN32
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 72);
+#else
+  // Dirent's size is important for us as we are creating huge zim files on linux
+  // and we need to store a lot of dirents.
+  // Be sure that dirent's size is not increased by any change.
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 38);
+#endif
+}
+
 TEST(DirentTest, set_get_data_dirent)
 {
   zim::Dirent dirent;
