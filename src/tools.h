@@ -63,3 +63,32 @@ namespace zim {
 }
 
 #endif  // OPENZIM_LIBZIM_TOOLS_H
+
+/* Formatter for std::exception what() message:
+ * throw std::runtime_error(
+ *   Formatter() << "zimwriterfs: Unable to read" << filename << ": " << strerror(errno));
+ */
+class Formatter
+{
+public:
+  Formatter() {}
+  ~Formatter() {}
+  
+  template <typename Type>
+  Formatter & operator << (const Type & value)
+  {
+    stream_ << value;
+    return *this;
+  }
+  
+  // std::string str() const         { return stream_.str(); }
+  operator std::string () const   { return stream_.str(); }
+  
+private:
+  Formatter(const Formatter &);
+  Formatter & operator = (Formatter &);
+  
+  std::stringstream stream_;
+};
+
+
