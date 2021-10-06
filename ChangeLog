@@ -1,3 +1,20 @@
+libzim 6.3.2
+============
+
+This is a hotfix of 6.3.0 :
+ * libzim now create zimfile with zstd compression 19 instead of 22.
+   So new libzim do not need to allocate 128Mb per cluster at decompression
+   time.
+ * At reading time, on 32 bits architectures, zstd cluster are not keep in
+   cache. This avoid use to also keep the decompression stream which reserve
+   128Mb of memory address.
+
+libzim 6.3.1
+============
+
+The release process of 6.3.1 was buggy. So, no 6.3.1.
+
+
 libzim 6.3.0
 ============
 
