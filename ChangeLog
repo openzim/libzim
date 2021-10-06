@@ -1,3 +1,122 @@
+libzim 7.0.0
+============
+
+Version 7.0.0 is a major release.
+
+The API has been completely rewritten.
+Most notable change is that namespaces are now hidden.
+The new API is described in documentation, which includes a Transition Guide from v6.
+
+ZIM files created with it uses new ZIM minor version (6.1 - see Header section of spec.)
+Both backward and forward compatibility is kept.
+
+Improvements
+------------
+
+ * Rewrite creator and reader API
+   This removes the namespace from the API. Article are automatically put in
+   the right namespace ('A') and the retrivial of content is made using
+   specific API. (@mgautier #454)
+ * Better handling of the conditional compilation without xapian.
+   Before that, the search API was present (but returning empty result) if
+   libzim was compiled without xapian. Now the API is not present anymore.
+   User code must check if libzim is compiled with xapian or not by checking
+   if LIBZIM_WITH_XAPIAN is defined or not. (@mgautierfr #465)
+ * Add a new specific listing in zim files to list entries considered as "front
+   article". At creation, wrapper MUST pass the hint `FRONT_ARTICLE` to
+   correctly mark the entry. Search by title uses this list if present.
+   (@mgautierfr #487)
+ * Store the wellknown entries in the `W` namespace (`W/mainPage`)
+   (@mgautierfr #497)
+ * Rewrite Search API. Fix potential memory link and allow correct reusing of
+   create search. (@mgautierfr #530)
+ * New suggestion search API. The api mimics the Search API but specialized
+   for suggestion (@maneeshpm #574)
+ * Add `zim::Archive` constructors to open an archive using a existing file descriptor.
+   This API is not available on Windows. (@veloman-yunkan #449)
+ * Make zstd the default compression algorithm (@veloman-yunkan #480)
+ * The method `zim::Archive::checkIntegrity` now if the mimetypes indicated in the
+   dirents are correct (@veloman-yunkan #505)
+ * Writer doesn't add a `.zim` extension to the given path. (@maneeshpm #503)
+ * Implement random entry picking. We are choosing a entry from the "front
+   article" list if present. (@mgautierfr #476)
+ * Creator now create the `M/Counter` metadata. (@mgautierfr)
+ * Better Illustration handling. Favicon is replaced by Illustration.
+   Illustration can now have different size and scale (even if the API do
+   not use this feature) (@mgautierfr #540)
+ * Search iterator now have a method `getZimId` to know the Id of the zim
+   corresponding to the result (useful for multizim search) (@maneeshpm #557)
+
+Bug fixes
+---------
+
+ * The method `zim::Archive::checkIntegrity` now check if the dirents are
+   correctly sorted. (@veloman-yunkan #448)
+ * Handle large MIME-type list. Some zim file may have a pretty large mimetype
+   list. (@veloman-yunkan #460)
+ * Fix handling of zim file containing item of size 0. (@mgautierfr #483)
+ * Better parsing of the entry paths to detect the namespace (@maneeshpm #479)
+ * Fix zim file creation on Windows (@mgautierfr #508)
+ * Better algorithm tunning for suggestion search (@maneeshpm #492)
+ * The default indexer now index html content only. (@mgautierfr #511)
+ * Better suggestion search : Don't use stopwords, use OP_PHRASE
+   (@maneeshpm #501)
+ * Remove duplicate in the suggestion search (@maneeshpm #515)
+ * Remove the termlist from the xapian database, lower memory usage
+   (@maneeshpm #528)
+ * Add a anchor in the suggestion search to search term at the beginning of
+   the title (@maneeshpm #526)
+ * Make the suggestion search working with special characters (`&`, `+`)
+   (@veloman-yunkan #534)
+ * Fix creator issue not detecting that cluster must be extended if it
+   contains only 32-bit-sized content. (@veloman-yunkan #552)
+ * Correctly generate suggestion snippet. (@maneeshpm #545)
+ * Better cluster size configuration (@mgautierfr #555)
+ * Make search iterator `getTitle` return the real title of the entry and not
+   the one stored in the xapian database (caseless) (@maneeshpm #586)
+ * Correcly close a zim creator to avoid a crash when the creator is
+   destructed without being started (@mgautierfr #613)
+ * Reduce the creator memory usage by reducing the memory size of the dirent
+   (@mgautier #616, #628)
+ * Write the cluster using a bigger chunk size for performance
+   (@mgautierfr #506)
+ * Change the default cluster size to 2MiB (@mgautierfr #585)
+ * The default mimetype for metadata now include the utf8 chardet
+   (@rgaudin #626)
+ * Improve the estimation of the number of search/suggestion results by forcing
+   Xapian to evaluate at least 10 results (@mgautier #625)
+
+Other
+-----
+
+ * Update xapian stopwords list. (@data-man #447)
+ * Remove direct pthread dependency (use c++11 thread library). (@mgautierfr #443)
+   We still need pthread library on linux and freebsd as C++11 is using it internally.
+ * [CI] Make the libzim CI compile libzim natively on Windows (@mgautierfr #453).
+ * [CI] Build libzim package for Ubuntu Hirsute and Impish
+   (@legoktm #459, #580)
+ * Always create zim file using the major version 6. (@mgautierfr #512)
+ * Move the test data files out of the git repository. Now test files are
+   stored in `zim-testing-suite` repository and must be downloaded.
+   (@mgautierfr #538, #535)
+ * Add search iterator unit test (@maneeshpm #547)
+ * Correctly fix search iterator method case to use camelCase everywhere
+   (@maneeshpm #563)
+ * Add a cast to string opertor on Uuid (@maneeshpm #582)
+ * Make unittest print the path of the missing zim file when something goes
+   wrong (@kelson42 #601)
+ * Delete temporary data (index) after we called `finishZimCreation` instead of
+   waiting for creator destruction. (@mgautierfr #603)
+ * Add basic user documentation (@mgautierfr #611)
+
+Known bugs
+----------
+
+Suggestion system using in current libkiwix doesn't work with new zim files
+created with this release (and future ones).
+New libkiwix version will be fixed and will work with new and old zim files.
+
+
 libzim 6.3.2
 ============
 
