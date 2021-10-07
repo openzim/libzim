@@ -1,4 +1,6 @@
 /*
+ * Copyrigth (c) 2021, Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (c) 2020, Veloman Yunkan
  * Copyright (c) 2014, lamerman
  * All rights reserved.
  *

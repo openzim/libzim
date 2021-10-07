@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2021 Renaud Gaudin <rgaudin@gmail.com>
  * Copyright (C) 2020 Matthieu Gautier <mgautier@kymeria.fr>
  *
  * This program is free software; you can redistribute it and/or

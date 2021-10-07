@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2017 Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (C) 2017-2021 Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (C) 2021 Veloman Yunkan
+ * Copyright (C) 2020 Emmanuel Engelhart <kelson@kiwix.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

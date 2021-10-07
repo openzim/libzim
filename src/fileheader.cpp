@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017-2020 Mattieu Gautier <mgautier@kymeria.fr>
  * Copyright (C) 2008 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or

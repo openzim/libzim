@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Matthieu Gautier <mgautier@kymeria.fr>
  * Copyright (C) 2020 Veloman Yunkan
  *
  * This program is free software; you can redistribute it and/or

@@ -1,5 +1,7 @@
 /*
- * Copyright 2011 Emmanuel Engelhart <kelson@kiwix.org>
+ * Copyright (C) 2021 Maneesh P M <manu.pm55@gmail.com>
+ * Copyright (C) 2018-2021 Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (C) 2011 Emmanuel Engelhart <kelson@kiwix.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU  General Public License as published by
