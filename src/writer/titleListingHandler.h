@@ -34,35 +34,27 @@ struct TitleCompare {
   }
 };
 
+// This handler is in charge of handling titles.
+// It will create the "classic" old V0 title listing (for ALL entries) but also
+// the V1 title listing (for front article only).
 class TitleListingHandler : public DirentHandler {
   public:
-    typedef std::vector<Dirent*> Dirents;
-
     explicit TitleListingHandler(CreatorData* data);
     virtual ~TitleListingHandler();
 
     void start() override;
     void stop() override;
     bool isCompressible() override { return false; }
-    std::unique_ptr<ContentProvider> getContentProvider() const override;
+    ContentProviders getContentProviders() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
     void handle(Dirent* dirent, const Hints& hints) override;
 
   protected:
-    Dirent* createDirent() const override;
+    Dirents createDirents() const override;
     CreatorData* mp_creatorData;
-    Dirents m_dirents;
+    Dirents m_handledDirents;
+    bool m_hasFrontArticles;
 };
-
-class TitleListingHandlerV1 : public TitleListingHandler {
-  public:
-    explicit TitleListingHandlerV1(CreatorData* data) : TitleListingHandler(data) {};
-    void handle(Dirent* dirent, const Hints& hints) override;
-
-  protected:
-    Dirent* createDirent() const override;
-};
-
 }
 }
 

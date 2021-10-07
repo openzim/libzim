@@ -38,12 +38,12 @@ class CounterHandler : public DirentHandler {
     void start() override;
     void stop() override;
     bool isCompressible() override { return true; }
-    std::unique_ptr<ContentProvider> getContentProvider() const override;
+    ContentProviders getContentProviders() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
     void handle(Dirent* dirent, const Hints& hints) override;
 
   private:
-    Dirent* createDirent() const override;
+    Dirents createDirents() const override;
     CreatorData* mp_creatorData;
     Counter m_mimetypeCounter;
 };

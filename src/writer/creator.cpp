@@ -182,7 +182,7 @@ namespace zim
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
       auto compressContent = isCompressibleMimetype(mimetype);
-      auto dirent = data->createDirent('M', name, mimetype, "");
+      auto dirent = data->createDirent(NS::M, name, mimetype, "");
       data->addItemData(dirent, std::move(provider), compressContent);
       data->handle(dirent);
     }
@@ -202,7 +202,7 @@ namespace zim
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
-      auto dirent = data->createRedirectDirent('C', path, title, 'C', targetPath);
+      auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
       }
@@ -216,7 +216,7 @@ namespace zim
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.
       if (!m_mainPath.empty()) {
-        data->mainPageDirent = data->createRedirectDirent('W', "mainPage", "", 'C', m_mainPath);
+        data->mainPageDirent = data->createRedirectDirent(NS::W, "mainPage", "", NS::C, m_mainPath);
         data->handle(data->mainPageDirent);
       }
 
@@ -225,8 +225,7 @@ namespace zim
       // mp_titleListingHandler is a special case, it have to handle all dirents (including itself)
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents.
-        auto dirent = handler->getDirent();
-        if (dirent) {
+        for(auto dirent:handler->getDirents()) {
           data->mp_titleListingHandler->handle(dirent, Hints());
         }
       }
@@ -243,18 +242,28 @@ namespace zim
       data->resolveMimeTypes();
 
       // We can now stop the direntHandlers, and get their content
+      bool titleListDirentSeen = false;
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
-        auto dirent = handler->getDirent();
-        if (dirent == nullptr) {
+        const auto& dirents = handler->getDirents();
+        if (dirents.empty()) {
           continue;
         }
-        auto provider = handler->getContentProvider();
-        data->addItemData(dirent, std::move(provider), handler->isCompressible());
-        if (handler == data->mp_titleListingHandler) {
-          // We have to get the offset of the titleList in the cluster before
-          // we close the cluster. Once the cluster is close, the offset information is dropped.
-          data->m_titleListBlobOffset = data->uncompCluster->getBlobOffset(dirent->getBlobNumber());
+        auto providers = handler->getContentProviders();
+        ASSERT(dirents.size(), ==, providers.size());
+        auto provider_it = providers.begin();
+        for(auto& dirent:dirents) {
+          // As we use a "handler level" isCompressible, all content of the same handler
+          // must have the same compression.
+          data->addItemData(dirent, std::move(*provider_it), handler->isCompressible());
+          if (handler == data->mp_titleListingHandler && !titleListDirentSeen) {
+            // We have to get the offset of the titleList in the cluster before
+            // we close the cluster. Once the cluster is close, the offset information is dropped.
+            // This works only if titleListingHandler create the full (V0) titlelist in its first dirent.
+            data->m_titleListBlobOffset = data->uncompCluster->getBlobOffset(dirent->getBlobNumber());
+            titleListDirentSeen = true;
+          }
+          provider_it++;
         }
       }
 
@@ -304,7 +313,8 @@ namespace zim
 
       header->setMimeListPos( Fileheader::size );
 
-      auto cluster = data->mp_titleListingHandler->getDirent()->getCluster();
+      // We assume here that titleListingHandler create the V0 listing in its first dirent.
+      auto cluster = data->mp_titleListingHandler->getDirents()[0]->getCluster();
       header->setTitleIdxPos(
         offset_type(cluster->getOffset() + cluster->getDataOffset() + data->m_titleListBlobOffset));
 
@@ -432,17 +442,12 @@ namespace zim
       uncompCluster = new Cluster(Compression::None);
 
 #if defined(ENABLE_XAPIAN)
-      auto titleIndexer = std::make_shared<TitleXapianHandler>(this);
-      m_direntHandlers.push_back(titleIndexer);
-      if (withIndex) {
-        auto fulltextIndexer = std::make_shared<FullTextXapianHandler>(this);
-        m_direntHandlers.push_back(fulltextIndexer);
-      }
+      auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
+      m_direntHandlers.push_back(xapianIndexer);
 #endif
 
       mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
       m_direntHandlers.push_back(mp_titleListingHandler);
-      m_direntHandlers.push_back(std::make_shared<TitleListingHandlerV1>(this));
       m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
       for(auto& handler:m_direntHandlers) {
@@ -489,7 +494,7 @@ namespace zim
           dirents.erase(ret.first);
           dirents.insert(dirent);
         } else {
-          std::cerr << "Impossible to add " << dirent->getNamespace() << "/" << dirent->getPath() << std::endl;
+          std::cerr << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
           std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
           return;
@@ -539,7 +544,7 @@ namespace zim
 
     }
 
-    Dirent* CreatorData::createDirent(char ns, const std::string& path, const std::string& mimetype, const std::string& title)
+    Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
     {
       auto dirent = pool.getClassicDirent(ns, path, title, getMimeTypeIdx(mimetype));
       addDirent(dirent);
@@ -554,10 +559,10 @@ namespace zim
         std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
         mimetype = "application/octet-stream";
       }
-      return createDirent('C', item->getPath(), mimetype, item->getTitle());
+      return createDirent(NS::C, item->getPath(), mimetype, item->getTitle());
     }
 
-    Dirent* CreatorData::createRedirectDirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
+    Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
     {
       auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
       addDirent(dirent);
@@ -611,9 +616,9 @@ namespace zim
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
           INFO("Invalid redirection "
-              << dirent->getNamespace() << '/' << dirent->getPath()
+              << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
               << " redirecting to (missing) "
-              << dirent->getRedirectNs() << '/' << dirent->getRedirectPath());
+              << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
           dirents.erase(dirent);
           dirent->markRemoved();
           if (dirent == mainPageDirent) {

@@ -31,16 +31,27 @@ namespace {
 
 class ListingProvider : public ContentProvider {
   public:
-    explicit ListingProvider(const TitleListingHandler::Dirents* dirents)
+    ListingProvider(const TitleListingHandler::Dirents* dirents, bool frontOnly)
       : mp_dirents(dirents),
-        m_it(dirents->begin())
+        m_it(dirents->begin()),
+        m_frontOnly(frontOnly)
     {}
 
     zim::size_type getSize() const override {
-      return mp_dirents->size() * sizeof(zim::entry_index_type);
+      if (m_frontOnly) {
+        auto nbFrontArticles = std::count_if(mp_dirents->begin(), mp_dirents->end(), [](Dirent* d) { return d->isFrontArticle();});
+        return nbFrontArticles * sizeof(zim::entry_index_type);
+      } else {
+        return mp_dirents->size() * sizeof(zim::entry_index_type);
+      }
     }
 
     zim::Blob feed() override {
+      if (m_frontOnly) {
+        while (m_it != mp_dirents->end() && !(*m_it)->isFrontArticle()) {
+          m_it++;
+        }
+      }
       if (m_it == mp_dirents->end()) {
         return zim::Blob(nullptr, 0);
       }
@@ -53,12 +64,14 @@ class ListingProvider : public ContentProvider {
     const TitleListingHandler::Dirents* mp_dirents;
     char buffer[sizeof(zim::entry_index_type)];
     TitleListingHandler::Dirents::const_iterator m_it;
+    bool m_frontOnly;
 };
 
 } // end of anonymous namespace
 
 TitleListingHandler::TitleListingHandler(CreatorData* data)
-  : mp_creatorData(data)
+  : mp_creatorData(data),
+    m_hasFrontArticles(false)
 {}
 
 TitleListingHandler::~TitleListingHandler() = default;
@@ -67,18 +80,28 @@ void TitleListingHandler::start() {
 }
 
 void TitleListingHandler::stop() {
-  m_dirents.erase(
-    std::remove_if(m_dirents.begin(), m_dirents.end(), [](const Dirent* d) { return d->isRemoved(); }),
-    m_dirents.end());
-  std::sort(m_dirents.begin(), m_dirents.end(), TitleCompare());
+  m_handledDirents.erase(
+    std::remove_if(m_handledDirents.begin(), m_handledDirents.end(), [](const Dirent* d) { return d->isRemoved(); }),
+    m_handledDirents.end());
+  std::sort(m_handledDirents.begin(), m_handledDirents.end(), TitleCompare());
 }
 
-Dirent* TitleListingHandler::createDirent() const {
-  return mp_creatorData->createDirent('X', "listing/titleOrdered/v0", "application/octet-stream+zimlisting", "");
+DirentHandler::Dirents TitleListingHandler::createDirents() const {
+  Dirents ret;
+  ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v0", "application/octet-stream+zimlisting", ""));
+  if (m_hasFrontArticles) {
+    ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", ""));
+  }
+  return ret;
 }
 
-std::unique_ptr<ContentProvider> TitleListingHandler::getContentProvider() const {
-  return std::unique_ptr<ContentProvider>(new ListingProvider(&m_dirents));
+DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const {
+  ContentProviders ret;
+  ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, false)));
+  if (m_hasFrontArticles) {
+    ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, true)));
+  }
+  return ret;
 }
 
 void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
@@ -88,24 +111,12 @@ void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  m_dirents.push_back(dirent);
-}
-
-Dirent* TitleListingHandlerV1::createDirent() const {
-  if (m_dirents.empty()) {
-    return nullptr;
-  }
-  return mp_creatorData->createDirent('X', "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
-}
-
-void TitleListingHandlerV1::handle(Dirent* dirent, const Hints& hints)
-{
-  bool isFront { false };
+  m_handledDirents.push_back(dirent);
   try {
-    isFront = bool(hints.at(FRONT_ARTICLE));
+    if(bool(hints.at(FRONT_ARTICLE))) {
+      m_hasFrontArticles = true;
+      dirent->setFrontArticle();
+    }
   } catch(std::out_of_range&) {}
-  if (isFront) {
-    m_dirents.push_back(dirent);
-  }
 }
 

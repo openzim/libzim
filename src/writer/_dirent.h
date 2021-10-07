@@ -30,6 +30,16 @@ namespace zim
   namespace writer {
     class Dirent;
 
+    // Be sure that enum value are sorted by "alphabetical" order
+    enum class NS: uint8_t {
+      C = 0,
+      M = 1,
+      W = 2,
+      X = 3
+    };
+
+    char NsAsChar(NS ns);
+
     class DirentInfo {
       public: // structures
         struct Direct {
@@ -42,14 +52,14 @@ namespace zim
         } PACKED;
 
         struct Redirect {
-          Redirect(char ns, const std::string& target) :
+          Redirect(NS ns, const std::string& target) :
             targetPath(target),
             ns(ns)
           {};
           Redirect(Redirect&& r) = default;
           ~Redirect() {};
           TinyString targetPath;
-          char ns;
+          NS ns;
         } PACKED;
 
         struct Resolved {
@@ -131,31 +141,32 @@ namespace zim
         entry_index_t idx = entry_index_t(0);
         DirentInfo info;
         offset_t offset;
-        char ns;
-        bool removed;
+        uint8_t _ns : 2;
+        bool removed : 1;
+        bool frontArticle : 1;
 
       public:
         // Creator for a "classic" dirent
-        Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype);
+        Dirent(NS ns, const std::string& path, const std::string& title, uint16_t mimetype);
 
         // Creator for a "redirection" dirent
-        Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath);
+        Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
 
         // Creator for "temporary" dirent, used to search for dirent in container.
         // We use them in url ordered container so we only need to set the namespace and the path.
         // Other value are irrelevant.
-        Dirent(char ns, const std::string& path)
+        Dirent(NS ns, const std::string& path)
           : Dirent(ns, path, "", 0)
           { }
 
-        char getNamespace() const                { return ns; }
+        NS getNamespace() const           { return static_cast<NS>(_ns); }
         std::string getTitle() const      { return pathTitle.getTitle(false); }
         std::string getRealTitle() const      { return pathTitle.getTitle(true); }
         std::string getPath() const       { return pathTitle.getPath(); }
 
         uint32_t getVersion() const            { return version; }
 
-        char getRedirectNs() const;
+        NS getRedirectNs() const;
         std::string getRedirectPath() const;
         void setRedirect(const Dirent* target) {
           ASSERT(info.tag, ==, DirentInfo::REDIRECT);
@@ -208,6 +219,9 @@ namespace zim
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }
 
+        bool isFrontArticle() const { return frontArticle; }
+        void setFrontArticle() { frontArticle = true; }
+
         void write(int out_fd) const;
 
         friend bool compareUrl(const Dirent* d1, const Dirent* d2);
@@ -217,12 +231,13 @@ namespace zim
 
     inline bool compareUrl(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns || (d1->ns == d2->ns && d1->getPath() < d2->getPath());
+      return d1->getNamespace() < d2->getNamespace()
+        || (d1->getNamespace() == d2->getNamespace() && d1->getPath() < d2->getPath());
     }
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1->ns < d2->ns
-        || (d1->ns == d2->ns && d1->getTitle() < d2->getTitle());
+      return d1->getNamespace() < d2->getNamespace()
+        || (d1->getNamespace() == d2->getNamespace() && d1->getTitle() < d2->getTitle());
     }
   }
 }

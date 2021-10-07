@@ -37,29 +37,41 @@ log_define("zim.dirent")
 namespace zim {
 namespace writer {
 
+char NsAsChar(NS ns) {
+  switch(ns) {
+    case NS::C: return 'C';
+    case NS::M: return 'M';
+    case NS::W: return 'W';
+    case NS::X: return 'X';
+  }
+  throw std::runtime_error("Invalid namespace value.");
+}
+
 // Creator for a "classic" dirent
-Dirent::Dirent(char ns, const std::string& path, const std::string& title, uint16_t mimetype)
+Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_t mimetype)
   : pathTitle(path, title),
     mimeType(mimetype),
     idx(0),
     info(DirentInfo::Direct()),
     offset(0),
-    ns(ns),
-    removed(false)
+    _ns(static_cast<uint8_t>(ns)),
+    removed(false),
+    frontArticle(false)
 {}
 
 // Creator for a "redirection" dirent
-Dirent::Dirent(char ns, const std::string& path, const std::string& title, char targetNs, const std::string& targetPath)
+Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
   : pathTitle(path, title),
     mimeType(redirectMimeType),
     idx(0),
     info(std::move(DirentInfo::Redirect(targetNs, targetPath))),
     offset(0),
-    ns(ns),
-    removed(false)
+    _ns(static_cast<uint8_t>(ns)),
+    removed(false),
+    frontArticle(false)
 {}
 
-char Dirent::getRedirectNs() const {
+NS Dirent::getRedirectNs() const {
   return info.getRedirect().ns;
 }
 
@@ -77,7 +89,7 @@ void Dirent::write(int out_fd) const
   } header;
   zim::toLittleEndian(getMimeType(), header.d);
   header.d[2] = 0; // parameter size
-  header.d[3] = getNamespace();
+  header.d[3] = NsAsChar(getNamespace());
 
   log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size());
 
