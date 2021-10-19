@@ -11,7 +11,7 @@ jobs:
           - debian-unstable
           - debian-bullseye
           - debian-buster
-          # - ubuntu-impish
+          - ubuntu-impish
           - ubuntu-hirsute
           - ubuntu-focal
           - ubuntu-bionic
@@ -58,14 +58,13 @@ jobs:
         with:
           args: --no-sign
 
-      # Temporarily disabled, Impish keeps changing and breaking the build
-      #- uses: legoktm/gh-action-build-deb@ubuntu-impish
-      #  if: matrix.distro == 'ubuntu-impish'
-      #  name: Build package for ubuntu-impish
-      #  id: build-ubuntu-impish
-      #  with:
-      #    args: --no-sign
-      #    ppa: ${{ steps.ppa.outputs.ppa }}
+      - uses: legoktm/gh-action-build-deb@ubuntu-impish
+        if: matrix.distro == 'ubuntu-impish'
+        name: Build package for ubuntu-impish
+        id: build-ubuntu-impish
+        with:
+          args: --no-sign
+          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: legoktm/gh-action-build-deb@ubuntu-hirsute
         if: matrix.distro == 'ubuntu-hirsute'
