@@ -13,7 +13,7 @@ jobs:
           - iOS_i386
           - iOS_x86_64
           - iOS_armv7
-    runs-on: macos-latest
+    runs-on: macos-10.15
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
@@ -117,7 +117,7 @@ jobs:
       HOME: /home/runner
     runs-on: ubuntu-latest
     container:
-      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-26"
+      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-31"
     steps:
     - name: Extract branch name
       shell: bash
