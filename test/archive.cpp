@@ -185,10 +185,16 @@ TEST(ZimArchive, openCreatedArchive)
   ASSERT_TRUE(archive.hasMainEntry());
 
   ASSERT_EQ(archive.getMetadata("Title"), "This is a title");
+  auto titleMeta = archive.getMetadataItem("Title");
+  ASSERT_EQ(std::string(titleMeta.getData()), "This is a title");
+  ASSERT_EQ(titleMeta.getMimetype(), "text/plain;charset=utf-8");
   ASSERT_EQ(archive.getMetadata("Counter"), "text/html=2");
   auto illu48 = archive.getIllustrationItem(48);
   ASSERT_EQ(illu48.getPath(), "Illustration_48x48@1");
   ASSERT_EQ(std::string(illu48.getData()), "PNGBinaryContent48");
+  auto illu48Meta = archive.getMetadataItem(illu48.getPath());
+  ASSERT_EQ(std::string(illu48Meta.getData()), "PNGBinaryContent48");
+  ASSERT_EQ(illu48Meta.getMimetype(), "image/png");
   auto illu96 = archive.getIllustrationItem(96);
   ASSERT_EQ(illu96.getPath(), "Illustration_96x96@1");
   ASSERT_EQ(std::string(illu96.getData()), "PNGBinaryContent96");

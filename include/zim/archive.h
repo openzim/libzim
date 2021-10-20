@@ -151,15 +151,25 @@ namespace zim
        */
       Uuid getUuid() const;
 
-      /** Get a specific metadata.
+      /** Get a specific metadata content.
        *
        *  Get the content of a metadata stored in the archive.
        *
-       *  @param name The name of the parameter.
-       *  @return The content of the parameter.
-       *  @exception EntryNotFound If the parameter is not in the archive.
+       *  @param name The name of the metadata.
+       *  @return The content of the metadata.
+       *  @exception EntryNotFound If the metadata is not in the arcthive.
        */
       std::string getMetadata(const std::string& name) const;
+
+      /** Get a specific metadata item.
+       *
+       *  Get the item associated to a metadata stored in the archive.
+       *
+       *  @param name The name of the metadata.
+       *  @return The item associated to the metadata.
+       *  @exception EntryNotFound If the metadata in not in the archive.
+       */
+      Item getMetadataItem(const std::string& name) const;
 
       /** Get the list of metadata stored in the archive.
        *

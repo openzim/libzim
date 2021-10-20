@@ -82,14 +82,19 @@ namespace zim
     return m_impl->getFileheader().getUuid();
   }
 
-  std::string Archive::getMetadata(const std::string& name) const
+  Item Archive::getMetadataItem(const std::string& name) const
   {
     auto r = m_impl->findx('M', name);
     if (!r.first) {
       throw EntryNotFound("Cannot find metadata");
     }
     auto entry = Entry(m_impl, entry_index_type(r.second));
-    auto item = entry.getItem(true);
+    return entry.getItem(true);
+  }
+
+  std::string Archive::getMetadata(const std::string& name) const
+  {
+    auto item = getMetadataItem(name);
     return item.getData();
   }
 
