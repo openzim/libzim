@@ -154,13 +154,17 @@ namespace zim
         /*No exit test*/;
         r++
        ) {
-      auto path = getEntryByPath(entry_index_type(r)).getPath();
-      if (path.find("Illustration_") != 0) {
+      try {
+        auto path = getEntryByPath(entry_index_type(r)).getPath();
+        if (path.find("Illustration_") != 0) {
+          break;
+        }
+        try {
+          ret.insert(parseIllustrationPathToSize(path));
+        } catch (...) {}
+      } catch (const std::out_of_range& e) {
         break;
       }
-      try {
-        ret.insert(parseIllustrationPathToSize(path));
-      } catch (...) {}
     }
     if (ret.find(48) == ret.end()) {
       try {
