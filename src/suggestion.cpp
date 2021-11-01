@@ -138,7 +138,6 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
 
   if (!query.empty()) {
     Xapian::QueryParser suggestionParser = m_queryParser;
-    suggestionParser.set_default_op(Xapian::Query::op::OP_OR);
     suggestionParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
     Xapian::Query subquery_phrase = suggestionParser.parse_query(query);
     // Force the OP_PHRASE window to be equal to the number of terms.
