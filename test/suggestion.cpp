@@ -378,7 +378,7 @@ TEST(Suggestion, searchByTitle)
     auto item = std::make_shared<TestItem>("testPath", "text/html", "Article Target");
     creator.addItem(item);
     creator.addRedirection("redirectionPath1", "Article Redirect 1", "testPath");
-    creator.addRedirection("redirectionPath2", "Article Redirect 2", "redirectionPath1");
+    creator.addRedirection("redirectionPath2", "Article Redirect 2", "redirectionPath1", {{zim::writer::FRONT_ARTICLE, 1}});
 
     creator.addMetadata("Title", "Test zim");
     creator.finishZimCreation();
