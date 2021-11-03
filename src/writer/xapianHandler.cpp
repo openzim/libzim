@@ -78,30 +78,57 @@ DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
   return ret;
 }
 
-void XapianHandler::handle(Dirent* dirent, const Hints& hints)
-{
-  // We have no items to get the title from. So it is a redirect
-  // We assume that if the redirect has a title, we must index it.
-  if (dirent->getNamespace() != NS::C) {
-    // We should always have namespace == 'C' but let's be careful.
-    return;
-  }
-
+void XapianHandler::indexTitle(Dirent* dirent) {
   auto title = dirent->getRealTitle();
   if (title.empty()) {
     return;
   }
   auto path = dirent->getPath();
-  auto redirectPath = dirent->getRedirectPath();
-  mp_titleIndexer->indexTitle(path, title, redirectPath);
+  if (dirent->isRedirect()) {
+    auto redirectPath = dirent->getRedirectPath();
+    mp_titleIndexer->indexTitle(path, title, redirectPath);
+  } else {
+    mp_titleIndexer->indexTitle(path, title);
+  }
+}
+
+void XapianHandler::handle(Dirent* dirent, const Hints& hints)
+{
+  if (dirent->getNamespace() != NS::C) {
+    return;
+  }
+
+  try {
+    // Either the hint is not given (redirection, internal dirent)
+    // and it is not a front article.
+    // Or it is given by user or set by overloaded `handle` (with item).
+    // So we don't need check the mimetype here.
+    if (bool(hints.at(FRONT_ARTICLE))) {
+      indexTitle(dirent);
+    }
+  } catch(std::out_of_range&) {}
 }
 
 void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
   if (dirent->getNamespace() != NS::C) {
-    // We should always have namespace == 'C' but let's be careful.
     return;
   }
+
+  // Title index.
+  // It is depending of FRONT_ARTICLE (and mimetype)
+  auto hints = item->getHints();
+  bool isFrontArticle = true;
+  try {
+    isFrontArticle = bool(hints.at(FRONT_ARTICLE));
+  } catch( std::out_of_range&) {
+    isFrontArticle = (item->getMimeType().find("text/html") == 0);
+  }
+  if (isFrontArticle) {
+    indexTitle(dirent);
+  }
+
+  // FullText index
   auto indexData = item->getIndexData();
   if (!indexData || !indexData->hasIndexData()) {
     return;
@@ -110,10 +137,6 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   auto path = dirent->getPath();
   if (mp_fulltextIndexer) {
     mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, title, mp_fulltextIndexer.get()));
-  }
-
-  if (!title.empty()) {
-    mp_titleIndexer->indexTitle(path, title);
   }
 }
 

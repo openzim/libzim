@@ -42,7 +42,10 @@ class XapianHandler : public DirentHandler {
   protected:
     Dirents createDirents() const override;
 
-  private:
+  private: // methods
+    void indexTitle(Dirent* dirent);
+
+  private: // data
     std::unique_ptr<XapianIndexer> mp_fulltextIndexer;
     std::unique_ptr<XapianIndexer> mp_titleIndexer;
     CreatorData* mp_creatorData;
