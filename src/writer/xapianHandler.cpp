@@ -129,13 +129,13 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   }
 
   // FullText index
-  auto indexData = item->getIndexData();
-  if (!indexData || !indexData->hasIndexData()) {
-    return;
-  }
-  auto title = indexData->getTitle();
-  auto path = dirent->getPath();
   if (mp_fulltextIndexer) {
+    auto indexData = item->getIndexData();
+    if (!indexData || !indexData->hasIndexData()) {
+      return;
+    }
+    auto title = indexData->getTitle();
+    auto path = dirent->getPath();
     mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, title, mp_fulltextIndexer.get()));
   }
 }
