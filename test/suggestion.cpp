@@ -535,4 +535,34 @@ TEST(Suggestion, searchByTitle)
       }
     );
   }
+
+  TEST(Suggestion, reuseSearcher) {
+    std::vector<std::string> titles = {
+                                        "song for you",
+                                        "sing a song for you",
+                                        "a song b for c you",
+                                        "song for someone"
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    zim::SuggestionSearcher suggestionSearcher(archive);
+    suggestionSearcher.setVerbose(true);
+    auto suggestionSearch1 = suggestionSearcher.suggest("song for you");
+    auto suggestionResult1 = suggestionSearch1.getResults(0, 2);
+
+    int count = 0;
+    for (auto entry : suggestionResult1) {
+      count++;
+    }
+
+    auto suggestionSearch2 = suggestionSearcher.suggest("song for you");
+    auto suggestionResult2 = suggestionSearch2.getResults(2, archive.getEntryCount());
+
+    for (auto entry : suggestionResult2) {
+      count++;
+    }
+    ASSERT_EQ(count, 3);
+  }
 }
