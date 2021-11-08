@@ -187,11 +187,11 @@ namespace zim
        */
       Item getIllustrationItem(unsigned int size=48) const;
 
-      /** Return a list of available size for the illustations in the archive.
+      /** Return a list of available sizes (width) for the illustations in the archive.
        *
-       * Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
-       * An Archive may contains several illustration with different size.
-       * This method allow to know which illustration (size) is in the archive.
+       * Illustration is an icon for the archive that can be used in catalog and elsewehere to illustrate the archive.
+       * An Archive may contains several illustrations with different size.
+       * This method allows to know which illustration are in the archive (by size: width)
        *
        * @return A set of size.
        */
