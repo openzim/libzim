@@ -25,6 +25,7 @@
 #include "zim/archive.h"
 
 #include <stdexcept>
+#include <mutex>
 
 #if defined(LIBZIM_WITH_XAPIAN)
 #include <xapian.h>
@@ -47,6 +48,9 @@ class SuggestionDataBase {
 
     // Verbosity of operations.
     bool m_verbose;
+
+  private: // data
+    std::mutex m_mutex;
 
 #if defined(LIBZIM_WITH_XAPIAN)
 
