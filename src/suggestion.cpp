@@ -86,7 +86,6 @@ void SuggestionDataBase::initXapianDb() {
       try {
           m_stemmer = Xapian::Stem(languageLocale.getLanguage());
           m_queryParser.set_stemmer(m_stemmer);
-          m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
       } catch (...) {
           std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
       }
@@ -131,21 +130,25 @@ int SuggestionDataBase::valueSlot(const std::string& valueName) const
  */
 Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
 {
+  std::lock_guard<std::mutex> locker(m_mutex);
   Xapian::Query xquery;
 
   const auto flags = Xapian::QueryParser::FLAG_DEFAULT | Xapian::QueryParser::FLAG_PARTIAL;
+
+  // Reset stemming strategy for normal parsing
+  m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
   xquery = m_queryParser.parse_query(query, flags);
 
   if (!query.empty()) {
-    Xapian::QueryParser suggestionParser = m_queryParser;
-    suggestionParser.set_default_op(Xapian::Query::op::OP_OR);
-    suggestionParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
-    Xapian::Query subquery_phrase = suggestionParser.parse_query(query);
+    // Reconfigure stemming strategy for phrase search
+    m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
+
+    Xapian::Query subquery_phrase = m_queryParser.parse_query(query);
     // Force the OP_PHRASE window to be equal to the number of terms.
     subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
 
     auto qs = ANCHOR_TERM + query;
-    Xapian::Query subquery_anchored = suggestionParser.parse_query(qs);
+    Xapian::Query subquery_anchored = m_queryParser.parse_query(qs);
     subquery_anchored = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_anchored.get_terms_begin(), subquery_anchored.get_terms_end(), subquery_anchored.get_length());
 
     xquery = Xapian::Query(Xapian::Query::OP_OR, xquery, subquery_phrase);
