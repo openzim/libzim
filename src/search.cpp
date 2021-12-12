@@ -170,15 +170,18 @@ Xapian::Query InternalDataBase::parseQuery(const Query& query)
 
 Searcher::Searcher(const std::vector<Archive>& archives) :
     mp_internalDb(nullptr),
-    m_archives(archives),
     m_verbose(false)
-{}
+{
+    for ( const auto& a : archives ) {
+        addArchive(a);
+    }
+}
 
 Searcher::Searcher(const Archive& archive) :
     mp_internalDb(nullptr),
     m_verbose(false)
 {
-    m_archives.push_back(archive);
+    addArchive(archive);
 }
 
 Searcher::Searcher(const Searcher& other) = default;
@@ -187,9 +190,31 @@ Searcher::Searcher(Searcher&& other) = default;
 Searcher& Searcher::operator=(Searcher&& other) = default;
 Searcher::~Searcher() = default;
 
+namespace
+{
+
+bool archivesAreEquivalent(const Archive& a1, const Archive& a2)
+{
+  return a1.getUuid() == a2.getUuid();
+}
+
+bool contains(const std::vector<Archive>& archives, const Archive& newArchive)
+{
+    for ( const auto& a : archives ) {
+        if ( archivesAreEquivalent(a, newArchive) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // unnamed namespace
+
 Searcher& Searcher::addArchive(const Archive& archive) {
-    m_archives.push_back(archive);
-    mp_internalDb.reset();
+    if ( !contains(m_archives, archive) ) {
+        m_archives.push_back(archive);
+        mp_internalDb.reset();
+    }
     return *this;
 }
 
