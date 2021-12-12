@@ -265,12 +265,22 @@ namespace zim
   }
 
   Entry Archive::getRandomEntry() const {
-    auto frontEntryCount = m_impl->getFrontEntryCount().v;
-    if (frontEntryCount == 0) {
-      throw EntryNotFound("Cannot find valid random entry (no front entry at all)");
-    }
+    if ( !m_impl->hasNewNamespaceScheme() ) {
+      const auto startOfNamespaceA = m_impl->getNamespaceBeginOffset('A');
+      const auto endOfNamespaceA = m_impl->getNamespaceEndOffset('A');
+      const auto n = (endOfNamespaceA - startOfNamespaceA).v;
+      if ( n == 0 ) {
+          throw EntryNotFound("Cannot find valid random entry (empty namespace 'A'");
+      }
+      return getEntryByPath(startOfNamespaceA.v + randomNumber(n-1));
+    } else {
+      auto frontEntryCount = m_impl->getFrontEntryCount().v;
+      if (frontEntryCount == 0) {
+        throw EntryNotFound("Cannot find valid random entry (no front entry at all)");
+      }
 
-    return getEntryByTitle(randomNumber(frontEntryCount-1));
+      return getEntryByTitle(randomNumber(frontEntryCount-1));
+    }
   }
 
   bool Archive::hasFulltextIndex() const {

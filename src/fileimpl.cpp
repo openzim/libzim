@@ -189,12 +189,13 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
         new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/sizeof(entry_index_type))));
   }
 
-  FileImpl::DirentLookup& FileImpl::direntLookup()
+  FileImpl::DirentLookup& FileImpl::direntLookup() const
   {
-    if ( ! m_direntLookup ) {
+    std::call_once(m_direntLookupOnceFlag, [this]{
+
       const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
       m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
-    }
+    });
     return *m_direntLookup;
   }
 
@@ -275,7 +276,6 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     } else {
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
-
   }
 
   FileImpl::FindxResult FileImpl::findx(char ns, const std::string& url)
@@ -454,13 +454,13 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return getClusterOffset(clusterIdx) + cluster->getBlobOffset(blobIdx);
   }
 
-  entry_index_t FileImpl::getNamespaceBeginOffset(char ch)
+  entry_index_t FileImpl::getNamespaceBeginOffset(char ch) const
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
     return direntLookup().getNamespaceRangeBegin(ch);
   }
 
-  entry_index_t FileImpl::getNamespaceEndOffset(char ch)
+  entry_index_t FileImpl::getNamespaceEndOffset(char ch) const
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
     return direntLookup().getNamespaceRangeEnd(ch);
