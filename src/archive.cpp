@@ -269,18 +269,8 @@ namespace zim
     if (frontEntryCount == 0) {
       throw EntryNotFound("Cannot find valid random entry (no front entry at all)");
     }
-    int watchdog = 42;
-    while(--watchdog) {
-      auto idx = randomNumber(frontEntryCount-1);
-      auto entry =  getEntryByTitle(idx);
-      auto item = entry.getItem(true);
 
-      if (item.getMimetype().find("text/html") == std::string::npos) {
-        continue;
-      }
-      return entry;
-    }
-    throw EntryNotFound("Cannot find valid random entry");
+    return getEntryByTitle(randomNumber(frontEntryCount-1));
   }
 
   bool Archive::hasFulltextIndex() const {
