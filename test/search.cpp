@@ -125,6 +125,10 @@ TEST(Search, multiSearch)
   zim::Archive archive(tza.getPath());
 
   zim::Searcher searcher(archive);
+
+  zim::Archive archive2(tza.getPath());
+  searcher.addArchive(archive2);
+
   searcher.setVerbose(true);
   zim::Query query("test article");
   auto search0 = searcher.search(query);
