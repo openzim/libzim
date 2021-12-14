@@ -114,10 +114,16 @@ namespace zim
          * to store).
          * The returned index data must stay valid even after creator release
          * its reference to the item.
+         * This method will be called once by libzim if it is compiled with xapian
+         * (and is configured to index data).
          *
-         * This method will be called twice by libzim if it is compiled with xapian
-         * (and is configured to index data). You may return the same indexData.
-         * The default implementation will use a contentProvider to get the content to index.
+         * The returned IndexData will be used as source to index the item.
+         * If you don't want the item to be indexed, you can return a nullptr here
+         * or return a valid IndexData pointer which will return false to `hasIndexData`.
+         *
+         * If you don't implement this method, a default implementation will be used.
+         * The default implementation first checks for the mimetype and if the mimetype
+         * contains `text/html` it will use a contentProvider to get the content to index.
          * The contentProvider will be created in the main thread but the data reading and
          * parsing will occur in a different thread.
          *
@@ -128,6 +134,16 @@ namespace zim
 
         /**
          * Hints to help the creator takes decision about the item.
+         *
+         * For now two hints are supported:
+         * - COMPRESS: Can be used to force the creator to put the item content
+         *   in a compressed cluster (if true) or not (if false).
+         *   If the hint is not provided, the decision is taken based on the
+         *   mimetype (textual or binary content ?)
+         * - FRONT_ARTICLE: Can (Should) be used to specify if the item is
+         *   a front article or not.
+         *   If the hint is not provided, the decision is taken based on the
+         *   mimetype (html or not ?)
          *
          * @return A list of hints.
          */

@@ -165,9 +165,14 @@ namespace zim
         /**
          * Add a redirection to the archive.
          *
+         * Hints (especially FRONT_ARTICLE) can be used to put the redirection
+         * in the front articles list.
+         * By default, redirections are not front article.
+         *
          * @param path the path of the redirection.
          * @param title the title of the redirection.
-         * @param targetpath the path of the target of the redirection
+         * @param targetpath the path of the target of the redirection.
+         * @param hints hints associated to the redirection.
          */
         void addRedirection(
             const std::string& path,
