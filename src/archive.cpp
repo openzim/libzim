@@ -358,7 +358,7 @@ namespace zim
 
     // We have to return two iterator for a range of entry where `path` is a prefix.
     // - The begin iterator is a iterator to the first entry with `path`  as a prefix (or (range) end if none)
-    // - The end iterator is the iterator pass the last entry with `path` as a prefix (or (gloabal) end)
+    // - The end iterator is the iterator pass the last entry with `path` as a prefix (or (global) end)
     //
     // The findx return a iterator for the exact match or the one just after.
     // So, for the begin iterator, we can simply use the index returned by findx

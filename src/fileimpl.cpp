@@ -334,6 +334,17 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
         l = p;
       else
       {
+        // We have found a entry with the correct title.
+        // But nothing guaranties this entry title is unique.
+        // We may have entries before "p" with the same title.
+        while (p>l) {
+          d = getDirentByTitle(title_index_t(--p));
+          if (direntCompareTitle(ns, title, *d)!=0) {
+            // We went one time to far
+            p++;
+            break;
+          }
+        }
         log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
         return { true, title_index_t(p) };
       }

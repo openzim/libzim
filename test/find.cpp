@@ -80,7 +80,15 @@ TEST(FindTests, ByTitle)
           count++;
           ASSERT_EQ(entry.getTitle().find("Першая старонка"), 0);
         }
-        ASSERT_EQ(count, 1);
+        if (testfile.category == "withns") {
+          // On the withns test file, there are two entry with this title:
+          //  the entry itself and the index.html (a redirection)
+          ASSERT_EQ(count, 2);
+        } else {
+          // On new test file, the main page redirection is store in `W` namespace,
+          // so the findByTitle found only 1 entry in `C` namespace.
+          ASSERT_EQ(count, 1);
+        }
 
         auto range1 = archive.findByTitle("Украінская");
 
