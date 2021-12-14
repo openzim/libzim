@@ -74,6 +74,7 @@ namespace zim
 
       using DirentLookup = zim::DirentLookup<DirectDirentAccessor>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
+      mutable std::once_flag m_direntLookupOnceFlag;
 
     public:
       using FindxResult = std::pair<bool, entry_index_t>;
@@ -110,9 +111,9 @@ namespace zim
       offset_t getClusterOffset(cluster_index_t idx) const;
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
 
-      entry_index_t getNamespaceBeginOffset(char ch);
-      entry_index_t getNamespaceEndOffset(char ch);
-      entry_index_t getNamespaceEntryCount(char ch) {
+      entry_index_t getNamespaceBeginOffset(char ch) const;
+      entry_index_t getNamespaceEndOffset(char ch) const;
+      entry_index_t getNamespaceEntryCount(char ch) const {
         return getNamespaceEndOffset(ch) - getNamespaceBeginOffset(ch);
       }
 
@@ -123,8 +124,6 @@ namespace zim
       entry_index_t getUserEntryCount() const { return m_endUserEntry - m_startUserEntry; }
       // The number of enties that can be considered as front article (no resource)
       entry_index_t getFrontEntryCount() const;
-
-      bool hasNamespace(char ch) const;
 
       const std::string& getMimeType(uint16_t idx) const;
 
@@ -140,7 +139,7 @@ namespace zim
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const std::string& path);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);
 
-      DirentLookup& direntLookup();
+      DirentLookup& direntLookup() const;
       ClusterHandle readCluster(cluster_index_t idx);
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();

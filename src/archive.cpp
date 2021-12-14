@@ -265,22 +265,22 @@ namespace zim
   }
 
   Entry Archive::getRandomEntry() const {
-    auto frontEntryCount = m_impl->getFrontEntryCount().v;
-    if (frontEntryCount == 0) {
-      throw EntryNotFound("Cannot find valid random entry (no front entry at all)");
-    }
-    int watchdog = 42;
-    while(--watchdog) {
-      auto idx = randomNumber(frontEntryCount-1);
-      auto entry =  getEntryByTitle(idx);
-      auto item = entry.getItem(true);
-
-      if (item.getMimetype().find("text/html") == std::string::npos) {
-        continue;
+    if ( !m_impl->hasNewNamespaceScheme() ) {
+      const auto startOfNamespaceA = m_impl->getNamespaceBeginOffset('A');
+      const auto endOfNamespaceA = m_impl->getNamespaceEndOffset('A');
+      const auto n = (endOfNamespaceA - startOfNamespaceA).v;
+      if ( n == 0 ) {
+          throw EntryNotFound("Cannot find valid random entry (empty namespace 'A'");
       }
-      return entry;
+      return getEntryByPath(startOfNamespaceA.v + randomNumber(n-1));
+    } else {
+      auto frontEntryCount = m_impl->getFrontEntryCount().v;
+      if (frontEntryCount == 0) {
+        throw EntryNotFound("Cannot find valid random entry (no front entry at all)");
+      }
+
+      return getEntryByTitle(randomNumber(frontEntryCount-1));
     }
-    throw EntryNotFound("Cannot find valid random entry");
   }
 
   bool Archive::hasFulltextIndex() const {
