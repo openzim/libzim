@@ -186,7 +186,7 @@ TEST(IndexCriteria, suggestion) {
   zim::Archive archive(tza.getPath());
 
   zim::SuggestionSearcher suggestionSearcher(archive);
-  auto suggestion = suggestionSearcher.suggest("test article");
+  auto suggestion = suggestionSearcher.suggest("Test Article");
 
   ASSERT_EQ(3, suggestion.getEstimatedMatches());
   auto result = suggestion.getResults(0, archive.getEntryCount());
