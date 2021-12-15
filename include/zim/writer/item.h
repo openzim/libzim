@@ -148,6 +148,11 @@ namespace zim
          * @return A list of hints.
          */
         virtual Hints getHints() const;
+
+        /**
+         * Returns the getHints() amended with default values based on mimetypes.
+         */
+        Hints getAmendedHints() const;
         virtual ~Item() = default;
     };
 

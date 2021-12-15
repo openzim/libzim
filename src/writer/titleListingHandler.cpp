@@ -106,12 +106,7 @@ DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const
 
 void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  auto hints = item->getHints();
-  // If not FRONT_ARTICLE hints is given, determine it from the mimetype.
-  if (hints.find(FRONT_ARTICLE) == hints.end()) {
-    hints[FRONT_ARTICLE] = (item->getMimeType().find("text/html") == 0);
-  }
-  handle(dirent, hints);
+  handle(dirent, item->getAmendedHints());
 }
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
@@ -124,10 +119,6 @@ void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
   }
 
   try {
-    // Either the hint is not given (redirection, internal dirent)
-    // and it is not a front article.
-    // Or it is given by user or set by overloaded `handle` (with item).
-    // So we don't need check the mimetype here.
     if(bool(hints.at(FRONT_ARTICLE))) {
       m_hasFrontArticles = true;
       dirent->setFrontArticle();

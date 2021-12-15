@@ -99,10 +99,6 @@ void XapianHandler::handle(Dirent* dirent, const Hints& hints)
   }
 
   try {
-    // Either the hint is not given (redirection, internal dirent)
-    // and it is not a front article.
-    // Or it is given by user or set by overloaded `handle` (with item).
-    // So we don't need check the mimetype here.
     if (bool(hints.at(FRONT_ARTICLE))) {
       indexTitle(dirent);
     }
@@ -116,17 +112,7 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   }
 
   // Title index.
-  // It is depending of FRONT_ARTICLE (and mimetype)
-  auto hints = item->getHints();
-  bool isFrontArticle = true;
-  try {
-    isFrontArticle = bool(hints.at(FRONT_ARTICLE));
-  } catch( std::out_of_range&) {
-    isFrontArticle = (item->getMimeType().find("text/html") == 0);
-  }
-  if (isFrontArticle) {
-    indexTitle(dirent);
-  }
+  handle(dirent, item->getAmendedHints());
 
   // FullText index
   if (mp_fulltextIndexer) {
