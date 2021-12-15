@@ -46,6 +46,9 @@ public: // functions
 
   Result find(char ns, const std::string& url) const;
 
+protected: // functions
+  Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& url) const;
+
 private: // functions
   std::string getDirentKey(entry_index_type i) const;
 
@@ -158,6 +161,13 @@ DirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
   if (l == u)
     return {false, entry_index_t(l)};
 
+  return findInRange(l, u, ns, url);
+}
+
+template<typename TDirentAccessor>
+typename DirentLookup<TDirentAccessor>::Result
+DirentLookup<TDirentAccessor>::findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& url) const
+{
   while (true)
   {
     entry_index_type p = l + (u - l) / 2;
