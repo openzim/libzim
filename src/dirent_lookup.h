@@ -44,7 +44,7 @@ public: // functions
   entry_index_t getNamespaceRangeBegin(char ns) const;
   entry_index_t getNamespaceRangeEnd(char ns) const;
 
-  Result find(char ns, const std::string& url);
+  Result find(char ns, const std::string& url) const;
 
 private: // functions
   std::string getDirentKey(entry_index_type i) const;
@@ -149,7 +149,7 @@ DirentLookup<TDirentAccessor>::getNamespaceRangeEnd(char ns) const
 
 template<typename TDirentAccessor>
 typename DirentLookup<TDirentAccessor>::Result
-DirentLookup<TDirentAccessor>::find(char ns, const std::string& url)
+DirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
 {
   const auto r = lookupGrid.getRange(ns + url);
   entry_index_type l(r.begin);
