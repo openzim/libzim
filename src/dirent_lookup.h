@@ -53,12 +53,12 @@ private: // types
   typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
 
 private: // data
-  const TDirentAccessor* direntAccessor = nullptr;
+  const TDirentAccessor& direntAccessor;
+  const entry_index_type direntCount;
 
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
 
-  entry_index_type direntCount = 0;
   NarrowDown lookupGrid;
 };
 
@@ -66,16 +66,15 @@ template<class TDirentAccessor>
 std::string
 DirentLookup<TDirentAccessor>::getDirentKey(entry_index_type i) const
 {
-  const auto d = direntAccessor->getDirent(entry_index_t(i));
+  const auto d = direntAccessor.getDirent(entry_index_t(i));
   return d->getNamespace() + d->getUrl();
 }
 
 template<class TDirentAccessor>
 DirentLookup<TDirentAccessor>::DirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount)
+  : direntAccessor(*_direntAccessor)
+  , direntCount(direntAccessor.getDirentCount())
 {
-  ASSERT(direntAccessor == nullptr, ==, true);
-  direntAccessor = _direntAccessor;
-  direntCount = entry_index_type(direntAccessor->getDirentCount());
   if ( direntCount )
   {
     const entry_index_type step = std::max(1u, direntCount/cacheEntryCount);
@@ -134,7 +133,7 @@ DirentLookup<TDirentAccessor>::getNamespaceRangeBegin(char ch) const
       return it->second;
   }
 
-  auto ret = getNamespaceBeginOffset(*direntAccessor, ch);
+  auto ret = getNamespaceBeginOffset(direntAccessor, ch);
 
   std::lock_guard<std::mutex> lock(cacheAccessMutex);
   namespaceBoundaryCache[ch] = ret;
@@ -162,7 +161,7 @@ DirentLookup<TDirentAccessor>::find(char ns, const std::string& url)
   while (true)
   {
     entry_index_type p = l + (u - l) / 2;
-    const auto d = direntAccessor->getDirent(entry_index_t(p));
+    const auto d = direntAccessor.getDirent(entry_index_t(p));
 
     const int c = ns < d->getNamespace() ? -1
                 : ns > d->getNamespace() ? 1
