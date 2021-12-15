@@ -68,50 +68,24 @@ class NamespaceTest : public :: testing::Test
 
 TEST_F(NamespaceTest, BeginOffset)
 {
-  auto result = zim::getNamespaceBeginOffset(impl, 'a');
-  ASSERT_EQ(result.v, 10);
-
-  result = zim::getNamespaceBeginOffset(impl, 'b');
-  ASSERT_EQ(result.v, 12);
-
-  result = zim::getNamespaceBeginOffset(impl, 'c');
-  ASSERT_EQ(result.v, 13);
-
-  result = zim::getNamespaceBeginOffset(impl, 'A'-1);
-  ASSERT_EQ(result.v, 0);
-
-  result = zim::getNamespaceBeginOffset(impl, 'A');
-  ASSERT_EQ(result.v, 0);
-
-  result = zim::getNamespaceBeginOffset(impl, 'M');
-  ASSERT_EQ(result.v, 9);
-
-  result = zim::getNamespaceBeginOffset(impl, 'U');
-  ASSERT_EQ(result.v, 10);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'a').v, 10);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'b').v, 12);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'c').v, 13);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'A'-1).v, 0);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'A').v, 0);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'M').v, 9);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'U').v, 10);
 }
 
 TEST_F(NamespaceTest, EndOffset)
 {
-  auto result = zim::getNamespaceEndOffset(impl, 'a');
-  ASSERT_EQ(result.v, 12);
-
-  result = zim::getNamespaceEndOffset(impl, 'b');
-  ASSERT_EQ(result.v, 13);
-
-  result = zim::getNamespaceEndOffset(impl, 'c');
-  ASSERT_EQ(result.v, 13);
-
-  result = zim::getNamespaceEndOffset(impl, 'A'-1);
-  ASSERT_EQ(result.v, 0);
-
-  result = zim::getNamespaceEndOffset(impl, 'A');
-  ASSERT_EQ(result.v, 9);
-
-  result = zim::getNamespaceEndOffset(impl, 'M');
-  ASSERT_EQ(result.v, 10);
-
-  result = zim::getNamespaceEndOffset(impl, 'U');
-  ASSERT_EQ(result.v, 10);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'a').v, 12);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'b').v, 13);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'c').v, 13);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'A'-1).v, 0);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'A').v, 9);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'M').v, 10);
+  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'U').v, 10);
 }
 
 TEST_F(NamespaceTest, EndEqualStartPlus1)
@@ -129,65 +103,46 @@ class FindxTest : public :: testing::Test
     GetDirentMock impl;
 };
 
+
+#define CHECK_FIND_RESULT(expr, is_exact_match, expected_value) \
+  { \
+    const auto findResult = expr; \
+    ASSERT_EQ(findResult.first, is_exact_match); \
+    ASSERT_EQ(findResult.second.v, expected_value); \
+  }
+
 TEST_F(FindxTest, ExactMatch)
 {
+#define CHECK_EXACT_MATCH(expr, expected_value)         \
+  CHECK_FIND_RESULT(expr, true, expected_value);
+
   zim::DirentLookup<GetDirentMock> dl(&impl, 4);
-  auto result = dl.find('A', "aa");
-  ASSERT_EQ(result.first, true);
-  ASSERT_EQ(result.second.v, 0);
+  CHECK_EXACT_MATCH(dl.find('A', "aa"), 0);
+  CHECK_EXACT_MATCH(dl.find('a', "aa"), 10);
+  CHECK_EXACT_MATCH(dl.find('A', "aabbbb"), 6);
+  CHECK_EXACT_MATCH(dl.find('b', "aa"), 12);
 
-  result = dl.find('a', "aa");
-  ASSERT_EQ(result.first, true);
-  ASSERT_EQ(result.second.v, 10);
-
-  result = dl.find('A', "aabbbb");
-  ASSERT_EQ(result.first, true);
-  ASSERT_EQ(result.second.v, 6);
-
-  result = dl.find('b', "aa");
-  ASSERT_EQ(result.first, true);
-  ASSERT_EQ(result.second.v, 12);
+#undef CHECK_EXACT_MATCH
 }
 
 
 TEST_F(FindxTest, NoExactMatch)
 {
+#define CHECK_NOEXACT_MATCH(expr, expected_value)        \
+  CHECK_FIND_RESULT(expr, false, expected_value);
+
   zim::DirentLookup<GetDirentMock> dl(&impl, 4);
-  auto result = dl.find('U', "aa"); // No U namespace => return 10 (the index of the first item from the next namespace)
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 10);
+  CHECK_NOEXACT_MATCH(dl.find('U', "aa"), 10); // No U namespace => return 10 (the index of the first item from the next namespace)
+  CHECK_NOEXACT_MATCH(dl.find('A', "aabb"), 5); // aabb is between aaaacc (4) and aabbaa (5) => 5
+  CHECK_NOEXACT_MATCH(dl.find('A', "aabbb"), 6); // aabbb is between aabbaa (5) and aabbbb (6) => 6
+  CHECK_NOEXACT_MATCH(dl.find('A', "aabbbc"), 7); // aabbbc is between aabbbb (6) and aabbcc (7) => 7
+  CHECK_NOEXACT_MATCH(dl.find('A', "bb"), 8); // bb is between aabbcc (7) and cccccc (8) => 8
+  CHECK_NOEXACT_MATCH(dl.find('A', "dd"), 9); // dd is after cccccc (8) => 9
+  CHECK_NOEXACT_MATCH(dl.find('M', "f"), 9); // f is before foo (9) => 9
+  CHECK_NOEXACT_MATCH(dl.find('M', "bar"), 9); // bar is before foo (9) => 9
+  CHECK_NOEXACT_MATCH(dl.find('M', "foo1"), 10); // foo1 is after foo (9) => 10
 
-  result = dl.find('A', "aabb"); // aabb is between aaaacc (4) and aabbaa (5) => 5
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 5);
-
-  result = dl.find('A', "aabbb"); // aabbb is between aabbaa (5) and aabbbb (6) => 6
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 6);
-
-  result = dl.find('A', "aabbbc"); // aabbbc is between aabbbb (6) and aabbcc (7) => 7
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 7);
-
-  result = dl.find('A', "bb"); // bb is between aabbcc (7) and cccccc (8) => 8
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 8);
-
-  result = dl.find('A', "dd"); // dd is after cccccc (8) => 9
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 9);
-
-  result = dl.find('M', "f"); // f is before foo (9) => 9
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 9);
-
-  result = dl.find('M', "bar"); // bar is before foo (9) => 9
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 9);
-
-  result = dl.find('M', "foo1"); // foo1 is after foo (9) => 10
-  ASSERT_EQ(result.first, false);
-  ASSERT_EQ(result.second.v, 10);
+#undef CHECK_NOEXACT_MATCH
 }
 
 
