@@ -32,14 +32,14 @@
 namespace zim
 {
 
-template<class Impl>
+template<class TDirentAccessor>
 class DirentLookup
 {
 public: // types
   typedef std::pair<bool, entry_index_t> Result;
 
 public: // functions
-  DirentLookup(const Impl* _impl, entry_index_type cacheEntryCount);
+  DirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
 
   entry_index_t getNamespaceRangeBegin(char ns) const;
   entry_index_t getNamespaceRangeEnd(char ns) const;
@@ -53,7 +53,7 @@ private: // types
   typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
 
 private: // data
-  const Impl* impl = nullptr;
+  const TDirentAccessor* direntAccessor = nullptr;
 
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
@@ -62,20 +62,20 @@ private: // data
   NarrowDown lookupGrid;
 };
 
-template<class Impl>
+template<class TDirentAccessor>
 std::string
-DirentLookup<Impl>::getDirentKey(entry_index_type i) const
+DirentLookup<TDirentAccessor>::getDirentKey(entry_index_type i) const
 {
-  const auto d = impl->getDirent(entry_index_t(i));
+  const auto d = direntAccessor->getDirent(entry_index_t(i));
   return d->getNamespace() + d->getUrl();
 }
 
-template<class Impl>
-DirentLookup<Impl>::DirentLookup(const Impl* _impl, entry_index_type cacheEntryCount)
+template<class TDirentAccessor>
+DirentLookup<TDirentAccessor>::DirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount)
 {
-  ASSERT(impl == nullptr, ==, true);
-  impl = _impl;
-  direntCount = entry_index_type(impl->getDirentCount());
+  ASSERT(direntAccessor == nullptr, ==, true);
+  direntAccessor = _direntAccessor;
+  direntCount = entry_index_type(direntAccessor->getDirentCount());
   if ( direntCount )
   {
     const entry_index_type step = std::max(1u, direntCount/cacheEntryCount);
@@ -87,19 +87,19 @@ DirentLookup<Impl>::DirentLookup(const Impl* _impl, entry_index_type cacheEntryC
   }
 }
 
-template<typename IMPL>
-entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
+template<typename TDirentAccessor>
+entry_index_t getNamespaceBeginOffset(TDirentAccessor& direntAccessor, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
 
   entry_index_type lower = 0;
-  entry_index_type upper = entry_index_type(impl.getDirentCount());
-  auto d = impl.getDirent(entry_index_t(0));
+  entry_index_type upper = entry_index_type(direntAccessor.getDirentCount());
+  auto d = direntAccessor.getDirent(entry_index_t(0));
   while (upper - lower > 1)
   {
     entry_index_type m = lower + (upper - lower) / 2;
-    auto d = impl.getDirent(entry_index_t(m));
+    auto d = direntAccessor.getDirent(entry_index_t(m));
     if (d->getNamespace() >= ch)
       upper = m;
     else
@@ -110,19 +110,19 @@ entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
   return ret;
 }
 
-template<typename IMPL>
-entry_index_t getNamespaceEndOffset(IMPL& impl, char ch)
+template<typename TDirentAccessor>
+entry_index_t getNamespaceEndOffset(TDirentAccessor& direntAccessor, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <, 127);
-  return getNamespaceBeginOffset(impl, ch+1);
+  return getNamespaceBeginOffset(direntAccessor, ch+1);
 }
 
 
 
-template<class Impl>
+template<class TDirentAccessor>
 entry_index_t
-DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
+DirentLookup<TDirentAccessor>::getNamespaceRangeBegin(char ch) const
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
@@ -134,23 +134,23 @@ DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
       return it->second;
   }
 
-  auto ret = getNamespaceBeginOffset(*impl, ch);
+  auto ret = getNamespaceBeginOffset(*direntAccessor, ch);
 
   std::lock_guard<std::mutex> lock(cacheAccessMutex);
   namespaceBoundaryCache[ch] = ret;
   return ret;
 }
 
-template<class Impl>
+template<class TDirentAccessor>
 entry_index_t
-DirentLookup<Impl>::getNamespaceRangeEnd(char ns) const
+DirentLookup<TDirentAccessor>::getNamespaceRangeEnd(char ns) const
 {
   return getNamespaceRangeBegin(ns+1);
 }
 
-template<typename Impl>
-typename DirentLookup<Impl>::Result
-DirentLookup<Impl>::find(char ns, const std::string& url)
+template<typename TDirentAccessor>
+typename DirentLookup<TDirentAccessor>::Result
+DirentLookup<TDirentAccessor>::find(char ns, const std::string& url)
 {
   const auto r = lookupGrid.getRange(ns + url);
   entry_index_type l(r.begin);
@@ -162,7 +162,7 @@ DirentLookup<Impl>::find(char ns, const std::string& url)
   while (true)
   {
     entry_index_type p = l + (u - l) / 2;
-    const auto d = impl->getDirent(entry_index_t(p));
+    const auto d = direntAccessor->getDirent(entry_index_t(p));
 
     const int c = ns < d->getNamespace() ? -1
                 : ns > d->getNamespace() ? 1
