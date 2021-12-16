@@ -48,6 +48,8 @@ const std::vector<std::pair<char, std::string>> articleurl = {
 
 struct GetDirentMock
 {
+  typedef GetDirentMock DirentAccessorType;
+
   zim::entry_index_t getDirentCount() const {
     return zim::entry_index_t(articleurl.size());
   }

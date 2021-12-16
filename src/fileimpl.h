@@ -72,7 +72,12 @@ namespace zim
       mutable std::vector<pair_type> articleListByCluster;
       mutable std::once_flag orderOnceFlag;
 
-      using DirentLookup = zim::FastDirentLookup<DirectDirentAccessor>;
+      struct DirentLookupConfig
+      {
+        typedef DirectDirentAccessor DirentAccessorType;
+      };
+
+      using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
       mutable std::once_flag m_direntLookupOnceFlag;
 
