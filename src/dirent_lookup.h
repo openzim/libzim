@@ -28,6 +28,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <cassert>
 
 namespace zim
 {
@@ -50,6 +51,7 @@ public: // functions
 protected: // functions
   int compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const;
   Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const;
+  Result binarySearchInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const;
 
 protected: // types
   typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
@@ -187,31 +189,13 @@ typename DirentLookup<TConfig>::Result
 FastDirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
   const auto r = lookupGrid.getRange(ns + key);
-  entry_index_type l(r.begin);
-  entry_index_type u(r.end);
-
-  if (l == u)
-    return {false, entry_index_t(l)};
-
-  return BaseType::findInRange(l, u, ns, key);
+  return BaseType::findInRange(r.begin, r.end, ns, key);
 }
 
 template<typename TConfig>
 typename DirentLookup<TConfig>::Result
 DirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
-  if ( direntCount == 0 )
-      return { false, entry_index_t(0) };
-
-  const auto c = compareWithDirentAt(ns, key, 0);
-  if ( c < 0 )
-      return { false, entry_index_t(0) };
-  else if ( c == 0 )
-      return { true, entry_index_t(0) };
-
-  if ( compareWithDirentAt(ns, key, direntCount-1) > 0 )
-      return { false, entry_index_t(direntCount) };
-
   return findInRange(0, direntCount, ns, key);
 }
 
@@ -219,21 +203,43 @@ template<typename TConfig>
 typename DirentLookup<TConfig>::Result
 DirentLookup<TConfig>::findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const
 {
+  if ( l == u )
+      return { false, entry_index_t(l) };
+
+  const auto c = compareWithDirentAt(ns, key, l);
+  if ( c < 0 )
+      return { false, entry_index_t(l) };
+  else if ( c == 0 )
+      return { true, entry_index_t(l) };
+
+  if ( compareWithDirentAt(ns, key, u-1) > 0 )
+      return { false, entry_index_t(u) };
+
+  return binarySearchInRange(l, u-1, ns, key);
+}
+
+template<typename TConfig>
+typename DirentLookup<TConfig>::Result
+DirentLookup<TConfig>::binarySearchInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const
+{
+  assert(l <= u && u < direntCount);
+  assert(compareWithDirentAt(ns, key, l) > 0);
+  assert(compareWithDirentAt(ns, key, u) <= 0);
+  // Invariant maintained by the binary search:
+  //    (entry at l) < (query entry ns/key) <= (entry at u)
   while (true)
   {
-    entry_index_type p = l + (u - l) / 2;
+    // compute p as the **upward rounded** average of l and u
+    const entry_index_type p = l + (u - l + 1) / 2;
     const int c = compareWithDirentAt(ns, key, p);
-
-    if (c < 0)
+    if (c <= 0) { // (entry at l) < ns/key <= (entry at p) <= (entry at u)
+      if ( u == p ) {
+        return { c == 0, entry_index_t(u) };
+      }
       u = p;
-    else if (c > 0)
-    {
-      if ( l == p )
-        return {false, entry_index_t(u)};
+    } else {  // (entry at l) < (entry at p) < ns/key <= (entry at u)
       l = p;
     }
-    else
-      return {true, entry_index_t(p)};
   }
 }
 
