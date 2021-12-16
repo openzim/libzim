@@ -45,11 +45,11 @@ public: // functions
   entry_index_t getNamespaceRangeBegin(char ns) const;
   entry_index_t getNamespaceRangeEnd(char ns) const;
 
-  Result find(char ns, const std::string& url) const;
+  Result find(char ns, const std::string& key) const;
 
 protected: // functions
-  int compareWithDirentAt(char ns, const std::string& url, entry_index_type i) const;
-  Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& url) const;
+  int compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const;
+  Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const;
 
 protected: // types
   typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
@@ -63,12 +63,12 @@ protected: // data
 };
 
 template<class TConfig>
-int DirentLookup<TConfig>::compareWithDirentAt(char ns, const std::string& url, entry_index_type i) const
+int DirentLookup<TConfig>::compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const
 {
   const auto dirent = direntAccessor.getDirent(entry_index_t(i));
   return ns < dirent->getNamespace() ? -1
        : ns > dirent->getNamespace() ? 1
-       : url.compare(dirent->getUrl());
+       : key.compare(TConfig::getDirentKey(*dirent));
 }
 
 template<class TConfig>
@@ -80,7 +80,7 @@ class FastDirentLookup : public DirentLookup<TConfig>
 public: // functions
   FastDirentLookup(const DirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
 
-  typename BaseType::Result find(char ns, const std::string& url) const;
+  typename BaseType::Result find(char ns, const std::string& key) const;
 
 private: // functions
   std::string getDirentKey(entry_index_type i) const;
@@ -96,7 +96,7 @@ std::string
 FastDirentLookup<TConfig>::getDirentKey(entry_index_type i) const
 {
   const auto d = direntAccessor.getDirent(entry_index_t(i));
-  return d->getNamespace() + d->getUrl();
+  return d->getNamespace() + TConfig::getDirentKey(*d);
 }
 
 template<class TConfig>
@@ -184,45 +184,45 @@ DirentLookup<TConfig>::getNamespaceRangeEnd(char ns) const
 
 template<typename TConfig>
 typename DirentLookup<TConfig>::Result
-FastDirentLookup<TConfig>::find(char ns, const std::string& url) const
+FastDirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
-  const auto r = lookupGrid.getRange(ns + url);
+  const auto r = lookupGrid.getRange(ns + key);
   entry_index_type l(r.begin);
   entry_index_type u(r.end);
 
   if (l == u)
     return {false, entry_index_t(l)};
 
-  return BaseType::findInRange(l, u, ns, url);
+  return BaseType::findInRange(l, u, ns, key);
 }
 
 template<typename TConfig>
 typename DirentLookup<TConfig>::Result
-DirentLookup<TConfig>::find(char ns, const std::string& url) const
+DirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
   if ( direntCount == 0 )
       return { false, entry_index_t(0) };
 
-  const auto c = compareWithDirentAt(ns, url, 0);
+  const auto c = compareWithDirentAt(ns, key, 0);
   if ( c < 0 )
       return { false, entry_index_t(0) };
   else if ( c == 0 )
       return { true, entry_index_t(0) };
 
-  if ( compareWithDirentAt(ns, url, direntCount-1) > 0 )
+  if ( compareWithDirentAt(ns, key, direntCount-1) > 0 )
       return { false, entry_index_t(direntCount) };
 
-  return findInRange(0, direntCount, ns, url);
+  return findInRange(0, direntCount, ns, key);
 }
 
 template<typename TConfig>
 typename DirentLookup<TConfig>::Result
-DirentLookup<TConfig>::findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& url) const
+DirentLookup<TConfig>::findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const
 {
   while (true)
   {
     entry_index_type p = l + (u - l) / 2;
-    const int c = compareWithDirentAt(ns, url, p);
+    const int c = compareWithDirentAt(ns, key, p);
 
     if (c < 0)
       u = p;

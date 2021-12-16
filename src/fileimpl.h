@@ -75,6 +75,9 @@ namespace zim
       struct DirentLookupConfig
       {
         typedef DirectDirentAccessor DirentAccessorType;
+        static const std::string& getDirentKey(const Dirent& d) {
+          return d.getUrl();
+        }
       };
 
       using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
