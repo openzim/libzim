@@ -163,6 +163,7 @@ TEST_F(DirentLookupTest, NoExactMatch)
   CHECK_FIND_RESULT(expr,        false, expected_value); \
   CHECK_FIND_RESULT(fast_##expr, false, expected_value);
 
+  CHECK_NOEXACT_MATCH(direntLookup.find('A', "ABC"), 0);
   CHECK_NOEXACT_MATCH(direntLookup.find('U', "aa"), 10); // No U namespace => return 10 (the index of the first item from the next namespace)
   CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabb"), 5); // aabb is between aaaacc (4) and aabbaa (5) => 5
   CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabbb"), 6); // aabbb is between aabbaa (5) and aabbbb (6) => 6
@@ -172,6 +173,7 @@ TEST_F(DirentLookupTest, NoExactMatch)
   CHECK_NOEXACT_MATCH(direntLookup.find('M', "f"), 9); // f is before foo (9) => 9
   CHECK_NOEXACT_MATCH(direntLookup.find('M', "bar"), 9); // bar is before foo (9) => 9
   CHECK_NOEXACT_MATCH(direntLookup.find('M', "foo1"), 10); // foo1 is after foo (9) => 10
+  CHECK_NOEXACT_MATCH(direntLookup.find('z', "zz"), 13);
 
 #undef CHECK_NOEXACT_MATCH
 }

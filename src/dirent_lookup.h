@@ -198,9 +198,18 @@ template<typename TDirentAccessor>
 typename DirentLookup<TDirentAccessor>::Result
 DirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
 {
-  // FIXME: handle the edge cases correctly:
-  // FIXME:   - the query value is before the first dirent
-  // FIXME:   - the query value is after the last dirent
+  if ( direntCount == 0 )
+      return { false, entry_index_t(0) };
+
+  const auto c = compareWithDirentAt(ns, url, 0);
+  if ( c < 0 )
+      return { false, entry_index_t(0) };
+  else if ( c == 0 )
+      return { true, entry_index_t(0) };
+
+  if ( compareWithDirentAt(ns, url, direntCount-1) > 0 )
+      return { false, entry_index_t(direntCount) };
+
   return findInRange(0, direntCount, ns, url);
 }
 
