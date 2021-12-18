@@ -41,7 +41,7 @@ void _on_assert_fail(const char* vara, const char* op, const char* varb,
       vara << "[" << a << "] " << op << " " << varb << "[" << b << "]";
   std::cerr << ss.str() << std::endl;
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && defined(__GNU_LIBRARY__)
   void *callstack[64];
   size_t size;
   size = backtrace(callstack, 64);
