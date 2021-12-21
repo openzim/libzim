@@ -148,6 +148,12 @@ class TempZimArchive : zim::unittests::TempFile {
     const std::string getPath();
 };
 
+enum class IsFrontArticle {
+  YES,
+  NO,
+  DEFAULT
+};
+
 class TestItem : public zim::writer::Item {
   public:
     TestItem(
@@ -155,7 +161,7 @@ class TestItem : public zim::writer::Item {
         const std::string& mimetype = "text/html",
         const std::string& title = "Test Item",
         const std::string& content = "foo",
-        bool frontArticle = true) :
+        IsFrontArticle frontArticle = IsFrontArticle::DEFAULT) :
       path(path),
       title(title),
       content(content),
@@ -168,10 +174,14 @@ class TestItem : public zim::writer::Item {
     virtual std::string getTitle() const { return title; };
     virtual std::string getMimeType() const { return mimetype; };
     virtual zim::writer::Hints getHints() const {
-      if (frontArticle) {
-        return zim::writer::Hints{{zim::writer::FRONT_ARTICLE, 1}};
+      switch (frontArticle) {
+        case IsFrontArticle::YES:
+          return zim::writer::Hints{{zim::writer::FRONT_ARTICLE, 1}};
+        case IsFrontArticle::NO:
+          return zim::writer::Hints{{zim::writer::FRONT_ARTICLE, 0}};
+        default:
+          return zim::writer::Hints();
       }
-      return zim::writer::Hints();
     }
 
     virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const {
@@ -182,7 +192,7 @@ class TestItem : public zim::writer::Item {
   std::string title;
   std::string content;
   std::string mimetype;
-  bool frontArticle;
+  IsFrontArticle frontArticle;
 };
 
 } // namespace unittests

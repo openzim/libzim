@@ -39,6 +39,7 @@ using zim::unittests::makeTempFile;
 using zim::unittests::getDataFilePath;
 using zim::unittests::TempFile;
 using zim::unittests::TestItem;
+using zim::unittests::IsFrontArticle;
 
 using TestContextImpl = std::vector<std::pair<std::string, std::string> >;
 struct TestContext : TestContextImpl {
@@ -154,10 +155,10 @@ TEST(ZimArchive, openCreatedArchive)
   creator.setUuid(uuid);
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
-  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent", true);
+  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent", IsFrontArticle::YES);
   creator.addItem(item);
   // Be sure that title order is not the same that url order
-  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content", false);
+  item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content", IsFrontArticle::NO);
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
   creator.addIllustration(48, "PNGBinaryContent48");

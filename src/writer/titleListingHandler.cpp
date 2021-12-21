@@ -106,12 +106,18 @@ DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const
 
 void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  handle(dirent, item->getHints());
+  handle(dirent, item->getAmendedHints());
 }
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
   m_handledDirents.push_back(dirent);
+
+  // By definition, dirent not in `C` namespace are not FRONT_ARTICLE
+  if (dirent->getNamespace() != NS::C) {
+    return;
+  }
+
   try {
     if(bool(hints.at(FRONT_ARTICLE))) {
       m_hasFrontArticles = true;

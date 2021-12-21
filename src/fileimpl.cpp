@@ -320,36 +320,48 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     }
 
     unsigned itcount = 0;
+    bool u_is_exact_match = false;
     while (u - l > 1)
     {
       ++itcount;
       entry_index_type p = l + (u - l) / 2;
-      auto d = getDirentByTitle(title_index_t(p));
 
+      auto d = getDirentByTitle(title_index_t(p));
       int c = direntCompareTitle(ns, title, *d);
 
-      if (c < 0)
+      if (c <= 0) {
         u = p;
-      else if (c > 0)
+        u_is_exact_match = (c == 0);
+      } else {
         l = p;
-      else
-      {
-        log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << p);
-        return { true, title_index_t(p) };
       }
     }
 
+    // We now have a range of 1 where:
+    // - l lower than what we search for (may be upper or equal if it was since the beginning)
+    // - u is upper or equal to what we search for.
+    //
+    // Let's check for l
     auto d = getDirentByTitle(title_index_t(l));
     int c = direntCompareTitle(ns, title, *d);
 
-    if (c == 0)
+    bool found;
+    entry_index_type ret_index;
+
+    if (c <= 0)
     {
-      log_debug("article found after " << itcount << " iterations in file \"" << getFilename() << "\" at index " << l);
-      return { true, title_index_t(l) };
+      // If l is upper or equal, we have found a match (l), exact or not (c==0 ?)
+      found = (c==0);
+      ret_index = l;
+    } else {
+      // If l is lower, we have either a exact match (u if u is a exact match)
+      // or the upper bound of (virtual) searched range.  found = u_is_exact_match;
+      found = u_is_exact_match;
+      ret_index = u;
     }
 
-    log_debug("article not found after " << itcount << " iterations (\"" << d.getTitle() << "\" does not match)");
-    return { false, title_index_t(c < 0 ? l : u) };
+    log_debug("article (" << d.getTitle() << ") " << found ? "":"not " << "found after " << itcount << " iterations in file \"" << getFilename() << "\"");
+    return { found, title_index_t(ret_index) };
   }
 
   FileCompound::PartRange

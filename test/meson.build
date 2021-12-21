@@ -20,7 +20,8 @@ tests = [
     'random',
     'tooltesting',
     'tinyString',
-    'suggestion_iterator'
+    'suggestion_iterator',
+    'indexing_criteria'
 ]
 
 if xapian_dep.found()

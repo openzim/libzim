@@ -31,6 +31,8 @@ namespace
 
 
 using zim::unittests::getDataFilePath;
+using zim::unittests::TempZimArchive;
+using zim::unittests::TestItem;
 
 // ByTitle
 #if WITH_TEST_DATA
@@ -80,7 +82,15 @@ TEST(FindTests, ByTitle)
           count++;
           ASSERT_EQ(entry.getTitle().find("Першая старонка"), 0);
         }
-        ASSERT_EQ(count, 1);
+        if (testfile.category == "withns") {
+          // On the withns test file, there are two entry with this title:
+          //  the entry itself and the index.html (a redirection)
+          ASSERT_EQ(count, 2);
+        } else {
+          // On new test file, the main page redirection is store in `W` namespace,
+          // so the findByTitle found only 1 entry in `C` namespace.
+          ASSERT_EQ(count, 1);
+        }
 
         auto range1 = archive.findByTitle("Украінская");
 
@@ -132,6 +142,42 @@ TEST(FindTests, ByTitle)
         ASSERT_EQ(count, 0);
     }
 }
+
+#define CHECK_FIND_TITLE_COUNT(prefix, expected_count) \
+{ \
+  auto count = 0; \
+  auto range = archive.findByTitle(prefix); \
+  for(auto& entry: range) { \
+    count++; \
+    ASSERT_EQ(entry.getTitle().find(prefix), 0); \
+  } \
+  ASSERT_EQ(count, expected_count); \
+}
+
+TEST(FindTests, ByTitleWithDuplicate)
+{
+  TempZimArchive tza("testZim");
+  zim::writer::Creator creator;
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("article0", "text/html", "AAA", ""));
+  creator.addItem(std::make_shared<TestItem>("article1", "text/html", "BB", ""));
+  creator.addItem(std::make_shared<TestItem>("article2", "text/html", "BBB", ""));
+  creator.addItem(std::make_shared<TestItem>("article3", "text/html", "BBB", ""));
+  creator.addItem(std::make_shared<TestItem>("article4", "text/html", "BBBB", ""));
+  creator.addItem(std::make_shared<TestItem>("article5", "text/html", "CCC", ""));
+  creator.addItem(std::make_shared<TestItem>("article6", "text/html", "CCC", ""));
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+  // First binary seach step will look for index 3 (0+6/2) which is a BBB,
+  // but we want to be sure it returns article2 which is the start of the range "BBB*"
+  CHECK_FIND_TITLE_COUNT("BBB", 3)
+  CHECK_FIND_TITLE_COUNT("BB", 4)
+  CHECK_FIND_TITLE_COUNT("BBBB", 1)
+  CHECK_FIND_TITLE_COUNT("CCC", 2)
+  CHECK_FIND_TITLE_COUNT("C", 2)
+}
+
 
 // By Path
 TEST(FindTests, ByPath)

@@ -40,6 +40,21 @@ namespace zim
       return Hints();
     }
 
+    Hints Item::getAmendedHints() const {
+      auto hints = getHints();
+
+      // If not FRONT_ARTICLE hints is given, determine it from the mimetype.
+      if (hints.find(FRONT_ARTICLE) == hints.end()) {
+        hints[FRONT_ARTICLE] = (getMimeType().find("text/html") == 0);
+      }
+
+      // If not COMPRESS hints is given, determine it from the mimetype.
+      if (hints.find(COMPRESS) == hints.end()) {
+        hints[COMPRESS] = isCompressibleMimetype(getMimeType());
+      }
+      return hints;
+    }
+
     std::unique_ptr<ContentProvider> StringItem::getContentProvider() const
     {
       auto shared_string = std::shared_ptr<const std::string>(shared_from_this(), &content);

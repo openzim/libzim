@@ -529,7 +529,7 @@ private:
       iterator(const iterator<order>& other)
         : m_file(other.m_file),
           m_idx(other.m_idx),
-          m_entry(new Entry(*other))
+          m_entry(other.m_entry?new Entry(*other.m_entry):nullptr)
       {}
 
       bool operator== (const iterator<order>& it) const

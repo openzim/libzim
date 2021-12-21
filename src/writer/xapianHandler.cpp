@@ -78,42 +78,51 @@ DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
   return ret;
 }
 
-void XapianHandler::handle(Dirent* dirent, const Hints& hints)
-{
-  // We have no items to get the title from. So it is a redirect
-  // We assume that if the redirect has a title, we must index it.
-  if (dirent->getNamespace() != NS::C) {
-    // We should always have namespace == 'C' but let's be careful.
-    return;
-  }
-
+void XapianHandler::indexTitle(Dirent* dirent) {
   auto title = dirent->getRealTitle();
   if (title.empty()) {
     return;
   }
   auto path = dirent->getPath();
-  auto redirectPath = dirent->getRedirectPath();
-  mp_titleIndexer->indexTitle(path, title, redirectPath);
+  if (dirent->isRedirect()) {
+    auto redirectPath = dirent->getRedirectPath();
+    mp_titleIndexer->indexTitle(path, title, redirectPath);
+  } else {
+    mp_titleIndexer->indexTitle(path, title);
+  }
+}
+
+void XapianHandler::handle(Dirent* dirent, const Hints& hints)
+{
+  if (dirent->getNamespace() != NS::C) {
+    return;
+  }
+
+  try {
+    if (bool(hints.at(FRONT_ARTICLE))) {
+      indexTitle(dirent);
+    }
+  } catch(std::out_of_range&) {}
 }
 
 void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
   if (dirent->getNamespace() != NS::C) {
-    // We should always have namespace == 'C' but let's be careful.
     return;
-  }
-  auto indexData = item->getIndexData();
-  if (!indexData || !indexData->hasIndexData()) {
-    return;
-  }
-  auto title = indexData->getTitle();
-  auto path = dirent->getPath();
-  if (mp_fulltextIndexer) {
-    mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, title, mp_fulltextIndexer.get()));
   }
 
-  if (!title.empty()) {
-    mp_titleIndexer->indexTitle(path, title);
+  // Title index.
+  handle(dirent, item->getAmendedHints());
+
+  // FullText index
+  if (mp_fulltextIndexer) {
+    auto indexData = item->getIndexData();
+    if (!indexData || !indexData->hasIndexData()) {
+      return;
+    }
+    auto title = indexData->getTitle();
+    auto path = dirent->getPath();
+    mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, title, mp_fulltextIndexer.get()));
   }
 }
 
