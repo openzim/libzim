@@ -1,3 +1,18 @@
+libzim 7.1.0
+============
+
+ * Fix dirent test on 32 bits architectures (@mgautierfr #632)
+ * Fix compilation on Alpine - with musl (@amirouche #649)
+ * Don't crash if ZIM without illustration nor X/W namespace (@mgautierfr #641)
+ * Switch default suggestion operator to AND (@maneeshpm #644)
+ * Add a new method Archive::getMetadataItem (@mgautierfr #639)
+ * Better indexion criterias (@mgautierfr #642)
+ * Avoid duplicated archives in the searcher (@veloman-yunkan #648)
+ * Fix random entry (@veloman-yunkan #650)
+ * Various improvements.
+   - CI @mgautierfr #640, @kelson42 #638, @legoktm #654
+   - Doc @rgaudin #646
+
 libzim 7.0.0
 ============
 
