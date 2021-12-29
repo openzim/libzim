@@ -75,6 +75,8 @@ namespace zim
     // This must be the last one and denotes the count of all checks
     COUNT
   };
+
+  void printVersions();
 }
 
 #endif // ZIM_ZIM_H
