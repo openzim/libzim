@@ -23,8 +23,6 @@
 #define ZIM_ZIM_H
 
 #include <cstdint>
-#include <string>
-#include <vector>
 
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -77,9 +75,6 @@ namespace zim
     // This must be the last one and denotes the count of all checks
     COUNT
   };
-
-  std::vector<std::pair<std::string, std::string>> getVersions();
-  void printVersions();
 }
 
 #endif // ZIM_ZIM_H

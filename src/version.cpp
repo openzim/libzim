@@ -18,10 +18,10 @@
  */
 
 #include <iostream>
-#include <vector>
 
-#include <config.h>
+#include <zim/version.h>
 #include <zim/zim_config.h>
+#include <config.h>
 #include <zstd.h>
 #include <lzma.h>
 #include <unicode/uvernum.h>
