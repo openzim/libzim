@@ -32,7 +32,7 @@
 
 namespace zim
 {
-  std::vector<std::pair<std::string, std::string>> getVersions() {
+  LibVersions getVersions() {
     return {
       { "libzim",  LIBZIM_VERSION      },
       { "libzstd", ZSTD_VERSION_STRING },
@@ -51,9 +51,9 @@ namespace zim
   }
 
 void printVersions() {
-  std::vector<std::pair<std::string, std::string>> versions = getVersions();
-  for (auto iter = versions.begin(); iter != versions.end(); iter++) {
-    std::cout << iter->first << " " << iter->second << std::endl;
+  LibVersions versions = getVersions();
+  for (const auto& iter : versions ) {
+    std::cout << iter.first << " " << iter.second << std::endl;
   }
 }
 

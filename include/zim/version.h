@@ -25,7 +25,8 @@
 
 namespace zim
 {
-  std::vector<std::pair<std::string, std::string>> getVersions();
+  typedef std::vector<std::pair<std::string, std::string>> LibVersions;
+  LibVersions getVersions();
   void printVersions();
 }
 
