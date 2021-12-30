@@ -18,41 +18,44 @@
  */
 
 #include <iostream>
+#include <sstream>
 
 #include <zim/version.h>
 #include <zim/zim_config.h>
 #include <config.h>
 #include <zstd.h>
 #include <lzma.h>
-#include <unicode/uvernum.h>
 
 #if defined(ENABLE_XAPIAN)
 #include <xapian.h>
+#include <unicode/uversion.h>
 #endif
 
 namespace zim
 {
   LibVersions getVersions() {
-    return {
+    LibVersions versions = {
       { "libzim",  LIBZIM_VERSION      },
       { "libzstd", ZSTD_VERSION_STRING },
-      { "liblzma", LZMA_VERSION_STRING },
-
-      // U_ICU_VERSION does not include the patch level if 0
-      { "libicu", std::to_string(U_ICU_VERSION_MAJOR_NUM) + "." +
-                  std::to_string(U_ICU_VERSION_MINOR_NUM) + "." +
-                  std::to_string(U_ICU_VERSION_PATCHLEVEL_NUM) }
-
-      // Libxapian is not a mandatory dependence
-#if defined(ENABLE_XAPIAN)
-      , { "libxapian", XAPIAN_VERSION }
-#endif
+      { "liblzma", LZMA_VERSION_STRING }
     };
+
+#if defined(ENABLE_XAPIAN)
+    // Libxapian is not a mandatory dependence
+    versions.push_back({ "libxapian", XAPIAN_VERSION });
+
+    // U_ICU_VERSION does not include the patch level if 0
+    std::ostringstream libicu_version;
+    libicu_version << U_ICU_VERSION_MAJOR_NUM << "." << U_ICU_VERSION_MINOR_NUM << "." << U_ICU_VERSION_PATCHLEVEL_NUM;
+    versions.push_back({ "libicu", libicu_version.str() });
+#endif
+
+    return versions;
   }
 
 void printVersions() {
   LibVersions versions = getVersions();
-  for (const auto& iter : versions ) {
+  for (const auto& iter : versions) {
     std::cout << iter.first << " " << iter.second << std::endl;
   }
 }
