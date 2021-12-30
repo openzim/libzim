@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include <config.h>
 #include <zim/zim_config.h>
@@ -31,19 +32,29 @@
 
 namespace zim
 {
+  std::vector<std::pair<std::string, std::string>> getVersions() {
+    return {
+      { "libzim",  LIBZIM_VERSION      },
+      { "libzstd", ZSTD_VERSION_STRING },
+      { "liblzma", LZMA_VERSION_STRING },
+
+      // U_ICU_VERSION does not include the patch level if 0
+      { "libicu", std::to_string(U_ICU_VERSION_MAJOR_NUM) + "." +
+                  std::to_string(U_ICU_VERSION_MINOR_NUM) + "." +
+                  std::to_string(U_ICU_VERSION_PATCHLEVEL_NUM) }
+
+      // Libxapian is not a mandatory dependence
+#if defined(ENABLE_XAPIAN)
+      , { "libxapian", XAPIAN_VERSION }
+#endif
+    };
+  }
 
 void printVersions() {
-  std::cout << "libzim " << LIBZIM_VERSION << std::endl;
-  std::cout << "libzstd " << ZSTD_VERSION_STRING << std::endl;
-  std::cout << "liblzma " << LZMA_VERSION_STRING << std::endl;
-
-  // U_ICU_VERSION does not include the patch level if 0
-  std::cout << "libicu " << U_ICU_VERSION_MAJOR_NUM << "." <<
-    U_ICU_VERSION_MINOR_NUM << "." << U_ICU_VERSION_PATCHLEVEL_NUM << std::endl;
-
-#if defined(ENABLE_XAPIAN)
-  std::cout << "libxapian " << XAPIAN_VERSION << std::endl;
-#endif
+  std::vector<std::pair<std::string, std::string>> versions = getVersions();
+  for (auto iter = versions.begin(); iter != versions.end(); iter++) {
+    std::cout << iter->first << " " << iter->second << std::endl;
+  }
 }
 
 } //namespace zim

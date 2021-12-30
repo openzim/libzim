@@ -23,6 +23,8 @@
 #define ZIM_ZIM_H
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -76,6 +78,7 @@ namespace zim
     COUNT
   };
 
+  std::vector<std::pair<std::string, std::string>> getVersions();
   void printVersions();
 }
 
