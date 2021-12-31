@@ -37,7 +37,8 @@ common_sources = [
     'writer/titleListingHandler.cpp',
     'writer/counterHandler.cpp',
     'suggestion.cpp',
-    'suggestion_iterator.cpp'
+    'suggestion_iterator.cpp',
+    'version.cpp'
 ]
 
 if host_machine.system() == 'windows'

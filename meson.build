@@ -97,5 +97,5 @@ pkg_mod.generate(libraries : libzim,
                  version : meson.project_version(),
                  name : 'libzim',
                  filebase : 'libzim',
-                 description : 'A Library to zim.',
+                 description : 'A Library to read/write ZIM files.',
                  requires : pkg_requires)
