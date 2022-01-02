@@ -113,10 +113,13 @@ class DirentLookupTest : public :: testing::Test
 
 TEST_F(DirentLookupTest, ExactMatch)
 {
-#define CHECK_EXACT_MATCH(expr, expected_value)         \
-  CHECK_FIND_RESULT(expr, true, expected_value);
+  zim::DirentLookup<GetDirentMock> direntLookup(&dirents);
+  zim::FastDirentLookup<GetDirentMock> fast_direntLookup(&dirents, 4);
 
-  zim::FastDirentLookup<GetDirentMock> direntLookup(&dirents, 4);
+#define CHECK_EXACT_MATCH(expr, expected_value)         \
+  CHECK_FIND_RESULT(expr,        true, expected_value); \
+  CHECK_FIND_RESULT(fast_##expr, true, expected_value);
+
   CHECK_EXACT_MATCH(direntLookup.find('A', "aa"), 0);
   CHECK_EXACT_MATCH(direntLookup.find('a', "aa"), 10);
   CHECK_EXACT_MATCH(direntLookup.find('A', "aabbbb"), 6);
@@ -128,10 +131,13 @@ TEST_F(DirentLookupTest, ExactMatch)
 
 TEST_F(DirentLookupTest, NoExactMatch)
 {
-#define CHECK_NOEXACT_MATCH(expr, expected_value)        \
-  CHECK_FIND_RESULT(expr, false, expected_value);
+  zim::DirentLookup<GetDirentMock> direntLookup(&dirents);
+  zim::FastDirentLookup<GetDirentMock> fast_direntLookup(&dirents, 4);
 
-  zim::FastDirentLookup<GetDirentMock> direntLookup(&dirents, 4);
+#define CHECK_NOEXACT_MATCH(expr, expected_value)        \
+  CHECK_FIND_RESULT(expr,        false, expected_value); \
+  CHECK_FIND_RESULT(fast_##expr, false, expected_value);
+
   CHECK_NOEXACT_MATCH(direntLookup.find('U', "aa"), 10); // No U namespace => return 10 (the index of the first item from the next namespace)
   CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabb"), 5); // aabb is between aaaacc (4) and aabbaa (5) => 5
   CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabbb"), 6); // aabbb is between aabbaa (5) and aabbbb (6) => 6
