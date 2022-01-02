@@ -39,7 +39,7 @@ public: // types
   typedef std::pair<bool, entry_index_t> Result;
 
 public: // functions
-  DirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
+  explicit DirentLookup(const TDirentAccessor* _direntAccessor);
 
   entry_index_t getNamespaceRangeBegin(char ns) const;
   entry_index_t getNamespaceRangeEnd(char ns) const;
@@ -49,34 +49,54 @@ public: // functions
 protected: // functions
   Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& url) const;
 
-private: // functions
-  std::string getDirentKey(entry_index_type i) const;
-
-private: // types
+protected: // types
   typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
 
-private: // data
+protected: // data
   const TDirentAccessor& direntAccessor;
   const entry_index_type direntCount;
 
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
+};
 
+template<class TDirentAccessor>
+class FastDirentLookup : public DirentLookup<TDirentAccessor>
+{
+  typedef DirentLookup<TDirentAccessor> BaseType;
+
+public: // functions
+  FastDirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
+
+  typename BaseType::Result find(char ns, const std::string& url) const;
+
+private: // functions
+  std::string getDirentKey(entry_index_type i) const;
+
+private: // data
+  using BaseType::direntAccessor;
+  using BaseType::direntCount;
   NarrowDown lookupGrid;
 };
 
 template<class TDirentAccessor>
 std::string
-DirentLookup<TDirentAccessor>::getDirentKey(entry_index_type i) const
+FastDirentLookup<TDirentAccessor>::getDirentKey(entry_index_type i) const
 {
   const auto d = direntAccessor.getDirent(entry_index_t(i));
   return d->getNamespace() + d->getUrl();
 }
 
 template<class TDirentAccessor>
-DirentLookup<TDirentAccessor>::DirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount)
+DirentLookup<TDirentAccessor>::DirentLookup(const TDirentAccessor* _direntAccessor)
   : direntAccessor(*_direntAccessor)
   , direntCount(direntAccessor.getDirentCount())
+{
+}
+
+template<class TDirentAccessor>
+FastDirentLookup<TDirentAccessor>::FastDirentLookup(const TDirentAccessor* _direntAccessor, entry_index_type cacheEntryCount)
+  : BaseType(_direntAccessor)
 {
   if ( direntCount )
   {
@@ -152,7 +172,7 @@ DirentLookup<TDirentAccessor>::getNamespaceRangeEnd(char ns) const
 
 template<typename TDirentAccessor>
 typename DirentLookup<TDirentAccessor>::Result
-DirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
+FastDirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
 {
   const auto r = lookupGrid.getRange(ns + url);
   entry_index_type l(r.begin);
@@ -161,7 +181,17 @@ DirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
   if (l == u)
     return {false, entry_index_t(l)};
 
-  return findInRange(l, u, ns, url);
+  return BaseType::findInRange(l, u, ns, url);
+}
+
+template<typename TDirentAccessor>
+typename DirentLookup<TDirentAccessor>::Result
+DirentLookup<TDirentAccessor>::find(char ns, const std::string& url) const
+{
+  // FIXME: handle the edge cases correctly:
+  // FIXME:   - the query value is before the first dirent
+  // FIXME:   - the query value is after the last dirent
+  return findInRange(0, direntCount, ns, url);
 }
 
 template<typename TDirentAccessor>
