@@ -60,47 +60,47 @@ struct GetDirentMock
   }
 };
 
-class NamespaceTest : public :: testing::Test
+class NamespaceBoundaryTest : public :: testing::Test
 {
   protected:
-    GetDirentMock impl;
+    GetDirentMock dirents;
 };
 
-TEST_F(NamespaceTest, BeginOffset)
+TEST_F(NamespaceBoundaryTest, BeginOffset)
 {
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'a').v, 10);
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'b').v, 12);
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'c').v, 13);
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'A'-1).v, 0);
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'A').v, 0);
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'M').v, 9);
-  ASSERT_EQ(zim::getNamespaceBeginOffset(impl, 'U').v, 10);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'a').v, 10);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'b').v, 12);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'c').v, 13);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'A'-1).v, 0);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'A').v, 0);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'M').v, 9);
+  ASSERT_EQ(zim::getNamespaceBeginOffset(dirents, 'U').v, 10);
 }
 
-TEST_F(NamespaceTest, EndOffset)
+TEST_F(NamespaceBoundaryTest, EndOffset)
 {
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'a').v, 12);
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'b').v, 13);
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'c').v, 13);
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'A'-1).v, 0);
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'A').v, 9);
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'M').v, 10);
-  ASSERT_EQ(zim::getNamespaceEndOffset(impl, 'U').v, 10);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'a').v, 12);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'b').v, 13);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'c').v, 13);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'A'-1).v, 0);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'A').v, 9);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'M').v, 10);
+  ASSERT_EQ(zim::getNamespaceEndOffset(dirents, 'U').v, 10);
 }
 
-TEST_F(NamespaceTest, EndEqualStartPlus1)
+TEST_F(NamespaceBoundaryTest, EndEqualsStartOfNext)
 {
   for (char ns=32; ns<127; ns++){
     std::cout << "ns: " << ns << "|" << (int)ns << std::endl;
-    ASSERT_EQ(zim::getNamespaceEndOffset(impl, ns).v, zim::getNamespaceBeginOffset(impl, ns+1).v);
+    ASSERT_EQ(zim::getNamespaceEndOffset(dirents, ns).v, zim::getNamespaceBeginOffset(dirents, ns+1).v);
   }
 }
 
 
-class FindxTest : public :: testing::Test
+class DirentLookupTest : public :: testing::Test
 {
   protected:
-    GetDirentMock impl;
+    GetDirentMock dirents;
 };
 
 
@@ -111,36 +111,36 @@ class FindxTest : public :: testing::Test
     ASSERT_EQ(findResult.second.v, expected_value); \
   }
 
-TEST_F(FindxTest, ExactMatch)
+TEST_F(DirentLookupTest, ExactMatch)
 {
 #define CHECK_EXACT_MATCH(expr, expected_value)         \
   CHECK_FIND_RESULT(expr, true, expected_value);
 
-  zim::DirentLookup<GetDirentMock> dl(&impl, 4);
-  CHECK_EXACT_MATCH(dl.find('A', "aa"), 0);
-  CHECK_EXACT_MATCH(dl.find('a', "aa"), 10);
-  CHECK_EXACT_MATCH(dl.find('A', "aabbbb"), 6);
-  CHECK_EXACT_MATCH(dl.find('b', "aa"), 12);
+  zim::DirentLookup<GetDirentMock> direntLookup(&dirents, 4);
+  CHECK_EXACT_MATCH(direntLookup.find('A', "aa"), 0);
+  CHECK_EXACT_MATCH(direntLookup.find('a', "aa"), 10);
+  CHECK_EXACT_MATCH(direntLookup.find('A', "aabbbb"), 6);
+  CHECK_EXACT_MATCH(direntLookup.find('b', "aa"), 12);
 
 #undef CHECK_EXACT_MATCH
 }
 
 
-TEST_F(FindxTest, NoExactMatch)
+TEST_F(DirentLookupTest, NoExactMatch)
 {
 #define CHECK_NOEXACT_MATCH(expr, expected_value)        \
   CHECK_FIND_RESULT(expr, false, expected_value);
 
-  zim::DirentLookup<GetDirentMock> dl(&impl, 4);
-  CHECK_NOEXACT_MATCH(dl.find('U', "aa"), 10); // No U namespace => return 10 (the index of the first item from the next namespace)
-  CHECK_NOEXACT_MATCH(dl.find('A', "aabb"), 5); // aabb is between aaaacc (4) and aabbaa (5) => 5
-  CHECK_NOEXACT_MATCH(dl.find('A', "aabbb"), 6); // aabbb is between aabbaa (5) and aabbbb (6) => 6
-  CHECK_NOEXACT_MATCH(dl.find('A', "aabbbc"), 7); // aabbbc is between aabbbb (6) and aabbcc (7) => 7
-  CHECK_NOEXACT_MATCH(dl.find('A', "bb"), 8); // bb is between aabbcc (7) and cccccc (8) => 8
-  CHECK_NOEXACT_MATCH(dl.find('A', "dd"), 9); // dd is after cccccc (8) => 9
-  CHECK_NOEXACT_MATCH(dl.find('M', "f"), 9); // f is before foo (9) => 9
-  CHECK_NOEXACT_MATCH(dl.find('M', "bar"), 9); // bar is before foo (9) => 9
-  CHECK_NOEXACT_MATCH(dl.find('M', "foo1"), 10); // foo1 is after foo (9) => 10
+  zim::DirentLookup<GetDirentMock> direntLookup(&dirents, 4);
+  CHECK_NOEXACT_MATCH(direntLookup.find('U', "aa"), 10); // No U namespace => return 10 (the index of the first item from the next namespace)
+  CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabb"), 5); // aabb is between aaaacc (4) and aabbaa (5) => 5
+  CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabbb"), 6); // aabbb is between aabbaa (5) and aabbbb (6) => 6
+  CHECK_NOEXACT_MATCH(direntLookup.find('A', "aabbbc"), 7); // aabbbc is between aabbbb (6) and aabbcc (7) => 7
+  CHECK_NOEXACT_MATCH(direntLookup.find('A', "bb"), 8); // bb is between aabbcc (7) and cccccc (8) => 8
+  CHECK_NOEXACT_MATCH(direntLookup.find('A', "dd"), 9); // dd is after cccccc (8) => 9
+  CHECK_NOEXACT_MATCH(direntLookup.find('M', "f"), 9); // f is before foo (9) => 9
+  CHECK_NOEXACT_MATCH(direntLookup.find('M', "bar"), 9); // bar is before foo (9) => 9
+  CHECK_NOEXACT_MATCH(direntLookup.find('M', "foo1"), 10); // foo1 is after foo (9) => 10
 
 #undef CHECK_NOEXACT_MATCH
 }
