@@ -53,10 +53,11 @@ namespace zim
     return versions;
   }
 
-void printVersions() {
+void printVersions(std::ostream& out) {
   LibVersions versions = getVersions();
   for (const auto& iter : versions) {
-    std::cout << iter.first << " " << iter.second << std::endl;
+    out << (iter != versions.front() ? "+ " : "") <<
+      iter.first << " " << iter.second << std::endl;
   }
 }
 
