@@ -103,6 +103,31 @@ class DirentLookupTest : public :: testing::Test
     GetDirentMock dirents;
 };
 
+typedef zim::DirentLookup<GetDirentMock> DirentLookupType;
+
+// Provide access to protected functionality in order to unit-test it
+struct UnprotectedDirentLookup : DirentLookupType
+{
+  template<typename... T> UnprotectedDirentLookup(const T&... args)
+    : DirentLookupType(args...)
+  {}
+
+  using DirentLookupType::compareWithDirentAt;
+};
+
+
+TEST_F(DirentLookupTest, compareWithDirentAt)
+{
+  UnprotectedDirentLookup direntLookup(&dirents);
+
+  // Dirent at index 9 is {'M', "foo"}
+  EXPECT_LE(direntLookup.compareWithDirentAt('A', "foo", 9), 0);
+  EXPECT_LE(direntLookup.compareWithDirentAt('M', "boo", 9), 0);
+  EXPECT_EQ(direntLookup.compareWithDirentAt('M', "foo", 9), 0);
+  EXPECT_GE(direntLookup.compareWithDirentAt('M', "for", 9), 0);
+  EXPECT_GE(direntLookup.compareWithDirentAt('N', "foo", 9), 0);
+}
+
 
 #define CHECK_FIND_RESULT(expr, is_exact_match, expected_value) \
   { \

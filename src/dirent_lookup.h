@@ -47,6 +47,7 @@ public: // functions
   Result find(char ns, const std::string& url) const;
 
 protected: // functions
+  int compareWithDirentAt(char ns, const std::string& url, entry_index_type i) const;
   Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& url) const;
 
 protected: // types
@@ -59,6 +60,15 @@ protected: // data
   mutable NamespaceBoundaryCache namespaceBoundaryCache;
   mutable std::mutex cacheAccessMutex;
 };
+
+template<class TDirentAccessor>
+int DirentLookup<TDirentAccessor>::compareWithDirentAt(char ns, const std::string& url, entry_index_type i) const
+{
+  const auto dirent = direntAccessor.getDirent(entry_index_t(i));
+  return ns < dirent->getNamespace() ? -1
+       : ns > dirent->getNamespace() ? 1
+       : url.compare(dirent->getUrl());
+}
 
 template<class TDirentAccessor>
 class FastDirentLookup : public DirentLookup<TDirentAccessor>
@@ -201,11 +211,7 @@ DirentLookup<TDirentAccessor>::findInRange(entry_index_type l, entry_index_type 
   while (true)
   {
     entry_index_type p = l + (u - l) / 2;
-    const auto d = direntAccessor.getDirent(entry_index_t(p));
-
-    const int c = ns < d->getNamespace() ? -1
-                : ns > d->getNamespace() ? 1
-                : url.compare(d->getUrl());
+    const int c = compareWithDirentAt(ns, url, p);
 
     if (c < 0)
       u = p;
