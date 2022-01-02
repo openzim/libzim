@@ -75,6 +75,7 @@ namespace zim
       struct DirentLookupConfig
       {
         typedef DirectDirentAccessor DirentAccessorType;
+        typedef entry_index_t index_t;
         static const std::string& getDirentKey(const Dirent& d) {
           return d.getUrl();
         }
@@ -83,6 +84,19 @@ namespace zim
       using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
       mutable std::once_flag m_direntLookupOnceFlag;
+
+
+      struct ByTitleDirentLookupConfig
+      {
+        typedef IndirectDirentAccessor DirentAccessorType;
+        typedef title_index_t index_t;
+        static const std::string& getDirentKey(const Dirent& d) {
+          return d.getTitle();
+        }
+      };
+
+      using ByTitleDirentLookup = zim::DirentLookup<ByTitleDirentLookupConfig>;
+      std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
     public:
       using FindxResult = std::pair<bool, entry_index_t>;

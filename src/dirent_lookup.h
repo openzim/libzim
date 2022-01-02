@@ -38,13 +38,14 @@ class DirentLookup
 {
 public: // types
   typedef typename TConfig::DirentAccessorType DirentAccessor;
-  typedef std::pair<bool, entry_index_t> Result;
+  typedef typename TConfig::index_t index_t;
+  typedef std::pair<bool, index_t> Result;
 
 public: // functions
   explicit DirentLookup(const DirentAccessor* _direntAccessor);
 
-  entry_index_t getNamespaceRangeBegin(char ns) const;
-  entry_index_t getNamespaceRangeEnd(char ns) const;
+  index_t getNamespaceRangeBegin(char ns) const;
+  index_t getNamespaceRangeEnd(char ns) const;
 
   Result find(char ns, const std::string& key) const;
 
@@ -54,7 +55,7 @@ protected: // functions
   Result binarySearchInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const;
 
 protected: // types
-  typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
+  typedef std::map<char, index_t> NamespaceBoundaryCache;
 
 protected: // data
   const DirentAccessor& direntAccessor;
@@ -67,7 +68,7 @@ protected: // data
 template<class TConfig>
 int DirentLookup<TConfig>::compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const
 {
-  const auto dirent = direntAccessor.getDirent(entry_index_t(i));
+  const auto dirent = direntAccessor.getDirent(index_t(i));
   return ns < dirent->getNamespace() ? -1
        : ns > dirent->getNamespace() ? 1
        : key.compare(TConfig::getDirentKey(*dirent));
@@ -78,6 +79,7 @@ class FastDirentLookup : public DirentLookup<TConfig>
 {
   typedef DirentLookup<TConfig> BaseType;
   typedef typename BaseType::DirentAccessor DirentAccessor;
+  typedef typename BaseType::index_t index_t;
 
 public: // functions
   FastDirentLookup(const DirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
@@ -97,7 +99,7 @@ template<class TConfig>
 std::string
 FastDirentLookup<TConfig>::getDirentKey(entry_index_type i) const
 {
-  const auto d = direntAccessor.getDirent(entry_index_t(i));
+  const auto d = direntAccessor.getDirent(index_t(i));
   return d->getNamespace() + TConfig::getDirentKey(*d);
 }
 
@@ -157,7 +159,7 @@ entry_index_t getNamespaceEndOffset(TDirentAccessor& direntAccessor, char ch)
 
 
 template<class TConfig>
-entry_index_t
+typename DirentLookup<TConfig>::index_t
 DirentLookup<TConfig>::getNamespaceRangeBegin(char ch) const
 {
   ASSERT(ch, >=, 32);
@@ -178,7 +180,7 @@ DirentLookup<TConfig>::getNamespaceRangeBegin(char ch) const
 }
 
 template<class TConfig>
-entry_index_t
+typename DirentLookup<TConfig>::index_t
 DirentLookup<TConfig>::getNamespaceRangeEnd(char ns) const
 {
   return getNamespaceRangeBegin(ns+1);
@@ -204,16 +206,16 @@ typename DirentLookup<TConfig>::Result
 DirentLookup<TConfig>::findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const
 {
   if ( l == u )
-      return { false, entry_index_t(l) };
+      return { false, index_t(l) };
 
   const auto c = compareWithDirentAt(ns, key, l);
   if ( c < 0 )
-      return { false, entry_index_t(l) };
+      return { false, index_t(l) };
   else if ( c == 0 )
-      return { true, entry_index_t(l) };
+      return { true, index_t(l) };
 
   if ( compareWithDirentAt(ns, key, u-1) > 0 )
-      return { false, entry_index_t(u) };
+      return { false, index_t(u) };
 
   return binarySearchInRange(l, u-1, ns, key);
 }
@@ -234,7 +236,7 @@ DirentLookup<TConfig>::binarySearchInRange(entry_index_type l, entry_index_type 
     const int c = compareWithDirentAt(ns, key, p);
     if (c <= 0) { // (entry at l) < ns/key <= (entry at p) <= (entry at u)
       if ( u == p ) {
-        return { c == 0, entry_index_t(u) };
+        return { c == 0, index_t(u) };
       }
       u = p;
     } else {  // (entry at l) < (entry at p) < ns/key <= (entry at u)

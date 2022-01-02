@@ -49,6 +49,7 @@ const std::vector<std::pair<char, std::string>> articleurl = {
 struct GetDirentMock
 {
   typedef GetDirentMock DirentAccessorType;
+  typedef zim::entry_index_t index_t;
   static const std::string& getDirentKey(const zim::Dirent& d) {
     return d.getUrl();
   }
