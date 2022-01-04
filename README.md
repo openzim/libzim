@@ -50,7 +50,7 @@ To test the code:
 
 To build the documentations you need the packages:
 * [Doxygen](https://www.doxygen.nl)
-* Python packages for [Sphinx](https://www.sphinx-doc.org), [Breathe](https://breathe.readthedocs.io) and [Exhale](https://exhale.readthedocs.io)
+* Python packages for [Sphinx](https://www.sphinx-doc.org), [Sphinx rtd theme](https://github.com/readthedocs/sphinx_rtd_theme), [Breathe](https://breathe.readthedocs.io) and [Exhale](https://exhale.readthedocs.io) (packages `Sphinx`, `sphinx_rtd_theme`, `Breathe` and `Exhale` while using pip)
 
 These dependencies may or may not be packaged by your operating
 system. They may also be packaged but only in an older version. The
