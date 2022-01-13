@@ -30,7 +30,7 @@ std::string
 compress(const std::string& data)
 {
   zim::Compressor<CompressionInfo> compressor(data.size());
-  compressor.init(const_cast<char*>(data.c_str()));
+  compressor.init(1, const_cast<char*>(data.c_str()));
   compressor.feed(data.c_str(), data.size());
   zim::zsize_t comp_size;
   const auto comp_data = compressor.get_data(&comp_size);

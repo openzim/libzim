@@ -26,6 +26,16 @@
 #include <stdexcept>
 
 const std::string LZMA_INFO::name = "lzma";
+
+void LZMA_INFO::init_stream_encoder(stream_t* stream, int compression_level, char* raw_data)
+{
+  *stream = LZMA_STREAM_INIT;
+  auto errcode = lzma_easy_encoder(stream, compression_level, LZMA_CHECK_CRC32);
+  if (errcode != LZMA_OK) {
+    throw std::runtime_error("Cannot initialize lzma_easy_encoder");
+  }
+}
+
 void LZMA_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
 {
   *stream = LZMA_STREAM_INIT;
@@ -33,15 +43,6 @@ void LZMA_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
   auto errcode = lzma_stream_decoder(stream, memsize, 0);
   if (errcode != LZMA_OK) {
     throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
-  }
-}
-
-void LZMA_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
-{
-  *stream = LZMA_STREAM_INIT;
-  auto errcode = lzma_easy_encoder(stream, 9 | LZMA_PRESET_EXTREME, LZMA_CHECK_CRC32);
-  if (errcode != LZMA_OK) {
-    throw std::runtime_error("Cannot initialize lzma_easy_encoder");
   }
 }
 
@@ -103,21 +104,21 @@ ZSTD_INFO::stream_t::~stream_t()
     ::ZSTD_freeDStream(decoder_stream);
 }
 
+void ZSTD_INFO::init_stream_encoder(stream_t* stream, int compression_level, char* raw_data)
+{
+  stream->encoder_stream = ::ZSTD_createCStream();
+  auto ret = ::ZSTD_initCStream(stream->encoder_stream, compression_level);
+  if (::ZSTD_isError(ret)) {
+    throw std::runtime_error("Failed to initialize Zstd compression");
+  }
+}
+
 void ZSTD_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
 {
   stream->decoder_stream = ::ZSTD_createDStream();
   auto ret = ::ZSTD_initDStream(stream->decoder_stream);
   if (::ZSTD_isError(ret)) {
     throw std::runtime_error("Failed to initialize Zstd decompression");
-  }
-}
-
-void ZSTD_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
-{
-  stream->encoder_stream = ::ZSTD_createCStream();
-  auto ret = ::ZSTD_initCStream(stream->encoder_stream, 19);
-  if (::ZSTD_isError(ret)) {
-    throw std::runtime_error("Failed to initialize Zstd compression");
   }
 }
 

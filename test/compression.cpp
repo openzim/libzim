@@ -61,7 +61,7 @@ TYPED_TEST(CompressionTest, compress) {
         size_t offset = 0;
         while (size) {
           if (first) {
-            compressor.init(const_cast<char*>(data.c_str()));
+            compressor.init(9, const_cast<char*>(data.c_str()));
             first = false;
           }
           auto adjustedChunkSize = std::min(size, chunkSize);

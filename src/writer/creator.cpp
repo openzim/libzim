@@ -110,7 +110,7 @@ namespace zim
       return *this;
     }
 
-    Creator& Creator::configCompression(Compression compression)
+    Creator& Creator::configCompression(Compression compression, int compressionLevel)
     {
       if(compression == Compression::Lzma) {
         std::cerr << "WARNING: LZMA compression method is deprecated."
@@ -118,6 +118,7 @@ namespace zim
                   << std::endl;
       }
       m_compression = compression;
+      m_compressionLevel = compressionLevel;
       return *this;
     }
 
@@ -143,7 +144,7 @@ namespace zim
     void Creator::startZimCreation(const std::string& filepath)
     {
       data = std::unique_ptr<CreatorData>(
-        new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_clusterSize)
+        new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_compressionLevel, m_clusterSize)
       );
 
       for(unsigned i=0; i<m_nbWorkers; i++)
@@ -392,9 +393,11 @@ namespace zim
                                    bool withIndex,
                                    std::string language,
                                    Compression c,
+                                   int compression_level,
                                    size_t clusterSize)
       : mainPageDirent(nullptr),
         compression(c),
+        compressionLevel(compression_level),
         zimName(fname),
         tmpFileName(fname + ".tmp"),
         clusterSize(clusterSize),

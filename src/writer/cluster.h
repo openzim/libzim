@@ -48,6 +48,7 @@ class Cluster {
     virtual ~Cluster();
 
     void setCompression(Compression c) { compression = c; }
+    void setCompressionLevel(int cl) { compressionLevel = cl; }
     Compression getCompression() const { return compression; }
 
     void addContent(std::unique_ptr<ContentProvider> provider);
@@ -78,6 +79,7 @@ class Cluster {
 
   protected:
     Compression compression;
+    int compressionLevel;
     cluster_index_t index;
     bool isExtended;
     Offsets blobOffsets;

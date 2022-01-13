@@ -47,6 +47,7 @@ namespace writer {
 
 Cluster::Cluster(Compression compression)
   : compression(compression),
+    compressionLevel(0),
     isExtended(false),
     _size(0)
 {
@@ -152,7 +153,7 @@ void Cluster::_compress()
   bool first = true;
   auto writer = [&](const Blob& data) -> void {
     if (first) {
-      runner.init((char*)data.data());
+      runner.init(compressionLevel, (char*)data.data());
       first = false;
     }
     runner.feed(data.data(), data.size());

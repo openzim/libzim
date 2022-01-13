@@ -23,6 +23,7 @@
 #define ZIM_WRITER_CREATOR_H
 
 #include <memory>
+#include <zim/compression_levels.h>
 #include <zim/zim.h>
 #include <zim/writer/item.h>
 
@@ -72,7 +73,7 @@ namespace zim
          * @param comptype the compression algorithm to use.
          * @return a reference to itself.
          */
-        Creator& configCompression(Compression compression);
+        Creator& configCompression(Compression compression, int compression_level);
 
         /**
          * Set the size of the created clusters.
@@ -205,6 +206,7 @@ namespace zim
         // configuration
         bool m_verbose = false;
         Compression m_compression = Compression::Zstd;
+        int m_compressionLevel = static_cast<int>(ZSTDCompressionLevel::DEFAULT);
         bool m_withIndex = false;
         size_t m_clusterSize;
         std::string m_indexingLanguage;

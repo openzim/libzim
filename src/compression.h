@@ -27,6 +27,7 @@
 
 #include "file_reader.h"
 #include <zim/error.h>
+#include <zim/compression_levels.h>
 
 #include "config.h"
 
@@ -59,8 +60,8 @@ enum class RunnerStatus {
 struct LZMA_INFO {
   typedef lzma_stream stream_t;
   static const std::string name;
+  static void init_stream_encoder(stream_t* stream, int compression_level, char* raw_data);
   static void init_stream_decoder(stream_t* stream, char* raw_data);
-  static void init_stream_encoder(stream_t* stream, char* raw_data);
   static CompStatus stream_run_encode(stream_t* stream, CompStep step);
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
   static CompStatus stream_run(stream_t* stream, CompStep step);
@@ -89,8 +90,8 @@ struct ZSTD_INFO {
   };
 
   static const std::string name;
+  static void init_stream_encoder(stream_t* stream, int compression_level, char* raw_data);
   static void init_stream_decoder(stream_t* stream, char* raw_data);
-  static void init_stream_encoder(stream_t* stream, char* raw_data);
   static CompStatus stream_run_encode(stream_t* stream, CompStep step);
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
   static void stream_end_encode(stream_t* stream);
@@ -233,8 +234,8 @@ class Compressor
 
     ~Compressor() = default;
 
-    void init(char* data) {
-      INFO::init_stream_encoder(&stream, data);
+    void init(int compression_level, char * data) {
+      INFO::init_stream_encoder(&stream, compression_level, data);
       stream.next_out = (uint8_t*)ret_data.get();
       stream.avail_out = ret_size;
     }

@@ -65,6 +65,7 @@ namespace zim
         CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language,
                        Compression compression,
+                       int compressionLevel,
                        size_t clusterSize);
         virtual ~CreatorData();
 
@@ -102,6 +103,7 @@ namespace zim
         ThreadList workerThreads;
         std::thread  writerThread;
         const Compression compression;
+        int compressionLevel;
         std::string zimName;
         std::string tmpFileName;
         bool isEmpty = true;
