@@ -1,3 +1,9 @@
+libzim 7.2.0
+============
+
+ * Add methods to get/print (dependences) versions (@kelson42, #452)
+ * Fix Emscripten compilation (@kelson42, @mossroy, #643)
+
 libzim 7.1.0
 ============
 
