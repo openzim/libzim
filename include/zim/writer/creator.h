@@ -23,7 +23,6 @@
 #define ZIM_WRITER_CREATOR_H
 
 #include <memory>
-#include <zim/compression_levels.h>
 #include <zim/zim.h>
 #include <zim/writer/item.h>
 
@@ -206,7 +205,7 @@ namespace zim
         // configuration
         bool m_verbose = false;
         Compression m_compression = Compression::Zstd;
-        int m_compressionLevel = static_cast<int>(ZSTDCompressionLevel::DEFAULT);
+        int m_compressionLevel = static_cast<int>(ZSTDCompressionLevel::MAXIMUM);
         bool m_withIndex = false;
         size_t m_clusterSize;
         std::string m_indexingLanguage;

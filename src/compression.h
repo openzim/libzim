@@ -27,7 +27,6 @@
 
 #include "file_reader.h"
 #include <zim/error.h>
-#include <zim/compression_levels.h>
 
 #include "config.h"
 

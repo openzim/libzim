@@ -4,7 +4,6 @@ zim_config = configure_file(output : 'zim_config.h',
 install_headers(
     'archive.h',
     'blob.h',
-    'compression_levels.h',
     'error.h',
     'item.h',
     'entry.h',

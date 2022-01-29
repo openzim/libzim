@@ -60,6 +60,18 @@ namespace zim
     Zstd = 5
   };
 
+  enum class LZMACompressionLevel: int {
+    MINIMUM = 0,
+    DEFAULT = 5,
+    MAXIMUM = 9
+  };
+
+  enum class ZSTDCompressionLevel: int {
+    MINIMUM = -21,
+    DEFAULT = 3,
+    MAXIMUM = 21
+  };
+
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";
 
   enum class IntegrityCheck

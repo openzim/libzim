@@ -24,6 +24,7 @@
 #include <zim/writer/contentProvider.h>
 #include <zim/writer/creator.h>
 #include <zim/blob.h>
+#include <zim/zim.h>
 
 class TestItem : public zim::writer::Item
 {
@@ -75,7 +76,7 @@ int main(int argc, char* argv[])
   unsigned max = 16;
   try {
     zim::writer::Creator c;
-    c.configVerbose(false).configCompression(zim::Compression::Zstd, static_cast<int>(ZSTDCompressionLevel::DEFAULT));
+    c.configVerbose(false).configCompression(zim::Compression::Zstd, static_cast<int>(zim::ZSTDCompressionLevel::DEFAULT));
     c.startZimCreation("foo.zim");
     for (unsigned n = 0; n < max; ++n)
     {

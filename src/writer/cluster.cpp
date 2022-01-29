@@ -25,6 +25,7 @@
 #include "../debug.h"
 #include "../compression.h"
 
+#include <zim/zim.h>
 #include <zim/writer/contentProvider.h>
 
 #include <sstream>
@@ -47,7 +48,7 @@ namespace writer {
 
 Cluster::Cluster(Compression compression)
   : compression(compression),
-    compressionLevel(0),
+    compressionLevel(static_cast<int>(ZSTDCompressionLevel::MAXIMUM)),
     isExtended(false),
     _size(0)
 {
