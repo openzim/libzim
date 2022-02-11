@@ -23,7 +23,7 @@ private_conf.set('LZMA_MEMORY_SIZE', get_option('LZMA_MEMORY_SIZE'))
 private_conf.set10('MMAP_SUPPORT_64', sizeof_off_t==8)
 private_conf.set10('ENV64BIT', sizeof_size_t==8)
 private_conf.set10('ENV32BIT', sizeof_size_t==4)
-if target_machine.system() == 'windows'
+if host_machine.system() == 'windows'
     private_conf.set('ENABLE_USE_MMAP', false)
     add_project_arguments('-DNOMINMAX', language: 'cpp')
 else
@@ -41,7 +41,7 @@ endif
 
 zstd_dep = dependency('libzstd', static:static_linkage)
 
-if target_machine.system() == 'freebsd'
+if host_machine.system() == 'freebsd'
     execinfo_dep = cpp.find_library('execinfo')
 endif
 
@@ -63,7 +63,7 @@ else
 endif
 
 compiler = meson.get_compiler('cpp')
-if (compiler.get_id() == 'gcc' and build_machine.system() == 'linux') or target_machine.system() == 'freebsd'
+if (compiler.get_id() == 'gcc' and build_machine.system() == 'linux') or host_machine.system() == 'freebsd'
   # C++ std::thread is implemented using pthread on linux by gcc
   thread_dep = dependency('threads')
 else

@@ -57,14 +57,14 @@ jobs:
           SKIP_BIG_MEMORY_TEST: 1
 
   Windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
-      - name: Setup python 3.6
-        uses: actions/setup-python@v1
+      - name: Setup python 3.10
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.6'
+          python-version: '3.10'
       - name: Install packages
         run:
           choco install ninja
