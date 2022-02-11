@@ -57,7 +57,7 @@ jobs:
           SKIP_BIG_MEMORY_TEST: 1
 
   Windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
