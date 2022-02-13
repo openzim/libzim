@@ -81,7 +81,7 @@ FD FS::openFile(path_t filepath)
 {
   int fd = open(filepath.c_str(), O_RDONLY);
   if (fd == -1) {
-    throw std::runtime_error("");
+    throw std::runtime_error("Error opening file: " + filepath);
   }
   return FD(fd);
 }
