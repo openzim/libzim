@@ -452,6 +452,7 @@ namespace zim
 
     CreatorData::~CreatorData()
     {
+      quitAllThreads();
       if (compCluster)
         delete compCluster;
       if (uncompCluster)
@@ -459,7 +460,6 @@ namespace zim
       for(auto& cluster: clustersList) {
         delete cluster;
       }
-      quitAllThreads();
     }
 
     void CreatorData::quitAllThreads() {
