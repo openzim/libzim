@@ -288,9 +288,11 @@ namespace zim
       TINFO("write zimfile :");
       writeLastParts();
       ::close(data->out_fd);
+      data->out_fd = -1;
 
       TINFO("rename tmpfile to final one.");
       DEFAULTFS::rename(data->tmpFileName, data->zimName);
+      data->tmpFileName.clear();
 
       TINFO("finish");
     }
@@ -459,6 +461,12 @@ namespace zim
         delete uncompCluster;
       for(auto& cluster: clustersList) {
         delete cluster;
+      }
+      if ( out_fd != - 1 ) {
+        ::close(out_fd);
+      }
+      if ( ! tmpFileName.empty() ) {
+        DEFAULTFS::removeFile(tmpFileName);
       }
     }
 
