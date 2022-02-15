@@ -26,7 +26,7 @@ jobs:
           brew update
           brew install gcovr pkg-config ninja || brew link --overwrite python@3.9
       - name: Install python modules
-        run: pip3 install meson==0.52.1 pytest
+        run: pip3 install meson==0.61.2 pytest
       - name: Install deps
         shell: bash
         run: |
