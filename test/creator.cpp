@@ -21,6 +21,7 @@
 #include <zim/writer/creator.h>
 #include <zim/writer/item.h>
 #include <zim/writer/contentProvider.h>
+#include <zim/archive.h>
 
 #include "tools.h"
 #include "../src/file_compound.h"
@@ -333,6 +334,34 @@ TEST(ZimCreator, createZim)
 
   blob = cluster->getBlob(illustration96BlobIndex);
   ASSERT_EQ(std::string(blob), "PNGBinaryContent96");
+}
+
+
+TEST(ZimCreator, interruptedZimCreation)
+{
+  unittests::TempFile tmpFile("zimfile");
+  {
+    writer::Creator creator;
+    creator.configClusterSize(16*1024);
+    creator.startZimCreation(tmpFile.path());
+    std::ostringstream oss;
+    for ( size_t i = 0; i < 12345; ++i ) {
+      oss << i;
+    }
+    const std::string content(oss.str());
+    for ( char c = 'a'; c <= 'z'; ++c ) {
+      const std::string path(1, c);
+      creator.addItem(std::make_shared<TestItem>(path, path, content));
+    }
+    // creator.finishZimCreation() is not called
+  }
+
+  EXPECT_THROW(
+      {
+        const zim::Archive archive(tmpFile.path());
+      },
+      zim::ZimFileFormatError
+  );
 }
 
 
