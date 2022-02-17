@@ -28,54 +28,92 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <cassert>
 
 namespace zim
 {
 
-template<class Impl>
+template<class TConfig>
 class DirentLookup
 {
 public: // types
-  typedef std::pair<bool, entry_index_t> Result;
+  typedef typename TConfig::DirentAccessorType DirentAccessor;
+  typedef typename TConfig::index_t index_t;
+  typedef std::pair<bool, index_t> Result;
 
 public: // functions
-  DirentLookup(const Impl* _impl, entry_index_type cacheEntryCount);
+  explicit DirentLookup(const DirentAccessor* _direntAccessor);
 
-  entry_index_t getNamespaceRangeBegin(char ns) const;
-  entry_index_t getNamespaceRangeEnd(char ns) const;
+  index_t getNamespaceRangeBegin(char ns) const;
+  index_t getNamespaceRangeEnd(char ns) const;
 
-  Result find(char ns, const std::string& url);
+  Result find(char ns, const std::string& key) const;
+
+protected: // functions
+  int compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const;
+  Result findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const;
+  Result binarySearchInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const;
+
+protected: // types
+  typedef std::map<char, index_t> NamespaceBoundaryCache;
+
+protected: // data
+  const DirentAccessor& direntAccessor;
+  const entry_index_type direntCount;
+
+  mutable NamespaceBoundaryCache namespaceBoundaryCache;
+  mutable std::mutex cacheAccessMutex;
+};
+
+template<class TConfig>
+int DirentLookup<TConfig>::compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const
+{
+  const auto dirent = direntAccessor.getDirent(index_t(i));
+  return ns < dirent->getNamespace() ? -1
+       : ns > dirent->getNamespace() ? 1
+       : key.compare(TConfig::getDirentKey(*dirent));
+}
+
+template<class TConfig>
+class FastDirentLookup : public DirentLookup<TConfig>
+{
+  typedef DirentLookup<TConfig> BaseType;
+  typedef typename BaseType::DirentAccessor DirentAccessor;
+  typedef typename BaseType::index_t index_t;
+
+public: // functions
+  FastDirentLookup(const DirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
+
+  typename BaseType::Result find(char ns, const std::string& key) const;
 
 private: // functions
   std::string getDirentKey(entry_index_type i) const;
 
-private: // types
-  typedef std::map<char, entry_index_t> NamespaceBoundaryCache;
-
 private: // data
-  const Impl* impl = nullptr;
-
-  mutable NamespaceBoundaryCache namespaceBoundaryCache;
-  mutable std::mutex cacheAccessMutex;
-
-  entry_index_type direntCount = 0;
+  using BaseType::direntAccessor;
+  using BaseType::direntCount;
   NarrowDown lookupGrid;
 };
 
-template<class Impl>
+template<class TConfig>
 std::string
-DirentLookup<Impl>::getDirentKey(entry_index_type i) const
+FastDirentLookup<TConfig>::getDirentKey(entry_index_type i) const
 {
-  const auto d = impl->getDirent(entry_index_t(i));
-  return d->getNamespace() + d->getUrl();
+  const auto d = direntAccessor.getDirent(index_t(i));
+  return d->getNamespace() + TConfig::getDirentKey(*d);
 }
 
-template<class Impl>
-DirentLookup<Impl>::DirentLookup(const Impl* _impl, entry_index_type cacheEntryCount)
+template<class TConfig>
+DirentLookup<TConfig>::DirentLookup(const DirentAccessor* _direntAccessor)
+  : direntAccessor(*_direntAccessor)
+  , direntCount(direntAccessor.getDirentCount())
 {
-  ASSERT(impl == nullptr, ==, true);
-  impl = _impl;
-  direntCount = entry_index_type(impl->getDirentCount());
+}
+
+template<class TConfig>
+FastDirentLookup<TConfig>::FastDirentLookup(const DirentAccessor* _direntAccessor, entry_index_type cacheEntryCount)
+  : BaseType(_direntAccessor)
+{
   if ( direntCount )
   {
     const entry_index_type step = std::max(1u, direntCount/cacheEntryCount);
@@ -87,19 +125,19 @@ DirentLookup<Impl>::DirentLookup(const Impl* _impl, entry_index_type cacheEntryC
   }
 }
 
-template<typename IMPL>
-entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
+template<typename TDirentAccessor>
+entry_index_t getNamespaceBeginOffset(TDirentAccessor& direntAccessor, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
 
   entry_index_type lower = 0;
-  entry_index_type upper = entry_index_type(impl.getDirentCount());
-  auto d = impl.getDirent(entry_index_t(0));
+  entry_index_type upper = entry_index_type(direntAccessor.getDirentCount());
+  auto d = direntAccessor.getDirent(entry_index_t(0));
   while (upper - lower > 1)
   {
     entry_index_type m = lower + (upper - lower) / 2;
-    auto d = impl.getDirent(entry_index_t(m));
+    auto d = direntAccessor.getDirent(entry_index_t(m));
     if (d->getNamespace() >= ch)
       upper = m;
     else
@@ -110,19 +148,19 @@ entry_index_t getNamespaceBeginOffset(IMPL& impl, char ch)
   return ret;
 }
 
-template<typename IMPL>
-entry_index_t getNamespaceEndOffset(IMPL& impl, char ch)
+template<typename TDirentAccessor>
+entry_index_t getNamespaceEndOffset(TDirentAccessor& direntAccessor, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <, 127);
-  return getNamespaceBeginOffset(impl, ch+1);
+  return getNamespaceBeginOffset(direntAccessor, ch+1);
 }
 
 
 
-template<class Impl>
-entry_index_t
-DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
+template<class TConfig>
+typename DirentLookup<TConfig>::index_t
+DirentLookup<TConfig>::getNamespaceRangeBegin(char ch) const
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
@@ -134,50 +172,76 @@ DirentLookup<Impl>::getNamespaceRangeBegin(char ch) const
       return it->second;
   }
 
-  auto ret = getNamespaceBeginOffset(*impl, ch);
+  auto ret = getNamespaceBeginOffset(direntAccessor, ch);
 
   std::lock_guard<std::mutex> lock(cacheAccessMutex);
   namespaceBoundaryCache[ch] = ret;
   return ret;
 }
 
-template<class Impl>
-entry_index_t
-DirentLookup<Impl>::getNamespaceRangeEnd(char ns) const
+template<class TConfig>
+typename DirentLookup<TConfig>::index_t
+DirentLookup<TConfig>::getNamespaceRangeEnd(char ns) const
 {
   return getNamespaceRangeBegin(ns+1);
 }
 
-template<typename Impl>
-typename DirentLookup<Impl>::Result
-DirentLookup<Impl>::find(char ns, const std::string& url)
+template<typename TConfig>
+typename DirentLookup<TConfig>::Result
+FastDirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
-  const auto r = lookupGrid.getRange(ns + url);
-  entry_index_type l(r.begin);
-  entry_index_type u(r.end);
+  const auto r = lookupGrid.getRange(ns + key);
+  return BaseType::findInRange(r.begin, r.end, ns, key);
+}
 
-  if (l == u)
-    return {false, entry_index_t(l)};
+template<typename TConfig>
+typename DirentLookup<TConfig>::Result
+DirentLookup<TConfig>::find(char ns, const std::string& key) const
+{
+  return findInRange(0, direntCount, ns, key);
+}
 
+template<typename TConfig>
+typename DirentLookup<TConfig>::Result
+DirentLookup<TConfig>::findInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const
+{
+  if ( l == u )
+      return { false, index_t(l) };
+
+  const auto c = compareWithDirentAt(ns, key, l);
+  if ( c < 0 )
+      return { false, index_t(l) };
+  else if ( c == 0 )
+      return { true, index_t(l) };
+
+  if ( compareWithDirentAt(ns, key, u-1) > 0 )
+      return { false, index_t(u) };
+
+  return binarySearchInRange(l, u-1, ns, key);
+}
+
+template<typename TConfig>
+typename DirentLookup<TConfig>::Result
+DirentLookup<TConfig>::binarySearchInRange(entry_index_type l, entry_index_type u, char ns, const std::string& key) const
+{
+  assert(l <= u && u < direntCount);
+  assert(compareWithDirentAt(ns, key, l) > 0);
+  assert(compareWithDirentAt(ns, key, u) <= 0);
+  // Invariant maintained by the binary search:
+  //    (entry at l) < (query entry ns/key) <= (entry at u)
   while (true)
   {
-    entry_index_type p = l + (u - l) / 2;
-    const auto d = impl->getDirent(entry_index_t(p));
-
-    const int c = ns < d->getNamespace() ? -1
-                : ns > d->getNamespace() ? 1
-                : url.compare(d->getUrl());
-
-    if (c < 0)
+    // compute p as the **upward rounded** average of l and u
+    const entry_index_type p = l + (u - l + 1) / 2;
+    const int c = compareWithDirentAt(ns, key, p);
+    if (c <= 0) { // (entry at l) < ns/key <= (entry at p) <= (entry at u)
+      if ( u == p ) {
+        return { c == 0, index_t(u) };
+      }
       u = p;
-    else if (c > 0)
-    {
-      if ( l == p )
-        return {false, entry_index_t(u)};
+    } else {  // (entry at l) < (entry at p) < ns/key <= (entry at u)
       l = p;
     }
-    else
-      return {true, entry_index_t(p)};
   }
 }
 

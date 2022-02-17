@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <string.h>
 
 namespace zim
 {
@@ -81,7 +82,8 @@ FD FS::openFile(path_t filepath)
 {
   int fd = open(filepath.c_str(), O_RDONLY);
   if (fd == -1) {
-    throw std::runtime_error("");
+    const std::string errorStr = strerror(errno);
+    throw std::runtime_error("Error opening file: " + filepath + ": " + errorStr);
   }
   return FD(fd);
 }
