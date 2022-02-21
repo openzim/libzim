@@ -10,9 +10,7 @@ jobs:
         target:
           - native_dyn
           - iOS_arm64
-          - iOS_i386
           - iOS_x86_64
-          - iOS_armv7
     runs-on: macos-latest
     steps:
       - name: Checkout code
