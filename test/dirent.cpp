@@ -106,7 +106,7 @@ TEST(DirentTest, set_get_data_dirent)
 TEST(DirentTest, read_write_article_dirent)
 {
   zim::writer::Dirent dirent(NS::C, "Bar", "Foo", 17);
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
   cluster.addContent(""); // Add a dummy content
   cluster.setClusterIndex(zim::cluster_index_t(45));
   dirent.setCluster(&cluster);
@@ -134,7 +134,7 @@ TEST(DirentTest, read_write_article_dirent)
 TEST(DirentTest, read_write_article_dirent_unicode)
 {
   zim::writer::Dirent dirent(NS::C, "L\xc3\xbcliang", "", 17);
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
   cluster.addContent(""); // Add a dummy content
   cluster.setClusterIndex(zim::cluster_index_t(45));
   dirent.setCluster(&cluster);

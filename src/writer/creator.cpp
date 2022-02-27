@@ -438,8 +438,8 @@ namespace zim
       // because we don't know which one will fill up first.  We also need
       // to track the dirents currently in each, so we can fix up the
       // cluster index if the other one ends up written first.
-      compCluster = new Cluster(compression);
-      uncompCluster = new Cluster(Compression::None);
+      compCluster = new Cluster(compression, compression_level);
+      uncompCluster = new Cluster(Compression::None, 0);
 
 #if defined(ENABLE_XAPIAN)
       auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
@@ -594,9 +594,9 @@ namespace zim
 
       if (compressed)
       {
-        cluster = compCluster = new Cluster(compression);
+        cluster = compCluster = new Cluster(compression, compressionLevel);
       } else {
-        cluster = uncompCluster = new Cluster(Compression::None);
+        cluster = uncompCluster = new Cluster(Compression::None, 0);
       }
       return cluster;
     }

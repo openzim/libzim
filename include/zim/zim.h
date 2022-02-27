@@ -62,14 +62,14 @@ namespace zim
 
   enum class LZMACompressionLevel: int {
     MINIMUM = 0,
-    DEFAULT = 5,
-    MAXIMUM = 9
+    MAXIMUM = 9,
+    DEFAULT = MAXIMUM
   };
 
   enum class ZSTDCompressionLevel: int {
     MINIMUM = -21,
-    DEFAULT = 3,
-    MAXIMUM = 21
+    MAXIMUM = 19,
+    DEFAULT = MAXIMUM
   };
 
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";

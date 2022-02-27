@@ -46,9 +46,9 @@ const zim::size_type MAX_WRITE_SIZE(4UL*1024*1024*1024-1);
 namespace zim {
 namespace writer {
 
-Cluster::Cluster(Compression compression)
+Cluster::Cluster(Compression compression, int compression_level)
   : compression(compression),
-    compressionLevel(static_cast<int>(ZSTDCompressionLevel::MAXIMUM)),
+    compressionLevel(compression_level),
     isExtended(false),
     _size(0)
 {

@@ -44,7 +44,7 @@ class Cluster {
 
 
   public:
-    Cluster(Compression compression);
+    Cluster(Compression compression, int compression_level);
     virtual ~Cluster();
 
     void setCompression(Compression c) { compression = c; }

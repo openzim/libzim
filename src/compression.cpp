@@ -30,7 +30,13 @@ const std::string LZMA_INFO::name = "lzma";
 void LZMA_INFO::init_stream_encoder(stream_t* stream, int compression_level, char* raw_data)
 {
   *stream = LZMA_STREAM_INIT;
-  auto errcode = lzma_easy_encoder(stream, compression_level, LZMA_CHECK_CRC32);
+  int cl = compression_level;
+
+  if (cl == static_cast<int>(zim::LZMACompressionLevel::MAXIMUM)) {
+    cl |= LZMA_PRESET_EXTREME;
+  }
+
+  auto errcode = lzma_easy_encoder(stream, cl, LZMA_CHECK_CRC32);
   if (errcode != LZMA_OK) {
     throw std::runtime_error("Cannot initialize lzma_easy_encoder");
   }

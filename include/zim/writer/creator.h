@@ -205,7 +205,7 @@ namespace zim
         // configuration
         bool m_verbose = false;
         Compression m_compression = Compression::Zstd;
-        int m_compressionLevel = static_cast<int>(ZSTDCompressionLevel::MAXIMUM);
+        int m_compressionLevel = 0;
         bool m_withIndex = false;
         size_t m_clusterSize;
         std::string m_indexingLanguage;

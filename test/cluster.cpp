@@ -66,7 +66,7 @@ using zim::unittests::write_to_buffer;
 
 TEST(ClusterTest, create_cluster)
 {
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
 
   ASSERT_EQ(cluster.count().v, 0U);
 
@@ -86,7 +86,7 @@ TEST(ClusterTest, create_cluster)
 
 TEST(ClusterTest, read_write_cluster)
 {
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -110,7 +110,7 @@ TEST(ClusterTest, read_write_cluster)
 
 TEST(ClusterTest, read_write_no_content)
 {
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
 
   cluster.close();
   auto buffer = write_to_buffer(cluster, "\3garbage");
@@ -123,7 +123,7 @@ TEST(ClusterTest, read_write_no_content)
 
 TEST(ClusterTest, read_write_empty)
 {
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
 
   std::string emptyString;
 
@@ -145,7 +145,7 @@ TEST(ClusterTest, read_write_empty)
 
 TEST(ClusterTest, read_write_clusterLzma)
 {
-  zim::writer::Cluster cluster(zim::Compression::Lzma);
+  zim::writer::Cluster cluster(zim::Compression::Lzma, static_cast<int>(zim::LZMACompressionLevel::DEFAULT));
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -172,7 +172,7 @@ TEST(ClusterTest, read_write_clusterLzma)
 
 TEST(ClusterTest, read_write_clusterZstd)
 {
-  zim::writer::Cluster cluster(zim::Compression::Zstd);
+  zim::writer::Cluster cluster(zim::Compression::Zstd, static_cast<int>(zim::ZSTDCompressionLevel::DEFAULT));
 
   std::string blob0("123456789012345678901234567890");
   std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -244,7 +244,7 @@ TEST(ClusterTest, read_write_extended_cluster)
   auto bigProvider = std::unique_ptr<zim::writer::ContentProvider>(new FakeProvider(almost_4g));
   std::string blob4("zyxwvutsrqponmlkjihgfedcba");
 
-  zim::writer::Cluster cluster(zim::Compression::None);
+  zim::writer::Cluster cluster(zim::Compression::None, 0);
   cluster.addContent(blob0);
   cluster.addContent(blob1);
   cluster.addContent(blob2);
