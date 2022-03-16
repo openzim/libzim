@@ -30,14 +30,35 @@
 
 namespace zim
 {
+  /**
+   * A blob is a pointer to data, potentially stored in an `Archive`.
+   *
+   * All `Blob`'s methods are threadsafe.
+   */
   class Blob
   {
     public: // types
       using DataPtr = std::shared_ptr<const char>;
 
     public: // functions
+      /**
+       * Constuct a empty `Blob`
+       */
       Blob();
+
+      /**
+       * Constuct `Blob` pointing to `data`.
+       *
+       * The created blob only point to the data and doesn't own it.
+       * User must care that data is not freed before using the blob.
+       */
       Blob(const char* data, size_type size);
+
+      /**
+       * Constuct `Blob` pointing to `data`.
+       *
+       * The created blob shares the ownership on data.
+       */
       Blob(const DataPtr& buffer, size_type size);
 
       operator std::string() const { return std::string(_data.get(), _size); }
