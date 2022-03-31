@@ -50,6 +50,9 @@ namespace zim
     }
 
     void IndexTask::run(CreatorData* data) {
+      if (!mp_indexData->hasIndexData()) {
+        return;
+      }
       Xapian::Stem stemmer;
       Xapian::TermGenerator indexer;
       try {

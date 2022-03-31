@@ -117,7 +117,7 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   // FullText index
   if (mp_fulltextIndexer) {
     auto indexData = item->getIndexData();
-    if (!indexData || !indexData->hasIndexData()) {
+    if (!indexData) {
       return;
     }
     auto title = indexData->getTitle();
