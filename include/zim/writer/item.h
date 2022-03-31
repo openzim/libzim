@@ -127,6 +127,8 @@ namespace zim
          * The contentProvider will be created in the main thread but the data reading and
          * parsing will occur in a different thread.
          *
+         * All methods of `IndexData` will be called in a different (same) thread.
+         *
          * @return the indexData of the item.
          *         May return a nullptr if there is no indexData.
          */
