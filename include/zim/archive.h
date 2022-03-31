@@ -613,7 +613,20 @@ private:
       mutable std::unique_ptr<Entry> m_entry;
   };
 
+  /**
+   * The set of the integrity checks to be performed by `zim::validate()`.
+   */
   typedef std::bitset<size_t(IntegrityCheck::COUNT)> IntegrityCheckList;
+
+  /** Check the integrity of the zim file.
+   *
+   * Run the specified checks to verify the zim file is valid
+   * (with regard to the zim format). Some checks can be quite slow.
+   *
+   * @param zimPath The path of the ZIM archive to be checked.
+   * @param checksToRun The set of checks to perform.
+   * @return False if any check fails, true otherwise.
+   */
   bool validate(const std::string& zimPath, IntegrityCheckList checksToRun);
 }
 

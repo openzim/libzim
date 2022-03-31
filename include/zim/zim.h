@@ -62,17 +62,50 @@ namespace zim
 
   static const char MimeHtmlTemplate[] = "text/x-zim-htmltemplate";
 
+  /**
+   * Various types of integrity checks performed by `zim::validate()`.
+   */
   enum class IntegrityCheck
   {
+    /**
+     * Validates the checksum of the ZIM file.
+     */
     CHECKSUM,
-    DIRENT_PTRS, // Checks that offsets in UrlPtrList are valid
-    DIRENT_ORDER, // Checks that dirents are properly sorted
-    TITLE_INDEX, // Checks that entries in the title index are valid
-                 // and properly sorted
-    CLUSTER_PTRS, // Checks that offsets in ClusterPtrList are valid
-    DIRENT_MIMETYPES, // Checks that mime-type values in dirents are valid
 
-    // This must be the last one and denotes the count of all checks
+    /**
+     * Checks that offsets in UrlPtrList are valid.
+     */
+    DIRENT_PTRS,
+
+    /**
+     * Checks that dirents are properly sorted.
+     */
+    DIRENT_ORDER,
+
+    /**
+     * Checks that entries in the title index are valid and properly sorted.
+     */
+    TITLE_INDEX,
+
+    /**
+     * Checks that offsets in ClusterPtrList are valid.
+     */
+    CLUSTER_PTRS,
+
+    /**
+     * Checks that mime-type values in dirents are valid.
+     */
+    DIRENT_MIMETYPES,
+
+    ////////////////////////////////////////////////////////////////////////////
+    // End of integrity check types.
+    // COUNT must be the last one and denotes the count of all checks
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * `COUNT` is not a valid integrity check type. It exists to tell the
+     * number of all supported integrity checks.
+     */
     COUNT
   };
 }
