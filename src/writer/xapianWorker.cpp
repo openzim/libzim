@@ -70,7 +70,7 @@ namespace zim
 
       std::string fullPath = "C/" + m_path;
       document.set_data(fullPath);
-      document.add_value(0, m_title);
+      document.add_value(0, mp_indexData->getTitle());
 
       std::stringstream countWordStringStream;
       countWordStringStream << mp_indexData->getWordCount();
