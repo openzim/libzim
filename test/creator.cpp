@@ -178,6 +178,7 @@ TEST(ZimCreator, createZim)
   creator.setUuid(uuid);
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
+  creator.addRedirection("foo", "WrongRedirection", "foobar", {{zim::writer::FRONT_ARTICLE, true}}); // Will be replaced by item
   auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
   creator.addItem(item);
   // Be sure that title order is not the same that url order
@@ -188,7 +189,7 @@ TEST(ZimCreator, createZim)
   creator.addIllustration(96, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
-  creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
+  creator.addRedirection("foo4", "FooRedirection", "NoExistant", {{zim::writer::FRONT_ARTICLE, true}}); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
   // Do not use the high level Archive to test that zim file is correctly created but lower structure.

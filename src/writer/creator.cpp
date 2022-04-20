@@ -495,6 +495,7 @@ namespace zim
         if (existing->isRedirect() && !dirent->isRedirect()) {
           unresolvedRedirectDirents.erase(existing);
           dirents.erase(ret.first);
+          existing->markRemoved();
           dirents.insert(dirent);
         } else {
           std::cerr << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
