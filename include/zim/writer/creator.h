@@ -44,6 +44,11 @@ namespace zim
      *
      * During the creation of the zim file (and before the call to `finishZimCreation`),
      * some values must be set using the `set*` methods.
+     *
+     * All `add*` methods can throw a std::runtime_error exception if the entry
+     * cannot be added (mainly because a entry with the same path has already been added).
+     * It is up to the user to catch this exception and handle the error.
+     * The creator is still in a valid state and the creation can continue.
      */
     class Creator
     {

@@ -498,19 +498,17 @@ namespace zim
           existing->markRemoved();
           dirents.insert(dirent);
         } else {
-          std::cerr << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
-          std::cerr << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
-          std::cerr << "  existing dirent's title is : " << existing->getTitle() << std::endl;
-          return;
+          std::ostringstream ss;
+          ss << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
+          ss << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
+          ss << "  existing dirent's title is : " << existing->getTitle() << std::endl;
+          throw std::runtime_error(ss.str());
         }
       };
 
-      // If this is a redirect, we're done: there's no blob to add.
-      if (dirent->isRedirect())
-      {
+      if (dirent->isRedirect()) {
         unresolvedRedirectDirents.insert(dirent);
         nbRedirectItems++;
-        return;
       }
     }
 

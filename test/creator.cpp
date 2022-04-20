@@ -180,7 +180,8 @@ TEST(ZimCreator, createZim)
   creator.startZimCreation(tempPath);
   creator.addRedirection("foo", "WrongRedirection", "foobar", {{zim::writer::FRONT_ARTICLE, true}}); // Will be replaced by item
   auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
-  creator.addItem(item);
+  EXPECT_NO_THROW(creator.addItem(item));
+  EXPECT_THROW(creator.addItem(item), std::runtime_error);
   // Be sure that title order is not the same that url order
   item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
