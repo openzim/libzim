@@ -150,6 +150,42 @@ TEST(Suggestion, searchByTitle)
     ASSERT_EQ(expectedResult , resultSet);
   }
 
+  TEST(Suggestion, caseDiacriticsAndHomogrpaphsHandling) {
+    std::vector<std::string> titles = {
+                                        "nonberlin",
+                                        "simply berlin",
+                                        "accented bérlin",
+                                        "uppercase BERLIN",
+                                        "homograph bеrlin", // е is cyrillic
+                                      };
+
+    TempZimArchive tza("testZim");
+    const zim::Archive archive = tza.createZimFromTitles(titles);
+
+    const std::vector<std::string> expectedResult{
+                                                   "accented bérlin",
+                                                   "simply berlin",
+                                                   "uppercase BERLIN",
+                                                 };
+
+    ASSERT_EQ(getSuggestions(archive, "berlin", archive.getEntryCount()),
+              expectedResult
+    );
+
+    ASSERT_EQ(getSuggestions(archive, "BERLIN", archive.getEntryCount()),
+              expectedResult
+    );
+
+    ASSERT_EQ(getSuggestions(archive, "bêřlïñ", archive.getEntryCount()),
+              expectedResult
+    );
+
+    // е in the query string "bеrlin" below is a cyrillic character
+    ASSERT_EQ(getSuggestions(archive, "bеrlin", archive.getEntryCount()),
+              std::vector<std::string>{"homograph bеrlin"}
+    );
+  }
+
   TEST(Suggestion, resultsGreaterThanLimit) {
     std::vector<std::string> titles = {
                                         "foobar b",
