@@ -255,9 +255,10 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
 
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
-    auto query = mp_internalDb->parseQuery(m_query);
+    const auto unaccentedQuery = removeAccents(m_query);
+    auto query = mp_internalDb->parseQuery(unaccentedQuery);
     if (mp_internalDb->m_verbose) {
-        std::cout << "Parsed query '" << m_query << "' to " << query.get_description() << std::endl;
+        std::cout << "Parsed query '" << unaccentedQuery << "' to " << query.get_description() << std::endl;
     }
     enquire->set_query(query);
 
