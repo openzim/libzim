@@ -1,3 +1,27 @@
+libzim 7.2.1
+============
+
+ * Make suggestions diacritics insensitive (@veloman-yunkan #691)
+ * [Writer] Raise an exception when user add a invalid entry (duplicate path)
+   instead of printing a message (which can be too easily missed) and be buggy
+   (@mautierfr #690)
+ * [Writer] Do not `hasIndexData` and `getTitle` in the main thread when we add
+   an entry (@mgautier #684)
+ * [Writer] Properly clean and stop the writer even if user hasn't call
+   `finishZimCreation` (The created zim file is still invalid) (@veloman-yunkan #666)
+ * Add a default argument value for mimetype of `creator::addMetadata`
+   (@kelvinhammond #678)
+ * Use a more informative message in exception when we cannot open a file
+   (@veloman-yunkan #667 #668)
+ * Use a generic dirent lookup to search by title (@veloman-yunkan #651)
+ * Various improvements:
+   - CI, Packaging : Stop creating packages for Ubuntu Hirsute (@legoktm #664)
+   - Update Readme (@TheDuchy #660)
+   - Fix cross-compilation host machine detection (@kelson42 #665)
+   - Fix macos/ios compilation (@mgautierfr #672)
+   - Update documentation @mgautierfr #677, @veloman-yunkan #682
+
+
 libzim 7.2.0
 ============
 
