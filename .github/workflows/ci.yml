@@ -94,22 +94,22 @@ jobs:
           - false
         include:
           - target: native_static
-            image_variant: xenial
+            image_variant: bionic
             lib_postfix: '/x86_64-linux-gnu'
           - target: native_dyn
-            image_variant: xenial
+            image_variant: bionic
             lib_postfix: '/x86_64-linux-gnu'
           - target: android_arm
-            image_variant: xenial
+            image_variant: bionic
             lib_postfix: '/x86_64-linux-gnu'
           - target: android_arm64
-            image_variant: xenial
+            image_variant: bionic
             lib_postfix: '/x86_64-linux-gnu'
           - target: win32_static
-            image_variant: f31
+            image_variant: f35
             lib_postfix: '64'
           - target: win32_dyn
-            image_variant: f31
+            image_variant: f35
             lib_postfix: '64'
     env:
       HOME: /home/runner
