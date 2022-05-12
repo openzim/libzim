@@ -173,7 +173,10 @@ std::string SearchIterator::getSnippet() const {
         try {
           htmlParser.parse_html(content, "UTF-8", true);
         } catch (...) {}
-        return internal->mp_mset->snippet(htmlParser.dump, 500, internal->mp_internalDb->m_stemmer);
+        return internal->mp_mset->snippet(htmlParser.dump,
+                                          /*length=*/500,
+                                          /*stemmer=*/internal->mp_internalDb->m_stemmer,
+                                          /*flags=*/Xapian::MSet::SNIPPET_BACKGROUND_MODEL);
     } catch (...) {
       return "";
     }
