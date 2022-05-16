@@ -176,7 +176,7 @@ std::string SearchIterator::getSnippet() const {
         return internal->mp_mset->snippet(htmlParser.dump,
                                           /*length=*/500,
                                           /*stemmer=*/internal->mp_internalDb->m_stemmer,
-                                          /*flags=*/Xapian::MSet::SNIPPET_BACKGROUND_MODEL);
+                                          /*flags=*/0);
     } catch (...) {
       return "";
     }
