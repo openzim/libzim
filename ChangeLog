@@ -1,3 +1,13 @@
+libzim 7.2.2
+============
+
+ * Change the way we generate search result snippet.
+   We now ask xapian to generate "less" relevant snippet (even if in practice,
+   snippets are still good). But it know generate snippet far more quicker.
+   On cold search, no cache and low IO, search can go from 90s to 3s.
+   (@mgautier #697)
+ * [CI] Update base images (@mgautier #695)
+
 libzim 7.2.1
 ============
 
