@@ -57,14 +57,14 @@ breathe_projects = {
 breathe_default_project = 'libzim'
 
 exhale_args = {
-    "containmentFolder":   "./api",
-    "rootFileName":        "ref_api.rst",
-    "rootFileTitle":       "Reference API",
-    "doxygenStripFromPath":"..",
+    "containmentFolder": "./api",
+    "rootFileName": "ref_api.rst",
+    "rootFileTitle": "Reference API",
+    "doxygenStripFromPath": "..",
     "treeViewIsBootstrap": True,
     "createTreeView" : True,
     "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin":    "INPUT = ../include"
+    "exhaleDoxygenStdin": "INPUT = ../include"
 }
 
 primary_domain = 'cpp'
