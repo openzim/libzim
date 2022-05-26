@@ -108,7 +108,6 @@ time_t FileCompound::getMTime() const {
   mtime = st.st_mtime;
 
   return mtime;
-
 }
 
 } // zim

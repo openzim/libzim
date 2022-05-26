@@ -49,7 +49,6 @@ struct REAL_TYPEDEF{
 
   inline REAL_TYPEDEF<B> operator++(int)
   { return REAL_TYPEDEF<B>(v++); }
-
 } PACKED;
 
 template<typename T> inline T& operator+= (T& lhs, const T& rhs)

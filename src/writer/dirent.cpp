@@ -110,7 +110,6 @@ void Dirent::write(int out_fd) const
 
   _write(out_fd, pathTitle.data(), pathTitle.size());
   _write(out_fd, &zero, 1);
-
 }
 
 }

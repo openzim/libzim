@@ -165,7 +165,6 @@ namespace zim
       if (data->dirents.size()%1000 == 0) {
         TPROGRESS();
       }
-
     }
 
     void Creator::addMetadata(const std::string& name, const std::string& content, const std::string& mimetype)
@@ -543,7 +542,6 @@ namespace zim
       } else {
         nbUnCompItems++;
       }
-
     }
 
     Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
