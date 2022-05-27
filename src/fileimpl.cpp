@@ -193,7 +193,6 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   FileImpl::DirentLookup& FileImpl::direntLookup() const
   {
     std::call_once(m_direntLookupOnceFlag, [this]{
-
       const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
       m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
     });

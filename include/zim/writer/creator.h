@@ -53,7 +53,6 @@ namespace zim
     class Creator
     {
       public:
-
         /**
          * Creator constructor.
          *
