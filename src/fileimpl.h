@@ -83,7 +83,7 @@ namespace zim
 
       using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
-      mutable std::once_flag m_direntLookupOnceFlag;
+      mutable std::mutex m_direntLookupCreationMutex;
 
 
       struct ByTitleDirentLookupConfig

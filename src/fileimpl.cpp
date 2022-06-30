@@ -192,10 +192,19 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   FileImpl::DirentLookup& FileImpl::direntLookup() const
   {
-    std::call_once(m_direntLookupOnceFlag, [this]{
-      const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-      m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
-    });
+    // Not using std::call_once because it is buggy.
+    // 1. It doesn't play well with musl libc - an exception thrown by the
+    //    callable results in SIGABRT even if there is a handler for it higher
+    //    in the call stack.
+    // 2. With `glibc` an exceptional execution of `std::call_once` doesn't
+    //    unlock the mutex associated with the `std::once_flag` object.
+    if ( !m_direntLookup ) {
+      std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
+      if ( !m_direntLookup ) {
+        const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
+        m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
+      }
+    }
     return *m_direntLookup;
   }
 
