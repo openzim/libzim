@@ -348,24 +348,24 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   void FileImpl::prepareArticleListByCluster() const
   {
-          articleListByCluster.reserve(getUserEntryCount().v);
+    articleListByCluster.reserve(getUserEntryCount().v);
 
-          auto endIdx = getEndUserEntry().v;
-          for(auto i = getStartUserEntry().v; i < endIdx; i++)
-          {
-              // This is the offset of the dirent in the zimFile
-              auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
-              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
-              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
-              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-                articleListByCluster.push_back(std::make_pair(0, i));
-              } else {
-                // If it is a classic article, get the clusterNumber (at offset 8)
-                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
-              }
-          }
-          std::sort(articleListByCluster.begin(), articleListByCluster.end());
+    auto endIdx = getEndUserEntry().v;
+    for(auto i = getStartUserEntry().v; i < endIdx; i++)
+    {
+      // This is the offset of the dirent in the zimFile
+      auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
+      // Get the mimeType of the dirent (offset 0) to know the type of the dirent
+      uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
+      if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
+        articleListByCluster.push_back(std::make_pair(0, i));
+      } else {
+        // If it is a classic article, get the clusterNumber (at offset 8)
+        auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
+        articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+      }
+    }
+    std::sort(articleListByCluster.begin(), articleListByCluster.end());
   }
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
