@@ -69,7 +69,7 @@ namespace zim
       MimeTypes mimeTypes;
 
       using pair_type = std::pair<cluster_index_type, entry_index_type>;
-      mutable std::vector<pair_type> articleListByCluster;
+      mutable std::vector<pair_type> m_articleListByCluster;
       mutable std::mutex m_articleListByClusterMutex;
 
       struct DirentLookupConfig

@@ -348,7 +348,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   void FileImpl::prepareArticleListByCluster() const
   {
-    articleListByCluster.reserve(getUserEntryCount().v);
+    m_articleListByCluster.reserve(getUserEntryCount().v);
 
     auto endIdx = getEndUserEntry().v;
     for(auto i = getStartUserEntry().v; i < endIdx; i++)
@@ -358,29 +358,29 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
       // Get the mimeType of the dirent (offset 0) to know the type of the dirent
       uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
       if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-        articleListByCluster.push_back(std::make_pair(0, i));
+        m_articleListByCluster.push_back(std::make_pair(0, i));
       } else {
         // If it is a classic article, get the clusterNumber (at offset 8)
         auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-        articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+        m_articleListByCluster.push_back(std::make_pair(clusterNumber, i));
       }
     }
-    std::sort(articleListByCluster.begin(), articleListByCluster.end());
+    std::sort(m_articleListByCluster.begin(), m_articleListByCluster.end());
   }
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
   {
       // Not using std::call_once because it is buggy. See the comment
       // in FileImpl::direntLookup().
-      if ( articleListByCluster.empty() ) {
+      if ( m_articleListByCluster.empty() ) {
         std::lock_guard<std::mutex> lock(m_articleListByClusterMutex);
-        if ( articleListByCluster.empty() ) {
+        if ( m_articleListByCluster.empty() ) {
           prepareArticleListByCluster();
         }
       }
-      if (idx.v >= articleListByCluster.size())
+      if (idx.v >= m_articleListByCluster.size())
         throw std::out_of_range("entry index out of range");
-      return entry_index_t(articleListByCluster[idx.v].second);
+      return entry_index_t(m_articleListByCluster[idx.v].second);
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
