@@ -29,7 +29,7 @@
 # define ASSERT(left, operator, right) (void(0))
 #else
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && defined(__GNU_LIBRARY__)
 #include <execinfo.h>
 #endif
 
