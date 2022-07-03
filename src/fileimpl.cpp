@@ -346,10 +346,8 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return entry_index_t(mp_titleDirentAccessor->getDirentCount().v);
   }
 
-  entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
+  void FileImpl::prepareArticleListByCluster() const
   {
-      std::call_once(orderOnceFlag, [this]
-      {
           articleListByCluster.reserve(getUserEntryCount().v);
 
           auto endIdx = getEndUserEntry().v;
@@ -368,8 +366,11 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
               }
           }
           std::sort(articleListByCluster.begin(), articleListByCluster.end());
-      });
+  }
 
+  entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
+  {
+      std::call_once(orderOnceFlag, [this]{ prepareArticleListByCluster(); });
       if (idx.v >= articleListByCluster.size())
         throw std::out_of_range("entry index out of range");
       return entry_index_t(articleListByCluster[idx.v].second);
