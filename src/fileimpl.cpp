@@ -370,17 +370,17 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
   {
-      // Not using std::call_once because it is buggy. See the comment
-      // in FileImpl::direntLookup().
+    // Not using std::call_once because it is buggy. See the comment
+    // in FileImpl::direntLookup().
+    if ( m_articleListByCluster.empty() ) {
+      std::lock_guard<std::mutex> lock(m_articleListByClusterMutex);
       if ( m_articleListByCluster.empty() ) {
-        std::lock_guard<std::mutex> lock(m_articleListByClusterMutex);
-        if ( m_articleListByCluster.empty() ) {
-          prepareArticleListByCluster();
-        }
+        prepareArticleListByCluster();
       }
-      if (idx.v >= m_articleListByCluster.size())
-        throw std::out_of_range("entry index out of range");
-      return entry_index_t(m_articleListByCluster[idx.v].second);
+    }
+    if (idx.v >= m_articleListByCluster.size())
+      throw std::out_of_range("entry index out of range");
+    return entry_index_t(m_articleListByCluster[idx.v].second);
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
