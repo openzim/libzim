@@ -115,7 +115,7 @@ jobs:
       HOME: /home/runner
     runs-on: ubuntu-latest
     container:
-      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-31"
+      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-32"
     steps:
     - name: Checkout code
       shell: python
