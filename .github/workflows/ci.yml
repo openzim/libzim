@@ -139,7 +139,7 @@ jobs:
         ]
         check_call(clone_command, cwd=environ['HOME'])
     - name: Install deps
-      if: ! startsWith(matrix.target, 'alpine_')
+      if: false == startsWith(matrix.target, 'alpine_')
       shell: bash
       run: |
         ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
