@@ -101,10 +101,10 @@ jobs:
             lib_postfix: '/x86_64-linux-gnu'
           - target: android_arm
             image_variant: bionic
-            lib_postfix: '/x86_64-linux-gnu'
+            lib_postfix: '/arm-linux-androideabi'
           - target: android_arm64
             image_variant: bionic
-            lib_postfix: '/x86_64-linux-gnu'
+            lib_postfix: '/aarch64-linux-android'
           - target: win32_static
             image_variant: f35
             lib_postfix: '64'
