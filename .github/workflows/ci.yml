@@ -101,10 +101,10 @@ jobs:
             lib_postfix: '/x86_64-linux-gnu'
           - target: android_arm
             image_variant: bionic
-            lib_postfix: '/x86_64-linux-gnu'
+            lib_postfix: '/arm-linux-androideabi'
           - target: android_arm64
             image_variant: bionic
-            lib_postfix: '/x86_64-linux-gnu'
+            lib_postfix: '/aarch64-linux-android'
           - target: win32_static
             image_variant: f35
             lib_postfix: '64'
@@ -115,7 +115,7 @@ jobs:
       HOME: /home/runner
     runs-on: ubuntu-latest
     container:
-      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-31"
+      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-32"
     steps:
     - name: Checkout code
       shell: python
@@ -153,7 +153,7 @@ jobs:
           MESON_OPTION="$MESON_OPTION --cross-file $HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
         fi
         if [[ "${{matrix.target}}" =~ android_.* ]]; then
-          MESON_OPTION="$MESON_OPTION -Dandroid=true"
+          MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
         fi
         cd $HOME/libzim
         meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
