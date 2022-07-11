@@ -85,6 +85,7 @@ jobs:
         target:
           - native_static
           - native_dyn
+          - alpine_dyn
           - android_arm
           - android_arm64
           - win32_static
@@ -105,6 +106,9 @@ jobs:
           - target: android_arm64
             image_variant: bionic
             lib_postfix: '/aarch64-linux-android'
+          - target: alpine_dyn
+            image_variant: alpine
+            lib_postfix: '/x86_64-linux-musl'
           - target: win32_static
             image_variant: f35
             lib_postfix: '64'
@@ -135,6 +139,7 @@ jobs:
         ]
         check_call(clone_command, cwd=environ['HOME'])
     - name: Install deps
+      if: false == startsWith(matrix.target, 'alpine_')
       shell: bash
       run: |
         ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
@@ -149,7 +154,7 @@ jobs:
         fi
         if [[ "${{matrix.target}}" =~ native_.* ]]; then
           MESON_OPTION="$MESON_OPTION -Db_coverage=true"
-        else
+        elif [[ "${{matrix.target}}" != alpine_* ]]; then
           MESON_OPTION="$MESON_OPTION --cross-file $HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
         fi
         if [[ "${{matrix.target}}" =~ android_.* ]]; then
@@ -162,7 +167,7 @@ jobs:
       env:
         PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
     - name: Test
-      if: startsWith(matrix.target, 'native_')
+      if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
       shell: bash
       run: |
         cd $HOME/libzim/build
