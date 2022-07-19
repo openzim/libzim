@@ -69,8 +69,8 @@ namespace zim
       MimeTypes mimeTypes;
 
       using pair_type = std::pair<cluster_index_type, entry_index_type>;
-      mutable std::vector<pair_type> articleListByCluster;
-      mutable std::once_flag orderOnceFlag;
+      mutable std::vector<pair_type> m_articleListByCluster;
+      mutable std::mutex m_articleListByClusterMutex;
 
       struct DirentLookupConfig
       {
@@ -83,7 +83,7 @@ namespace zim
 
       using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
-      mutable std::once_flag m_direntLookupOnceFlag;
+      mutable std::mutex m_direntLookupCreationMutex;
 
 
       struct ByTitleDirentLookupConfig
@@ -161,6 +161,7 @@ namespace zim
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const std::string& path);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);
 
+      void prepareArticleListByCluster() const;
       DirentLookup& direntLookup() const;
       ClusterHandle readCluster(cluster_index_t idx);
       offset_type getMimeListEndUpperLimit() const;

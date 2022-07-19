@@ -192,10 +192,19 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   FileImpl::DirentLookup& FileImpl::direntLookup() const
   {
-    std::call_once(m_direntLookupOnceFlag, [this]{
-      const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-      m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
-    });
+    // Not using std::call_once because it is buggy.
+    // 1. It doesn't play well with musl libc - an exception thrown by the
+    //    callable results in SIGABRT even if there is a handler for it higher
+    //    in the call stack.
+    // 2. With `glibc` an exceptional execution of `std::call_once` doesn't
+    //    unlock the mutex associated with the `std::once_flag` object.
+    if ( !m_direntLookup ) {
+      std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
+      if ( !m_direntLookup ) {
+        const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
+        m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
+      }
+    }
     return *m_direntLookup;
   }
 
@@ -337,33 +346,41 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return entry_index_t(mp_titleDirentAccessor->getDirentCount().v);
   }
 
+  void FileImpl::prepareArticleListByCluster() const
+  {
+    m_articleListByCluster.reserve(getUserEntryCount().v);
+
+    auto endIdx = getEndUserEntry().v;
+    for(auto i = getStartUserEntry().v; i < endIdx; i++)
+    {
+      // This is the offset of the dirent in the zimFile
+      auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
+      // Get the mimeType of the dirent (offset 0) to know the type of the dirent
+      uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
+      if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
+        m_articleListByCluster.push_back(std::make_pair(0, i));
+      } else {
+        // If it is a classic article, get the clusterNumber (at offset 8)
+        auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
+        m_articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+      }
+    }
+    std::sort(m_articleListByCluster.begin(), m_articleListByCluster.end());
+  }
+
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
   {
-      std::call_once(orderOnceFlag, [this]
-      {
-          articleListByCluster.reserve(getUserEntryCount().v);
-
-          auto endIdx = getEndUserEntry().v;
-          for(auto i = getStartUserEntry().v; i < endIdx; i++)
-          {
-              // This is the offset of the dirent in the zimFile
-              auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
-              // Get the mimeType of the dirent (offset 0) to know the type of the dirent
-              uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
-              if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-                articleListByCluster.push_back(std::make_pair(0, i));
-              } else {
-                // If it is a classic article, get the clusterNumber (at offset 8)
-                auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-                articleListByCluster.push_back(std::make_pair(clusterNumber, i));
-              }
-          }
-          std::sort(articleListByCluster.begin(), articleListByCluster.end());
-      });
-
-      if (idx.v >= articleListByCluster.size())
-        throw std::out_of_range("entry index out of range");
-      return entry_index_t(articleListByCluster[idx.v].second);
+    // Not using std::call_once because it is buggy. See the comment
+    // in FileImpl::direntLookup().
+    if ( m_articleListByCluster.empty() ) {
+      std::lock_guard<std::mutex> lock(m_articleListByClusterMutex);
+      if ( m_articleListByCluster.empty() ) {
+        prepareArticleListByCluster();
+      }
+    }
+    if (idx.v >= m_articleListByCluster.size())
+      throw std::out_of_range("entry index out of range");
+    return entry_index_t(m_articleListByCluster[idx.v].second);
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)

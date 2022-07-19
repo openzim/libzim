@@ -173,7 +173,9 @@ jobs:
         cd $HOME/libzim/build
         ninja download_test_data
         meson test --verbose
-        ninja coverage
+        if [[ "${{matrix.target}}" =~ native_.* ]]; then
+          ninja coverage
+        fi
       env:
         LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
         SKIP_BIG_MEMORY_TEST: 1
