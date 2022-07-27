@@ -1,22 +1,17 @@
-Tommi Mäkitalo
-Emmanuel Engelhart
-Kiran Mathew Koshy
-C. Scott Ananian
-Matthieu Gautier
-Kunal Mehta
-Vasudev Kamath
-Nirbheek Chauhan
-joel
-Adrian Kunding
-Vitaly Zaitsev
-Magnus Woodgate
-Renaud Gaudin
-mornfall
-Mohamed Sameh
-Dmitry Atamanov
-MiguelRocha
-Veloman Yunkan
-Gianfranco Costamagna
-Steve Wills
-hashworks
-Maneesh P M
+# This is the list of Libzim's significant contributors.
+#
+# This does not necessarily list everyone who has contributed code,
+# especially since many employees of one corporation may be contributing.
+# To see the full list of contributors, see the revision history in
+# source control.
+
+C. Scott Ananian <cscott@cscott.net> https://github.com/cscott
+Dmitry Atamanov <data-man@users.noreply.github.com> https://github.com/data-man
+Emmanuel Engelhart <kelson@kiwix.org> https://github.com/kelson42
+Kunal Mehta <legoktm@debian.org> https://github.com/legoktm
+Maneeshpm <manu.pm55@gmail.com> https://github.com/maneeshpm
+Matthieu Gautier <mgautier@kymeria.fr> https://github.com/mgautierfr
+MiguelRocha <miguelrocha@ua.pt> https://github.com/miguelrocha
+Renaud Gaudin <reg@kiwix.org> https://github.com/rgaudin
+Tommi Mäkitalo <tommi@tntnet.org> https://github.com/maekitalo
+Veloman Yunkan <veloman.yunkan@gmail.com> https://github.com/veloman-yunkan
