@@ -137,7 +137,7 @@ TEST(ZimCreator, createEmptyZim)
   auto clusterPtrPos = header.getClusterPtrPos();
   auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos+8)));
   auto cluster = Cluster::read(*reader, clusterOffset);
-  ASSERT_EQ(cluster->getCompression(), Compression::None);
+  ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
   ASSERT_EQ(cluster->count(), blob_index_t(1)); // Only titleListIndexesv0
   auto blob = cluster->getBlob(v0BlobIndex);
   ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
@@ -277,7 +277,7 @@ TEST(ZimCreator, createZim)
   // Test main content
   auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos)));
   auto cluster = Cluster::read(*reader, clusterOffset);
-  ASSERT_EQ(cluster->getCompression(), Compression::Zstd);
+  ASSERT_EQ(cluster->getCompression(), Cluster::Compression::Zstd);
   ASSERT_EQ(cluster->count(), blob_index_t(4)); // 4 entries are compressed content
 
   auto blob = cluster->getBlob(fooBlobIndex);
@@ -296,7 +296,7 @@ TEST(ZimCreator, createZim)
   // Test listing content
   clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos + 8)));
   cluster = Cluster::read(*reader, clusterOffset);
-  ASSERT_EQ(cluster->getCompression(), Compression::None);
+  ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
   ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-6)); // 6 entries are either compressed or redirections
 
   ASSERT_EQ(header.getTitleIdxPos(), (clusterOffset+cluster->getBlobOffset(v0BlobIndex)).v);

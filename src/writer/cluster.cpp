@@ -128,12 +128,6 @@ void Cluster::compress()
 {
   auto comp = getCompression();
   switch(comp) {
-    case Compression::Lzma:
-      {
-        _compress<LZMA_INFO>();
-        break;
-      }
-
     case Compression::Zstd:
       {
         _compress<ZSTD_INFO>();
@@ -198,7 +192,6 @@ void Cluster::write(int out_fd) const
       break;
     }
 
-    case Compression::Lzma:
     case Compression::Zstd:
       {
         log_debug("compress data");

@@ -56,7 +56,10 @@ namespace zim
   enum class Compression
   {
     None = 1,
-    Lzma = 4,
+
+    // intermediate values correspond to compression
+    // methods that are no longer supported
+
     Zstd = 5
   };
 

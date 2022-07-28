@@ -100,7 +100,7 @@ TEST(ClusterTest, read_write_cluster)
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::None);
+  ASSERT_EQ(cluster2.getCompression(), zim::Cluster::Compression::None);
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 3U);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
@@ -116,7 +116,7 @@ TEST(ClusterTest, read_write_no_content)
   auto buffer = write_to_buffer(cluster, "\3garbage");
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::None);
+  ASSERT_EQ(cluster2.getCompression(), zim::Cluster::Compression::None);
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 0U);
 }
@@ -135,39 +135,12 @@ TEST(ClusterTest, read_write_empty)
   auto buffer = write_to_buffer(cluster);
   const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
   zim::Cluster& cluster2 = *cluster2shptr;
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::None);
+  ASSERT_EQ(cluster2.getCompression(), zim::Cluster::Compression::None);
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 3U);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, 0U);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, 0U);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, 0U);
-}
-
-TEST(ClusterTest, read_write_clusterLzma)
-{
-  zim::writer::Cluster cluster(zim::Compression::Lzma);
-
-  std::string blob0("123456789012345678901234567890");
-  std::string blob1("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  std::string blob2("abcdefghijklmnopqrstuvwxyz");
-
-  cluster.addContent(blob0);
-  cluster.addContent(blob1);
-  cluster.addContent(blob2);
-
-  cluster.close();
-  auto buffer = write_to_buffer(cluster);
-  const auto cluster2shptr = zim::Cluster::read(zim::BufferReader(buffer), zim::offset_t(0));
-  zim::Cluster& cluster2 = *cluster2shptr;
-  ASSERT_EQ(cluster2.isExtended, false);
-  ASSERT_EQ(cluster2.count().v, 3U);
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::Lzma);
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
-  ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
-  ASSERT_EQ(blob0, std::string(cluster2.getBlob(zim::blob_index_t(0))));
-  ASSERT_EQ(blob1, std::string(cluster2.getBlob(zim::blob_index_t(1))));
-  ASSERT_EQ(blob2, std::string(cluster2.getBlob(zim::blob_index_t(2))));
 }
 
 TEST(ClusterTest, read_write_clusterZstd)
@@ -188,7 +161,7 @@ TEST(ClusterTest, read_write_clusterZstd)
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, false);
   ASSERT_EQ(cluster2.count().v, 3U);
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::Zstd);
+  ASSERT_EQ(cluster2.getCompression(), zim::Cluster::Compression::Zstd);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
@@ -261,7 +234,7 @@ TEST(ClusterTest, read_write_extended_cluster)
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, true);
   ASSERT_EQ(cluster2.count().v, 5U);
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::None);
+  ASSERT_EQ(cluster2.getCompression(), zim::Cluster::Compression::None);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());
@@ -343,7 +316,7 @@ TEST(ClusterTest, read_extended_cluster)
   zim::Cluster& cluster2 = *cluster2shptr;
   ASSERT_EQ(cluster2.isExtended, true);
   ASSERT_EQ(cluster2.count().v, 4U);
-  ASSERT_EQ(cluster2.getCompression(), zim::Compression::None);
+  ASSERT_EQ(cluster2.getCompression(), zim::Cluster::Compression::None);
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(0)).v, blob0.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(1)).v, blob1.size());
   ASSERT_EQ(cluster2.getBlobSize(zim::blob_index_t(2)).v, blob2.size());

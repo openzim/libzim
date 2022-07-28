@@ -36,7 +36,6 @@ class CompressionTest : public testing::Test {
 };
 
 using CompressionAlgo = ::testing::Types<
-  LZMA_INFO,
   ZSTD_INFO
 >;
 

@@ -36,19 +36,6 @@ void LZMA_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
   }
 }
 
-void LZMA_INFO::init_stream_encoder(stream_t* stream, char* raw_data)
-{
-  *stream = LZMA_STREAM_INIT;
-  auto errcode = lzma_easy_encoder(stream, 9 | LZMA_PRESET_EXTREME, LZMA_CHECK_CRC32);
-  if (errcode != LZMA_OK) {
-    throw std::runtime_error("Cannot initialize lzma_easy_encoder");
-  }
-}
-
-CompStatus LZMA_INFO::stream_run_encode(stream_t* stream, CompStep step) {
-  return stream_run(stream, step);
-}
-
 CompStatus LZMA_INFO::stream_run_decode(stream_t* stream, CompStep step) {
   return stream_run(stream, step);
 }
@@ -72,11 +59,6 @@ CompStatus LZMA_INFO::stream_run(stream_t* stream, CompStep step)
 }
 
 void LZMA_INFO::stream_end_decode(stream_t* stream)
-{
-  lzma_end(stream);
-}
-
-void LZMA_INFO::stream_end_encode(stream_t* stream)
 {
   lzma_end(stream);
 }
