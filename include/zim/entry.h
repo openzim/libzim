@@ -69,9 +69,17 @@ namespace zim
       /** Get the Entry targeted by the entry.
        *
        * @return The entry directly targeted by this redirect entry.
-       * @exception InvalidEntry in the entry is not a redirection.
+       * @exception InvalidEntry if the entry is not a redirection.
        */
       Entry getRedirectEntry() const;
+
+      /** Get the index of the Entry targeted by the entry.
+       *
+       * @return The index of the entry directly targeted by this redirect
+       *         entry.
+       * @exception InvalidEntry if the entry is not a redirection.
+       */
+      entry_index_type getRedirectEntryIndex() const;
 
       entry_index_type getIndex() const   { return m_idx; }
 

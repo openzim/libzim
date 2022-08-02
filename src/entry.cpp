@@ -80,11 +80,15 @@ Item Entry::getRedirect() const {
   return nextEntry.getItem(false);
 }
 
-Entry Entry::getRedirectEntry() const  {
+entry_index_type Entry::getRedirectEntryIndex() const  {
   if (!isRedirect()) {
     std::ostringstream sstream;
     sstream << "Entry " << getPath() << " is not a redirect entry.";
     throw InvalidType(sstream.str());
   }
-  return Entry(m_file, static_cast<entry_index_type>(m_dirent->getRedirectIndex()));
+  return m_dirent->getRedirectIndex().v;
+}
+
+Entry Entry::getRedirectEntry() const  {
+  return Entry(m_file, getRedirectEntryIndex());
 }

@@ -204,6 +204,8 @@ TEST(ZimArchive, openCreatedArchive)
   ASSERT_EQ(foo.getPath(), "foo");
   ASSERT_EQ(foo.getTitle(), "Foo");
   ASSERT_EQ(std::string(foo.getItem().getData()), "FooContent");
+  ASSERT_THROW(foo.getRedirectEntry(), zim::InvalidType);
+  ASSERT_THROW(foo.getRedirectEntryIndex(), zim::InvalidType);
 
   auto foo2 = archive.getEntryByPath("foo2");
   ASSERT_EQ(foo2.getPath(), "foo2");
@@ -215,10 +217,12 @@ TEST(ZimArchive, openCreatedArchive)
   ASSERT_EQ(foo3.getTitle(), "FooRedirection");
   ASSERT_TRUE(foo3.isRedirect());
   ASSERT_EQ(foo3.getRedirectEntry().getIndex(), foo.getIndex());
+  ASSERT_EQ(foo3.getRedirectEntryIndex(), foo.getIndex());
 
   auto main = archive.getMainEntry();
   ASSERT_TRUE(main.isRedirect());
   ASSERT_EQ(main.getRedirectEntry().getIndex(), foo.getIndex());
+  ASSERT_EQ(main.getRedirectEntryIndex(), foo.getIndex());
   ASSERT_EQ(archive.getMainEntryIndex(), main.getIndex());
 }
 
