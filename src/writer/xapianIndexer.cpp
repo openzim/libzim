@@ -157,7 +157,7 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
 void XapianIndexer::indexingPostlude()
 {
   this->writableDatabase.commit();
-  this->writableDatabase.compact(indexPath, Xapian::DBCOMPACT_SINGLE_FILE);
+  this->writableDatabase.compact(indexPath, Xapian::DBCOMPACT_SINGLE_FILE|Xapian::Compactor::FULLER);
   this->writableDatabase.close();
 }
 
