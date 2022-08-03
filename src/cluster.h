@@ -46,6 +46,20 @@ namespace zim
       typedef std::vector<std::unique_ptr<const Reader>> BlobReaders;
 
     public:
+      // zim::Compression lists only compression methods supported by the
+      // writer. But on the reader side we need to deal with some historical
+      // compression types. Here we maintain the full list of compression
+      // types.
+      enum class Compression
+      {
+        None = 1,
+        Zip,      // Support is discontinued
+        Bzip2,    // Support is discontinued
+        Lzma,     // Supported only by the reader
+        Zstd
+      };
+
+    public:
       const Compression compression;
       const bool isExtended;
 

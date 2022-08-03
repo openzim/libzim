@@ -57,7 +57,6 @@ class DecoderStreamReaderTest : public testing::Test {
 };
 
 using CompressionTypes = ::testing::Types<
-  LZMA_INFO,
   ZSTD_INFO
 >;
 

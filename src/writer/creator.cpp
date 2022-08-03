@@ -112,11 +112,6 @@ namespace zim
 
     Creator& Creator::configCompression(Compression compression)
     {
-      if(compression == Compression::Lzma) {
-        std::cerr << "WARNING: LZMA compression method is deprecated."
-                  << " Support for it will be dropped from libzim soon."
-                  << std::endl;
-      }
       m_compression = compression;
       return *this;
     }
