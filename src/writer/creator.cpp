@@ -93,7 +93,7 @@ log_define("zim.writer.creator")
     }
 
 
-#define CLUSTER_BASE_OFFSET 1024
+#define CLUSTER_BASE_OFFSET 2048
 
 namespace zim
 {
