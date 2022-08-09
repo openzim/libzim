@@ -106,7 +106,6 @@ void XapianIndexer::indexingPrelude()
   }
   writableDatabase.set_metadata("language", language);
   writableDatabase.set_metadata("stopwords", stopwords);
-  writableDatabase.begin_transaction(true);
 }
 
 /*
@@ -155,18 +154,10 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   empty = false;
 }
 
-void XapianIndexer::flush()
-{
-  this->writableDatabase.commit_transaction();
-  this->writableDatabase.begin_transaction(true);
-}
-
 void XapianIndexer::indexingPostlude()
 {
-  this->flush();
-  this->writableDatabase.commit_transaction();
   this->writableDatabase.commit();
-  this->writableDatabase.compact(indexPath, Xapian::DBCOMPACT_SINGLE_FILE);
+  this->writableDatabase.compact(indexPath, Xapian::DBCOMPACT_SINGLE_FILE|Xapian::Compactor::FULLER);
   this->writableDatabase.close();
 }
 

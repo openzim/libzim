@@ -46,7 +46,6 @@ class XapianIndexer
   virtual ~XapianIndexer();
   std::string getIndexPath() { return indexPath; }
   void indexingPrelude();
-  void flush();
   void indexingPostlude();
   bool is_empty() { return empty; }
 
