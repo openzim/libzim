@@ -164,6 +164,7 @@ std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
 
 #include <unicode/translit.h>
 #include <unicode/ucnv.h>
+#include <unicode/putil.h>
 std::string zim::removeAccents(const std::string& text)
 {
   ucnv_setDefaultName("UTF-8");
@@ -204,5 +205,10 @@ bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Da
   }
 
   return true;
+}
+
+void setICUDataDirectory(const std::string& path)
+{
+  u_setDataDirectory(path.c_str());
 }
 #endif

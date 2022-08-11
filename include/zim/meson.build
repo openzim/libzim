@@ -11,6 +11,7 @@ install_headers(
     'zim.h',
     'suggestion.h',
     'suggestion_iterator.h',
+    'tools.h',
     'version.h',
     zim_config,
     subdir:'zim'
