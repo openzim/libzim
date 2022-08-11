@@ -1,7 +1,7 @@
 project('libzim', ['c', 'cpp'],
   version : '7.2.2',
   license : 'GPL2',
-  default_options : ['c_std=c11', 'cpp_std=c++11'])
+  default_options : ['c_std=c11', 'cpp_std=c++11', 'b_ndebug=if-release'])
 
 if build_machine.system() != 'windows'
   add_project_arguments('-D_LARGEFILE64_SOURCE=1', '-D_FILE_OFFSET_BITS=64', language: 'cpp')

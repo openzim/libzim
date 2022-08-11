@@ -25,7 +25,7 @@
 #include <stdexcept>
 #include <stdlib.h>
 
-#if defined (NDEBUG)
+#if 1
 # define ASSERT(left, operator, right) (void(0))
 #else
 

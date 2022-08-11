@@ -93,7 +93,9 @@ TEST(FileReader, shouldJustWork)
     ASSERT_THROW(reader->read(offset_t(26)), std::runtime_error);
     ASSERT_THROW(reader->read(out, offset_t(25), zsize_t(4)), std::runtime_error);
     ASSERT_THROW(reader->read(out, offset_t(30), zsize_t(4)), std::runtime_error);
-    ASSERT_THROW(reader->read(out, offset_t(30), zsize_t(0)), std::runtime_error);
+    // Reading 0 bytes is a no op. The (debug) ASSERT is catching the wrong offset first,
+    // but in release, without assert, this is really a noop and no error must be checked.
+    //ASSERT_THROW(reader->read(out, offset_t(30), zsize_t(0)), std::runtime_error);
   }
 }
 

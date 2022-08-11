@@ -396,6 +396,7 @@ namespace zim
         clusterSize(clusterSize),
         withIndex(withIndex),
         indexingLanguage(language),
+        mimeTypeLeftSpace(CLUSTER_BASE_OFFSET-80),
         verbose(verbose),
         nbRedirectItems(0),
         nbCompItems(0),
@@ -660,8 +661,13 @@ namespace zim
       auto it = mimeTypesMap.find(mimeType);
       if (it == mimeTypesMap.end())
       {
-        if (nextMimeIdx >= std::numeric_limits<uint16_t>::max())
+        if (nextMimeIdx >= std::numeric_limits<uint16_t>::max()) {
           throw std::runtime_error("too many distinct mime types");
+        }
+        if (mimeType.size() >= mimeTypeLeftSpace) {
+          throw std::runtime_error("Too many mime types for the space we have allocated");
+        }
+        mimeTypeLeftSpace -= mimeType.size() - 1;
         mimeTypesMap[mimeType] = nextMimeIdx;
         rmimeTypesMap[nextMimeIdx] = mimeType;
         return nextMimeIdx++;

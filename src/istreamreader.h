@@ -60,6 +60,9 @@ public: // functions
   // Reads a blob of the specified size from the stream
   virtual std::unique_ptr<const Reader> sub_reader(zsize_t size);
 
+  // Skip a amount of bytes in the stream
+  virtual void skip(zsize_t size);
+
 private: // virtual methods
   // Reads exactly 'nbytes' bytes into the provided buffer 'buf'
   // (which must be at least that big). Throws an exception if
