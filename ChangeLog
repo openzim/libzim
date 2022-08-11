@@ -1,3 +1,21 @@
+libzim 8.0.0
+============
+
+ * [API-BREAK] Remove lzma compression support in writer (@veloman-yunkan #718)
+ * Add new method `zim::Entry::getRedirectEntryIndex()` (@veloman-yunkan #716)
+ * Add new helper function `zim::setICUDataDirectory()` to help android wrapper
+   compilation (@mgautierfr #722)
+ * Fix `std::call_once` usage (alpine bug) (@veloman-yunkan #ê708)
+ * Better xapian indexation (no transaction, better compact algorithm) (@mgautierfr #719)
+ * Reserve more space (1968B instead of 944B) for mimetype list (@mgautierfr #720)
+ * [CI] Fix android compilation in the CI (@veloman-yunkan @mgautierfr #713)
+ * [CI] Add CI for Alpine (@veloman-yunkan #710)
+ * [CI] Support checkout of tag in the CI (@teeks99 #696)
+ * [CI] Remove movebot (@kelson42 704)
+ * [CI] Remove Impish and add Kinetic packages (@legoktm #715)
+ * Fix code factor report (@kelson42 #700)
+ * Fix readme (@kelson42 #701 #716)
+
 libzim 7.2.2
 ============
 
