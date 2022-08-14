@@ -80,6 +80,53 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
   }
 }
 
+// Consider a set of integer-numbered objects with their object-ids spanning a
+// contiguous range [a, b).
+// Each object is also labelled with an integer group id. The group-ids too
+// form a contiguous (or dense enough) set.
+// The Grouping class allows to re-arrange the stream of such objects fed
+// to it in the object-id order, returning a table of object-ids in the group-id
+// order (where the order of the objects within the same group is preserved).
+//
+template<class ObjectId, class GroupId>
+class Grouping
+{
+public: // types
+  typedef std::vector<ObjectId> GroupedObjectIds;
+
+public: // functions
+  explicit Grouping(ObjectId objectIdBegin, ObjectId objectIdEnd)
+    : firstObjectId_(objectIdBegin)
+  {
+    groupAndObjectIds_.reserve(objectIdEnd - objectIdBegin);
+  }
+
+  void add(ObjectId objectId, GroupId groupId)
+  {
+    assert(objectId == firstObjectId_ + groupAndObjectIds_.size());
+    groupAndObjectIds_.push_back({groupId, objectId});
+  }
+
+  GroupedObjectIds getGroupedObjectIds()
+  {
+    std::sort(groupAndObjectIds_.begin(), groupAndObjectIds_.end());
+    GroupedObjectIds result;
+    result.reserve(groupAndObjectIds_.size());
+    for ( const auto groupAndObjectId : groupAndObjectIds_ ) {
+      result.push_back(groupAndObjectId.second);
+    }
+    GroupAndObjectIds().swap(groupAndObjectIds_);
+    return result;
+  }
+
+private: // types
+  typedef std::vector<std::pair<GroupId, ObjectId>> GroupAndObjectIds;
+
+private: // data
+  const ObjectId firstObjectId_;
+  GroupAndObjectIds groupAndObjectIds_;
+};
+
 } //unnamed namespace
 
   //////////////////////////////////////////////////////////////////////
@@ -348,24 +395,24 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   void FileImpl::prepareArticleListByCluster() const
   {
-    m_articleListByCluster.reserve(getUserEntryCount().v);
-
-    auto endIdx = getEndUserEntry().v;
-    for(auto i = getStartUserEntry().v; i < endIdx; i++)
+    const auto endIdx = getEndUserEntry().v;
+    const auto startIdx = getStartUserEntry().v;
+    Grouping<entry_index_type, cluster_index_type> g(startIdx, endIdx);
+    for(auto i = startIdx; i < endIdx; i++)
     {
       // This is the offset of the dirent in the zimFile
       auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
       // Get the mimeType of the dirent (offset 0) to know the type of the dirent
       uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
       if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-        m_articleListByCluster.push_back(std::make_pair(0, i));
+        g.add(i, 0);
       } else {
         // If it is a classic article, get the clusterNumber (at offset 8)
         auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-        m_articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+        g.add(i, clusterNumber);
       }
     }
-    std::sort(m_articleListByCluster.begin(), m_articleListByCluster.end());
+    m_articleListByCluster = g.getGroupedObjectIds();
   }
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
@@ -380,7 +427,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     }
     if (idx.v >= m_articleListByCluster.size())
       throw std::out_of_range("entry index out of range");
-    return entry_index_t(m_articleListByCluster[idx.v].second);
+    return entry_index_t(m_articleListByCluster[idx.v]);
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
