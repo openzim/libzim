@@ -104,9 +104,10 @@ public: // functions
     groupIds_.reserve(objectIdEnd - objectIdBegin);
   }
 
-  void add(ObjectId objectId, GroupId groupId)
+  // i'th call of add() is assumed to refer to the object
+  // with id (firstObjectId_+i)
+  void add(GroupId groupId)
   {
-    assert(objectId == firstObjectId_ + groupIds_.size());
     groupIds_.push_back(groupId);
     minGroupId_ = std::min(minGroupId_, groupId);
     maxGroupId_ = std::max(maxGroupId_, groupId);
@@ -435,11 +436,11 @@ private: // data
       // Get the mimeType of the dirent (offset 0) to know the type of the dirent
       uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
       if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-        g.add(i, 0);
+        g.add(0);
       } else {
         // If it is a classic article, get the clusterNumber (at offset 8)
         auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-        g.add(i, clusterNumber);
+        g.add(clusterNumber);
       }
     }
     m_articleListByCluster = g.getGroupedObjectIds();
