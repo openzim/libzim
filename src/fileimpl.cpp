@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <cstring>
 #include <fstream>
+#include <numeric>
 #include "config.h"
 #include "log.h"
 #include "envvalue.h"
@@ -97,34 +98,63 @@ public: // types
 public: // functions
   explicit Grouping(ObjectId objectIdBegin, ObjectId objectIdEnd)
     : firstObjectId_(objectIdBegin)
+    , minGroupId_(std::numeric_limits<GroupId>::max())
+    , maxGroupId_(std::numeric_limits<GroupId>::min())
   {
-    groupAndObjectIds_.reserve(objectIdEnd - objectIdBegin);
+    groupIds_.reserve(objectIdEnd - objectIdBegin);
   }
 
   void add(ObjectId objectId, GroupId groupId)
   {
-    assert(objectId == firstObjectId_ + groupAndObjectIds_.size());
-    groupAndObjectIds_.push_back({groupId, objectId});
+    assert(objectId == firstObjectId_ + groupIds_.size());
+    groupIds_.push_back(groupId);
+    minGroupId_ = std::min(minGroupId_, groupId);
+    maxGroupId_ = std::max(maxGroupId_, groupId);
   }
 
   GroupedObjectIds getGroupedObjectIds()
   {
-    std::sort(groupAndObjectIds_.begin(), groupAndObjectIds_.end());
     GroupedObjectIds result;
-    result.reserve(groupAndObjectIds_.size());
-    for ( const auto groupAndObjectId : groupAndObjectIds_ ) {
-      result.push_back(groupAndObjectId.second);
+    if ( !groupIds_.empty() ) {
+      // nextObjectSeat[g - minGroupId_] tells where the next object
+      // with group-id g must be placed (seated) in the result
+      std::vector<size_t> nextObjectSeat = getGroupBoundaries();
+
+      result.resize(groupIds_.size());
+      for ( size_t i = 0; i < groupIds_.size(); ++i ) {
+        const GroupId g = groupIds_[i];
+        // This statement has an important side-effect  vv
+        const auto pos = nextObjectSeat[g - minGroupId_]++;
+        result[pos] = firstObjectId_ + i;
+      }
+      GroupIds().swap(groupIds_);
     }
-    GroupAndObjectIds().swap(groupAndObjectIds_);
     return result;
   }
 
+private: // functions
+  std::vector<size_t> getGroupBoundaries() const
+  {
+    std::vector<size_t> groupIdCounts(maxGroupId_ - minGroupId_ + 1, 0);
+    for ( const auto groupId : groupIds_ ) {
+      ++groupIdCounts[groupId - minGroupId_];
+    }
+
+    std::vector<size_t> groupBoundaries(1, 0);
+    std::partial_sum(groupIdCounts.begin(), groupIdCounts.end(),
+                     std::back_inserter(groupBoundaries)
+    );
+    return groupBoundaries;
+  }
+
 private: // types
-  typedef std::vector<std::pair<GroupId, ObjectId>> GroupAndObjectIds;
+  typedef std::vector<GroupId> GroupIds;
 
 private: // data
   const ObjectId firstObjectId_;
-  GroupAndObjectIds groupAndObjectIds_;
+  GroupIds groupIds_;
+  GroupId minGroupId_;
+  GroupId maxGroupId_;
 };
 
 } //unnamed namespace
