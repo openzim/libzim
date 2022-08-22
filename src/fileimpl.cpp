@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <cstring>
 #include <fstream>
+#include <numeric>
 #include "config.h"
 #include "log.h"
 #include "envvalue.h"
@@ -79,6 +80,83 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle(), offset, size);
   }
 }
+
+// Consider a set of integer-numbered objects with their object-ids spanning a
+// contiguous range [a, b).
+// Each object is also labelled with an integer group id. The group-ids too
+// form a contiguous (or dense enough) set.
+// The Grouping class allows to re-arrange the stream of such objects fed
+// to it in the object-id order, returning a table of object-ids in the group-id
+// order (where the order of the objects within the same group is preserved).
+//
+template<class ObjectId, class GroupId>
+class Grouping
+{
+public: // types
+  typedef std::vector<ObjectId> GroupedObjectIds;
+
+public: // functions
+  explicit Grouping(ObjectId objectIdBegin, ObjectId objectIdEnd)
+    : firstObjectId_(objectIdBegin)
+    , minGroupId_(std::numeric_limits<GroupId>::max())
+    , maxGroupId_(std::numeric_limits<GroupId>::min())
+  {
+    groupIds_.reserve(objectIdEnd - objectIdBegin);
+  }
+
+  // i'th call of add() is assumed to refer to the object
+  // with id (firstObjectId_+i)
+  void add(GroupId groupId)
+  {
+    groupIds_.push_back(groupId);
+    minGroupId_ = std::min(minGroupId_, groupId);
+    maxGroupId_ = std::max(maxGroupId_, groupId);
+  }
+
+  GroupedObjectIds getGroupedObjectIds()
+  {
+    GroupedObjectIds result;
+    if ( !groupIds_.empty() ) {
+      // nextObjectSeat[g - minGroupId_] tells where the next object
+      // with group-id g must be placed (seated) in the result
+      std::vector<size_t> nextObjectSeat = getGroupBoundaries();
+
+      result.resize(groupIds_.size());
+      for ( size_t i = 0; i < groupIds_.size(); ++i ) {
+        const GroupId g = groupIds_[i];
+        // This statement has an important side-effect  vv
+        const auto pos = nextObjectSeat[g - minGroupId_]++;
+        result[pos] = firstObjectId_ + i;
+      }
+      GroupIds().swap(groupIds_);
+    }
+    return result;
+  }
+
+private: // functions
+  std::vector<size_t> getGroupBoundaries() const
+  {
+    std::vector<size_t> groupIdCounts(maxGroupId_ - minGroupId_ + 1, 0);
+    for ( const auto groupId : groupIds_ ) {
+      ++groupIdCounts[groupId - minGroupId_];
+    }
+
+    std::vector<size_t> groupBoundaries(1, 0);
+    std::partial_sum(groupIdCounts.begin(), groupIdCounts.end(),
+                     std::back_inserter(groupBoundaries)
+    );
+    return groupBoundaries;
+  }
+
+private: // types
+  typedef std::vector<GroupId> GroupIds;
+
+private: // data
+  const ObjectId firstObjectId_;
+  GroupIds groupIds_;
+  GroupId minGroupId_;
+  GroupId maxGroupId_;
+};
 
 } //unnamed namespace
 
@@ -348,24 +426,24 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
 
   void FileImpl::prepareArticleListByCluster() const
   {
-    m_articleListByCluster.reserve(getUserEntryCount().v);
-
-    auto endIdx = getEndUserEntry().v;
-    for(auto i = getStartUserEntry().v; i < endIdx; i++)
+    const auto endIdx = getEndUserEntry().v;
+    const auto startIdx = getStartUserEntry().v;
+    Grouping<entry_index_type, cluster_index_type> g(startIdx, endIdx);
+    for(auto i = startIdx; i < endIdx; i++)
     {
       // This is the offset of the dirent in the zimFile
       auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
       // Get the mimeType of the dirent (offset 0) to know the type of the dirent
       uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
       if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
-        m_articleListByCluster.push_back(std::make_pair(0, i));
+        g.add(0);
       } else {
         // If it is a classic article, get the clusterNumber (at offset 8)
         auto clusterNumber = zimReader->read_uint<zim::cluster_index_type>(indexOffset+offset_t(8));
-        m_articleListByCluster.push_back(std::make_pair(clusterNumber, i));
+        g.add(clusterNumber);
       }
     }
-    std::sort(m_articleListByCluster.begin(), m_articleListByCluster.end());
+    m_articleListByCluster = g.getGroupedObjectIds();
   }
 
   entry_index_t FileImpl::getIndexByClusterOrder(entry_index_t idx) const
@@ -380,7 +458,7 @@ makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsi
     }
     if (idx.v >= m_articleListByCluster.size())
       throw std::out_of_range("entry index out of range");
-    return entry_index_t(m_articleListByCluster[idx.v].second);
+    return entry_index_t(m_articleListByCluster[idx.v]);
   }
 
   FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
