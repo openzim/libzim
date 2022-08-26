@@ -36,14 +36,14 @@ namespace zim
 
     void* taskRunner(void* arg) {
       auto creatorData = static_cast<zim::writer::CreatorData*>(arg);
-      Task* task;
       unsigned int wait = 0;
 
       while(!creatorData->isErrored()) {
+        std::shared_ptr<Task> task;
         microsleep(wait);
         wait += 100;
         if (creatorData->taskList.popFromQueue(task)) {
-          if (task == nullptr) {
+          if (!task) {
             return nullptr;
           }
           try {
@@ -51,7 +51,6 @@ namespace zim
           } catch (...) {
             creatorData->addError(std::current_exception());
           }
-          delete task;
           wait = 0;
         }
       }

@@ -617,7 +617,7 @@ namespace zim
       }
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
-      taskList.pushToQueue(new ClusterTask(cluster));
+      taskList.pushToQueue(std::make_shared<ClusterTask>(cluster));
       clusterToWrite.pushToQueue(cluster);
 
       if (compressed)

@@ -121,7 +121,7 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
       return;
     }
     auto path = dirent->getPath();
-    mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, mp_fulltextIndexer.get()));
+    mp_creatorData->taskList.pushToQueue(std::make_shared<IndexTask>(indexData, path, mp_fulltextIndexer.get()));
   }
 }
 

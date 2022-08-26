@@ -59,7 +59,7 @@ namespace zim
         typedef std::vector<std::string> MimeTypesList;
         typedef std::vector<Cluster*> ClusterList;
         typedef Queue<Cluster*> ClusterQueue;
-        typedef Queue<Task*> TaskQueue;
+        typedef Queue<std::shared_ptr<Task>> TaskQueue;
         typedef std::vector<std::thread> ThreadList;
 
         CreatorData(const std::string& fname, bool verbose,
