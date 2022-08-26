@@ -486,7 +486,9 @@ namespace zim
     void CreatorData::addError(const std::exception_ptr exception)
     {
       std::lock_guard<std::mutex> l(m_exceptionLock);
-      m_exceptionSlot = exception;
+      if (!m_exceptionSlot) {
+        m_exceptionSlot = exception;
+      }
     }
 
     bool CreatorData::isErrored() const
