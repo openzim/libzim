@@ -39,15 +39,81 @@ namespace zim
     using Hints = std::map<HintKeys, uint64_t>;
 
     class ContentProvider;
+
+    /**
+     * IndexData represent data of an Item to be indexed in the archive.
+     *
+     * This is a abstract class the user need to implement.
+     * (But default `Item::getIndexData` returns a default implementation
+     * for IndexData which works for html content.)
+     */
     class IndexData {
       public:
         using GeoPosition = std::tuple<bool, double, double>;
         virtual ~IndexData() = default;
+
+        /**
+         * If the IndexData actually has data to index.
+         *
+         * It can be used to create `IndexData` for all your content
+         * but discard some indexation based on some criteria.
+         *
+         * @return true if the item associated to this IndexData must be indexed.
+         */
         virtual bool hasIndexData() const = 0;
+
+        /**
+         * The title to use when indexing the item.
+         *
+         * May be different than `Item::getTitle()`, even if most of the time
+         * it will be the same.
+         *
+         * @return the title to use.
+         */
         virtual std::string getTitle() const = 0;
+
+        /**
+         * The content to use when indexing the item.
+         *
+         * This is probably the most important method of `IndexData`.
+         * Most item's contents are not applicable for a direct indexation.
+         * We don't want to index html tags or menu/footer of an article.
+         * This method allow you to return a currated plain text to indexe.
+         *
+         * @return the content to use.
+         */
         virtual std::string getContent() const = 0;
+
+        /**
+         * The keywords to use when indexing the item.
+         *
+         * Return a set of keywords, separated by space for the content.
+         * Keywords are indexed using a higher score than text in `getContent`
+         *
+         * @return a string containing keywords separated by space.
+         */
         virtual std::string getKeywords() const = 0;
+
+        /**
+         * The number of words in the content.
+         *
+         * This value is not directly used to index the content but it
+         * is stored in the xapian database, which may be used later to query
+         * articles.
+         *
+         * @return the number of words in the item.
+         */
         virtual uint32_t getWordCount() const = 0;
+
+        /**
+         * The Geographical position of the subject covered by the item.
+         * (When applicable)
+         *
+         * @return a 3 tuple (true, latitude, longitude) if the item is
+         *         about a geo positioned thing.
+         *         a 3 tuple (false, _, _) if having a GeoPosition is not
+         *         relevant.
+         */
         virtual GeoPosition getGeoPosition() const = 0;
     };
 
