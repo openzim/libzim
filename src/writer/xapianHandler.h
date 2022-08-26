@@ -44,6 +44,7 @@ class XapianHandler : public DirentHandler {
 
   private: // methods
     void indexTitle(Dirent* dirent);
+    void waitNoMoreTask() const;
 
   private: // data
     std::unique_ptr<XapianIndexer> mp_fulltextIndexer;

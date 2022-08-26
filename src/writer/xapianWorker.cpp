@@ -41,14 +41,6 @@ namespace zim
       return contentLength / 500 + 1;
     }
 
-    void IndexTask::waitNoMoreTask() {
-      unsigned int wait = 0;
-      do {
-        microsleep(wait);
-        wait += 10;
-      } while (waiting_task.load() > 0);
-    }
-
     void IndexTask::run(CreatorData* data) {
       if (!mp_indexData->hasIndexData()) {
         return;
