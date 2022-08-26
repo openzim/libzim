@@ -21,6 +21,8 @@
 #define ZIM_ERROR_H
 
 #include <stdexcept>
+#include <sstream>
+#include <typeinfo>
 
 namespace zim
 {
@@ -85,6 +87,61 @@ namespace zim
       explicit IncoherentImplementationError(const std::string& message)
        : CreatorError(message)
       {}
+  };
+
+  /* Exception thrown in the main thread when another exception has been
+   * thrown in another worker thread.
+   *
+   * Creator uses different worker threads to do background work.
+   * If an exception is thrown in one of this threads, it is catched and
+   * "rethrown" in the main thread as soon as possible with a `AsyncError`.
+   *
+   * AsyncError contains the original exception. You can rethrow the original
+   * exception using `rethrow`:
+   *
+   * ```
+   * try {
+   *   creator->addStuff(...);
+   * } catch (const zim::AsyncError& e) {
+   *   // An exception has been thrown in a worker thread
+   *   try {
+   *     e.rethrow();
+   *   } catch (const std::exception& original_exception) {
+   *     // original_exception is the exception thrown in the worker thread
+   *     ...
+   *   }
+   * }
+   * ```
+   */
+  class AsyncError : public CreatorError
+  {
+    public:
+      explicit AsyncError(const std::exception_ptr exception)
+       : CreatorError(buildErrorMessage(exception)),
+         m_exception(exception)
+      {}
+
+      [[noreturn]] void rethrow() const {
+        std::rethrow_exception(m_exception);
+      }
+
+    private: // data
+      std::exception_ptr m_exception;
+
+    private: // function
+      static std::string buildErrorMessage(const std::exception_ptr exception) {
+        try {
+          std::rethrow_exception(exception);
+        } catch (const std::exception& e) {
+          std::stringstream ss;
+          ss << "Asynchronous error: ";
+          ss << typeid(e).name() << std::endl;
+          ss << e.what();
+          return ss.str();
+        } catch (...) {
+          return "Unknown asynchronous exception";
+        }
+      }
   };
 }
 

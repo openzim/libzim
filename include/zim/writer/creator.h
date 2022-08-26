@@ -51,8 +51,11 @@ namespace zim
      * The current (documented) conditions when a exception is thrown are:
      * - When a entry cannot be added (mainly because a entry with the same path has already been added)
      *    A `zim::InvalidEntry` will be thrown. The creator will still be in a valid state and the creation can continue.
-     * - A incoherence has been detected in user implementation (of Item, ContentProvider, IndexData, ...)
-     *    A `zim::IncoherentImplementationError` will be thrown.
+     * - An exception has been thrown in a worker thread.
+     *    This exception will be catch and rethrown through a `zim::AsyncError`.
+     *    The creator will be set in a invalid state and creation cannot continue.
+     * - Any exception thrown by user implementation itself.
+     *    Note that this exception may be thrown in a worker thread and so being "catch" by a AsyncError.
      * - Any other exception thrown for unknown reason.
      * By default, creator status is not changed by thrown exception and creation should stop.
      */

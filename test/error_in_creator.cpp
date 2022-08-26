@@ -23,6 +23,7 @@
 #include <zim/writer/contentProvider.h>
 
 #include "tools.h"
+#include <zim/error.h>
 #include "gtest/gtest.h"
 
 namespace
@@ -211,7 +212,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   // (memory initialisation of the compression stream ?)
   usleep(1000000);
   // We detect it for any call after
-  EXPECT_THROW(creator.addMetadata("Title", "This is a title"), std::runtime_error);
+  EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
   EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), std::runtime_error);
   EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), std::runtime_error);
   EXPECT_THROW(creator.finishZimCreation(), std::runtime_error);
@@ -236,7 +237,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   // (the one using the contentProvider) detect the error sooner
   usleep(10000);
   // But we detect it for any call after
-  EXPECT_THROW(creator.addMetadata("Title", "This is a title"), std::runtime_error);
+  EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
   EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), std::runtime_error);
   EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), std::runtime_error);
   EXPECT_THROW(creator.finishZimCreation(), std::runtime_error);

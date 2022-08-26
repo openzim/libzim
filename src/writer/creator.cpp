@@ -30,6 +30,7 @@
 #include "workers.h"
 #include "clusterWorker.h"
 #include <zim/blob.h>
+#include <zim/error.h>
 #include <zim/writer/contentProvider.h>
 #include "../endian_tools.h"
 #include <algorithm>
@@ -401,7 +402,7 @@ namespace zim
       if (data->m_exceptionSlot) {
         std::cerr << "ERROR Detected" << std::endl;
         data->m_errored = true;
-        std::rethrow_exception(data->m_exceptionSlot);
+        throw AsyncError(data->m_exceptionSlot);
       }
     }
 
