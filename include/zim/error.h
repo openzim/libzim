@@ -143,6 +143,19 @@ namespace zim
         }
       }
   };
+
+  /* Exception thrown when the creator is in error state.
+   *
+   * If the creator is in error state (mostly because a AsyncError has already
+   * being thrown), any call to any method on it will thrown a `CreatorStateError`.
+   */
+  class CreatorStateError : public CreatorError
+  {
+    public:
+      explicit CreatorStateError()
+       : CreatorError("Creator is in error state.")
+      {}
+  };
 }
 
 #endif // ZIM_ERROR_H

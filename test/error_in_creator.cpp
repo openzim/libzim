@@ -213,9 +213,9 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   usleep(1000000);
   // We detect it for any call after
   EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
-  EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), std::runtime_error);
-  EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), std::runtime_error);
-  EXPECT_THROW(creator.finishZimCreation(), std::runtime_error);
+  EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), CreatorStateError);
+  EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), CreatorStateError);
+  EXPECT_THROW(creator.finishZimCreation(), CreatorStateError);
 }
 
 TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
@@ -238,9 +238,9 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   usleep(10000);
   // But we detect it for any call after
   EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
-  EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), std::runtime_error);
-  EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), std::runtime_error);
-  EXPECT_THROW(creator.finishZimCreation(), std::runtime_error);
+  EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), CreatorStateError);
+  EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), CreatorStateError);
+  EXPECT_THROW(creator.finishZimCreation(), CreatorStateError);
 }
 
 INSTANTIATE_TEST_CASE_P(

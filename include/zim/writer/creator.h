@@ -54,6 +54,8 @@ namespace zim
      * - An exception has been thrown in a worker thread.
      *    This exception will be catch and rethrown through a `zim::AsyncError`.
      *    The creator will be set in a invalid state and creation cannot continue.
+     * - The creator is in error state.
+     *    A `zim::CreatorStateError` will be thrown.
      * - Any exception thrown by user implementation itself.
      *    Note that this exception may be thrown in a worker thread and so being "catch" by a AsyncError.
      * - Any other exception thrown for unknown reason.

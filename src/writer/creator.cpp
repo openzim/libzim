@@ -396,7 +396,7 @@ namespace zim
     void Creator::checkError()
     {
       if (data->m_errored) {
-        throw std::runtime_error("Creator is in error state");
+        throw CreatorStateError();
       }
       std::lock_guard<std::mutex> l(data->m_exceptionLock);
       if (data->m_exceptionSlot) {
