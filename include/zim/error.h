@@ -47,6 +47,27 @@ namespace zim
        : std::runtime_error(msg)
       {}
   };
+
+  /* Exception thrown by the Creator in case of error.
+   *
+   * Most exceptions actually thrown are inheriting this exception.
+   */
+  class CreatorError : public std::runtime_error
+  {
+    public:
+      explicit CreatorError(const std::string& message)
+       : std::runtime_error(message)
+      {}
+  };
+
+   /* Exception thrown when a entry cannot be added to the Creator.*/
+  class InvalidEntry : public CreatorError
+  {
+    public:
+      explicit InvalidEntry(const std::string& message)
+       : CreatorError(message)
+      {}
+  };
 }
 
 #endif // ZIM_ERROR_H

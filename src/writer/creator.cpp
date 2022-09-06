@@ -491,7 +491,7 @@ namespace zim
           ss << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
           ss << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           ss << "  existing dirent's title is : " << existing->getTitle() << std::endl;
-          throw std::runtime_error(ss.str());
+          throw InvalidEntry(ss.str());
         }
       };
 
@@ -656,7 +656,7 @@ namespace zim
       if (it == mimeTypesMap.end())
       {
         if (nextMimeIdx >= std::numeric_limits<uint16_t>::max())
-          throw std::runtime_error("too many distinct mime types");
+          throw CreatorError("too many distinct mime types");
         mimeTypesMap[mimeType] = nextMimeIdx;
         rmimeTypesMap[nextMimeIdx] = mimeType;
         return nextMimeIdx++;
@@ -669,7 +669,7 @@ namespace zim
     {
       auto it = rmimeTypesMap.find(mimeTypeIdx);
       if (it == rmimeTypesMap.end())
-        throw std::runtime_error("mime type index not found");
+        throw CreatorError("mime type index not found");
       return it->second;
     }
   }
