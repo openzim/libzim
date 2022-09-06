@@ -68,6 +68,24 @@ namespace zim
        : CreatorError(message)
       {}
   };
+
+  /* Exception thrown if a incoherence in the user implementation has been detected.
+   *
+   * Users need to implement interfaces such as:
+   * - ContentProvider
+   * - IndexData
+   * - Item
+   *
+   * If a incoherence has been detected in those implementations a
+   * `IncoherentImplementationError` will be thrown.
+   */
+  class IncoherentImplementationError : public CreatorError
+  {
+    public:
+      explicit IncoherentImplementationError(const std::string& message)
+       : CreatorError(message)
+      {}
+  };
 }
 
 #endif // ZIM_ERROR_H
