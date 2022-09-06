@@ -370,8 +370,7 @@ namespace zim
       while (true) {
          auto r = read(out_fd, batch_read, 1024);
          if (r == -1) {
-           perror("Cannot read");
-           throw std::runtime_error("oups");
+           throw std::runtime_error(std::strerror(errno));
          }
          if (r == 0)
            break;
@@ -414,15 +413,11 @@ namespace zim
 #endif
       out_fd = open(tmpFileName.c_str(), flag, mode);
       if (out_fd == -1){
-        perror(nullptr);
-        std::ostringstream ss;
-        ss << "Cannot create file " << tmpFileName;
-        throw std::runtime_error(ss.str());
+        throw std::runtime_error(std::strerror(errno));
       }
       if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
         close(out_fd);
-        perror(nullptr);
-        throw std::runtime_error("Impossible to seek in file");
+        throw std::runtime_error(std::strerror(errno));
       }
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
