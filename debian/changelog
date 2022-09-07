@@ -1,3 +1,9 @@
+libzim (8.0.1) stable; urgency=medium
+
+  * Update to libzim version 8.0.1
+
+ -- Matthieu Gautier <mgautier@kymeria.fr> Web, 07 Sep 2022 14:38:00 -0200
+
 libzim (0.0.0) unstable; urgency=medium
 
   * Initial release.
