@@ -23,6 +23,7 @@
 #include <zim/writer/contentProvider.h>
 
 #include "tools.h"
+#include "../src/tools.h"
 #include <zim/error.h>
 #include "gtest/gtest.h"
 
@@ -187,6 +188,16 @@ FaultyItemErrorTest,
     ERRORKIND::GET_INDEXDATA
 ));
 
+double getWaitTimeFactor() {
+  char* str_time_factor = std::getenv("WAIT_TIME_FACTOR_TEST");
+  if (str_time_factor) {
+    // Yes, if user set a "non float" value, sleep_time will be 0. But not our problem here
+    // Same thing if user set a negative value.
+    return atof(str_time_factor);
+  }
+  return 1.0;
+}
+
 
 class FaultyDelayedItemErrorTest : public ::testing::TestWithParam<ERRORKIND> {};
 
@@ -207,10 +218,14 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   EXPECT_NO_THROW(creator.addItem(item));
   // We force the closing of the cluster, so working thread will detect error
   EXPECT_NO_THROW(creator.addMetadata("A metadata", "A compressed (default) metadata"));
-  // give a chance to threads to detect the error
-  // For compressed cluster, the cluster task is a bit longer to use the contentProvider
-  // (memory initialisation of the compression stream ?)
-  usleep(1000000);
+  // give a chance to threads to detect the error.
+  // How many time to wait is a bit tricky.
+  // Too long and all tests will wait to much and developpers hate to wait,
+  // Not enough and error is not deteced and tests fail (and developpers hate failing tets)
+  // The exact value is specific to each computer, so we need to make this configurable.
+  // We use a base and we multiply it by a factor taken from env variable.
+  const long sleep_time = 1000000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
+  zim::microsleep(sleep_time * getWaitTimeFactor());
   // We detect it for any call after
   EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
   EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), CreatorStateError);
@@ -233,9 +248,15 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   // We force the closing of the cluster, so working thread will detect error
   EXPECT_NO_THROW(creator.addMetadata("A metadata", "A uncompressed metadata", "plain/content"));
   // give a chance to threads to detect the error
-  // Less to wait for as we don't compress the content and the writer thread
-  // (the one using the contentProvider) detect the error sooner
-  usleep(10000);
+  // How many time to wait is a bit tricky.
+  // Too long and all tests will wait to much and developpers hate to wait
+  // Not enough and error is not deteced and tests fail (and developpers hate failing tets)
+  // The exacte value is specific to each computer, so we need to make this configurable.
+  // We use a base and we multiply it by a factor taken from env variable.
+  // Note here, that we have a base smaller than for compressed test as we don't compress the content
+  // and the writer thread (the one using the contentProvider) detect the error sooner
+  const long sleep_time = 10000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
+  zim::microsleep(sleep_time * getWaitTimeFactor());
   // But we detect it for any call after
   EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
   EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), CreatorStateError);
