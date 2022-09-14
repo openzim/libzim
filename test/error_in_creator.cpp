@@ -26,6 +26,7 @@
 #include "../src/tools.h"
 #include <zim/error.h>
 #include "gtest/gtest.h"
+#include "config.h"
 
 namespace
 {
@@ -175,6 +176,11 @@ TEST_P(FaultyItemErrorTest, faultyItem)
   EXPECT_NO_THROW(creator.finishZimCreation());
 }
 
+// It would be more natural to put the `#if defined` only around the
+// discarded values, but when crosscompiling on Windows, compiler fail to
+// understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
+// macro. I suspect some macro definition conflicts.
+#if defined(ENABLE_XAPIAN)
 INSTANTIATE_TEST_CASE_P(
 CreatorError,
 FaultyItemErrorTest,
@@ -187,6 +193,19 @@ FaultyItemErrorTest,
     ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE,
     ERRORKIND::GET_INDEXDATA
 ));
+#else
+INSTANTIATE_TEST_CASE_P(
+CreatorError,
+FaultyItemErrorTest,
+::testing::Values(
+    ERRORKIND::PATH,
+    ERRORKIND::TITLE,
+    ERRORKIND::MIMETYPE,
+    ERRORKIND::HINTS,
+    ERRORKIND::GET_CONTENTPROVIDER,
+    ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE
+));
+#endif //ENABLE_XAPIAN
 
 double getWaitTimeFactor() {
   char* str_time_factor = std::getenv("WAIT_TIME_FACTOR_TEST");
@@ -264,13 +283,18 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   EXPECT_THROW(creator.finishZimCreation(), CreatorStateError);
 }
 
+// It would be more natural to put the `#if defined` only around the
+// discarded values, but when crosscompiling on Windows, compiler fail to
+// understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
+// macro. I suspect some macro definition conflicts.
+#if defined(ENABLE_XAPIAN)
 INSTANTIATE_TEST_CASE_P(
 CreatorError,
 FaultyDelayedItemErrorTest,
 ::testing::Values(
     ERRORKIND::EXCEPTION_CONTENTPROVIDER_FEED,
     ERRORKIND::WRONG_OVER_SIZE_CONTENTPROVIDER,
-    ERRORKIND::WRONG_UNDER_SIZE_CONTENTPROVIDER,
+    ERRORKIND::WRONG_UNDER_SIZE_CONTENTPROVIDER ,
     ERRORKIND::HAS_INDEXDATA,
     ERRORKIND::GET_INDEXDATA_TITLE,
     ERRORKIND::GET_INDEXDATA_CONTENT,
@@ -278,6 +302,15 @@ FaultyDelayedItemErrorTest,
     ERRORKIND::GET_INDEXDATA_WORDCOUNT,
     ERRORKIND::GET_INDEXDATA_POSITION
 ));
-
+#else
+INSTANTIATE_TEST_CASE_P(
+CreatorError,
+FaultyDelayedItemErrorTest,
+::testing::Values(
+    ERRORKIND::EXCEPTION_CONTENTPROVIDER_FEED,
+    ERRORKIND::WRONG_OVER_SIZE_CONTENTPROVIDER,
+    ERRORKIND::WRONG_UNDER_SIZE_CONTENTPROVIDER
+));
+#endif // ENABLE_XAPIAN
 } // unnamed namespace
 
