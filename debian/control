@@ -16,7 +16,7 @@ Homepage: https://www.openzim.org/wiki/Libzim
 Standards-Version: 4.4.1
 Rules-Requires-Root: no
 
-Package: libzim7
+Package: libzim8
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
@@ -47,7 +47,7 @@ Package: libzim-dev
 Section: libdevel
 Architecture: any
 Depends: ${misc:Depends},
- libzim7 (= ${binary:Version}),
+ libzim8 (= ${binary:Version}),
  liblzma-dev,
  libxapian-dev,
  libicu-dev,
