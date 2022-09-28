@@ -37,11 +37,7 @@ XapianHandler::~XapianHandler() = default;
 
 
 void XapianHandler::waitNoMoreTask() const {
-  unsigned int wait = 0;
-  do {
-    microsleep(wait);
-    wait += 10;
-  } while (IndexTask::waiting_task.load() > 0 && !mp_creatorData->isErrored());
+  IndexTask::waitNoMoreTask(mp_creatorData);
 }
 
 void XapianHandler::start() {

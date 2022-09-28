@@ -21,8 +21,6 @@
 
 #include "cluster.h"
 
-std::atomic<unsigned long> zim::writer::ClusterTask::waiting_task(0);
-
 namespace zim
 {
   namespace writer

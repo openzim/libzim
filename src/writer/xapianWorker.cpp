@@ -28,7 +28,6 @@
 #include <mutex>
 
 static std::mutex s_dbaccessLock;
-std::atomic<unsigned long> zim::writer::IndexTask::waiting_task(0);
 
 namespace zim
 {

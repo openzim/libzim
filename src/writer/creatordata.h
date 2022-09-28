@@ -26,7 +26,6 @@
 #include <zim/writer/item.h>
 #include "queue.h"
 #include "_dirent.h"
-#include "workers.h"
 #include "handler.h"
 #include <set>
 #include <vector>
@@ -50,6 +49,7 @@ namespace zim
     };
 
     class Cluster;
+    class Task;
     class CreatorData
     {
       public:

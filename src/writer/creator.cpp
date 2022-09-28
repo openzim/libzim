@@ -273,13 +273,7 @@ namespace zim
 
       TINFO("Waiting for workers");
       // wait all cluster compression has been done
-      // If we are in error state, threads have been stoped and waiting_task
-      // will never reach 0, so no need to wait.
-      unsigned int wait = 0;
-      do {
-        microsleep(wait);
-        wait += 10;
-      } while(ClusterTask::waiting_task.load() > 0 && !data->isErrored());
+      ClusterTask::waitNoMoreTask(data.get());
 
       data->quitAllThreads();
       checkError();
