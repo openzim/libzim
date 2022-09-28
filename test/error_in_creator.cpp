@@ -52,7 +52,13 @@ enum class ERRORKIND {
   GET_INDEXDATA_POSITION                 // 15
 };
 
-#define THROW_ERROR(KIND) if (ERRORKIND::KIND == fault) { throw std::runtime_error(#KIND); } else {}
+class SimulatedFaultError : public std::runtime_error
+{
+  public:
+    SimulatedFaultError(const std::string& err) : std::runtime_error(err) {}
+};
+
+#define THROW_ERROR(KIND) if (ERRORKIND::KIND == fault) { throw SimulatedFaultError(#KIND); } else {}
 
 class FaultyContentProvider : public writer::StringProvider
 {
@@ -171,7 +177,7 @@ TEST_P(FaultyItemErrorTest, faultyItem)
   creator.startZimCreation(tempPath);
   auto item = std::make_shared<FaultyItem>("foo", "Foo", "FooContent", true, GetParam());
   // A error in the item is directly reported
-  EXPECT_THROW(creator.addItem(item), std::runtime_error);
+  EXPECT_THROW(creator.addItem(item), SimulatedFaultError);
   // As the error is directly reported, finishZimCreation report nothing.
   EXPECT_NO_THROW(creator.finishZimCreation());
 }
