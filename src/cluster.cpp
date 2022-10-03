@@ -120,7 +120,9 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     while (--n_offset)
     {
       OFFSET_TYPE new_offset = seqReader.read<OFFSET_TYPE>();
-      ASSERT(new_offset, >=, offset);
+      if (new_offset < offset) {
+        throw ZimFileFormatError("Offsets in cluster must be increasing.")
+      }
 
       m_blobOffsets.push_back(offset_t(new_offset));
       offset = new_offset;
@@ -142,6 +144,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
       auto blobSize = getBlobSize(blob_index_t(current));
       if (blobSize.v > SIZE_MAX) {
         m_blobReaders.push_back(std::unique_ptr<Reader>(new BufferReader(Buffer::makeBuffer(zsize_t(0)))));
+        m_reader->skip(blobSize.v);
       } else {
         m_blobReaders.push_back(m_reader->sub_reader(blobSize));
       }

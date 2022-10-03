@@ -63,6 +63,9 @@ MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> sou
 
 char MultiPartFileReader::read(offset_t offset) const {
   ASSERT(offset.v, <, _size.v);
+  if (offset.v >= _size.v) {
+    throw std::runtime_error("Error while reading out of reader");
+  }
   offset += _offset;
   auto part_pair = source->locate(offset);
   auto& fhandle = part_pair->second->fhandle();

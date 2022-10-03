@@ -49,7 +49,10 @@ zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
   while (size_to_read > 0) {
     auto size_read = PREAD(m_fd, dest, size_to_read, current_offset);
     if (size_read == -1) {
-      return zsize_t(-1);
+      throw std::runtime_error("Error while reading.");
+    }
+    if (size_read == 0) {
+      throw std::runtime_error("Error reading after the end of file.");
     }
     size_to_read -= size_read;
     current_offset += size_read;
