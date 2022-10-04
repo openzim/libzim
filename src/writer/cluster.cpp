@@ -243,7 +243,12 @@ void Cluster::write_data(writer_t writer) const
       size += blob.size();
       writer(blob);
     }
-    ASSERT(size, ==, provider->getSize());
+    if (size != provider->getSize()) {
+      std::stringstream ss;
+      ss << "Declared provider's size (" << provider->getSize() << ")";
+      ss << " is not equal to total size returned by feed() calls (" << size << ").";
+      throw IncoherentImplementationError(ss.str());
+    }
   }
 }
 

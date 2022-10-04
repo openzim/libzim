@@ -31,7 +31,7 @@ namespace writer {
 class Item;
 class XapianIndexer;
 
-class IndexTask : public Task {
+class IndexTask : public TrackableTask<IndexTask> {
   public:
     IndexTask(const IndexTask&) = delete;
     IndexTask& operator=(const IndexTask&) = delete;
@@ -39,18 +39,10 @@ class IndexTask : public Task {
       mp_indexData(indexData),
       m_path(path),
       mp_indexer(indexer)
-    {
-      ++waiting_task;
-    }
-    virtual ~IndexTask()
-    {
-      --waiting_task;
-    }
-
-    static void waitNoMoreTask();
+    {}
+    virtual ~IndexTask() = default;
 
     virtual void run(CreatorData* data);
-    static std::atomic<unsigned long> waiting_task;
 
   private:
     std::shared_ptr<IndexData> mp_indexData;

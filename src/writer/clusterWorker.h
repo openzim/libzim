@@ -28,22 +28,16 @@ namespace writer {
 
 class Cluster;
 
-class ClusterTask : public Task {
+class ClusterTask : public TrackableTask<ClusterTask> {
   public:
     ClusterTask(const ClusterTask&) = delete;
     ClusterTask& operator=(const ClusterTask&) = delete;
     explicit ClusterTask(Cluster* cluster) :
       cluster(cluster)
-    {
-      ++waiting_task;
-    };
-    virtual ~ClusterTask()
-    {
-      --waiting_task;
-    }
+    {};
+    virtual ~ClusterTask() = default;
 
     virtual void run(CreatorData* data);
-    static std::atomic<unsigned long> waiting_task;
 
   private:
     Cluster* cluster;

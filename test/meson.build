@@ -3,6 +3,7 @@ tests = [
     'cluster',
     'creator',
     'dirent',
+    'error_in_creator',
     'header',
     'uuid',
     'template',

@@ -30,6 +30,7 @@
 #include "workers.h"
 #include "clusterWorker.h"
 #include <zim/blob.h>
+#include <zim/error.h>
 #include <zim/writer/contentProvider.h>
 #include "../endian_tools.h"
 #include <algorithm>
@@ -152,6 +153,7 @@ namespace zim
 
     void Creator::addItem(std::shared_ptr<Item> item)
     {
+      checkError();
       bool compressContent = item->getAmendedHints()[COMPRESS];
       auto dirent = data->createItemDirent(item.get());
       data->addItemData(dirent, item->getContentProvider(), compressContent);
@@ -164,12 +166,14 @@ namespace zim
 
     void Creator::addMetadata(const std::string& name, const std::string& content, const std::string& mimetype)
     {
+      checkError();
       auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
       addMetadata(name, std::move(provider), mimetype);
     }
 
     void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype)
     {
+      checkError();
       auto compressContent = isCompressibleMimetype(mimetype);
       auto dirent = data->createDirent(NS::M, name, mimetype, "");
       data->addItemData(dirent, std::move(provider), compressContent);
@@ -178,12 +182,14 @@ namespace zim
 
     void Creator::addIllustration(unsigned int size, const std::string& content)
     {
+      checkError();
       auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
       addIllustration(size, std::move(provider));
     }
 
     void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider)
     {
+      checkError();
       std::stringstream ss;
       ss << "Illustration_" << size << "x" << size << "@1";
       addMetadata(ss.str(), std::move(provider), "image/png");
@@ -191,6 +197,7 @@ namespace zim
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
+      checkError();
       auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
       if (data->dirents.size()%1000 == 0){
         TPROGRESS();
@@ -201,6 +208,7 @@ namespace zim
 
     void Creator::finishZimCreation()
     {
+      checkError();
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.
@@ -265,13 +273,10 @@ namespace zim
 
       TINFO("Waiting for workers");
       // wait all cluster compression has been done
-      unsigned int wait = 0;
-      do {
-        microsleep(wait);
-        wait += 10;
-      } while(ClusterTask::waiting_task.load() > 0);
+      ClusterTask::waitNoMoreTask(data.get());
 
       data->quitAllThreads();
+      checkError();
 
       // Delete all handler (they will clean there own data)
       data->m_direntHandlers.clear();
@@ -370,8 +375,7 @@ namespace zim
       while (true) {
          auto r = read(out_fd, batch_read, 1024);
          if (r == -1) {
-           perror("Cannot read");
-           throw std::runtime_error("oups");
+           throw std::runtime_error(std::strerror(errno));
          }
          if (r == 0)
            break;
@@ -383,6 +387,19 @@ namespace zim
       _write(out_fd, reinterpret_cast<const char*>(digest), 16);
     }
 
+    void Creator::checkError()
+    {
+      if (data->m_errored) {
+        throw CreatorStateError();
+      }
+      std::lock_guard<std::mutex> l(data->m_exceptionLock);
+      if (data->m_exceptionSlot) {
+        std::cerr << "ERROR Detected" << std::endl;
+        data->m_errored = true;
+        throw AsyncError(data->m_exceptionSlot);
+      }
+    }
+
     CreatorData::CreatorData(const std::string& fname,
                                    bool verbose,
                                    bool withIndex,
@@ -390,6 +407,7 @@ namespace zim
                                    Compression c,
                                    size_t clusterSize)
       : mainPageDirent(nullptr),
+        m_errored(false),
         compression(c),
         zimName(fname),
         tmpFileName(fname + ".tmp"),
@@ -414,15 +432,11 @@ namespace zim
 #endif
       out_fd = open(tmpFileName.c_str(), flag, mode);
       if (out_fd == -1){
-        perror(nullptr);
-        std::ostringstream ss;
-        ss << "Cannot create file " << tmpFileName;
-        throw std::runtime_error(ss.str());
+        throw std::runtime_error(std::strerror(errno));
       }
       if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
         close(out_fd);
-        perror(nullptr);
-        throw std::runtime_error("Impossible to seek in file");
+        throw std::runtime_error(std::strerror(errno));
       }
 
       // We keep both a "compressed cluster" and an "uncompressed cluster"
@@ -464,6 +478,26 @@ namespace zim
       }
     }
 
+    void CreatorData::addError(const std::exception_ptr exception)
+    {
+      std::lock_guard<std::mutex> l(m_exceptionLock);
+      if (!m_exceptionSlot) {
+        m_exceptionSlot = exception;
+      }
+    }
+
+    bool CreatorData::isErrored() const
+    {
+      if (m_errored) {
+        return true;
+      }
+      std::lock_guard<std::mutex> l(m_exceptionLock);
+      if (m_exceptionSlot) {
+        return true;
+      }
+      return false;
+    }
+
     void CreatorData::quitAllThreads() {
       // Quit all workerThreads
       for (auto i=0U; i< workerThreads.size(); i++) {
@@ -496,7 +530,7 @@ namespace zim
           ss << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
           ss << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
           ss << "  existing dirent's title is : " << existing->getTitle() << std::endl;
-          throw std::runtime_error(ss.str());
+          throw InvalidEntry(ss.str());
         }
       };
 
@@ -578,7 +612,7 @@ namespace zim
       }
       cluster->setClusterIndex(cluster_index_t(clustersList.size()));
       clustersList.push_back(cluster);
-      taskList.pushToQueue(new ClusterTask(cluster));
+      taskList.pushToQueue(std::make_shared<ClusterTask>(cluster));
       clusterToWrite.pushToQueue(cluster);
 
       if (compressed)
@@ -661,7 +695,7 @@ namespace zim
       if (it == mimeTypesMap.end())
       {
         if (nextMimeIdx >= std::numeric_limits<uint16_t>::max())
-          throw std::runtime_error("too many distinct mime types");
+          throw CreatorError("too many distinct mime types");
         mimeTypesMap[mimeType] = nextMimeIdx;
         rmimeTypesMap[nextMimeIdx] = mimeType;
         return nextMimeIdx++;
@@ -674,7 +708,7 @@ namespace zim
     {
       auto it = rmimeTypesMap.find(mimeTypeIdx);
       if (it == rmimeTypesMap.end())
-        throw std::runtime_error("mime type index not found");
+        throw CreatorError("mime type index not found");
       return it->second;
     }
   }

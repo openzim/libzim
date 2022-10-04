@@ -35,6 +35,11 @@ XapianHandler::XapianHandler(CreatorData* data, bool withFulltextIndex)
 
 XapianHandler::~XapianHandler() = default;
 
+
+void XapianHandler::waitNoMoreTask() const {
+  IndexTask::waitNoMoreTask(mp_creatorData);
+}
+
 void XapianHandler::start() {
   if (mp_fulltextIndexer) {
     mp_fulltextIndexer->indexingPrelude();
@@ -46,7 +51,7 @@ void XapianHandler::stop() {
   // We need to wait that all indexation tasks have been done before closing the
   // xapian database.
   if (mp_fulltextIndexer) {
-    IndexTask::waitNoMoreTask();
+    waitNoMoreTask();
     mp_fulltextIndexer->indexingPostlude();
   }
   mp_titleIndexer->indexingPostlude();
@@ -56,7 +61,7 @@ DirentHandler::Dirents XapianHandler::createDirents() const {
   // Wait for all task to be done before checking if we are empty.
   Dirents ret;
   if (mp_fulltextIndexer) {
-    IndexTask::waitNoMoreTask();
+    waitNoMoreTask();
     if (!mp_fulltextIndexer->is_empty()) {
       ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
     }
@@ -121,7 +126,7 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
       return;
     }
     auto path = dirent->getPath();
-    mp_creatorData->taskList.pushToQueue(new IndexTask(indexData, path, mp_fulltextIndexer.get()));
+    mp_creatorData->taskList.pushToQueue(std::make_shared<IndexTask>(indexData, path, mp_fulltextIndexer.get()));
   }
 }
 

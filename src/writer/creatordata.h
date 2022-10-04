@@ -26,7 +26,6 @@
 #include <zim/writer/item.h>
 #include "queue.h"
 #include "_dirent.h"
-#include "workers.h"
 #include "handler.h"
 #include <set>
 #include <vector>
@@ -50,6 +49,7 @@ namespace zim
     };
 
     class Cluster;
+    class Task;
     class CreatorData
     {
       public:
@@ -59,7 +59,7 @@ namespace zim
         typedef std::vector<std::string> MimeTypesList;
         typedef std::vector<Cluster*> ClusterList;
         typedef Queue<Cluster*> ClusterQueue;
-        typedef Queue<Task*> TaskQueue;
+        typedef Queue<std::shared_ptr<Task>> TaskQueue;
         typedef std::vector<std::thread> ThreadList;
 
         CreatorData(const std::string& fname, bool verbose,
@@ -83,6 +83,8 @@ namespace zim
         uint16_t getMimeTypeIdx(const std::string& mimeType);
         const std::string& getMimeType(uint16_t mimeTypeIdx) const;
 
+        void addError(const std::exception_ptr error);
+        bool isErrored() const;
         void quitAllThreads();
 
         DirentPool  pool;
@@ -101,6 +103,9 @@ namespace zim
         TaskQueue taskList;
         ThreadList workerThreads;
         std::thread  writerThread;
+        mutable std::mutex m_exceptionLock;
+        std::exception_ptr m_exceptionSlot;
+        std::atomic<bool> m_errored;
         const Compression compression;
         std::string zimName;
         std::string tmpFileName;

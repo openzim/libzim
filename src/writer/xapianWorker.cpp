@@ -28,7 +28,6 @@
 #include <mutex>
 
 static std::mutex s_dbaccessLock;
-std::atomic<unsigned long> zim::writer::IndexTask::waiting_task(0);
 
 namespace zim
 {
@@ -39,14 +38,6 @@ namespace zim
     inline unsigned int getTitleBoostFactor(const unsigned int contentLength)
     {
       return contentLength / 500 + 1;
-    }
-
-    void IndexTask::waitNoMoreTask() {
-      unsigned int wait = 0;
-      do {
-        microsleep(wait);
-        wait += 10;
-      } while (waiting_task.load() > 0);
     }
 
     void IndexTask::run(CreatorData* data) {

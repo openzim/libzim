@@ -154,6 +154,18 @@ tests need up to 16GB of memory. You can skip those specific tests with:
 SKIP_BIG_MEMORY_TEST=1 meson test
 ```
 
+Some tests are checking error detection in multithread environment and
+they need to sleep to let threads working (and detect error).
+How many time to wait depends of your computer.
+If you have `error_in_creator` test failing, you probably need to extend the waiting time.
+This can be done by setting the env variable `WAIT_TIME_FACTOR_TEST` to a float factor.
+The waiting time will multiplied by this factor.
+
+```
+WAIT_TIME_FACTOR_TEST=2 meson test
+```
+
+
 Installation
 ------------
 
