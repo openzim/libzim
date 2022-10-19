@@ -56,6 +56,8 @@ namespace zim {
 
   std::map<std::string, int> read_valuesmap(const std::string& s);
 
+  using MimeCounterType = std::map<const std::string, zim::entry_index_type>;
+  MimeCounterType parseMimetypeCounter(const std::string& counterData);
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
   std::string removeAccents(const std::string& text);
