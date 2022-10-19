@@ -322,9 +322,9 @@ TEST(ZimArchive, articleNumber)
      // Name                                          mediaCount,  withns                                           nons
      //                                                            {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
     {"small.zim",                                     1,           { 1,       17,          17,       }, { 1,       2,           16        }},
-    {"wikibooks_be_all_nopic_2017-02.zim",            34,          { 70,      118,         118,      }, { 66,      109,         123       }},
-    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   34,          { 70,      118,         118,      }, { 66,      109,         123       }},
-    {"wikipedia_en_climate_change_nopic_2020-01.zim", 333,         { 7253,    7646,        7646,     }, { 1837,    7633,        7649      }}
+    {"wikibooks_be_all_nopic_2017-02.zim",            34,          { 66,      118,         118,      }, { 66,      109,         123       }},
+    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   34,          { 66,      118,         118,      }, { 66,      109,         123       }},
+    {"wikipedia_en_climate_change_nopic_2020-01.zim", 333,         { 1837,    7646,        7646,     }, { 1837,    7633,        7649      }}
   };
   // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
   // for small.zim, there is always 1 article, whatever the article is in 'A' namespace or in specific index.

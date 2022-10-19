@@ -140,9 +140,7 @@ namespace zim
        *  The definition of "article" depends of the zim archive.
        *  On recent archives, this correspond to all entries marked as "FRONT_ARTICLE"
        *  at creaton time.
-       *  On old archives, this correspond to all entries in 'A' namespace.
-       *  Few archives may have been created without namespace but also without specific
-       *  article listing. In this case, articles are all user entries.
+       *  On old archives, this corresponds to all "text/html*" entries.
        *
        *  @return the number of articles in the archive.
        */
