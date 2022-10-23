@@ -20,7 +20,6 @@
 
 #define ZIM_PRIVATE
 #include <zim/item.h>
-#include "_dirent.h"
 #include "cluster.h"
 #include "fileimpl.h"
 #include "file_part.h"
@@ -30,24 +29,10 @@ log_define("zim.item")
 
 using namespace zim;
 
-Item::Item(std::shared_ptr<FileImpl> file, entry_index_type idx)
-  : m_file(file),
-    m_idx(idx),
-    m_dirent(file->getDirent(entry_index_t(idx)))
-{}
-
-std::string Item::getTitle() const
+Item::Item(const Entry& entry)
+  : Entry(entry)
 {
-  return m_dirent->getTitle();
-}
-
-std::string Item::getPath() const
-{
-  if (m_file->hasNewNamespaceScheme()) {
-    return m_dirent->getUrl();
-  } else {
-    return m_dirent->getLongUrl();
-  }
+  assert(!entry.isRedirect());
 }
 
 std::string Item::getMimetype() const
