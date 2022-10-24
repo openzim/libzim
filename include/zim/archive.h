@@ -148,6 +148,14 @@ namespace zim
        */
       entry_index_type getArticleCount() const;
 
+      /** Return the number of media in the archive.
+       *
+       * This definition of "media" is based on the mimetype.
+       *
+       * @return the number of media in the archive.
+       */
+      entry_index_type getMediaCount() const;
+
       /** The uuid of the archive.
        *
        *  @return the uuid of the archive.
