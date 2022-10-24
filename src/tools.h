@@ -58,6 +58,18 @@ namespace zim {
 
   using MimeCounterType = std::map<const std::string, zim::entry_index_type>;
   MimeCounterType parseMimetypeCounter(const std::string& counterData);
+
+  template<class Filter>
+  entry_index_type countMimeType(const std::string& counterData, Filter filter) {
+    entry_index_type count = 0;
+    for (auto& pair: parseMimetypeCounter(counterData)) {
+      if (filter(pair.first)) {
+        count += pair.second;
+      }
+    }
+    return count;
+  }
+
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
   std::string removeAccents(const std::string& text);
