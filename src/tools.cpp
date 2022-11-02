@@ -20,6 +20,7 @@
  */
 
 #include "tools.h"
+#include "zim/tools.h"
 #include "fs.h"
 
 #include <sys/types.h>
