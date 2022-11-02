@@ -302,6 +302,7 @@ struct ZimFileInfo {
 
 struct TestDataInfo {
   const char* const name;
+  zim::entry_index_type mediaCount;
   ZimFileInfo withnsInfo, nonsInfo;
 
 
@@ -318,12 +319,12 @@ struct TestDataInfo {
 TEST(ZimArchive, articleNumber)
 {
   TestDataInfo zimfiles[] = {
-     // Name                                           withns                               nons
-     //                                               {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
-    {"small.zim",                                     { 1,       17,          17 },        { 1,       2,           16        }},
-    {"wikibooks_be_all_nopic_2017-02.zim",            { 70,      118,         118},        { 66,      109,         123       }},
-    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   { 70,      118,         118},        { 66,      109,         123       }},
-    {"wikipedia_en_climate_change_nopic_2020-01.zim", { 7253,    7646,        7646},       { 1837,    7633,        7649      }}
+     // Name                                          mediaCount,  withns                                           nons
+     //                                                            {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
+    {"small.zim",                                     1,           { 1,       17,          17,       }, { 1,       2,           16        }},
+    {"wikibooks_be_all_nopic_2017-02.zim",            34,          { 66,      118,         118,      }, { 66,      109,         123       }},
+    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   34,          { 66,      118,         118,      }, { 66,      109,         123       }},
+    {"wikipedia_en_climate_change_nopic_2020-01.zim", 333,         { 1837,    7646,        7646,     }, { 1837,    7633,        7649      }}
   };
   // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
   // for small.zim, there is always 1 article, whatever the article is in 'A' namespace or in specific index.
@@ -336,6 +337,7 @@ TEST(ZimArchive, articleNumber)
       EXPECT_EQ( archive.getAllEntryCount(), testZimInfo.allEntryCount ) << ctx;
       EXPECT_EQ( archive.getEntryCount(), testZimInfo.entryCount ) << ctx;
       EXPECT_EQ( archive.getArticleCount(), testZimInfo.articleCount ) << ctx;
+      EXPECT_EQ( archive.getMediaCount(), testdata.mediaCount) << ctx;
     }
   }
 }

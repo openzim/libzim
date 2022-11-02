@@ -22,7 +22,8 @@ tests = [
     'tooltesting',
     'tinyString',
     'suggestion_iterator',
-    'indexing_criteria'
+    'indexing_criteria',
+    'counterParsing'
 ]
 
 if xapian_dep.found()

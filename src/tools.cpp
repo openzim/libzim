@@ -33,6 +33,7 @@
 #include <stdexcept>
 #include <random>
 #include <errno.h>
+#include <sstream>
 
 #ifdef _WIN32
 # include <windows.h>
@@ -156,6 +157,67 @@ std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
         result.insert( std::pair<std::string, int>(tmp_elems[0], atoi(tmp_elems[1].c_str())) );
     }
     return result;
+}
+
+namespace
+{
+// The counter metadata format is a list of item separated by a `;` :
+// item0;item1;item2
+// Each item is a "tuple" mimetype=number.
+// However, the mimetype may contains parameters:
+// text/html;raw=true;foo=bar
+// So the final format may be complex to parse:
+// key0=value0;key1;foo=bar=value1;key2=value2
+
+typedef zim::MimeCounterType::value_type MimetypeAndCounter;
+
+std::string readFullMimetypeAndCounterString(std::istream& in)
+{
+  std::string mtcStr, params;
+  getline(in, mtcStr, ';');
+  if ( mtcStr.find('=') == std::string::npos )
+  {
+    do
+    {
+      if ( !getline(in, params, ';' ) )
+        return std::string();
+      mtcStr += ";" + params;
+    }
+    while ( std::count(params.begin(), params.end(), '=') != 2 );
+  }
+  return mtcStr;
+}
+
+MimetypeAndCounter parseASingleMimetypeCounter(const std::string& s)
+{
+  const std::string::size_type k = s.find_last_of("=");
+  if ( k != std::string::npos )
+  {
+    const std::string mimeType = s.substr(0, k);
+    std::istringstream counterSS(s.substr(k+1));
+    unsigned int counter;
+    if (counterSS >> counter && counterSS.eof())
+      return std::make_pair(mimeType, counter);
+  }
+  return MimetypeAndCounter{"", 0};
+}
+
+} // unnamed namespace
+
+zim::MimeCounterType zim::parseMimetypeCounter(const std::string& counterData)
+{
+  zim::MimeCounterType counters;
+  std::istringstream ss(counterData);
+
+  while (ss)
+  {
+    const std::string mtcStr = readFullMimetypeAndCounterString(ss);
+    const MimetypeAndCounter mtc = parseASingleMimetypeCounter(mtcStr);
+    if ( !mtc.first.empty() )
+      counters.insert(mtc);
+  }
+
+  return counters;
 }
 
 // Xapian based tools

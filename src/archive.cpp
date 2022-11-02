@@ -70,11 +70,29 @@ namespace zim
   {
     if (m_impl->hasFrontArticlesIndex()) {
       return m_impl->getFrontEntryCount().v;
-    } else if (m_impl->hasNewNamespaceScheme()) {
-      return m_impl->getNamespaceEntryCount('C').v;
     } else {
-      return m_impl->getNamespaceEntryCount('A').v;
+      try {
+        return countMimeType(
+          getMetadata("Counter"),
+          [](const std::string& mimetype) { return mimetype.find("text/html") == 0; }
+        );
+      } catch(const EntryNotFound& e) {
+        const char articleNs = m_impl->hasNewNamespaceScheme() ? 'C' : 'A';
+        return m_impl->getNamespaceEntryCount(articleNs).v;
+      }
     }
+  }
+
+  entry_index_type Archive::getMediaCount() const
+  {
+    return countMimeType(
+      getMetadata("Counter"),
+      [](const std::string& mimetype) {
+        return mimetype.find("image/") == 0 ||
+               mimetype.find("video/") == 0 ||
+               mimetype.find("audio/") == 0;
+      }
+    );
   }
 
   Uuid Archive::getUuid() const
