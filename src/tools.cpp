@@ -207,7 +207,7 @@ bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Da
   return true;
 }
 
-void setICUDataDirectory(const std::string& path)
+void zim::setICUDataDirectory(const std::string& path)
 {
   u_setDataDirectory(path.c_str());
 }
