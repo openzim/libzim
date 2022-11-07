@@ -125,7 +125,6 @@ namespace zim
       protected:
         std::shared_ptr<const std::string> content;
         bool feeded;
-
     };
 
     /**
