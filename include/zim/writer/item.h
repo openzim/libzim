@@ -291,9 +291,6 @@ namespace zim
           : BasicItem(path, mimetype, title, hints),
             content(content)
         {}
-
-
-
     };
 
     /**
