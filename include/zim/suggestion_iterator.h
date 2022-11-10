@@ -84,6 +84,11 @@ class SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag,
 class SuggestionItem
 {
     public: // methods
+        SuggestionItem(std::string title, std::string path, std::string snippet = "")
+        :   title(title),
+            path(path),
+            snippet(snippet) {}
+
         std::string getTitle() const { return title; }
         std::string getPath() const { return path; }
         std::string getSnippet() const { return snippet; }
@@ -94,14 +99,6 @@ class SuggestionItem
         std::string title;
         std::string path;
         std::string snippet;
-
-    private: // methods
-        explicit SuggestionItem(std::string title, std::string path, std::string snippet = "")
-        :   title(title),
-            path(path),
-            snippet(snippet) {}
-
-    friend class SuggestionIterator;
 };
 
 } // namespace zim
