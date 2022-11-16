@@ -24,7 +24,7 @@
 
 
 namespace zim {
-#if defined(ENABLE_XAPIAN)
+#if defined(LIBZIM_WITH_XAPIAN)
 
   /** Helper function to set the icu data directory.
    *
