@@ -329,6 +329,30 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   CHECK_ASYNC_EXCEPT(creator.finishZimCreation());
 }
 
+
+// Check that destructor correctly clean everything on error
+// even if finishZimCreation is not called.
+TEST_P(FaultyDelayedItemErrorTest, faultyUnfinishedCreator)
+{
+  unittests::TempFile tmpFile("zimfile");
+  {
+    writer::Creator creator;
+    creator.configIndexing(true, "eng");
+    creator.configClusterSize(5);
+    creator.startZimCreation(tmpFile.path());
+    auto item = std::make_shared<FaultyItem>("foo", "Foo", "FooContent", true, GetParam());
+    // Exception is not thrown in main thread so error is not detected
+    EXPECT_NO_THROW(creator.addItem(item));
+    // creator.finishZimCreation() is not called
+  }
+
+  EXPECT_THROW(
+      {
+        const zim::Archive archive(tmpFile.path());
+      },
+      zim::ZimFileFormatError
+  );
+}
 // It would be more natural to put the `#if defined` only around the
 // discarded values, but when crosscompiling on Windows, compiler fail to
 // understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
