@@ -93,6 +93,7 @@ jobs:
           - android_arm64
           - win32_static
           - win32_dyn
+          - wasm
         with_xapian:
           - true
           - false
@@ -109,6 +110,9 @@ jobs:
           - target: android_arm64
             image_variant: bionic
             lib_postfix: '/aarch64-linux-android'
+          - target: wasm
+            image_variant: bionic
+            lib_postfix: '/x86_64-linux-gnu'
           - target: alpine_dyn
             image_variant: alpine
             lib_postfix: '/x86_64-linux-musl'
@@ -162,6 +166,9 @@ jobs:
         fi
         if [[ "${{matrix.target}}" =~ android_.* ]]; then
           MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
+        fi
+        if [[ "${{matrix.target}}" == wasm ]]; then
+          MESON_OPTION="$MESON_OPTION -Dexamples=false"
         fi
         cd $HOME/libzim
         meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
