@@ -1,3 +1,16 @@
+libzim 8.1.0
+============
+
+ * Optimization ofthe first call to `zim::Archive::iterEfficient` (@veloman-yunkan #724)
+ * Add some documentation to `zim::writer::IndexData` (@mgautierfr #727)
+ * Correctly catch and rethrow exception thrown in worker threads at creation (@mgautierfr #496 #748)
+ * Optimization of `Entry::getItem()` (@veloman-yunkan #732)
+ * Fix declaration of `zim::setICUDataDirectory()` (@MohitMaliFtechiz #733)
+ * Add `zim::Archive::getMediatCount()` (@mgautierfr #730)
+ * Make compilaton of examples optional (@mgautierfr #738)
+ * Add a CI for wasm (@mgautierfr #746)
+ * Make constructor of SuggestionItem public (@veloman-yunkan #740)
+
 libzim 8.0.1
 ============
 
