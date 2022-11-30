@@ -226,6 +226,43 @@ double getWaitTimeFactor() {
 
 class FaultyDelayedItemErrorTest : public ::testing::TestWithParam<ERRORKIND> {};
 
+
+// All the following code "should" thrown a error :
+// - An asyncError on the first call (async_error_thrown == false)
+// - An CreatorStateError on other calls (async_error_thrown == true)
+// But it may not thrown if worker thread has not run.
+// (and only in this case. If a AsyncError has been thrown, other calls MUST throw a CreatorErrorState).
+// FinishZimCreation() always waits for workers, so we MUST have an exception.
+#define CHECK_ASYNC_EXCEPT(CALL) \
+  { \
+    const char* something_went_wrong = nullptr; \
+    const bool MUST_FAIL = std::string(#CALL).find("finishZimCreation") != std::string::npos; \
+    try { \
+      CALL; \
+      if (async_error_thrown) { \
+        something_went_wrong = "We should have thrown a CreatorStateError after AsyncError has been detected."; \
+      } \
+      if (MUST_FAIL) { \
+        something_went_wrong = "The call should have thrown an exception."; \
+      } \
+    } catch (AsyncError& e) { \
+      if (async_error_thrown) { \
+        something_went_wrong = "We should have thrown a CreatorStateError after AsyncError has been detected."; \
+      } \
+      async_error_thrown = true; \
+    } catch (CreatorStateError& e) { \
+      if (!async_error_thrown) { \
+        something_went_wrong = "CreatorStateError must be thrown after a AsyncError."; \
+      } \
+    } catch (...) { \
+      something_went_wrong = "An exception other than CreatorStateError or AsyncError was thrown."; \
+    } \
+    if (something_went_wrong) { \
+      FAIL() << something_went_wrong; \
+    } \
+  }
+
+
 // Compressed and uncompressed content use a different code path as
 // compressed cluster uses contentProvider when the cluster is closed (compressed)
 // and uncompressed cluster uses contentProvider when the cluster is written.
@@ -234,6 +271,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   unittests::TempFile temp("zimfile");
   auto tempPath = temp.path();
 
+  bool async_error_thrown = false;
   writer::Creator creator;
   creator.configIndexing(true, "eng");
   creator.configClusterSize(5);
@@ -242,7 +280,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   // Exception is not thrown in main thread so error is not detected
   EXPECT_NO_THROW(creator.addItem(item));
   // We force the closing of the cluster, so working thread will detect error
-  EXPECT_NO_THROW(creator.addMetadata("A metadata", "A compressed (default) metadata"));
+  CHECK_ASYNC_EXCEPT(creator.addMetadata("A metadata", "A compressed (default) metadata"));
   // give a chance to threads to detect the error.
   // How many time to wait is a bit tricky.
   // Too long and all tests will wait to much and developpers hate to wait,
@@ -252,10 +290,11 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   const long sleep_time = 1000000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
   zim::microsleep(sleep_time * getWaitTimeFactor());
   // We detect it for any call after
-  EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
-  EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), CreatorStateError);
-  EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), CreatorStateError);
-  EXPECT_THROW(creator.finishZimCreation(), CreatorStateError);
+  CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
+  CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
+  CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));
+  CHECK_ASYNC_EXCEPT(creator.addRedirection("foo2", "FooRedirection", "foo"));
+  CHECK_ASYNC_EXCEPT(creator.finishZimCreation());
 }
 
 TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
@@ -263,6 +302,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   unittests::TempFile temp("zimfile");
   auto tempPath = temp.path();
 
+  bool async_error_thrown = false;
   writer::Creator creator;
   creator.configIndexing(true, "eng");
   creator.configClusterSize(5);
@@ -271,7 +311,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   // Exception is not thrown in main thread so error is not detected
   EXPECT_NO_THROW(creator.addItem(item));
   // We force the closing of the cluster, so working thread will detect error
-  EXPECT_NO_THROW(creator.addMetadata("A metadata", "A uncompressed metadata", "plain/content"));
+  CHECK_ASYNC_EXCEPT(creator.addMetadata("A metadata", "A uncompressed metadata", "plain/content"));
   // give a chance to threads to detect the error
   // How many time to wait is a bit tricky.
   // Too long and all tests will wait to much and developpers hate to wait
@@ -283,12 +323,36 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   const long sleep_time = 10000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
   zim::microsleep(sleep_time * getWaitTimeFactor());
   // But we detect it for any call after
-  EXPECT_THROW(creator.addMetadata("Title", "This is a title"), AsyncError);
-  EXPECT_THROW(creator.addIllustration(48, "PNGBinaryContent48"), CreatorStateError);
-  EXPECT_THROW(creator.addRedirection("foo2", "FooRedirection", "foo"), CreatorStateError);
-  EXPECT_THROW(creator.finishZimCreation(), CreatorStateError);
+  CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
+  CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));
+  CHECK_ASYNC_EXCEPT(creator.addRedirection("foo2", "FooRedirection", "foo"));
+  CHECK_ASYNC_EXCEPT(creator.finishZimCreation());
 }
 
+
+// Check that destructor correctly clean everything on error
+// even if finishZimCreation is not called.
+TEST_P(FaultyDelayedItemErrorTest, faultyUnfinishedCreator)
+{
+  unittests::TempFile tmpFile("zimfile");
+  {
+    writer::Creator creator;
+    creator.configIndexing(true, "eng");
+    creator.configClusterSize(5);
+    creator.startZimCreation(tmpFile.path());
+    auto item = std::make_shared<FaultyItem>("foo", "Foo", "FooContent", true, GetParam());
+    // Exception is not thrown in main thread so error is not detected
+    EXPECT_NO_THROW(creator.addItem(item));
+    // creator.finishZimCreation() is not called
+  }
+
+  EXPECT_THROW(
+      {
+        const zim::Archive archive(tmpFile.path());
+      },
+      zim::ZimFileFormatError
+  );
+}
 // It would be more natural to put the `#if defined` only around the
 // discarded values, but when crosscompiling on Windows, compiler fail to
 // understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
@@ -319,4 +383,5 @@ FaultyDelayedItemErrorTest,
 ));
 #endif // ENABLE_XAPIAN
 } // unnamed namespace
+
 
