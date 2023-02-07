@@ -15,25 +15,32 @@ jobs:
           - native_dyn
           - iOS_arm64
           - iOS_x86_64
+
     runs-on: macos-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
       - name: Install packages
         run: |
           brew update
           brew install gcovr pkg-config ninja || brew link --overwrite python
+
       - name: Install python modules
         run: pip3 install meson==0.52.1 pytest
+
       - name: Install deps
         shell: bash
         run: |
           ARCHIVE_NAME=deps2_osx_${{matrix.target}}_libzim.tar.xz
           wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
+
       - name: Compile
         shell: bash
         run: |
@@ -47,6 +54,7 @@ jobs:
           meson . build ${MESON_OPTION}
           cd build
           ninja
+
       - name: Test
         if: startsWith(matrix.target, 'native_')
         shell: bash
@@ -61,21 +69,27 @@ jobs:
 
   Windows:
     runs-on: windows-2019
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
       - name: Install packages
         run:
           choco install ninja
+
       - name: Install python modules
         run: pip3 install meson
+
       - name: Compile
         shell: cmd
         run: .github\script\build_libzim.cmd
+
       - name: Test
         shell: cmd
         run: |
@@ -131,6 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-32"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -141,6 +156,7 @@ jobs:
         run: |
           ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
           wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C /home/runner
+
       - name: Compile
         shell: bash
         run: |
@@ -166,6 +182,7 @@ jobs:
           ninja
         env:
           PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
+
       - name: Test
         if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
         shell: bash
@@ -180,6 +197,7 @@ jobs:
           LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
           SKIP_BIG_MEMORY_TEST: 1
           WAIT_TIME_FACTOR_TEST: 10
+
       - name: Publish coverage
         shell: bash
         run: |
