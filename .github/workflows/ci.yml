@@ -135,58 +135,58 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-    - name: Install deps
-      if: false == startsWith(matrix.target, 'alpine_')
-      shell: bash
-      run: |
-        ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
-        wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C /home/runner
-    - name: Compile
-      shell: bash
-      run: |
-        if [[ "${{matrix.target}}" =~ .*_dyn ]]; then
-          MESON_OPTION="--default-library=shared"
-        else
-          MESON_OPTION="--default-library=static"
-        fi
-        if [[ "${{matrix.target}}" =~ native_.* ]]; then
-          MESON_OPTION="$MESON_OPTION -Db_coverage=true"
-        elif [[ "${{matrix.target}}" != alpine_* ]]; then
-          MESON_OPTION="$MESON_OPTION --cross-file $HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
-        fi
-        if [[ "${{matrix.target}}" =~ android_.* ]]; then
-          MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
-        fi
-        if [[ "${{matrix.target}}" == wasm ]]; then
-          MESON_OPTION="$MESON_OPTION -Dexamples=false"
-        fi
-        cd $HOME/libzim
-        meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
-        cd build
-        ninja
-      env:
-        PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
-    - name: Test
-      if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
-      shell: bash
-      run: |
-        cd $HOME/libzim/build
-        ninja download_test_data
-        meson test --verbose
-        if [[ "${{matrix.target}}" =~ native_.* ]]; then
-          ninja coverage
-        fi
-      env:
-        LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
-        SKIP_BIG_MEMORY_TEST: 1
-        WAIT_TIME_FACTOR_TEST: 10
-    - name: Publish coverage
-      shell: bash
-      run: |
-        cd $HOME/libzim
-        curl https://codecov.io/bash -o codecov.sh
-        bash codecov.sh -n "${OS_NAME}_${{matrix.target}}" -Z
-        rm codecov.sh
-      if: startsWith(matrix.target, 'native_')
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Install deps
+        if: false == startsWith(matrix.target, 'alpine_')
+        shell: bash
+        run: |
+          ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
+          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C /home/runner
+      - name: Compile
+        shell: bash
+        run: |
+          if [[ "${{matrix.target}}" =~ .*_dyn ]]; then
+            MESON_OPTION="--default-library=shared"
+          else
+            MESON_OPTION="--default-library=static"
+          fi
+          if [[ "${{matrix.target}}" =~ native_.* ]]; then
+            MESON_OPTION="$MESON_OPTION -Db_coverage=true"
+          elif [[ "${{matrix.target}}" != alpine_* ]]; then
+            MESON_OPTION="$MESON_OPTION --cross-file $HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
+          fi
+          if [[ "${{matrix.target}}" =~ android_.* ]]; then
+            MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
+          fi
+          if [[ "${{matrix.target}}" == wasm ]]; then
+            MESON_OPTION="$MESON_OPTION -Dexamples=false"
+          fi
+          cd $HOME/libzim
+          meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
+          cd build
+          ninja
+        env:
+          PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
+      - name: Test
+        if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
+        shell: bash
+        run: |
+          cd $HOME/libzim/build
+          ninja download_test_data
+          meson test --verbose
+          if [[ "${{matrix.target}}" =~ native_.* ]]; then
+            ninja coverage
+          fi
+        env:
+          LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
+          SKIP_BIG_MEMORY_TEST: 1
+          WAIT_TIME_FACTOR_TEST: 10
+      - name: Publish coverage
+        shell: bash
+        run: |
+          cd $HOME/libzim
+          curl https://codecov.io/bash -o codecov.sh
+          bash codecov.sh -n "${OS_NAME}_${{matrix.target}}" -Z
+          rm codecov.sh
+        if: startsWith(matrix.target, 'native_')
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
