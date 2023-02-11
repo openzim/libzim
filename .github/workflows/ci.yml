@@ -16,7 +16,7 @@ jobs:
           - iOS_arm64
           - iOS_x86_64
 
-    runs-on: macos-latest
+    runs-on: macos-12
 
     steps:
       - name: Checkout code
