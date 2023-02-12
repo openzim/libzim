@@ -10,6 +10,7 @@ https://openzim.org/.
 
 [![Release](https://img.shields.io/github/v/tag/openzim/libzim?label=release&sort=semver)](https://download.openzim.org/release/libzim/)
 [![Repositories](https://img.shields.io/repology/repositories/libzim?label=repositories)](https://github.com/openzim/libzim/wiki/Repology)
+[![macOS Homebrew](https://badgen.net/homebrew/v/libzim)](https://formulae.brew.sh/formula/libzim)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![Build](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amain)](https://github.com/openzim/libzim/actions?query=branch%3Amain)
 [![Doc](https://readthedocs.org/projects/libzim/badge/?style=flat)](https://libzim.readthedocs.io/en/latest/?badge=latest)
