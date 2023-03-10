@@ -549,11 +549,10 @@ TEST(Suggestion, nonWordCharacters) {
     );
 
     EXPECT_SUGGESTION_RESULTS(archive, "&",
-      "&"
+      "&",
+      "&%#"
       // "Jack & Jill ...", "Alice & Bob" and "Ali Baba & the 40 thieves" not
       // included since inside those titles "&" is treated as noise.
-      // "&%#" not included since weird titles made entirely of punctuation
-      // only produce a full match.
     );
 
     EXPECT_SUGGESTION_RESULTS(archive, "&%#",
