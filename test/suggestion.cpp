@@ -524,6 +524,34 @@ TEST(Suggestion, nonWordCharacters) {
   }
 }
 
+TEST(Suggestion, TitlesMadeOfStopWordsOnly) {
+  TempZimArchive tza("testZim");
+  {
+    const zim::Archive archive = tza.createZimFromTitles({
+      "The",
+      "Are you at home?",
+      "Back and forth",
+      "One, two, three...",
+      "Not at all",
+      "Do not act before you have to"
+    });
+
+    EXPECT_SUGGESTION_RESULTS(archive, "the",
+        "The"
+    );
+
+    EXPECT_SUGGESTION_RESULTS(archive, "not",
+        "Not at all",
+        "Do not act before you have to"
+    );
+
+    EXPECT_SUGGESTION_RESULTS(archive, "at",
+        "Not at all",
+        "Are you at home?"
+    );
+  }
+}
+
 TEST(Suggestion, titleSnippet) {
   TempZimArchive tza("testzim");
 
