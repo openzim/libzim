@@ -506,11 +506,29 @@ TEST(Suggestion, nonWordCharacters) {
   {
     const zim::Archive archive = tza.createZimFromTitles({
       "Alice Bob",
+      "Alice & Bob",
       "Bonnie + Clyde",
-      "Jack & Jill, on the hill"
+      "Jack & Jill, on the hill",
+      "Ali Baba & the 40 thieves",
+      "&",
+      "&%#"
     });
 
+    // this test-point has nothing to do with the purpose of this unit-test
+    // however I couldn't stand the temptation of adding it.
+    EXPECT_SUGGESTION_RESULTS(archive, "Ali",
+      "Ali Baba & the 40 thieves",
+      "Alice & Bob",
+      "Alice Bob",
+    );
+
+    EXPECT_SUGGESTION_RESULTS(archive, "Alice Bob",
+      "Alice & Bob",
+      "Alice Bob"
+    );
+
     EXPECT_SUGGESTION_RESULTS(archive, "Alice & Bob",
+      "Alice & Bob",
       "Alice Bob"
     );
 
@@ -519,6 +537,38 @@ TEST(Suggestion, nonWordCharacters) {
     );
 
     EXPECT_SUGGESTION_RESULTS(archive, "Jack & Jill",
+      "Jack & Jill, on the hill"
+    );
+
+    EXPECT_SUGGESTION_RESULTS(archive, "4",
+      "Ali Baba & the 40 thieves"
+    );
+
+    EXPECT_SUGGESTION_RESULTS(archive, "40",
+      "Ali Baba & the 40 thieves"
+    );
+
+    // BUG: a query made of punctuation only is parsed as an empty query
+    // BUG: which matches everything (in unspecified order)
+    EXPECT_SUGGESTION_RESULTS(archive, "&",
+      "&",
+      "&%#",
+      "Alice & Bob",
+      "Alice Bob",
+      "Bonnie + Clyde",
+      "Ali Baba & the 40 thieves",
+      "Jack & Jill, on the hill"
+    );
+
+    // BUG: a query made of punctuation only is parsed as an empty query
+    // BUG: which matches everything (in unspecified order)
+    EXPECT_SUGGESTION_RESULTS(archive, "&%#",
+      "&",
+      "&%#",
+      "Alice & Bob",
+      "Alice Bob",
+      "Bonnie + Clyde",
+      "Ali Baba & the 40 thieves",
       "Jack & Jill, on the hill"
     );
   }
