@@ -548,28 +548,16 @@ TEST(Suggestion, nonWordCharacters) {
       "Ali Baba & the 40 thieves"
     );
 
-    // BUG: a query made of punctuation only is parsed as an empty query
-    // BUG: which matches everything (in unspecified order)
     EXPECT_SUGGESTION_RESULTS(archive, "&",
-      "&",
-      "&%#",
-      "Alice & Bob",
-      "Alice Bob",
-      "Bonnie + Clyde",
-      "Ali Baba & the 40 thieves",
-      "Jack & Jill, on the hill"
+      "&"
+      // "Jack & Jill ...", "Alice & Bob" and "Ali Baba & the 40 thieves" not
+      // included since inside those titles "&" is treated as noise.
+      // "&%#" not included since weird titles made entirely of punctuation
+      // only produce a full match.
     );
 
-    // BUG: a query made of punctuation only is parsed as an empty query
-    // BUG: which matches everything (in unspecified order)
     EXPECT_SUGGESTION_RESULTS(archive, "&%#",
-      "&",
-      "&%#",
-      "Alice & Bob",
-      "Alice Bob",
-      "Bonnie + Clyde",
-      "Ali Baba & the 40 thieves",
-      "Jack & Jill, on the hill"
+      "&%#"
     );
   }
 }

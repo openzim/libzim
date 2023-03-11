@@ -139,7 +139,11 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
   m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
   xquery = m_queryParser.parse_query(query, flags);
 
-  if (!query.empty()) {
+  if ( !query.empty() && xquery.get_num_subqueries() == 0 ) {
+    // a non-empty query string produced an empty xapian query which means
+    // that the query string is made solely of punctuation.
+    xquery = Xapian::Query(query);
+  } else if (!query.empty()) {
     // Reconfigure stemming strategy for phrase search
     m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
 
