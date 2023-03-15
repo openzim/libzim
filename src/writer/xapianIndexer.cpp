@@ -108,6 +108,16 @@ void XapianIndexer::indexingPrelude()
   writableDatabase.set_metadata("stopwords", stopwords);
 }
 
+namespace
+{
+
+size_t getTermCount(const Xapian::Document& d)
+{
+  return std::distance(d.termlist_begin(), d.termlist_end());
+}
+
+} // unnamed namespace
+
 /*
  * For title index, index the full path with namespace as data of the document.
  * The targetPath in valuesmap will store the path without namespace.
@@ -147,6 +157,12 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   if (!unaccentedTitle.empty()) {
     std::string anchoredTitle = ANCHOR_TERM + unaccentedTitle;
     indexer.index_text(anchoredTitle, 1);
+    if ( getTermCount(currentDocument) == 1 ) {
+      // only ANCHOR_TERM was added, hence unaccentedTitle is made solely of
+      // non-word characters. Then add entire title as a single term.
+      currentDocument.remove_term(*currentDocument.termlist_begin());
+      currentDocument.add_term(unaccentedTitle);
+    }
   }
 
   /* add to the database */

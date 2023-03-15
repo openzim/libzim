@@ -163,7 +163,7 @@ zim::Archive TempZimArchive::createZimFromTitles(std::vector<std::string> titles
 
   // add dummy items with given titles
   for (auto title : titles) {
-    std::string path = "dummyPath" + title;
+    std::string path = "dummyPath/" + title;
     auto item = std::make_shared<TestItem>(path, "text/html", title);
     creator.addItem(item);
   }
