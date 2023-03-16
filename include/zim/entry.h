@@ -83,7 +83,7 @@ namespace zim
 
       entry_index_type getIndex() const   { return m_idx; }
 
-    protected: // so that Item can be implemented as a wrapper over Entry
+    private:
       std::shared_ptr<FileImpl> m_file;
       entry_index_type m_idx;
       std::shared_ptr<const Dirent> m_dirent;

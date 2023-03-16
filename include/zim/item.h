@@ -23,27 +23,28 @@
 
 #include "zim.h"
 #include "blob.h"
-#include "entry.h"
 #include <string>
 
 namespace zim
 {
+  class Dirent;
+  class FileImpl;
+
   /**
    * An `Item` in an `Archive`
    *
-   * There is no public constructor - the only way to obtain an `Item`
-   * is via `Entry::getItem()` or `Entry::getRedirect()`.
-   *
    * All `Item`'s methods are threadsafe.
    */
-  class Item : private Entry
+  class Item
   {
     public: // types
       typedef std::pair<std::string, offset_type> DirectAccessInfo;
 
     public: // functions
-      std::string getTitle() const { return Entry::getTitle(); }
-      std::string getPath() const  { return Entry::getPath(); }
+      explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
+
+      std::string getTitle() const;
+      std::string getPath() const;
       std::string getMimetype() const;
 
       /** Get the data associated to the item
@@ -86,15 +87,16 @@ namespace zim
        */
       DirectAccessInfo getDirectAccessInformation() const;
 
-      entry_index_type getIndex() const   { return Entry::getIndex(); }
+      entry_index_type getIndex() const   { return m_idx; }
 
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterIndex() const;
 #endif
 
-    private: // functions
-      explicit Item(const Entry& entry);
-      friend class Entry;
+    private: // data
+      std::shared_ptr<FileImpl> m_file;
+      entry_index_type m_idx;
+      std::shared_ptr<const Dirent> m_dirent;
   };
 
 }
