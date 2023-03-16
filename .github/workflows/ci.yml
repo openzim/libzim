@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   Macos:
@@ -11,25 +15,32 @@ jobs:
           - native_dyn
           - iOS_arm64
           - iOS_x86_64
-    runs-on: macos-latest
+
+    runs-on: macos-12
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
       - name: Install packages
         run: |
           brew update
           brew install gcovr pkg-config ninja || brew link --overwrite python
+
       - name: Install python modules
         run: pip3 install meson==0.52.1 pytest
+
       - name: Install deps
         shell: bash
         run: |
           ARCHIVE_NAME=deps2_osx_${{matrix.target}}_libzim.tar.xz
           wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
+
       - name: Compile
         shell: bash
         run: |
@@ -43,6 +54,7 @@ jobs:
           meson . build ${MESON_OPTION}
           cd build
           ninja
+
       - name: Test
         if: startsWith(matrix.target, 'native_')
         shell: bash
@@ -57,21 +69,27 @@ jobs:
 
   Windows:
     runs-on: windows-2019
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
       - name: Install packages
         run:
           choco install ninja
+
       - name: Install python modules
         run: pip3 install meson
+
       - name: Compile
         shell: cmd
         run: .github\script\build_libzim.cmd
+
       - name: Test
         shell: cmd
         run: |
@@ -124,79 +142,71 @@ jobs:
             lib_postfix: '64'
     env:
       HOME: /home/runner
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
-      image: "kiwix/kiwix-build_ci:${{matrix.image_variant}}-32"
+      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:36"
+
     steps:
-    - name: Checkout code
-      shell: python
-      run: |
-        from subprocess import check_call
-        from os import environ
-        config_command = [
-          'git', 'config', '--global',
-          'http.postBuffer', '1048576000'
-        ]
-        check_call(config_command, cwd=environ['HOME'])
-        clone_command = [
-          'git', 'clone',
-          'https://github.com/${{github.repository}}',
-          '--depth=1',
-          '--branch', '${{github.ref_name}}'
-        ]
-        check_call(clone_command, cwd=environ['HOME'])
-    - name: Install deps
-      if: false == startsWith(matrix.target, 'alpine_')
-      shell: bash
-      run: |
-        ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
-        wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C /home/runner
-    - name: Compile
-      shell: bash
-      run: |
-        if [[ "${{matrix.target}}" =~ .*_dyn ]]; then
-          MESON_OPTION="--default-library=shared"
-        else
-          MESON_OPTION="--default-library=static"
-        fi
-        if [[ "${{matrix.target}}" =~ native_.* ]]; then
-          MESON_OPTION="$MESON_OPTION -Db_coverage=true"
-        elif [[ "${{matrix.target}}" != alpine_* ]]; then
-          MESON_OPTION="$MESON_OPTION --cross-file $HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
-        fi
-        if [[ "${{matrix.target}}" =~ android_.* ]]; then
-          MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
-        fi
-        if [[ "${{matrix.target}}" == wasm ]]; then
-          MESON_OPTION="$MESON_OPTION -Dexamples=false"
-        fi
-        cd $HOME/libzim
-        meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
-        cd build
-        ninja
-      env:
-        PKG_CONFIG_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig"
-    - name: Test
-      if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
-      shell: bash
-      run: |
-        cd $HOME/libzim/build
-        ninja download_test_data
-        meson test --verbose
-        if [[ "${{matrix.target}}" =~ native_.* ]]; then
-          ninja coverage
-        fi
-      env:
-        LD_LIBRARY_PATH: "/home/runner/BUILD_${{matrix.target}}/INSTALL/lib:/home/runner/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
-        SKIP_BIG_MEMORY_TEST: 1
-        WAIT_TIME_FACTOR_TEST: 10
-    - name: Publish coverage
-      shell: bash
-      run: |
-        cd $HOME/libzim
-        curl https://codecov.io/bash -o codecov.sh
-        bash codecov.sh -n "${OS_NAME}_${{matrix.target}}" -Z
-        rm codecov.sh
-      if: startsWith(matrix.target, 'native_')
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Install dependences
+        if: false == startsWith(matrix.target, 'alpine_')
+        run: |
+          ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
+          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C ${{env.HOME}}
+
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
+      - name: Compile source code
+        shell: bash
+        env:
+          PKG_CONFIG_PATH: ${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig
+        run: |
+          if [[ "${{matrix.target}}" =~ .*_dyn ]]
+          then
+            MESON_OPTION="--default-library=shared"
+          else
+            MESON_OPTION="--default-library=static"
+          fi
+          if [[ "${{matrix.target}}" =~ native_.* ]]
+          then
+            MESON_OPTION="$MESON_OPTION -Db_coverage=true"
+          elif [[ "${{matrix.target}}" != alpine_* ]]
+          then
+            MESON_OPTION="$MESON_OPTION --cross-file ${{ env.HOME }}/BUILD_${{ matrix.target }}/meson_cross_file.txt"
+          fi
+          if [[ "${{matrix.target}}" =~ android_.* ]]
+          then
+            MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
+          fi
+          if [[ "${{matrix.target}}" == wasm ]]
+          then
+            MESON_OPTION="$MESON_OPTION -Dexamples=false"
+          fi
+          meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
+          cd build
+          ninja
+
+      - name: Run automated tests
+        shell: bash
+        if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
+        env:
+          LD_LIBRARY_PATH: "${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib:${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
+          SKIP_BIG_MEMORY_TEST: 1
+          WAIT_TIME_FACTOR_TEST: 10
+        run: |
+          cd build
+          ninja download_test_data
+          meson test --verbose
+          if [[ "${{matrix.target}}" =~ native_.* ]]; then
+            ninja coverage
+          fi
+
+      - name: Upload code coverage
+        shell: bash
+        if: startsWith(matrix.target, 'native_')
+        env:
+          CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
+        run: |
+          curl https://codecov.io/bash -o codecov.sh
+          bash codecov.sh -n "${OS_NAME}_${{matrix.target}}" -Z
+          rm codecov.sh
