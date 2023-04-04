@@ -72,7 +72,7 @@ class InternalDataBase {
 struct SearchIterator::InternalData {
     std::shared_ptr<InternalDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
-    Xapian::MSetIterator iterator;
+    Xapian::MSetIterator _iterator;
     Xapian::Document _document;
     bool document_fetched;
     std::unique_ptr<Entry> _entry;
@@ -80,7 +80,7 @@ struct SearchIterator::InternalData {
     InternalData(const InternalData& other) :
       mp_internalDb(other.mp_internalDb),
       mp_mset(other.mp_mset),
-      iterator(other.iterator),
+      _iterator(other._iterator),
       _document(other._document),
       document_fetched(other.document_fetched),
       _entry(other._entry ? new Entry(*other._entry) : nullptr )
@@ -92,7 +92,7 @@ struct SearchIterator::InternalData {
       if (this != &other) {
         mp_internalDb = other.mp_internalDb;
         mp_mset = other.mp_mset;
-        iterator = other.iterator;
+        _iterator = other._iterator;
         _document = other._document;
         document_fetched = other.document_fetched;
         _entry.reset(other._entry ? new Entry(*other._entry) : nullptr);
@@ -103,23 +103,20 @@ struct SearchIterator::InternalData {
     InternalData(std::shared_ptr<InternalDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
         mp_internalDb(p_internalDb),
         mp_mset(p_mset),
-        iterator(iterator),
+        _iterator(iterator),
         document_fetched(false)
     {};
 
     Xapian::Document get_document() {
         if ( !document_fetched ) {
-            if (iterator == mp_mset->end()) {
-                throw std::runtime_error("Cannot get entry for end iterator");
-            }
-            _document = iterator.get_document();
+            _document = iterator().get_document();
             document_fetched = true;
         }
         return _document;
     }
 
     int get_databasenumber() {
-        Xapian::docid docid = *iterator;
+        Xapian::docid docid = *iterator();
         return (docid - 1) % mp_internalDb->m_archives.size();
     }
 
@@ -135,7 +132,18 @@ struct SearchIterator::InternalData {
     bool operator==(const InternalData& other) const {
         return (mp_internalDb == other.mp_internalDb
             &&  mp_mset == other.mp_mset
-            &&  iterator == other.iterator);
+            &&  _iterator == other._iterator);
+    }
+
+    bool is_end() const {
+        return _iterator == mp_mset->end();
+    }
+
+    const Xapian::MSetIterator& iterator() const {
+        if (is_end()) {
+            throw std::runtime_error("Cannot get entry for end iterator");
+        }
+        return _iterator;
     }
 };
 

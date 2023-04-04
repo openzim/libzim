@@ -73,7 +73,7 @@ SearchIterator& SearchIterator::operator++() {
     if ( ! internal ) {
         return *this;
     }
-    ++(internal->iterator);
+    ++(internal->_iterator);
     internal->document_fetched = false;
     internal->_entry.reset();
     return *this;
@@ -89,7 +89,7 @@ SearchIterator& SearchIterator::operator--() {
     if ( ! internal ) {
         return *this;
     }
-    --(internal->iterator);
+    --(internal->_iterator);
     internal->document_fetched = false;
     internal->_entry.reset();
     return *this;
@@ -141,7 +141,7 @@ int SearchIterator::getScore() const {
     if ( ! internal ) {
         return 0;
     }
-    return internal->iterator.get_percent();
+    return internal->iterator().get_percent();
 }
 
 std::string SearchIterator::getSnippet() const {
