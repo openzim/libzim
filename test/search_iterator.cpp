@@ -60,7 +60,7 @@ TEST(search_iterator, end) {
 
   ASSERT_THROW(it.getTitle(), std::runtime_error);
   ASSERT_THROW(it.getPath(), std::runtime_error);
-  ASSERT_EQ(it.getSnippet(), "");
+  ASSERT_THROW(it.getSnippet(), std::runtime_error);
   ASSERT_THROW(it.getScore(), std::runtime_error);
   ASSERT_THROW(it.getFileIndex(), std::runtime_error);
   ASSERT_THROW(it.getWordCount(), std::runtime_error);

@@ -162,9 +162,10 @@ std::string SearchIterator::getSnippet() const {
     {
         return internal->get_document().get_value(internal->mp_internalDb->valueSlot("snippet"));
     }
+
+    Entry& entry = internal->get_entry();
     /* No reader, no snippet */
     try {
-        Entry& entry = internal->get_entry();
         /* Get the content of the item to generate a snippet.
            We parse it and use the html dump to avoid remove html tags in the
            content and be able to nicely cut the text at random place. */
