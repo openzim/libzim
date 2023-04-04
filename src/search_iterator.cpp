@@ -184,20 +184,6 @@ std::string SearchIterator::getSnippet() const {
 }
 
 int SearchIterator::getSize() const {
-    if ( ! internal ) {
-        return -1;
-    }
-    if ( ! internal->mp_internalDb->hasValuesmap() )
-    {
-        /* This is the old legacy version. Guess and try */
-        return internal->get_document().get_value(2).empty() == true ? -1 : atoi(internal->get_document().get_value(2).c_str());
-    }
-    else if ( internal->mp_internalDb->hasValue("size") )
-    {
-        return atoi(internal->get_document().get_value(internal->mp_internalDb->valueSlot("size")).c_str());
-    }
-    /* The size is never used. Do we really want to get the content and
-       calculate the size ? */
     return -1;
 }
 
