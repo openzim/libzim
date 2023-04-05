@@ -291,7 +291,6 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   zim::microsleep(sleep_time * getWaitTimeFactor());
   // We detect it for any call after
   CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
-  CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
   CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));
   CHECK_ASYNC_EXCEPT(creator.addRedirection("foo2", "FooRedirection", "foo"));
   CHECK_ASYNC_EXCEPT(creator.finishZimCreation());
