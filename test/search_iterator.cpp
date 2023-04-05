@@ -60,9 +60,9 @@ TEST(search_iterator, end) {
 
   ASSERT_THROW(it.getTitle(), std::runtime_error);
   ASSERT_THROW(it.getPath(), std::runtime_error);
-  ASSERT_EQ(it.getSnippet(), "");
-//  ASSERT_EQ(it.getScore(), 0); Unspecified, may be 0 or 1. To fix.
-  ASSERT_EQ(it.getFileIndex(), 0);
+  ASSERT_THROW(it.getSnippet(), std::runtime_error);
+  ASSERT_THROW(it.getScore(), std::runtime_error);
+  ASSERT_THROW(it.getFileIndex(), std::runtime_error);
   ASSERT_THROW(it.getWordCount(), std::runtime_error);
   ASSERT_EQ(it.getSize(), -1);
   ASSERT_THROW(*it, std::runtime_error);

@@ -73,7 +73,7 @@ SearchIterator& SearchIterator::operator++() {
     if ( ! internal ) {
         return *this;
     }
-    ++(internal->iterator);
+    ++(internal->_iterator);
     internal->document_fetched = false;
     internal->_entry.reset();
     return *this;
@@ -89,7 +89,7 @@ SearchIterator& SearchIterator::operator--() {
     if ( ! internal ) {
         return *this;
     }
-    --(internal->iterator);
+    --(internal->_iterator);
     internal->document_fetched = false;
     internal->_entry.reset();
     return *this;
@@ -141,7 +141,7 @@ int SearchIterator::getScore() const {
     if ( ! internal ) {
         return 0;
     }
-    return internal->iterator.get_percent();
+    return internal->iterator().get_percent();
 }
 
 std::string SearchIterator::getSnippet() const {
@@ -162,9 +162,10 @@ std::string SearchIterator::getSnippet() const {
     {
         return internal->get_document().get_value(internal->mp_internalDb->valueSlot("snippet"));
     }
+
+    Entry& entry = internal->get_entry();
     /* No reader, no snippet */
     try {
-        Entry& entry = internal->get_entry();
         /* Get the content of the item to generate a snippet.
            We parse it and use the html dump to avoid remove html tags in the
            content and be able to nicely cut the text at random place. */
@@ -183,20 +184,6 @@ std::string SearchIterator::getSnippet() const {
 }
 
 int SearchIterator::getSize() const {
-    if ( ! internal ) {
-        return -1;
-    }
-    if ( ! internal->mp_internalDb->hasValuesmap() )
-    {
-        /* This is the old legacy version. Guess and try */
-        return internal->get_document().get_value(2).empty() == true ? -1 : atoi(internal->get_document().get_value(2).c_str());
-    }
-    else if ( internal->mp_internalDb->hasValue("size") )
-    {
-        return atoi(internal->get_document().get_value(internal->mp_internalDb->valueSlot("size")).c_str());
-    }
-    /* The size is never used. Do we really want to get the content and
-       calculate the size ? */
     return -1;
 }
 
