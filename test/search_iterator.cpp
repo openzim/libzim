@@ -38,7 +38,6 @@ TEST(search_iterator, uninitialized) {
   ASSERT_EQ(it.getScore(), 0);
   ASSERT_EQ(it.getFileIndex(), 0);
   ASSERT_EQ(it.getWordCount(), -1);
-  ASSERT_EQ(it.getSize(), -1);
   ASSERT_THROW(it.getZimId(), std::runtime_error);
   ASSERT_THROW(*it, std::runtime_error);
   ASSERT_THROW(it.operator->(), std::runtime_error);
@@ -64,7 +63,6 @@ TEST(search_iterator, end) {
   ASSERT_THROW(it.getScore(), std::runtime_error);
   ASSERT_THROW(it.getFileIndex(), std::runtime_error);
   ASSERT_THROW(it.getWordCount(), std::runtime_error);
-  ASSERT_EQ(it.getSize(), -1);
   ASSERT_THROW(*it, std::runtime_error);
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
@@ -116,7 +114,6 @@ TEST(search_iterator, functions) {
   ASSERT_EQ(it.getFileIndex(), 0);
   ASSERT_EQ(it.getZimId(), archive.getUuid());
   ASSERT_EQ(it.getWordCount(), 3);
-  ASSERT_EQ(it.getSize(), -1);                 // Unimplemented
 
   // Check getTitle for accents/cased text
   it++;
