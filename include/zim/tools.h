@@ -20,8 +20,7 @@
 #ifndef ZIM_TOOLS_H
 #define ZIM_TOOLS_H
 
-#include <zim/zim_config.h>
-
+#include "zim.h"
 
 namespace zim {
 #if defined(LIBZIM_WITH_XAPIAN)
@@ -32,7 +31,7 @@ namespace zim {
    * in the library. So android application needs to set
    * the data directory where ICU can find its data.
    */
-  void setICUDataDirectory(const std::string& path);
+  LIBZIM_API void setICUDataDirectory(const std::string& path);
 
 #endif
 }

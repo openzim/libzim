@@ -36,7 +36,7 @@ namespace zim
    *
    * All `Entry`'s methods are threadsafe.
    */
-  class Entry
+  class LIBZIM_API Entry
   {
     public:
       explicit Entry(std::shared_ptr<FileImpl> file_, entry_index_type idx_);

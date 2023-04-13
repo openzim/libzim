@@ -42,7 +42,7 @@ namespace zim
      * `ContentProvider` is an abstract class in charge of providing the content to
      * add in the archive to the creator.
      */
-    class ContentProvider {
+    class LIBZIM_API ContentProvider {
       public:
         virtual ~ContentProvider() = default;
         /**
@@ -81,7 +81,7 @@ namespace zim
     /**
      * StringProvider provide the content stored in a string.
      */
-    class StringProvider : public ContentProvider {
+    class LIBZIM_API StringProvider : public ContentProvider {
       public:
         /**
          * Create a provider using a string as content.
@@ -107,7 +107,7 @@ namespace zim
      * It is mostly the same thing that `StringProvider` but use a shared_ptr
      * to avoid copy.
      */
-    class SharedStringProvider : public ContentProvider {
+    class LIBZIM_API SharedStringProvider : public ContentProvider {
       public:
         /**
          * Create a provider using a string as content.
@@ -130,7 +130,7 @@ namespace zim
     /**
      * FileProvider provide the content stored in file.
      */
-    class FileProvider : public ContentProvider {
+    class LIBZIM_API FileProvider : public ContentProvider {
       public:
         /**
          * Create a provider using file as content.

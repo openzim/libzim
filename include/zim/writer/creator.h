@@ -61,7 +61,7 @@ namespace zim
      * - Any other exception thrown for unknown reason.
      * By default, creator status is not changed by thrown exception and creation should stop.
      */
-    class Creator
+    class LIBZIM_API Creator
     {
       public:
         /**

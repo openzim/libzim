@@ -53,7 +53,7 @@ class SearchResultSet;
  * However, Searcher (and subsequent classes) do not maintain a global/share state.
  * You can create several Searchers and use them in different threads.
  */
-class Searcher
+class LIBZIM_API Searcher
 {
   public:
     /** Searcher constructor.
@@ -115,7 +115,7 @@ class Searcher
  * It describe what have to be searched and how.
  * A Query is "database" independent.
  */
-class Query
+class LIBZIM_API Query
 {
   public:
     /** Query constructor.
@@ -156,7 +156,7 @@ class Query
  * This is somehow the reunification of a `Searcher` (what to search on)
  * and a `Query` (what to search for).
  */
-class Search
+class LIBZIM_API Search
 {
     public:
         Search(Search&& s);
@@ -195,7 +195,7 @@ class Search
  *
  * It mainly allows to get a iterator.
  */
-class SearchResultSet
+class LIBZIM_API SearchResultSet
 {
   public:
     typedef SearchIterator iterator;

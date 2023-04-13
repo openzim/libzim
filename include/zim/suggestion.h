@@ -52,7 +52,7 @@ class SuggestionDataBase;
  * However, SuggestionSearcher (and subsequent classes) do not maintain a global/
  * share state You can create several Searchers and use them in different threads.
  */
-class SuggestionSearcher
+class LIBZIM_API SuggestionSearcher
 {
   public:
     /** SuggestionSearcher constructor.
@@ -95,7 +95,7 @@ class SuggestionSearcher
 /**
  * A SuggestionSearch represent a particular suggestion search, based on a `SuggestionSearcher`.
  */
-class SuggestionSearch
+class LIBZIM_API SuggestionSearch
 {
     public:
         SuggestionSearch(SuggestionSearch&& s);
@@ -147,7 +147,7 @@ class SuggestionSearch
  *
  * It mainly allows to get a iterator either based on an MSetIterator or a RangeIterator.
  */
-class SuggestionResultSet
+class LIBZIM_API SuggestionResultSet
 {
   public:
     typedef SuggestionIterator iterator;

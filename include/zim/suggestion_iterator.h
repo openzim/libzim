@@ -31,7 +31,7 @@ class SuggestionResultSet;
 class SuggestionItem;
 class SearchIterator;
 
-class SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag, SuggestionItem>
+class LIBZIM_API SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag, SuggestionItem>
 {
     typedef Archive::iterator<EntryOrder::titleOrder> RangeIterator;
     friend class SuggestionResultSet;
@@ -81,7 +81,7 @@ class SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag,
 #endif  // LIBZIM_WITH_XAPIAN
 };
 
-class SuggestionItem
+class LIBZIM_API SuggestionItem
 {
     public: // methods
         SuggestionItem(std::string title, std::string path, std::string snippet = "")
