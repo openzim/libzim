@@ -107,6 +107,7 @@ jobs:
           - native_static
           - native_dyn
           - alpine_dyn
+          - aarch64_dyn
           - android_arm
           - android_arm64
           - win32_static
@@ -125,6 +126,9 @@ jobs:
           - target: alpine_dyn
             image_variant: alpine
             lib_postfix: '/x86_64-linux-musl'
+          - target: aarch64_dyn
+            image_variant: focal
+            lib_postfix: '/aarch64-linux-gnu'
           - target: android_arm
             image_variant: focal
             lib_postfix: '/arm-linux-androideabi'
