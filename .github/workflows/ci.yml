@@ -182,7 +182,7 @@ jobs:
           then
             MESON_OPTION="$MESON_OPTION -Dexamples=false"
           fi
-          meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
+          meson setup . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
           cd build
           ninja
 
