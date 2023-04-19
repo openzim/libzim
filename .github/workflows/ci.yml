@@ -122,24 +122,24 @@ jobs:
           - target: native_dyn
             image_variant: bionic
             lib_postfix: '/x86_64-linux-gnu'
+          - target: alpine_dyn
+            image_variant: alpine
+            lib_postfix: '/x86_64-linux-musl'
           - target: android_arm
             image_variant: bionic
             lib_postfix: '/arm-linux-androideabi'
           - target: android_arm64
             image_variant: bionic
             lib_postfix: '/aarch64-linux-android'
-          - target: wasm
-            image_variant: bionic
-            lib_postfix: '/x86_64-linux-gnu'
-          - target: alpine_dyn
-            image_variant: alpine
-            lib_postfix: '/x86_64-linux-musl'
           - target: win32_static
             image_variant: f35
             lib_postfix: '64'
           - target: win32_dyn
             image_variant: f35
             lib_postfix: '64'
+          - target: wasm
+            image_variant: bionic
+            lib_postfix: '/x86_64-linux-gnu'
     env:
       HOME: /home/runner
     runs-on: ubuntu-22.04
