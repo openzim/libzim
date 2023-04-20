@@ -107,6 +107,7 @@ jobs:
           - native_static
           - native_dyn
           - alpine_dyn
+          - aarch64_dyn
           - android_arm
           - android_arm64
           - win32_static
@@ -117,34 +118,37 @@ jobs:
           - false
         include:
           - target: native_static
-            image_variant: bionic
+            image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
           - target: native_dyn
-            image_variant: bionic
-            lib_postfix: '/x86_64-linux-gnu'
-          - target: android_arm
-            image_variant: bionic
-            lib_postfix: '/arm-linux-androideabi'
-          - target: android_arm64
-            image_variant: bionic
-            lib_postfix: '/aarch64-linux-android'
-          - target: wasm
-            image_variant: bionic
+            image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
           - target: alpine_dyn
             image_variant: alpine
             lib_postfix: '/x86_64-linux-musl'
+          - target: aarch64_dyn
+            image_variant: focal
+            lib_postfix: '/aarch64-linux-gnu'
+          - target: android_arm
+            image_variant: focal
+            lib_postfix: '/arm-linux-androideabi'
+          - target: android_arm64
+            image_variant: focal
+            lib_postfix: '/aarch64-linux-android'
           - target: win32_static
             image_variant: f35
             lib_postfix: '64'
           - target: win32_dyn
             image_variant: f35
             lib_postfix: '64'
+          - target: wasm
+            image_variant: focal
+            lib_postfix: '/x86_64-linux-gnu'
     env:
       HOME: /home/runner
     runs-on: ubuntu-22.04
     container:
-      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:36"
+      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:37"
 
     steps:
       - name: Install dependences
@@ -182,7 +186,7 @@ jobs:
           then
             MESON_OPTION="$MESON_OPTION -Dexamples=false"
           fi
-          meson . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
+          meson setup . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
           cd build
           ninja
 
