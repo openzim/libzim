@@ -20,13 +20,15 @@
 #ifndef ZIM_ERROR_H
 #define ZIM_ERROR_H
 
+#include "zim.h"
+
 #include <stdexcept>
 #include <sstream>
 #include <typeinfo>
 
 namespace zim
 {
-  class ZimFileFormatError : public std::runtime_error
+  class LIBZIM_API ZimFileFormatError : public std::runtime_error
   {
     public:
       explicit ZimFileFormatError(const std::string& msg)
@@ -34,7 +36,7 @@ namespace zim
         { }
   };
 
-  class InvalidType: public std::logic_error
+  class LIBZIM_API InvalidType: public std::logic_error
   {
     public:
       explicit InvalidType(const std::string& msg)
@@ -42,7 +44,7 @@ namespace zim
       {}
   };
 
-  class EntryNotFound : public std::runtime_error
+  class LIBZIM_API EntryNotFound : public std::runtime_error
   {
     public:
       explicit EntryNotFound(const std::string& msg)
@@ -54,7 +56,7 @@ namespace zim
    *
    * Most exceptions actually thrown are inheriting this exception.
    */
-  class CreatorError : public std::runtime_error
+  class LIBZIM_API CreatorError : public std::runtime_error
   {
     public:
       explicit CreatorError(const std::string& message)
@@ -63,7 +65,7 @@ namespace zim
   };
 
    /* Exception thrown when a entry cannot be added to the Creator.*/
-  class InvalidEntry : public CreatorError
+  class LIBZIM_API InvalidEntry : public CreatorError
   {
     public:
       explicit InvalidEntry(const std::string& message)
@@ -81,7 +83,7 @@ namespace zim
    * If a incoherence has been detected in those implementations a
    * `IncoherentImplementationError` will be thrown.
    */
-  class IncoherentImplementationError : public CreatorError
+  class LIBZIM_API IncoherentImplementationError : public CreatorError
   {
     public:
       explicit IncoherentImplementationError(const std::string& message)
@@ -113,7 +115,7 @@ namespace zim
    * }
    * ```
    */
-  class AsyncError : public CreatorError
+  class LIBZIM_API AsyncError : public CreatorError
   {
     public:
       explicit AsyncError(const std::exception_ptr exception)
@@ -149,7 +151,7 @@ namespace zim
    * If the creator is in error state (mostly because a AsyncError has already
    * being thrown), any call to any method on it will thrown a `CreatorStateError`.
    */
-  class CreatorStateError : public CreatorError
+  class LIBZIM_API CreatorStateError : public CreatorError
   {
     public:
       explicit CreatorStateError()

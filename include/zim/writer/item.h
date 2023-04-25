@@ -47,7 +47,7 @@ namespace zim
      * (But default `Item::getIndexData` returns a default implementation
      * for IndexData which works for html content.)
      */
-    class IndexData {
+    class LIBZIM_API IndexData {
       public:
         using GeoPosition = std::tuple<bool, double, double>;
         virtual ~IndexData() = default;
@@ -124,7 +124,7 @@ namespace zim
      * libzim provides `BasicItem`, `StringItem` and `FileItem`
      * to simplify (or avoid) this reimplementation.
      */
-    class Item
+    class LIBZIM_API Item
     {
       public:
         /**
@@ -230,7 +230,7 @@ namespace zim
      * `BasicItem` provides a basic implementation for everything about an `Item`
      * but the actual content of the item.
      */
-    class BasicItem : public Item
+    class LIBZIM_API BasicItem : public Item
     {
       public:
         /**
@@ -262,7 +262,7 @@ namespace zim
     /**
      * A `StringItem` is a full implemented item where the content is stored in a string.
      */
-    class StringItem : public BasicItem, public std::enable_shared_from_this<StringItem>
+    class LIBZIM_API StringItem : public BasicItem, public std::enable_shared_from_this<StringItem>
     {
       public:
         /**
@@ -296,7 +296,7 @@ namespace zim
     /**
      * A `FileItem` is a full implemented item where the content is file.
      */
-    class FileItem : public BasicItem
+    class LIBZIM_API FileItem : public BasicItem
     {
       public:
         /**

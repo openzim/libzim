@@ -53,7 +53,7 @@ namespace zim
    *
    * All methods of archive may throw an `ZimFileFormatError` if the file is invalid.
    */
-  class Archive
+  class LIBZIM_API Archive
   {
     public:
       template<EntryOrder order> class EntryRange;

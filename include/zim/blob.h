@@ -35,7 +35,7 @@ namespace zim
    *
    * All `Blob`'s methods are threadsafe.
    */
-  class Blob
+  class LIBZIM_API Blob
   {
     public: // types
       using DataPtr = std::shared_ptr<const char>;
