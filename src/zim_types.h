@@ -31,74 +31,29 @@
 #define PACKED
 #endif
 
-
-template<typename B>
+template<typename B, typename S>
 struct REAL_TYPEDEF{
   typedef B base_type;
+  typedef S SELF;
+
   B v;
   REAL_TYPEDEF() : v(0) {};
   explicit REAL_TYPEDEF(B v) : v(v) {};
   explicit inline operator bool() const { return v != 0; }
   explicit inline operator B() const { return v; }
 
-  inline bool operator==(const REAL_TYPEDEF<B>& rhs) const
+  inline bool operator==(const REAL_TYPEDEF<B, S>& rhs) const
   { return v == rhs.v; }
 
-  inline REAL_TYPEDEF<B>& operator++()
+  inline REAL_TYPEDEF<B, S>& operator++()
   { v++; return *this; }
 
-  inline REAL_TYPEDEF<B> operator++(int)
-  { return REAL_TYPEDEF<B>(v++); }
+  inline REAL_TYPEDEF<B, S> operator++(int)
+  { return REAL_TYPEDEF<B, S>(v++); }
 } PACKED;
 
-template<typename T> inline T& operator+= (T& lhs, const T& rhs)
-{
-  lhs.v += rhs.v;
-  return lhs;
-}
-
-template<typename T> inline T& operator+= (T& lhs, const typename T::base_type& rhs)
-{
-  lhs.v += rhs;
-  return lhs;
-}
-
-template<typename T> inline T operator+(T lhs, const T& rhs)
-{
-  lhs += rhs;
-  return lhs;
-}
-
-template<typename T> inline T& operator-=(T& lhs, const T& rhs)
-{
-  lhs.v -= rhs.v;
-  return lhs;
-}
-
-template<typename T> inline T operator-(T lhs, const T& rhs)
-{
-  lhs -= rhs;
-  return lhs;
-}
-
-template<typename T> inline bool operator< (const T& lhs, const T& rhs)
-{ return lhs.v < rhs.v; }
-
-template<typename T> inline bool operator> (const T& lhs, const T& rhs)
-{ return rhs < lhs; }
-
-template<typename T> inline bool operator<=(const T& lhs, const T& rhs)
-{ return !(lhs > rhs); }
-
-template<typename T> inline bool operator>=(const T& lhs, const T& rhs)
-{ return !(lhs < rhs); }
-
-template<typename T> inline bool operator!=(const T& lhs, const T& rhs)
-{ return !(lhs == rhs); }
-
-
-template<typename B>
-std::ostream& operator<<(std::ostream& os, const REAL_TYPEDEF<B>& obj)
+template<typename B, typename S>
+std::ostream& operator<<(std::ostream& os, const REAL_TYPEDEF<B, S>& obj)
 {
     os << obj.v;
     return os;
@@ -106,9 +61,20 @@ std::ostream& operator<<(std::ostream& os, const REAL_TYPEDEF<B>& obj)
 
 namespace zim {
 
-#define TYPEDEF(NAME, TYPE) struct NAME : public REAL_TYPEDEF<TYPE> { \
-explicit NAME(TYPE v=0) : REAL_TYPEDEF<TYPE>(v) {}; } PACKED; \
-static_assert(sizeof(NAME) == sizeof(TYPE), "");
+#define TYPEDEF(NAME, TYPE) struct NAME : public REAL_TYPEDEF<TYPE, NAME> {          \
+explicit NAME(TYPE v=0) : REAL_TYPEDEF<TYPE, NAME>(v) {}; } PACKED;                  \
+static_assert(sizeof(NAME) == sizeof(TYPE), "");                                     \
+inline NAME& operator+= (NAME& lhs, const NAME& rhs) { lhs.v += rhs.v; return lhs; } \
+inline NAME& operator+= (NAME& lhs, const TYPE& rhs) { lhs.v += rhs; return lhs; }   \
+inline NAME operator+(NAME lhs, const NAME& rhs) { lhs += rhs; return lhs; }         \
+inline NAME& operator-=(NAME& lhs, const NAME& rhs) { lhs.v -= rhs.v; return lhs; }  \
+inline NAME operator-(NAME lhs, const NAME& rhs) { lhs -= rhs; return lhs; }         \
+inline bool operator< (const NAME& lhs, const NAME& rhs) { return lhs.v < rhs.v; }   \
+inline bool operator> (const NAME& lhs, const NAME& rhs) { return rhs < lhs; }       \
+inline bool operator<=(const NAME& lhs, const NAME& rhs) { return !(lhs > rhs); }    \
+inline bool operator>=(const NAME& lhs, const NAME& rhs) { return !(lhs < rhs); }    \
+inline bool operator!=(const NAME& lhs, const NAME& rhs) { return !(lhs == rhs); }
+
 
 TYPEDEF(entry_index_t, entry_index_type)
 TYPEDEF(title_index_t, entry_index_type)

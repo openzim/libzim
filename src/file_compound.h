@@ -41,7 +41,7 @@ struct Range {
   const offset_t max;
 };
 
-struct less_range : public std::binary_function< Range, Range, bool>
+struct less_range
 {
   bool operator()(const Range& lhs, const Range& rhs) const {
     return lhs.min < rhs.min && lhs.max <= rhs.min;
