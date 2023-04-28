@@ -1,3 +1,18 @@
+libzim 8.2.0
+============
+
+ * Deprecate `SearchIterator::getSize()` method (@mgautierfr #774)
+ * Fix handling of search end iterator (@mgautierfr #774)
+   There were cases when we could dereference a end iterator.
+ * Fix suggestions with titles containing punctuations (@veloman-yunkan #765)
+ * Correctly publish our public API in Windows's dll (@xiaoyifang #783)
+ * Fix various warning and compilation error when compiling with last xcode version (@mgautierfr #782)
+ * Fix faulty unit-test checking for async errors (@mgautierfr #776)
+ * Update subproject wrap zstd to version 1.5.4 (and use upstream wrap file.) (@mgautierfr #749)
+ * Move main branch from `master` to `main`
+ * Add CI to build on aarch64 (@mgautierfr #784)
+ * Various CI improvement (@kelson42)
+
 libzim 8.1.1
 ============
 
