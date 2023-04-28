@@ -1,3 +1,8 @@
+libzim 8.1.1
+============
+
+ * Revert a ABI breaking change introduced in 8.1.0 (Optimization of `Entry::getItem()`)
+
 libzim 8.1.0
 ============
 
