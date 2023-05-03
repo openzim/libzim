@@ -206,11 +206,7 @@ jobs:
           fi
 
       - name: Upload code coverage
-        shell: bash
+        uses: codecov/codecov-action@v3
         if: startsWith(matrix.target, 'native_')
-        env:
-          CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
-        run: |
-          curl https://codecov.io/bash -o codecov.sh
-          bash codecov.sh -n "${OS_NAME}_${{matrix.target}}" -Z
-          rm codecov.sh
+        with:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
