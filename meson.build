@@ -38,7 +38,7 @@ lzma_dep = dependency('liblzma', static:static_linkage)
 if static_linkage
   add_project_arguments('-DLZMA_API_STATIC', language: 'cpp')
 else
-  private_conf.set('LIBZIM_EXPORT_DLL', true)
+  public_conf.set('LIBZIM_EXPORT_DLL', true)
 endif
 
 zstd_dep = dependency('libzstd', static:static_linkage)
