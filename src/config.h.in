@@ -20,3 +20,5 @@
 #mesondefine ENV64BIT
 
 #mesondefine ENV32BIT
+
+#mesondefine LIBZIM_EXPORT_DLL
