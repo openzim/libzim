@@ -94,9 +94,9 @@ namespace zim
 #endif
 
     private: // data
-      LIBZIM_API std::shared_ptr<FileImpl> m_file;
-      LIBZIM_API entry_index_type m_idx;
-      LIBZIM_API std::shared_ptr<const Dirent> m_dirent;
+      std::shared_ptr<FileImpl> m_file;
+      entry_index_type m_idx;
+      std::shared_ptr<const Dirent> m_dirent;
   };
 
 }
