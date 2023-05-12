@@ -35,7 +35,7 @@ namespace zim
    *
    * All `Blob`'s methods are threadsafe.
    */
-  class LIBZIM_API Blob
+  class Blob
   {
     public: // types
       using DataPtr = std::shared_ptr<const char>;
@@ -44,7 +44,7 @@ namespace zim
       /**
        * Constuct a empty `Blob`
        */
-      Blob();
+      LIBZIM_API Blob();
 
       /**
        * Constuct `Blob` pointing to `data`.
@@ -52,19 +52,19 @@ namespace zim
        * The created blob only point to the data and doesn't own it.
        * User must care that data is not freed before using the blob.
        */
-      Blob(const char* data, size_type size);
+      LIBZIM_API Blob(const char* data, size_type size);
 
       /**
        * Constuct `Blob` pointing to `data`.
        *
        * The created blob shares the ownership on data.
        */
-      Blob(const DataPtr& buffer, size_type size);
+      LIBZIM_API Blob(const DataPtr& buffer, size_type size);
 
-      operator std::string() const { return std::string(_data.get(), _size); }
-      const char* data() const  { return _data.get(); }
-      const char* end() const   { return _data.get() + _size; }
-      size_type size() const     { return _size; }
+      LIBZIM_API operator std::string() const { return std::string(_data.get(), _size); }
+      LIBZIM_API const char* data() const  { return _data.get(); }
+      LIBZIM_API const char* end() const   { return _data.get() + _size; }
+      LIBZIM_API size_type size() const     { return _size; }
 
    private:
      DataPtr _data;

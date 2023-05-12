@@ -35,7 +35,7 @@ namespace zim
    *
    * All `Item`'s methods are threadsafe.
    */
-  class LIBZIM_API Item
+  class Item
   {
     public: // types
       typedef std::pair<std::string, offset_type> DirectAccessInfo;
