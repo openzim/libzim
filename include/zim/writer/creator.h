@@ -70,8 +70,8 @@ namespace zim
          * @param verbose If the creator print verbose information.
          * @param comptype The compression algorithm to use.
          */
-        Creator();
-        virtual ~Creator();
+        LIBZIM_API Creator();
+        LIBZIM_API virtual ~Creator();
 
         /**
          * Configure the verbosity of the creator
@@ -79,7 +79,7 @@ namespace zim
          * @param verbose if the creator print verbose information.
          * @return a reference to itself.
          */
-        Creator& configVerbose(bool verbose);
+        LIBZIM_API Creator& configVerbose(bool verbose);
 
         /**
          * Configure the compression algorithm to use.
@@ -87,7 +87,7 @@ namespace zim
          * @param comptype the compression algorithm to use.
          * @return a reference to itself.
          */
-        Creator& configCompression(Compression compression);
+        LIBZIM_API Creator& configCompression(Compression compression);
 
         /**
          * Set the size of the created clusters.
@@ -106,7 +106,7 @@ namespace zim
          * @param targetSize The target size of a cluster (in byte).
          * @return a reference to itself.
          */
-        Creator& configClusterSize(zim::size_type targetSize);
+        LIBZIM_API Creator& configClusterSize(zim::size_type targetSize);
 
         /**
          * Configure the fulltext indexing feature.
@@ -115,7 +115,7 @@ namespace zim
          * @param language Language to use for the indexation.
          * @return a reference to itself.
          */
-        Creator& configIndexing(bool indexing, const std::string& language);
+        LIBZIM_API Creator& configIndexing(bool indexing, const std::string& language);
 
         /**
          * Set the number of thread to use for the internal worker.
@@ -123,7 +123,7 @@ namespace zim
          * @param nbWorkers The number of workers to use.
          * @return a reference to itself.
          */
-        Creator& configNbWorkers(unsigned nbWorkers);
+        LIBZIM_API Creator& configNbWorkers(unsigned nbWorkers);
 
         /**
          * Start the zim creation.
@@ -132,14 +132,14 @@ namespace zim
          *
          * @param filepath the path of the zim file to create.
          */
-        void startZimCreation(const std::string& filepath);
+        LIBZIM_API void startZimCreation(const std::string& filepath);
 
         /**
          * Add a item to the archive.
          *
          * @param item The item to add.
          */
-        void addItem(std::shared_ptr<Item> item);
+        LIBZIM_API void addItem(std::shared_ptr<Item> item);
 
         /**
          * Add a metadata to the archive.
@@ -149,7 +149,7 @@ namespace zim
          * @param mimetype the mimetype of the metadata.
          *                 Only used to detect if the metadata must be compressed or not.
          */
-        void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain;charset=utf-8");
+        LIBZIM_API void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain;charset=utf-8");
 
         /**
          * Add a metadata to the archive using a contentProvider instead of plain string.
@@ -159,7 +159,7 @@ namespace zim
          * @param mimetype the mimetype of the metadata.
          *                 Only used to detect if the metadata must be compressed.
          */
-        void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype = "text/plain;charset=utf-8");
+        LIBZIM_API void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype = "text/plain;charset=utf-8");
 
         /**
          * Add illustration to the archive.
@@ -167,7 +167,7 @@ namespace zim
          * @param size the size (width and height) of the illustration.
          * @param content the content of the illustration (must be a png content)
          */
-        void addIllustration(unsigned int size, const std::string& content);
+        LIBZIM_API void addIllustration(unsigned int size, const std::string& content);
 
         /**
          * Add illustration to the archive.
@@ -175,7 +175,7 @@ namespace zim
          * @param size the size (width and height) of the illustration.
          * @param provider the provider of the content of the illustration (must be a png content)
          */
-        void addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider);
+        LIBZIM_API void addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider);
 
         /**
          * Add a redirection to the archive.
@@ -189,7 +189,7 @@ namespace zim
          * @param targetpath the path of the target of the redirection.
          * @param hints hints associated to the redirection.
          */
-        void addRedirection(
+        LIBZIM_API void addRedirection(
             const std::string& path,
             const std::string& title,
             const std::string& targetpath,
@@ -198,40 +198,40 @@ namespace zim
         /**
          * Finalize the zim creation.
          */
-        void finishZimCreation();
+        LIBZIM_API void finishZimCreation();
 
         /**
          * Set the path of the main page.
          *
          * @param mainPath The path of the main page.
          */
-        void setMainPath(const std::string& mainPath) { m_mainPath = mainPath; }
+        LIBZIM_API void setMainPath(const std::string& mainPath) { m_mainPath = mainPath; }
 
         /**
          * Set the uuid of the the archive.
          *
          * @param uuid The uuid of the archive.
          */
-        void setUuid(const zim::Uuid& uuid) { m_uuid = uuid; }
+        LIBZIM_API void setUuid(const zim::Uuid& uuid) { m_uuid = uuid; }
 
       private:
-        std::unique_ptr<CreatorData> data;
+        LIBZIM_API std::unique_ptr<CreatorData> data;
 
         // configuration
-        bool m_verbose = false;
-        Compression m_compression = Compression::Zstd;
-        bool m_withIndex = false;
-        size_t m_clusterSize;
-        std::string m_indexingLanguage;
-        unsigned m_nbWorkers = 4;
+        LIBZIM_API bool m_verbose = false;
+        LIBZIM_API Compression m_compression = Compression::Zstd;
+        LIBZIM_API bool m_withIndex = false;
+        LIBZIM_API size_t m_clusterSize;
+        LIBZIM_API std::string m_indexingLanguage;
+        LIBZIM_API unsigned m_nbWorkers = 4;
 
         // zim data
-        std::string m_mainPath;
-        Uuid m_uuid = Uuid::generate();
+        LIBZIM_API std::string m_mainPath;
+        LIBZIM_API Uuid m_uuid = Uuid::generate();
 
-        void fillHeader(Fileheader* header) const;
-        void writeLastParts() const;
-        void checkError();
+        LIBZIM_API void fillHeader(Fileheader* header) const;
+        LIBZIM_API void writeLastParts() const;
+        LIBZIM_API void checkError();
     };
   }
 

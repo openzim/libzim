@@ -89,16 +89,16 @@ namespace zim
          *
          * @param content the content to serve.
          */
-        explicit StringProvider(const std::string& content)
+        LIBZIM_API explicit StringProvider(const std::string& content)
           : content(content),
             feeded(false)
         {}
-        zim::size_type getSize() const { return content.size(); }
-        Blob feed();
+        LIBZIM_API zim::size_type getSize() const { return content.size(); }
+        LIBZIM_API Blob feed();
 
       protected:
-        std::string content;
-        bool feeded;
+        LIBZIM_API std::string content;
+        LIBZIM_API bool feeded;
     };
 
     /**

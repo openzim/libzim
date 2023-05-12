@@ -41,11 +41,11 @@ namespace zim
       typedef std::pair<std::string, offset_type> DirectAccessInfo;
 
     public: // functions
-      explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
+      LIBZIM_API explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
 
-      std::string getTitle() const;
-      std::string getPath() const;
-      std::string getMimetype() const;
+      LIBZIM_API std::string getTitle() const;
+      LIBZIM_API std::string getPath() const;
+      LIBZIM_API std::string getMimetype() const;
 
       /** Get the data associated to the item
        *
@@ -54,7 +54,7 @@ namespace zim
        * @param offset The number of byte to skip at begining of the data.
        * @return A blob corresponding to the data.
        */
-      Blob getData(offset_type offset=0) const;
+      LIBZIM_API Blob getData(offset_type offset=0) const;
 
       /** Get the data associated to the item
        *
@@ -64,13 +64,13 @@ namespace zim
        * @param size The number of byte to read.
        * @return A blob corresponding to the data.
        */
-      Blob getData(offset_type offset, size_type size) const;
+      LIBZIM_API Blob getData(offset_type offset, size_type size) const;
 
       /** The size of the item.
        *
        * @return The size (in byte) of the item.
        */
-      size_type getSize() const;
+      LIBZIM_API size_type getSize() const;
 
       /** Direct access information.
        *
@@ -85,18 +85,18 @@ namespace zim
        *         If it is not possible to have direct access for this item,
        *         return a pair of `{"", 0}`
        */
-      DirectAccessInfo getDirectAccessInformation() const;
+      LIBZIM_API DirectAccessInfo getDirectAccessInformation() const;
 
-      entry_index_type getIndex() const   { return m_idx; }
+      LIBZIM_API entry_index_type getIndex() const   { return m_idx; }
 
 #ifdef ZIM_PRIVATE
-      cluster_index_type getClusterIndex() const;
+      LIBZIM_API cluster_index_type getClusterIndex() const;
 #endif
 
     private: // data
-      std::shared_ptr<FileImpl> m_file;
-      entry_index_type m_idx;
-      std::shared_ptr<const Dirent> m_dirent;
+      LIBZIM_API std::shared_ptr<FileImpl> m_file;
+      LIBZIM_API entry_index_type m_idx;
+      LIBZIM_API std::shared_ptr<const Dirent> m_dirent;
   };
 
 }
