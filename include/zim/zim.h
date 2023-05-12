@@ -34,7 +34,7 @@
 #endif
 
 #if (defined _WIN32 || defined __CYGWIN__) && defined LIBZIM_EXPORT_DLL
-#praga message("WARNING: declare macro dllexport")
+#pragma  message("WARNING: declare macro dllexport")
     #define LIBZIM_API __declspec(dllexport)
 #else
     #define LIBZIM_API
