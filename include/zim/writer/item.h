@@ -124,7 +124,7 @@ namespace zim
      * libzim provides `BasicItem`, `StringItem` and `FileItem`
      * to simplify (or avoid) this reimplementation.
      */
-    class LIBZIM_API Item
+    class Item
     {
       public:
         /**
@@ -135,7 +135,7 @@ namespace zim
          *
          * @return the path of the item.
          */
-        virtual std::string getPath() const = 0;
+        LIBZIM_API virtual std::string getPath() const = 0;
 
         /**
          * The title of the item.
@@ -145,7 +145,7 @@ namespace zim
          *
          * @return the title of the item.
          */
-        virtual std::string getTitle() const = 0;
+        LIBZIM_API virtual std::string getTitle() const = 0;
 
         /**
          * The mimetype of the item.
@@ -155,7 +155,7 @@ namespace zim
          *
          * @return the mimetype of the item.
          */
-        virtual std::string getMimeType() const = 0;
+        LIBZIM_API virtual std::string getMimeType() const = 0;
 
         /**
          * The content provider of the item.
@@ -171,7 +171,7 @@ namespace zim
          *
          * @return the contentProvider of the item.
          */
-        virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
+        LIBZIM_API virtual std::unique_ptr<ContentProvider> getContentProvider() const = 0;
 
         /**
          * The index data of the item.
@@ -198,7 +198,7 @@ namespace zim
          * @return the indexData of the item.
          *         May return a nullptr if there is no indexData.
          */
-        virtual std::shared_ptr<IndexData> getIndexData() const;
+        LIBZIM_API virtual std::shared_ptr<IndexData> getIndexData() const;
 
         /**
          * Hints to help the creator takes decision about the item.
@@ -215,13 +215,13 @@ namespace zim
          *
          * @return A list of hints.
          */
-        virtual Hints getHints() const;
+        LIBZIM_API virtual Hints getHints() const;
 
         /**
          * Returns the getHints() amended with default values based on mimetypes.
          */
-        Hints getAmendedHints() const;
-        virtual ~Item() = default;
+        LIBZIM_API Hints getAmendedHints() const;
+        LIBZIM_API virtual ~Item() = default;
     };
 
     /**
@@ -230,7 +230,7 @@ namespace zim
      * `BasicItem` provides a basic implementation for everything about an `Item`
      * but the actual content of the item.
      */
-    class LIBZIM_API BasicItem : public Item
+    class BasicItem : public Item
     {
       public:
         /**
@@ -240,17 +240,17 @@ namespace zim
          * @param mimetype the mimetype of the item.
          * @param title the title of the item.
          */
-        BasicItem(const std::string& path, const std::string& mimetype, const std::string& title, Hints hints)
+        LIBZIM_API BasicItem(const std::string& path, const std::string& mimetype, const std::string& title, Hints hints)
           : path(path),
             mimetype(mimetype),
             title(title),
             hints(hints)
         {}
 
-        std::string getPath() const { return path; }
-        std::string getTitle() const { return title; }
-        std::string getMimeType() const { return mimetype; }
-        Hints       getHints() const { return hints; }
+        LIBZIM_API std::string getPath() const { return path; }
+        LIBZIM_API std::string getTitle() const { return title; }
+        LIBZIM_API std::string getMimeType() const { return mimetype; }
+        LIBZIM_API Hints       getHints() const { return hints; }
 
       protected:
         std::string path;
