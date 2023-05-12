@@ -262,7 +262,7 @@ namespace zim
     /**
      * A `StringItem` is a full implemented item where the content is stored in a string.
      */
-    class LIBZIM_API StringItem : public BasicItem, public std::enable_shared_from_this<StringItem>
+    class StringItem : public BasicItem, public std::enable_shared_from_this<StringItem>
     {
       public:
         /**
@@ -276,14 +276,14 @@ namespace zim
          * @param content the content of the item.
          */
         template<typename... Ts>
-        static std::shared_ptr<StringItem> create(Ts&&... params) {
+        LIBZIM_API static std::shared_ptr<StringItem> create(Ts&&... params) {
           return std::shared_ptr<StringItem>(new StringItem(std::forward<Ts>(params)...));
         }
 
-        std::unique_ptr<ContentProvider> getContentProvider() const;
+        LIBZIM_API std::unique_ptr<ContentProvider> getContentProvider() const;
 
       protected:
-        std::string content;
+        LIBZIM_API std::string content;
 
       private:
         StringItem(const std::string& path, const std::string& mimetype,
@@ -296,7 +296,7 @@ namespace zim
     /**
      * A `FileItem` is a full implemented item where the content is file.
      */
-    class LIBZIM_API FileItem : public BasicItem
+    class FileItem : public BasicItem
     {
       public:
         /**
@@ -307,13 +307,13 @@ namespace zim
          * @param title the title of the item.
          * @param filepath the path of the file in the filesystem.
          */
-        FileItem(const std::string& path, const std::string& mimetype,
+        LIBZIM_API FileItem(const std::string& path, const std::string& mimetype,
                  const std::string& title, Hints hints, const std::string& filepath)
           : BasicItem(path, mimetype, title, hints),
             filepath(filepath)
         {}
 
-        std::unique_ptr<ContentProvider> getContentProvider() const;
+        LIBZIM_API std::unique_ptr<ContentProvider> getContentProvider() const;
 
       protected:
         std::string filepath;
