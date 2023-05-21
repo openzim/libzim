@@ -20,6 +20,7 @@
 #include "../src/tools.h"
 
 #include "gtest/gtest.h"
+#include <sstream>
 
 namespace {
   TEST(Tools, wordCount) {
@@ -54,4 +55,20 @@ namespace {
     ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_1 28x1 28@1"), std::runtime_error);
   }
 
+#if defined(ENABLE_XAPIAN)
+  TEST(Tools, removeAccents) {
+    ASSERT_EQ(zim::removeAccents("bépoàǹ"), "bepoan");
+    std::ostringstream ss;
+    for(auto i=0; i<4*1024; i++) {
+      ss << "bépo";
+    }
+    auto accentedString(ss.str());
+    ss.str("");
+    for(auto i=0; i<4*1024; i++) {
+      ss << "bepo";
+    }
+    auto unaccentedString(ss.str());
+    ASSERT_EQ(zim::removeAccents(accentedString), unaccentedString);
+  }
+#endif
 }
