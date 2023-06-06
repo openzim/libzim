@@ -286,4 +286,40 @@ TEST(Search, CJK)
     ASSERT_EQ(result.begin().getTitle(), "Test Article1");
   }
 }
+
+TEST(Search, accents)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "nostem");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a tèst articlé. temp0"));
+  creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. For article1."));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(std::vector<zim::Archive>{});
+  searcher.addArchive(archive);
+  searcher.setVerbose(true);
+
+  {
+    zim::Query query("test article");
+    auto search = searcher.search(query);
+
+    ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+    auto result = search.getResults(0, 1);
+    ASSERT_EQ(result.begin().getTitle(), "Test Article0");
+  }
+
+  {
+    zim::Query query("test àrticlé");
+    auto search = searcher.search(query);
+
+    ASSERT_EQ(0, search.getEstimatedMatches());
+  }
+}
 } // unnamed namespace
