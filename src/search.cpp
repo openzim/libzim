@@ -151,7 +151,7 @@ Xapian::Query InternalDataBase::parseQuery(const Query& query)
 {
   Xapian::Query xquery;
 
-  xquery = m_queryParser.parse_query(query.m_query);
+  xquery = m_queryParser.parse_query(query.m_query, Xapian::QueryParser::FLAG_CJK_NGRAM);
 
   if (query.m_geoquery && hasValue("geo.position")) {
     Xapian::GreatCircleMetric metric;

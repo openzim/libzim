@@ -133,7 +133,7 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
   std::lock_guard<std::mutex> locker(m_mutex);
   Xapian::Query xquery;
 
-  const auto flags = Xapian::QueryParser::FLAG_DEFAULT | Xapian::QueryParser::FLAG_PARTIAL;
+  const auto flags = Xapian::QueryParser::FLAG_DEFAULT | Xapian::QueryParser::FLAG_PARTIAL | Xapian::QueryParser::FLAG_CJK_NGRAM;
 
   // Reset stemming strategy for normal parsing
   m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
@@ -147,12 +147,12 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
     // Reconfigure stemming strategy for phrase search
     m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_NONE);
 
-    Xapian::Query subquery_phrase = m_queryParser.parse_query(query);
+    Xapian::Query subquery_phrase = m_queryParser.parse_query(query, Xapian::QueryParser::FLAG_CJK_NGRAM);
     // Force the OP_PHRASE window to be equal to the number of terms.
     subquery_phrase = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_phrase.get_terms_begin(), subquery_phrase.get_terms_end(), subquery_phrase.get_length());
 
     auto qs = ANCHOR_TERM + query;
-    Xapian::Query subquery_anchored = m_queryParser.parse_query(qs);
+    Xapian::Query subquery_anchored = m_queryParser.parse_query(qs, Xapian::QueryParser::FLAG_CJK_NGRAM);
     subquery_anchored = Xapian::Query(Xapian::Query::OP_PHRASE, subquery_anchored.get_terms_begin(), subquery_anchored.get_terms_end(), subquery_anchored.get_length());
 
     xquery = Xapian::Query(Xapian::Query::OP_OR, xquery, subquery_phrase);
