@@ -667,4 +667,39 @@ TEST(Suggestion, reuseSearcher) {
   ASSERT_EQ(count, 3);
 }
 
+TEST(Suggestion, CJK) {
+  TempZimArchive tza("testZim");
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "zh");
+  creator.startZimCreation(tza.getPath());
+
+  auto item1 = std::make_shared<TestItem>("testPath1", "text/html", "平方");
+  auto item2 = std::make_shared<TestItem>("testPath2", "text/html", "平方根");
+  creator.addItem(item1);
+  creator.addItem(item2);
+
+  creator.addMetadata("Title", "Test zim");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+  {
+    std::vector<std::string> resultSet = getSuggestions(archive, "平方", archive.getEntryCount());
+
+    // We should get two results
+    std::vector<std::string> expectedResult = {
+                                                "平方",
+                                                "平方根"
+                                              };
+    ASSERT_EQ(resultSet, expectedResult);
+  }
+
+  {
+    std::vector<std::string> resultSet = getSuggestions(archive, "平方根", archive.getEntryCount());
+
+    // We should get only one result
+    std::vector<std::string> expectedResult = {"平方根"};
+    ASSERT_EQ(resultSet, expectedResult);
+  }
+}
+
 } // unnamed namespace
