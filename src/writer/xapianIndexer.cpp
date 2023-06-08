@@ -133,6 +133,7 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
   Xapian::TermGenerator indexer;
+  indexer.set_flags(Xapian::TermGenerator::FLAG_CJK_NGRAM);
   try {
     stemmer = Xapian::Stem(stemmer_language);
     indexer.set_stemmer(stemmer);

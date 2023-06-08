@@ -46,6 +46,7 @@ namespace zim
       }
       Xapian::Stem stemmer;
       Xapian::TermGenerator indexer;
+      indexer.set_flags(Xapian::TermGenerator::FLAG_CJK_NGRAM);
       try {
         stemmer = Xapian::Stem(mp_indexer->stemmer_language);
         indexer.set_stemmer(stemmer);

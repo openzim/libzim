@@ -245,4 +245,45 @@ TEST(Search, geoQuery)
   auto result = search.getResults(0, 1);
   ASSERT_EQ(result.begin().getTitle(), "Test Article");
 }
+
+TEST(Search, CJK)
+{
+  TempZimArchive tza("testZim");
+
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "zh");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("path0", "text/html", "Test Article0", "This is a test article. 平方"));
+  creator.addItem(std::make_shared<TestItem>("path1", "text/html", "Test Article1", "This is another test article. 平方根"));
+
+  creator.setMainPath("path0");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+
+  zim::Searcher searcher(std::vector<zim::Archive>{});
+  searcher.addArchive(archive);
+  searcher.setVerbose(true);
+
+  {
+    zim::Query query("平方");
+    auto search = searcher.search(query);
+
+    // CJK language is "special". Words are not separated by spaces.
+    // We are searching for corresponding "combinations" of ideograms.
+    // So `平方` must also find `平方根`
+    ASSERT_EQ(2, search.getEstimatedMatches());
+    auto result = search.getResults(0, 1);
+    ASSERT_EQ(result.begin().getTitle(), "Test Article0");
+  }
+
+  {
+    zim::Query query("平方根");
+    auto search = searcher.search(query);
+
+    ASSERT_EQ(1, search.getEstimatedMatches());
+    auto result = search.getResults(0, 1);
+    ASSERT_EQ(result.begin().getTitle(), "Test Article1");
+  }
+}
 } // unnamed namespace
