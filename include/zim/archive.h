@@ -480,14 +480,14 @@ namespace zim
   };
 
   template<EntryOrder order>
-  entry_index_type _toPathOrder(const FileImpl& file, entry_index_type idx);
+  LIBZIM_API entry_index_type _toPathOrder(const FileImpl& file, entry_index_type idx);
 
   template<>
-  entry_index_type _toPathOrder<EntryOrder::pathOrder>(const FileImpl& file, entry_index_type idx);
+  LIBZIM_API entry_index_type _toPathOrder<EntryOrder::pathOrder>(const FileImpl& file, entry_index_type idx);
   template<>
-  entry_index_type _toPathOrder<EntryOrder::titleOrder>(const FileImpl& file, entry_index_type idx);
+  LIBZIM_API entry_index_type _toPathOrder<EntryOrder::titleOrder>(const FileImpl& file, entry_index_type idx);
   template<>
-  entry_index_type _toPathOrder<EntryOrder::efficientOrder>(const FileImpl& file, entry_index_type idx);
+  LIBZIM_API entry_index_type _toPathOrder<EntryOrder::efficientOrder>(const FileImpl& file, entry_index_type idx);
 
 
   /**
@@ -498,7 +498,7 @@ namespace zim
    * An `EntryRange` can't be modified is consequently threadsafe.
    */
   template<EntryOrder order>
-  class Archive::EntryRange {
+  class LIBZIM_API Archive::EntryRange {
     public:
       explicit EntryRange(const std::shared_ptr<FileImpl> file, entry_index_type begin, entry_index_type end)
         : m_file(file),
@@ -541,7 +541,7 @@ private:
    * An `EntryRange` can't be modified and is consequently threadsafe.
    */
   template<EntryOrder order>
-  class Archive::iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
+  class LIBZIM_API Archive::iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
   {
     public:
       explicit iterator(const std::shared_ptr<FileImpl> file, entry_index_type idx)

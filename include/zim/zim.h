@@ -33,13 +33,13 @@
 #define DEPRECATED
 #endif
 
+#include <zim/zim_config.h>
+
 #if (defined _WIN32 || defined __CYGWIN__) && defined LIBZIM_EXPORT_DLL
     #define LIBZIM_API __declspec(dllexport)
 #else
     #define LIBZIM_API
 #endif
-
-#include <zim/zim_config.h>
 
 namespace zim
 {
