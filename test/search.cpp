@@ -319,7 +319,9 @@ TEST(Search, accents)
     zim::Query query("test àrticlé");
     auto search = searcher.search(query);
 
-    ASSERT_EQ(0, search.getEstimatedMatches());
+    ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+    auto result = search.getResults(0, 1);
+    ASSERT_EQ(result.begin().getTitle(), "Test Article0");
   }
 }
 } // unnamed namespace
