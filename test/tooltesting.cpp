@@ -20,6 +20,12 @@
 #include "../src/tools.h"
 
 #include "gtest/gtest.h"
+#include <sstream>
+#include <string>
+
+#if defined(ENABLE_XAPIAN)
+  #include <unicode/unistr.h>
+#endif
 
 namespace {
   TEST(Tools, wordCount) {
@@ -54,4 +60,66 @@ namespace {
     ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_1 28x1 28@1"), std::runtime_error);
   }
 
+#if defined(ENABLE_XAPIAN)
+  TEST(Tools, removeAccents) {
+    ASSERT_EQ(zim::removeAccents("bépoàǹ"), "bepoan");
+    std::ostringstream ss;
+    // Create 2 and half batches (3 boundaries) of 4kb.
+    // Each bondary has its property:
+    // - A 4 bytes chars being cut by the boundary
+    // - A "é" stored in NDF form when the "e" is before the boundary and the "´" is after
+    // - Nothing special
+    for(auto j=0; j<1023; j++) {
+      ss << "bépo";
+    }
+    ss << "bép𩸽";
+    for(auto j=0; j<1023; j++) {
+      ss << "bépo";
+    }
+    ss << "bép" << "e" << "\xcc\x81";
+    for (auto j=0; j<512; j++) {
+      ss << "bépo";
+    }
+    auto accentedString(ss.str());
+    // Check our input data (that we have a char in the middle of a batch boundary)
+    // Indexing is made on u16
+    icu::UnicodeString ustring(accentedString.c_str());
+
+    // Test input data.
+    // "bépo" is 4 chars
+    ASSERT_EQ(ustring.getChar32Limit(0), 0);
+    ASSERT_EQ(ustring.getChar32Limit(1), 1);
+    ASSERT_EQ(ustring.getChar32Limit(2), 2);
+    ASSERT_EQ(ustring.getChar32Limit(3), 3);
+    ASSERT_EQ(ustring.getChar32Limit(4), 4);
+    // 𩸽 is in the middle of a boundary
+    ASSERT_EQ(ustring.getChar32Limit(4*1024-1), 4*1024-1);
+    ASSERT_EQ(ustring.getChar32Limit(4*1024), 4*1024+1);
+    ASSERT_EQ(ustring.getChar32Limit(4*1024+1), 4*1024+1);
+    // Because of 𩸽 at first boundary, second boundary will search at (4*1024+1) + 4*1024 so 8*1024+1
+    ASSERT_EQ(ustring.getChar32Limit(8*1024), 8*1024);
+    ASSERT_EQ(ustring.getChar32Limit(8*1024+1), 8*1024+1);
+    ASSERT_EQ(ustring.getChar32Limit(8*1024+2), 8*1024+2);
+    // boundary is in the middle of "e´"
+    EXPECT_EQ(ustring[8*1024-1], 'p'); // boundary - 2
+    EXPECT_EQ(ustring[8*1024], 'e'); // boundary - 1
+    EXPECT_EQ(ustring[8*1024+1], 0x0301); // boundary. Unicode symbol for '´' (utf16: 0x0301, utf8 : 0xCC 0x81)
+    EXPECT_EQ(ustring[8*1024+2], 'b'); // boundary + 1
+    EXPECT_EQ(ustring[8*1024+3], 233 /*ascii code for é*/); // boundary + 2
+    ss.str("");
+    for(auto j=0; j<1023; j++) {
+      ss << "bepo";
+    }
+    ss << "bep𩸽";
+    for(auto j=0; j<1023; j++) {
+      ss << "bepo";
+    }
+    ss << "bep" << "e";
+    for (auto j=0; j<512; j++) {
+      ss << "bepo";
+    }
+    auto unaccentedString(ss.str());
+    ASSERT_EQ(zim::removeAccents(accentedString), unaccentedString);
+  }
+#endif
 }

@@ -228,6 +228,8 @@ zim::MimeCounterType zim::parseMimetypeCounter(const std::string& counterData)
 #include <unicode/translit.h>
 #include <unicode/ucnv.h>
 #include <unicode/putil.h>
+
+#define BATCH_SIZE (4*1024)
 std::string zim::removeAccents(const std::string& text)
 {
   ucnv_setDefaultName("UTF-8");
@@ -235,9 +237,28 @@ std::string zim::removeAccents(const std::string& text)
   static std::unique_ptr<icu::Transliterator> removeAccentsTrans(icu::Transliterator::createInstance(
       "Lower; NFD; [:M:] remove; NFC", UTRANS_FORWARD, status));
   icu::UnicodeString ustring(text.c_str());
-  removeAccentsTrans->transliterate(ustring);
   std::string unaccentedText;
-  ustring.toUTF8String(unaccentedText);
+
+  auto nb_chars = ustring.length();
+  if (nb_chars <= BATCH_SIZE) {
+    // Remove accents in one step.
+    removeAccentsTrans->transliterate(ustring);
+    ustring.toUTF8String(unaccentedText);
+  } else {
+    auto current_pos = 0;
+    icu::UnicodeString current_ustring;
+    while (current_pos < nb_chars) {
+      // Remove accents by batch of BATCH_SIZE "chars" to avoid working on
+      // a too long string and spending to much time memcpy things.
+      auto end = ustring.getChar32Limit(current_pos+BATCH_SIZE);
+      auto current_size = end - current_pos;
+      current_ustring.remove();
+      ustring.extract(current_pos, current_size, current_ustring);
+      removeAccentsTrans->transliterate(current_ustring);
+      current_ustring.toUTF8String(unaccentedText);
+      current_pos += current_size;
+    }
+  }
   return unaccentedText;
 }
 
