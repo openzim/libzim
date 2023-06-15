@@ -22,6 +22,8 @@
 #ifndef ZIM_UUID_H
 #define ZIM_UUID_H
 
+#include "zim.h"
+
 #include <iosfwd>
 #include <algorithm>
 #include <cstring>
@@ -29,7 +31,7 @@
 
 namespace zim
 {
-  struct Uuid
+  struct LIBZIM_API Uuid
   {
     Uuid()
     {
@@ -54,7 +56,7 @@ namespace zim
     char data[16];
   };
 
-  std::ostream& operator<< (std::ostream& out, const Uuid& uuid);
+  std::ostream& LIBZIM_API operator<< (std::ostream& out, const Uuid& uuid);
 
 }
 
