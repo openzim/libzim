@@ -29,16 +29,16 @@
 #elif defined(_MSC_VER)
 #define DEPRECATED __declspec(deprecated)
 #else
-#praga message("WARNING: You need to implement DEPRECATED for this compiler")
+#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
 #define DEPRECATED
 #endif
 
 #include <zim/zim_config.h>
 
 #if (defined _WIN32 || defined __CYGWIN__) && defined LIBZIM_EXPORT_DLL
-    #define LIBZIM_API __declspec(dllexport)
+#define LIBZIM_API __declspec(dllexport)
 #else
-    #define LIBZIM_API
+#define LIBZIM_API
 #endif
 
 namespace zim
@@ -46,7 +46,7 @@ namespace zim
   // An index of an entry (in a zim file)
   typedef uint32_t entry_index_type;
 
-  // An index of an cluster (in a zim file)
+  // An index of a cluster (in a zim file)
   typedef uint32_t cluster_index_type;
 
   // An index of a blog (in a cluster)
@@ -119,4 +119,4 @@ namespace zim
 }
 
 #endif // ZIM_ZIM_H
-
+``
