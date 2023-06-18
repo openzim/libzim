@@ -151,14 +151,15 @@ Xapian::Query InternalDataBase::parseQuery(const Query& query)
 {
   Xapian::Query xquery;
 
-  xquery = m_queryParser.parse_query(query.m_query, Xapian::QueryParser::FLAG_CJK_NGRAM);
+  const auto unaccentedQuery = removeAccents(query.m_query);
+  xquery = m_queryParser.parse_query(unaccentedQuery, Xapian::QueryParser::FLAG_CJK_NGRAM);
 
   if (query.m_geoquery && hasValue("geo.position")) {
     Xapian::GreatCircleMetric metric;
     Xapian::LatLongCoord centre(query.m_latitude, query.m_longitude);
     Xapian::LatLongDistancePostingSource ps(valueSlot("geo.position"), centre, metric, query.m_distance);
     Xapian::Query geoQuery(&ps);
-    if (query.m_query.empty()) {
+    if (unaccentedQuery.empty()) {
       xquery = geoQuery;
     } else {
       xquery = Xapian::Query(Xapian::Query::OP_FILTER, xquery, geoQuery);
