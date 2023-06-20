@@ -56,7 +56,7 @@ namespace zim
     char data[16];
   };
 
-  std::ostream& LIBZIM_API operator<< (std::ostream& out, const Uuid& uuid);
+  LIBZIM_API std::ostream& operator<< (std::ostream& out, const Uuid& uuid);
 
 }
 
