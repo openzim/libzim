@@ -27,8 +27,8 @@
 namespace zim
 {
   typedef std::vector<std::pair<std::string, std::string>> LibVersions;
-  LibVersions LIBZIM_API getVersions();
-  void LIBZIM_API printVersions(std::ostream& out = std::cout);
+  LIBZIM_API LibVersions getVersions();
+  LIBZIM_API void printVersions(std::ostream& out = std::cout);
 }
 
 #endif // ZIM_VERSION_H
