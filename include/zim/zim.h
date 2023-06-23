@@ -35,7 +35,7 @@
 
 #include <zim/zim_config.h>
 
-#if (defined _WIN32 || defined __CYGWIN__) && defined LIBZIM_EXPORT_DLL
+#if defined(_MSC_VER) && defined(LIBZIM_EXPORT_DLL)
     #define LIBZIM_API __declspec(dllexport)
 #else
     #define LIBZIM_API
