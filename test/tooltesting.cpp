@@ -121,5 +121,11 @@ namespace {
     auto unaccentedString(ss.str());
     ASSERT_EQ(zim::removeAccents(accentedString), unaccentedString);
   }
+
+  TEST(Tools, simple_remove_accents) {
+    ASSERT_EQ(zim::removeAccents("jàzz"), "jazz");
+  }
 #endif
 }
+
+
