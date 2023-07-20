@@ -1,3 +1,12 @@
+libzim 8.2.1
+============
+
+ * Better indexer CJK content (@mgautierfr #806)
+ * Fix export of symbol on Windows dll (@xiaoyifang @mgautierfr #796 #807)
+ * Remove accents from the search query (@mgautierfr #804)
+ * Improved performance of removing of accents when working on long string (@mgautierfr #797)
+ * Various improvement and fixes of the CI (@mgautierfr @kelson42)
+
 libzim 8.2.0
 ============
 
