@@ -381,18 +381,6 @@ private: // data
     return { false, entry_index_t(0) };
   }
 
-  static inline int direntCompareTitle(char ns, const std::string& title, const Dirent& dirent)
-  {
-    auto direntNs = dirent.getNamespace();
-    if (ns < direntNs) {
-      return -1;
-    }
-    if (ns > direntNs) {
-      return 1;
-    }
-    return title.compare(dirent.getTitle());
-  }
-
   FileImpl::FindxTitleResult FileImpl::findxByTitle(char ns, const std::string& title)
   {
     return m_byTitleDirentLookup->find(ns, title);
