@@ -38,7 +38,7 @@ namespace {
     ASSERT_EQ(indexData->getTitle(), "a title");
     ASSERT_EQ(indexData->getContent(), "");
     ASSERT_EQ(indexData->getKeywords(), "");
-    ASSERT_EQ(indexData->getWordCount(), 0);
+    ASSERT_EQ(indexData->getWordCount(), 0U);
     ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
   }
 
@@ -49,7 +49,7 @@ namespace {
     ASSERT_EQ(indexData->getTitle(), "a title");
     ASSERT_EQ(indexData->getContent(), "some bold words");
     ASSERT_EQ(indexData->getKeywords(), "");
-    ASSERT_EQ(indexData->getWordCount(), 3);
+    ASSERT_EQ(indexData->getWordCount(), 3U);
     ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
   }
 
@@ -60,7 +60,7 @@ namespace {
     ASSERT_EQ(indexData->getTitle(), "a title");
     ASSERT_EQ(indexData->getContent(), "");
     ASSERT_EQ(indexData->getKeywords(), "");
-    ASSERT_EQ(indexData->getWordCount(), 0);
+    ASSERT_EQ(indexData->getWordCount(), 0U);
     ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
   }
 
@@ -71,7 +71,7 @@ namespace {
     ASSERT_EQ(indexData->getTitle(), "a title");
     ASSERT_EQ(indexData->getContent(), "");
     ASSERT_EQ(indexData->getKeywords(), "");
-    ASSERT_EQ(indexData->getWordCount(), 0);
+    ASSERT_EQ(indexData->getWordCount(), 0U);
     ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
   }
 
@@ -82,7 +82,7 @@ namespace {
     ASSERT_EQ(indexData->getTitle(), "a title");
     ASSERT_EQ(indexData->getContent(), "noindexsome bold words");
     ASSERT_EQ(indexData->getKeywords(), "");
-    ASSERT_EQ(indexData->getWordCount(), 3);
+    ASSERT_EQ(indexData->getWordCount(), 3U);
     ASSERT_EQ(indexData->getGeoPosition(), std::make_tuple(false, 0, 0));
   }
 
@@ -93,7 +93,7 @@ namespace {
     ASSERT_EQ(indexData->getTitle(), "a title");
     ASSERT_EQ(indexData->getContent(), "some bold words");
     ASSERT_EQ(indexData->getKeywords(), "some keyword important");
-    ASSERT_EQ(indexData->getWordCount(), 3);
+    ASSERT_EQ(indexData->getWordCount(), 3U);
     auto geoPos = indexData->getGeoPosition();
     ASSERT_TRUE(std::get<0>(geoPos));
     ASSERT_TRUE(std::abs(std::get<1>(geoPos)-45.005) < 0.00001);

@@ -41,7 +41,7 @@ TEST(BufferStreamer, shouldJustWork)
   auto buffer = Buffer::makeBuffer(data, zsize_t(sizeof(data)));
   zim::BufferStreamer bds(buffer, zsize_t(sizeof(data)));
 
-  ASSERT_EQ(1234, bds.read<uint32_t>());
+  ASSERT_EQ(1234U, bds.read<uint32_t>());
 
   ASSERT_EQ(data + 4, bds.current());
   const auto blob1 = std::string(bds.current(), 4);

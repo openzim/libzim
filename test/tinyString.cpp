@@ -30,7 +30,7 @@ TEST(TinyStringTest, empty)
 {
   TinyString s;
   ASSERT_TRUE(s.empty());
-  ASSERT_EQ(s.size(), 0);
+  ASSERT_EQ(s.size(), 0U);
   ASSERT_EQ((std::string)s, "");
   ASSERT_EQ(s, TinyString());
 }
@@ -39,7 +39,7 @@ TEST(TinyStringTest, noChar)
 {
   TinyString s("");
   ASSERT_TRUE(s.empty());
-  ASSERT_EQ(s.size(), 0);
+  ASSERT_EQ(s.size(), 0U);
   ASSERT_EQ((std::string)s, "");
   ASSERT_EQ(s, TinyString());
 }
@@ -48,7 +48,7 @@ TEST(TinyStringTest, oneChar)
 {
   TinyString s("A");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 1);
+  ASSERT_EQ(s.size(), 1U);
   ASSERT_EQ((std::string)s, "A");
   ASSERT_TRUE(s < TinyString("B"));
   ASSERT_EQ(s, TinyString("A"));
@@ -59,7 +59,7 @@ TEST(TinyStringTest, chars)
 {
   TinyString s("ABCDE");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 5);
+  ASSERT_EQ(s.size(), 5U);
   ASSERT_EQ((std::string)s, "ABCDE");
   ASSERT_FALSE(s < TinyString());
   ASSERT_FALSE(s < TinyString(""));
@@ -79,7 +79,7 @@ TEST(PathTitleTinyString, none)
 {
   PathTitleTinyString s;
   ASSERT_TRUE(s.empty());
-  ASSERT_EQ(s.size(), 0);
+  ASSERT_EQ(s.size(), 0U);
   ASSERT_EQ((std::string)s, "");
   ASSERT_EQ(s, TinyString());
   ASSERT_EQ(s.getPath(), "");
@@ -92,7 +92,7 @@ TEST(PathTitleTinyString, empty)
   //We have the separator between path and title
   PathTitleTinyString s("", "");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 1);
+  ASSERT_EQ(s.size(), 1U);
   ASSERT_EQ((std::string)s, std::string("", 1));
   ASSERT_EQ(s.getPath(), "");
   ASSERT_EQ(s.getTitle(false), "");
@@ -104,7 +104,7 @@ TEST(PathTitleTinyString, no_title)
   //We have the separator between path and title
   PathTitleTinyString s("FOO", "");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 4);
+  ASSERT_EQ(s.size(), 4U);
   ASSERT_EQ((std::string)s, std::string("FOO\0", 4));
   ASSERT_EQ(s.getPath(), "FOO");
   ASSERT_EQ(s.getTitle(false), "FOO");
@@ -116,7 +116,7 @@ TEST(PathTitleTinyString, no_path)
   //We have the separator between path and title
   PathTitleTinyString s("", "BAR");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 4);
+  ASSERT_EQ(s.size(), 4U);
   ASSERT_EQ((std::string)s, std::string("\0BAR", 4));
   ASSERT_EQ(s.getPath(), "");
   ASSERT_EQ(s.getTitle(false), "BAR");
@@ -128,7 +128,7 @@ TEST(PathTitleTinyString, path_title)
   //We have the separator between path and title
   PathTitleTinyString s("FOO", "BAR");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 7);
+  ASSERT_EQ(s.size(), 7U);
   ASSERT_EQ((std::string)s, std::string("FOO\0BAR", 7));
   ASSERT_EQ(s.getPath(), "FOO");
   ASSERT_EQ(s.getTitle(false), "BAR");
@@ -140,7 +140,7 @@ TEST(PathTitleTinyString, equal_path_title)
   //We have the separator between path and title
   PathTitleTinyString s("FOO", "FOO");
   ASSERT_FALSE(s.empty());
-  ASSERT_EQ(s.size(), 4);
+  ASSERT_EQ(s.size(), 4U);
   ASSERT_EQ((std::string)s, std::string("FOO\0", 4));
   ASSERT_EQ(s.getPath(), "FOO");
   ASSERT_EQ(s.getTitle(false), "FOO");

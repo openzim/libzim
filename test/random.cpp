@@ -31,13 +31,13 @@ namespace
 TEST(Random, smallMax)
 {
   for(auto i=0; i<1000; i++) {
-    ASSERT_EQ(randomNumber(0), 0);
+    ASSERT_EQ(randomNumber(0), 0U);
   }
 
 
   for(auto i=0; i<1000; i++) {
     auto r = randomNumber(1);
-    ASSERT_TRUE(r>=0 && r<=1) << r;
+    ASSERT_TRUE(r>=0U && r<=1U) << r;
   }
 }
 
