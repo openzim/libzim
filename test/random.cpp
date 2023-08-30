@@ -18,6 +18,7 @@
  */
 
 #include "gtest/gtest.h"
+#include <cstdint>
 
 namespace zim {
   uint32_t randomNumber(uint32_t max);
