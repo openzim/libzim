@@ -539,11 +539,33 @@ private:
    * from race-condition. It is not threadsafe.
    *
    * An `EntryRange` can't be modified and is consequently threadsafe.
+   *
+   * Be aware that the referenced/pointed Entry is generated and stored
+   * in the iterator itself.
+   * Once the iterator is destructed or incremented/decremented, you must NOT
+   * use the Entry.
    */
   template<EntryOrder order>
-  class LIBZIM_API Archive::iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
+  class LIBZIM_API Archive::iterator
   {
     public:
+      /* SuggestionIterator is conceptually a bidirectional iterator.
+       * But std *LegayBidirectionalIterator* is also a *LegacyForwardIterator* and
+       * it would impose us that :
+       * > Given a and b, dereferenceable iterators of type It:
+       * >  If a and b compare equal (a == b is contextually convertible to true)
+       * >  then either they are both non-dereferenceable or *a and *b are references bound to the same object.
+       * and
+       * > the LegacyForwardIterator requirements requires dereference to return a reference.
+       * Which cannot be as we create the entry on demand.
+       *
+       * So we are stick with declaring ourselves at `input_iterator`.
+       */
+      using iterator_category = std::input_iterator_tag;
+      using value_type = Entry;
+      using pointer = Entry*;
+      using reference = Entry&;
+
       explicit iterator(const std::shared_ptr<FileImpl> file, entry_index_type idx)
         : m_file(file),
           m_idx(idx),

@@ -32,10 +32,34 @@ namespace zim
 {
 class SearchResultSet;
 
-class LIBZIM_API SearchIterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
+/**
+ * A interator on search result (an Entry)
+ *
+ * Be aware that the referenced/pointed Entry is generated and stored
+ * in the iterator itself.
+ * Once the iterator is destructed or incremented/decremented, you must NOT
+ * use the Entry.
+ */
+class LIBZIM_API SearchIterator
 {
     friend class zim::SearchResultSet;
     public:
+        /* SuggestionIterator is conceptually a bidirectional iterator.
+         * But std *LegayBidirectionalIterator* is also a *LegacyForwardIterator* and
+         * it would impose us that :
+         * > Given a and b, dereferenceable iterators of type It:
+         * >  If a and b compare equal (a == b is contextually convertible to true)
+         * >  then either they are both non-dereferenceable or *a and *b are references bound to the same object.
+         * and
+         * > the LegacyForwardIterator requirements requires dereference to return a reference.
+         * Which cannot be as we create the entry on demand.
+         *
+         * So we are stick with declaring ourselves at `input_iterator`.
+         */
+        using iterator_category = std::input_iterator_tag;
+        using value_type = Entry;
+        using pointer = Entry*;
+        using reference = Entry&;
         SearchIterator();
         SearchIterator(const SearchIterator& it);
         SearchIterator& operator=(const SearchIterator& it);
