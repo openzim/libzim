@@ -106,7 +106,6 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     OFFSET_TYPE offset = m_reader->read<OFFSET_TYPE>();
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
-    const offset_t data_address(offset);
 
     // read offsets
     m_blobOffsets.clear();
