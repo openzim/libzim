@@ -51,7 +51,7 @@ TEST(Random, distribution)
 
   for (auto i=0U; i<NB_NUMBERS; i++) {
     auto r = randomNumber(MAX_RANDOM);
-    auto bucket_index = (float)r / MAX_RANDOM * NB_BUCKETS;
+    auto bucket_index = (int)((float)r / MAX_RANDOM * NB_BUCKETS);
     if (bucket_index == NB_BUCKETS) {
       // This only happens when r == MAX_RANDOM.
       bucket_index = NB_BUCKETS-1;
