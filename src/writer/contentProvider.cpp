@@ -63,7 +63,7 @@ namespace zim
         return Blob(nullptr, 0);
       }
 
-      if(fd->readAt(buffer.get(), zim::zsize_t(sizeToRead), zim::offset_t(offset)).v == -1UL) {
+      if(fd->readAt(buffer.get(), zim::zsize_t(sizeToRead), zim::offset_t(offset)) == zim::zsize_t(-1)) {
         throw std::runtime_error("Error reading file " + filepath);
       }
       offset += sizeToRead;
