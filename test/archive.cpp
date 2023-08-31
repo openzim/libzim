@@ -481,7 +481,7 @@ TEST(ZimArchive, validate)
     EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
   }
 }
-#endif
+
 
 void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2)
 {
@@ -559,7 +559,6 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 #endif
 }
 
-#if WITH_TEST_DATA
 TEST(ZimArchive, multipart)
 {
   auto nonSplittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02.zim");
@@ -617,6 +616,8 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 #endif // not _WIN32
 #endif // WITH_TEST_DATA
 
+
+#if WITH_TEST_DATA
 zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
 {
   zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
@@ -625,7 +626,6 @@ zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type si
   return zim::Blob(data, size);
 }
 
-#if WITH_TEST_DATA
 TEST(ZimArchive, getDirectAccessInformation)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
