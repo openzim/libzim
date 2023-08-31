@@ -41,7 +41,7 @@ else
   public_conf.set('LIBZIM_EXPORT_DLL', true)
 endif
 
-zstd_dep = dependency('libzstd', static:static_linkage)
+zstd_dep = dependency('libzstd', static:static_linkage, default_options:['werror=false'])
 
 if host_machine.system() == 'freebsd'
     execinfo_dep = cpp.find_library('execinfo')
