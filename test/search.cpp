@@ -133,7 +133,7 @@ TEST(Search, multiSearch)
   zim::Query query("test article");
   auto search0 = searcher.search(query);
 
-  ASSERT_EQ(archive.getEntryCount(), search0.getEstimatedMatches());
+  ASSERT_EQ(archive.getEntryCount(), (unsigned int)search0.getEstimatedMatches());
   auto result0 = search0.getResults(0, 2);
   ASSERT_EQ(result0.size(), 2);
   auto it0 = result0.begin();
@@ -214,7 +214,7 @@ TEST(Search, noStemming)
   zim::Query query("test article");
   auto search = searcher.search(query);
 
-  ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+  ASSERT_EQ(archive.getEntryCount(), (unsigned int)search.getEstimatedMatches());
   auto result = search.getResults(0, 1);
   ASSERT_EQ(result.begin().getTitle(), "Test Article0");
 }
@@ -241,7 +241,7 @@ TEST(Search, geoQuery)
   query.setGeorange(45.000, 10.000, 100);
   auto search = searcher.search(query);
 
-  ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+  ASSERT_EQ(archive.getEntryCount(), (unsigned int)search.getEstimatedMatches());
   auto result = search.getResults(0, 1);
   ASSERT_EQ(result.begin().getTitle(), "Test Article");
 }
@@ -310,7 +310,7 @@ TEST(Search, accents)
     zim::Query query("test article");
     auto search = searcher.search(query);
 
-    ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+    ASSERT_EQ(archive.getEntryCount(), (unsigned int)search.getEstimatedMatches());
     auto result = search.getResults(0, 1);
     ASSERT_EQ(result.begin().getTitle(), "Test Article0");
   }
@@ -319,7 +319,7 @@ TEST(Search, accents)
     zim::Query query("test àrticlé");
     auto search = searcher.search(query);
 
-    ASSERT_EQ(archive.getEntryCount(), search.getEstimatedMatches());
+    ASSERT_EQ(archive.getEntryCount(), (unsigned int)search.getEstimatedMatches());
     auto result = search.getResults(0, 1);
     ASSERT_EQ(result.begin().getTitle(), "Test Article0");
   }

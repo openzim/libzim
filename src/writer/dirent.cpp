@@ -65,7 +65,7 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
   : pathTitle(path, title),
     mimeType(redirectMimeType),
     idx(0),
-    info(std::move(DirentInfo::Redirect(targetNs, targetPath))),
+    info(DirentInfo::Redirect(targetNs, targetPath)),
     offset(0),
     _ns(static_cast<uint8_t>(ns)),
     removed(false),

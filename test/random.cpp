@@ -18,6 +18,7 @@
  */
 
 #include "gtest/gtest.h"
+#include <cstdint>
 
 namespace zim {
   uint32_t randomNumber(uint32_t max);
@@ -30,13 +31,13 @@ namespace
 TEST(Random, smallMax)
 {
   for(auto i=0; i<1000; i++) {
-    ASSERT_EQ(randomNumber(0), 0);
+    ASSERT_EQ(randomNumber(0), 0U);
   }
 
 
   for(auto i=0; i<1000; i++) {
     auto r = randomNumber(1);
-    ASSERT_TRUE(r>=0 && r<=1) << r;
+    ASSERT_TRUE(r>=0U && r<=1U) << r;
   }
 }
 
@@ -50,7 +51,7 @@ TEST(Random, distribution)
 
   for (auto i=0U; i<NB_NUMBERS; i++) {
     auto r = randomNumber(MAX_RANDOM);
-    auto bucket_index = (float)r / MAX_RANDOM * NB_BUCKETS;
+    auto bucket_index = (int)((float)r / MAX_RANDOM * NB_BUCKETS);
     if (bucket_index == NB_BUCKETS) {
       // This only happens when r == MAX_RANDOM.
       bucket_index = NB_BUCKETS-1;

@@ -80,7 +80,7 @@ TEST(FindTests, ByTitle)
         auto count = 0;
         for(auto& entry: range0) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Першая старонка"), 0);
+          ASSERT_EQ(entry.getTitle().find("Першая старонка"), 0U);
         }
         if (testfile.category == "withns") {
           // On the withns test file, there are two entry with this title:
@@ -97,7 +97,7 @@ TEST(FindTests, ByTitle)
         count = 0;
         for(auto& entry: range1) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0U);
         }
         ASSERT_EQ(count, 5);
 
@@ -107,7 +107,7 @@ TEST(FindTests, ByTitle)
         count = 0;
         for(auto& entry: range2) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0U);
         }
         ASSERT_EQ(count, 2);
 
@@ -117,7 +117,7 @@ TEST(FindTests, ByTitle)
         count = 0;
         for(auto& entry: range3) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0U);
         }
         ASSERT_EQ(count, 4);
 
@@ -127,7 +127,7 @@ TEST(FindTests, ByTitle)
         count = 0;
         for(auto& entry: range4) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0U);
         }
         ASSERT_EQ(count, 5);
 
@@ -137,7 +137,7 @@ TEST(FindTests, ByTitle)
         count = 0;
         for(auto& entry: range5) {
           count++;
-          ASSERT_EQ(entry.getTitle().find("Украінская"), 0);
+          ASSERT_EQ(entry.getTitle().find("Украінская"), 0U);
         }
         ASSERT_EQ(count, 0);
     }
@@ -149,7 +149,7 @@ TEST(FindTests, ByTitle)
   auto range = archive.findByTitle(prefix); \
   for(auto& entry: range) { \
     count++; \
-    ASSERT_EQ(entry.getTitle().find(prefix), 0); \
+    ASSERT_EQ(entry.getTitle().find(prefix), 0U); \
   } \
   ASSERT_EQ(count, expected_count); \
 }
@@ -193,62 +193,62 @@ TEST(FindTests, ByPath)
     auto range5 = archive.findByPath("");
     auto range6 = archive.findByPath("/");
 
-    ASSERT_EQ(range0.begin()->getIndex(), 5);
-    auto count = 0;
+    ASSERT_EQ(range0.begin()->getIndex(), 5U);
+    unsigned count = 0;
     for(auto& entry: range0) {
       count++;
-      ASSERT_EQ(entry.getPath().find("A/Main_Page.html"), 0);
+      ASSERT_EQ(entry.getPath().find("A/Main_Page.html"), 0U);
     }
-    ASSERT_EQ(count, 1);
+    ASSERT_EQ(count, 1U);
 
-    ASSERT_EQ(range1.begin()->getIndex(), 78);
+    ASSERT_EQ(range1.begin()->getIndex(), 78U);
     count = 0;
     for(auto& entry: range1) {
       count++;
       std::cout << entry.getPath() << std::endl;
-      ASSERT_EQ(entry.getPath().find("I/s/"), 0);
+      ASSERT_EQ(entry.getPath().find("I/s/"), 0U);
     }
-    ASSERT_EQ(count, 31);
+    ASSERT_EQ(count, 31U);
 
-    ASSERT_EQ(range2.begin()->getIndex(), 2);
+    ASSERT_EQ(range2.begin()->getIndex(), 2U);
     count = 0;
     for(auto& entry: range2) {
       count++;
-      ASSERT_EQ(entry.getPath().find("-/j/head.js"), 0);
+      ASSERT_EQ(entry.getPath().find("-/j/head.js"), 0U);
     }
-    ASSERT_EQ(count, 1);
+    ASSERT_EQ(count, 1U);
 
-    ASSERT_EQ(range3.begin()->getIndex(), 75);
+    ASSERT_EQ(range3.begin()->getIndex(), 75U);
     count = 0;
     for(auto& entry: range3) {
       count++;
       std::cout << entry.getPath() << std::endl;
-      ASSERT_EQ(entry.getPath().find("I"), 0);
+      ASSERT_EQ(entry.getPath().find("I"), 0U);
     }
-    ASSERT_EQ(count, 34);
+    ASSERT_EQ(count, 34U);
 
-    ASSERT_EQ(range4.begin()->getIndex(), 75);
+    ASSERT_EQ(range4.begin()->getIndex(), 75U);
     count = 0;
     for(auto& entry: range4) {
       count++;
       std::cout << entry.getPath() << std::endl;
-      ASSERT_EQ(entry.getPath().find("I/"), 0);
+      ASSERT_EQ(entry.getPath().find("I/"), 0U);
     }
-    ASSERT_EQ(count, 34);
+    ASSERT_EQ(count, 34U);
 
     count = 0;
     for(auto& entry: range5) {
       ASSERT_EQ(count, entry.getIndex());
       count++;
     }
-    ASSERT_EQ(count, 118);
+    ASSERT_EQ(count, 118U);
 
     count = 0;
     for(auto& entry: range6) {
       ASSERT_EQ(count, entry.getIndex());
       count++;
     }
-    ASSERT_EQ(count, 118);
+    ASSERT_EQ(count, 118U);
   }
 }
 
@@ -263,34 +263,34 @@ TEST(FindTests, ByPathNons)
     auto range2 = archive.findByPath("");
     auto range3 = archive.findByPath("/");
 
-    auto count = 0;
+    unsigned count = 0;
     for(auto& entry: range0) {
       count++;
-      ASSERT_EQ(entry.getPath().find("Першая_старонка.html"), 0);
+      ASSERT_EQ(entry.getPath().find("Першая_старонка.html"), 0U);
     }
-    ASSERT_EQ(count, 1);
+    ASSERT_EQ(count, 1U);
 
     count = 0;
     for(auto& entry: range1) {
       count++;
       std::cout << entry.getPath() << std::endl;
-      ASSERT_EQ(entry.getPath().find("П"), 0);
+      ASSERT_EQ(entry.getPath().find("П"), 0U);
     }
-    ASSERT_EQ(count, 2);
+    ASSERT_EQ(count, 2U);
 
     count = 0;
     for(auto& entry: range2) {
       ASSERT_EQ(count, entry.getIndex());
       count++;
     }
-    ASSERT_EQ(count, 109);
+    ASSERT_EQ(count, 109U);
 
     count = 0;
     for(auto& entry: range3) {
       ASSERT_EQ(count, entry.getIndex());
       count++;
     }
-    ASSERT_EQ(count, 109);
+    ASSERT_EQ(count, 109U);
   }
 }
 #endif

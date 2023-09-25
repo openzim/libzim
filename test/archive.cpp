@@ -171,15 +171,15 @@ TEST(ZimArchive, openCreatedArchive)
   zim::Archive archive(tempPath);
 #if !defined(ENABLE_XAPIAN)
 // 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
-#define ALL_ENTRY_COUNT 10
+#define ALL_ENTRY_COUNT 10U
 #else
 // same as above + 2 xapian indexes.
-#define ALL_ENTRY_COUNT 12
+#define ALL_ENTRY_COUNT 12U
 #endif
   ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
 #undef ALL_ENTRY_COUNT
-  ASSERT_EQ(archive.getEntryCount(), 3);
-  ASSERT_EQ(archive.getArticleCount(), 1);
+  ASSERT_EQ(archive.getEntryCount(), 3U);
+  ASSERT_EQ(archive.getArticleCount(), 1U);
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
@@ -481,7 +481,7 @@ TEST(ZimArchive, validate)
     EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
   }
 }
-#endif
+
 
 void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2)
 {
@@ -492,7 +492,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
   const zim::Entry mainEntry = archive1.getMainEntry();
   ASSERT_EQ(mainEntry.getTitle(), archive2.getMainEntry().getTitle());
 
-  ASSERT_NE(0, archive1.getEntryCount()); // ==> below loop is not a noop
+  ASSERT_NE(0U, archive1.getEntryCount()); // ==> below loop is not a noop
   {
     auto range1 = archive1.iterEfficient();
     auto range2 = archive2.iterEfficient();
@@ -559,7 +559,6 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 #endif
 }
 
-#if WITH_TEST_DATA
 TEST(ZimArchive, multipart)
 {
   auto nonSplittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02.zim");
@@ -617,6 +616,8 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 #endif // not _WIN32
 #endif // WITH_TEST_DATA
 
+
+#if WITH_TEST_DATA
 zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
 {
   zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
@@ -625,7 +626,6 @@ zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type si
   return zim::Blob(data, size);
 }
 
-#if WITH_TEST_DATA
 TEST(ZimArchive, getDirectAccessInformation)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
@@ -642,7 +642,7 @@ TEST(ZimArchive, getDirectAccessInformation)
         }
       }
     }
-    ASSERT_NE(0, checkedItemCount);
+    ASSERT_NE(0U, checkedItemCount);
   }
 }
 
@@ -664,7 +664,7 @@ TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
         }
       }
     }
-    ASSERT_NE(0, checkedItemCount);
+    ASSERT_NE(0U, checkedItemCount);
   }
 }
 
@@ -690,7 +690,7 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
         }
       }
     }
-    ASSERT_NE(0, checkedItemCount);
+    ASSERT_NE(0U, checkedItemCount);
   }
 }
 #endif // not _WIN32

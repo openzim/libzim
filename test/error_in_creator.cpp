@@ -288,7 +288,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   // The exact value is specific to each computer, so we need to make this configurable.
   // We use a base and we multiply it by a factor taken from env variable.
   const long sleep_time = 1000000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
-  zim::microsleep(sleep_time * getWaitTimeFactor());
+  zim::microsleep((int)(sleep_time * getWaitTimeFactor()));
   // We detect it for any call after
   CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
   CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));
@@ -320,7 +320,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   // Note here, that we have a base smaller than for compressed test as we don't compress the content
   // and the writer thread (the one using the contentProvider) detect the error sooner
   const long sleep_time = 10000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
-  zim::microsleep(sleep_time * getWaitTimeFactor());
+  zim::microsleep((int)(sleep_time * getWaitTimeFactor()));
   // But we detect it for any call after
   CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
   CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));

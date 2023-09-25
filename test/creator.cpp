@@ -120,7 +120,7 @@ TEST(ZimCreator, createEmptyZim)
   Fileheader header;
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
-  ASSERT_EQ(header.getArticleCount(), 2); // counter + titleListIndexesv0
+  ASSERT_EQ(header.getArticleCount(), 2u); // counter + titleListIndexesv0
 
   //Read the only one item existing.
   auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));

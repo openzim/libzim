@@ -43,12 +43,12 @@ TEST(ReaderDataStreamWrapper, shouldJustWork)
 
   RawStreamReader rdr(reader);
 
-  ASSERT_EQ(1234,         rdr.read<uint32_t>());
+  ASSERT_EQ(1234U,        rdr.read<uint32_t>());
   auto subbuffer = rdr.sub_reader(zsize_t(4))->get_buffer(offset_t(0), zsize_t(4));
   ASSERT_EQ("efgh",       toString(subbuffer));
   subbuffer = rdr.sub_reader(zsize_t(10))->get_buffer(offset_t(0), zsize_t(10));
   ASSERT_EQ("ijklmnopqr", toString(subbuffer));
-  ASSERT_EQ(-987654321,   rdr.read<int64_t>());
+  ASSERT_EQ(-987654321,  rdr.read<int64_t>());
 }
 
 } // unnamed namespace

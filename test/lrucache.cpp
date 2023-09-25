@@ -34,14 +34,14 @@
 #include "gtest/gtest.h"
 
 const int NUM_OF_TEST2_RECORDS = 100;
-const int TEST2_CACHE_CAPACITY = 50;
+const unsigned int TEST2_CACHE_CAPACITY = 50u;
 
 TEST(CacheTest, SimplePut) {
     zim::lru_cache<int, int> cache_lru(1);
     cache_lru.put(7, 777);
     EXPECT_TRUE(cache_lru.exists(7));
     EXPECT_EQ(777, cache_lru.get(7));
-    EXPECT_EQ(1, cache_lru.size());
+    EXPECT_EQ(1u, cache_lru.size());
 }
 
 TEST(CacheTest, OverwritingPut) {
@@ -50,7 +50,7 @@ TEST(CacheTest, OverwritingPut) {
     cache_lru.put(7, 222);
     EXPECT_TRUE(cache_lru.exists(7));
     EXPECT_EQ(222, cache_lru.get(7));
-    EXPECT_EQ(1, cache_lru.size());
+    EXPECT_EQ(1u, cache_lru.size());
 }
 
 TEST(CacheTest, MissingValue) {
@@ -65,13 +65,13 @@ TEST(CacheTest, DropValue) {
     cache_lru.put(7, 777);
     cache_lru.put(8, 888);
     cache_lru.put(9, 999);
-    EXPECT_EQ(3, cache_lru.size());
+    EXPECT_EQ(3u, cache_lru.size());
     EXPECT_TRUE(cache_lru.exists(7));
     EXPECT_EQ(777, cache_lru.get(7));
 
     EXPECT_TRUE(cache_lru.drop(7));
 
-    EXPECT_EQ(2, cache_lru.size());
+    EXPECT_EQ(2u, cache_lru.size());
     EXPECT_FALSE(cache_lru.exists(7));
     EXPECT_THROW(cache_lru.get(7).value(), std::range_error);
 
@@ -85,7 +85,7 @@ TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
         cache_lru.put(i, i);
     }
 
-    for (int i = 0; i < NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY; ++i) {
+    for (unsigned i = 0; i < NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY; ++i) {
         EXPECT_FALSE(cache_lru.exists(i));
     }
 

@@ -27,7 +27,9 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
+#include <BaseTsd.h>
 #define LSEEK _lseeki64
+typedef SSIZE_T ssize_t;
 #else
 #include <unistd.h>
 #define LSEEK lseek
@@ -113,7 +115,9 @@ zim::Buffer write_to_buffer(const T& object, const std::string& tail="")
   TempFile tmpFile("test_temp_file");
   const auto tmp_fd = tmpFile.fd();
   object.write(tmp_fd);
-  write(tmp_fd, tail.data(), tail.size());
+  if (write(tmp_fd, tail.data(), tail.size()) != (ssize_t)tail.size()) {
+    throw std::runtime_error("Cannot write to " + tmpFile.path());
+  }
   size_type size = LSEEK(tmp_fd, 0, SEEK_END);
 
   auto buf = zim::Buffer::makeBuffer(zim::zsize_t(size));

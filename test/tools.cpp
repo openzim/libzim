@@ -95,7 +95,9 @@ std::unique_ptr<TempFile>
 makeTempFile(const char* name, const std::string& content)
 {
   std::unique_ptr<TempFile> p(new TempFile(name));
-  write(p->fd(), &content[0], content.size());
+  if (write(p->fd(), &content[0], content.size()) != (ssize_t)content.size()) {
+    throw std::runtime_error("Error writing temp file " + p->path());
+  }
   p->close();
   return p;
 }

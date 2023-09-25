@@ -128,7 +128,7 @@ jobs:
             lib_postfix: '/x86_64-linux-musl'
           - target: aarch64_dyn
             image_variant: focal
-            lib_postfix: '/aarch64-rpi3-linux-gnu'
+            lib_postfix: '/aarch64-linux-gnu'
           - target: android_arm
             image_variant: focal
             lib_postfix: '/arm-linux-androideabi'
