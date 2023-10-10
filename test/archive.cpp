@@ -105,6 +105,9 @@ TEST(ZimArchive, openingAnEmptyZimArchiveSucceeds)
 
   zim::Archive archive(tmpfile->path());
   ASSERT_TRUE(archive.check());
+
+  ASSERT_EQ(archive.getMediaCount(), 0);
+  ASSERT_EQ(archive.getArticleCount(), 0);
 }
 
 bool isNastyOffset(int offset) {
