@@ -85,14 +85,19 @@ namespace zim
 
   entry_index_type Archive::getMediaCount() const
   {
-    return countMimeType(
-      getMetadata("Counter"),
-      [](const std::string& mimetype) {
-        return mimetype.find("image/") == 0 ||
-               mimetype.find("video/") == 0 ||
-               mimetype.find("audio/") == 0;
-      }
-    );
+    try {
+      return countMimeType(
+        getMetadata("Counter"),
+        [](const std::string& mimetype) {
+          return mimetype.find("image/") == 0 ||
+                 mimetype.find("video/") == 0 ||
+                 mimetype.find("audio/") == 0;
+        }
+      );
+    } catch(const EntryNotFound& e) {
+      return (m_impl->getNamespaceEntryCount('I').v
+            + m_impl->getNamespaceEntryCount('J').v);
+    }
   }
 
   Uuid Archive::getUuid() const

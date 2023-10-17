@@ -131,6 +131,10 @@ entry_index_t getNamespaceBeginOffset(TDirentAccessor& direntAccessor, char ch)
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
 
+  if (direntAccessor.getDirentCount().v == 0) {
+    return entry_index_t(0);
+  }
+
   entry_index_type lower = 0;
   entry_index_type upper = entry_index_type(direntAccessor.getDirentCount());
   auto d = direntAccessor.getDirent(entry_index_t(0));
