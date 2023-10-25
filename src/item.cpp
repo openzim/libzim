@@ -88,3 +88,8 @@ cluster_index_type Item::getClusterIndex() const
 {
   return m_dirent->getClusterNumber().v;
 }
+
+blob_index_type Item::getBlobIndex() const
+{
+  return m_dirent->getBlobNumber().v;
+}
