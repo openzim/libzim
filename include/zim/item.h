@@ -91,6 +91,7 @@ namespace zim
 
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterIndex() const;
+      blob_index_type getBlobIndex() const;
 #endif
 
     private: // data
