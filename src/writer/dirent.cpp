@@ -72,6 +72,17 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
     frontArticle(false)
 {}
 
+Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& target)
+  : pathTitle(path, title),
+    mimeType(target.mimeType),
+    idx(0),
+    info(target.info),
+    offset(0),
+    _ns(target._ns),
+    removed(false),
+    frontArticle(false)
+{}
+
 NS Dirent::getRedirectNs() const {
   return info.getRedirect().ns;
 }

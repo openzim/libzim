@@ -81,6 +81,15 @@ namespace zim
           new (dirent) Dirent(ns, path, title, targetNs, targetPath);
           return dirent;
         }
+
+        Dirent* getCloneDirent(const std::string& path, const std::string& title, const Dirent& target) {
+          if (direntIndex == 0xFFFF) {
+            allocate_new_pool();
+          }
+          auto dirent = pools.back() + direntIndex++;
+          new (dirent) Dirent(path, title, target);
+          return dirent;
+        }
     };
   }
 }

@@ -195,6 +195,17 @@ namespace zim
             const std::string& targetpath,
             const Hints& hints = Hints());
 
+
+        /**
+         *
+         */
+        void addClone(
+            const std::string& path,
+            const std::string& title,
+            const std::string& targetPath,
+            const Hints& hints = Hints()
+        );
+
         /**
          * Finalize the zim creation.
          */
