@@ -7,16 +7,30 @@ on:
       - main
 
 jobs:
-  Macos:
+  macOS:
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - macos-11
+          - macos-12
+          - macos-13
+          - macos-13-arm64
         target:
           - native_dyn
           - iOS_arm64
           - iOS_x86_64
-
-    runs-on: macos-12
+        exclude:
+          # iOS cross-compilation only on the 2 latest versions of macOS x86_64
+          - os: macos-11
+            target: iOS_arm64
+          - os: macos-11
+            target: iOS_x86_64
+          - os: macos-13-arm64
+            target: iOS_arm64
+          - os: macos-13-arm64
+            target: iOS_x86_64	    
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
