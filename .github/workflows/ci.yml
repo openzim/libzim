@@ -15,7 +15,7 @@ jobs:
           - macos-11
           - macos-12
           - macos-13
-          - macos-13-arm64
+          - macos-13-xlarge
         target:
           - native_dyn
           - iOS_arm64
@@ -26,10 +26,10 @@ jobs:
             target: iOS_arm64
           - os: macos-11
             target: iOS_x86_64
-          - os: macos-13-arm64
+          - os: macos-13-xlarge
             target: iOS_arm64
-          - os: macos-13-arm64
-            target: iOS_x86_64	    
+          - os: macos-13-xlarge
+            target: iOS_x86_64
     runs-on: ${{ matrix.os }}
 
     steps:
