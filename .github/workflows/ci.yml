@@ -36,6 +36,8 @@ jobs:
             target: iOS_arm64
           - os: macos-13
             target: iOS_x86_64
+          # TODO: M1 runner is still in beta and not reliable
+          - os: macos-13-xlarge
     runs-on: ${{ matrix.os }}
 
     steps:
