@@ -30,6 +30,12 @@ jobs:
             target: iOS_arm64
           - os: macos-13-xlarge
             target: iOS_x86_64
+          # TODO: iOS cross-compilation on macOS 13 compilation has to be fixed
+          # https://github.com/openzim/libzim/issues/834
+          - os: macos-13
+            target: iOS_arm64
+          - os: macos-13
+            target: iOS_x86_64
     runs-on: ${{ matrix.os }}
 
     steps:
