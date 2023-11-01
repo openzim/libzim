@@ -17,7 +17,6 @@ jobs:
         distro:
           - debian-unstable
           - debian-bullseye
-          - debian-buster
           - ubuntu-jammy
           - ubuntu-focal
     steps:
@@ -53,13 +52,6 @@ jobs:
         if: matrix.distro == 'debian-bullseye'
         name: Build package for debian-bullseye
         id: build-debian-bullseye
-        with:
-          args: --no-sign
-
-      - uses: legoktm/gh-action-build-deb@debian-buster
-        if: matrix.distro == 'debian-buster'
-        name: Build package for debian-buster
-        id: build-debian-buster
         with:
           args: --no-sign
 
