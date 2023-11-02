@@ -39,7 +39,7 @@ using CompressionAlgo = ::testing::Types<
   ZSTD_INFO
 >;
 
-TYPED_TEST_CASE(CompressionTest, CompressionAlgo);
+TYPED_TEST_SUITE(CompressionTest, CompressionAlgo);
 
 TYPED_TEST(CompressionTest, compress) {
   std::string data;

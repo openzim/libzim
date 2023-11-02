@@ -60,7 +60,7 @@ using CompressionTypes = ::testing::Types<
   ZSTD_INFO
 >;
 
-TYPED_TEST_CASE(DecoderStreamReaderTest, CompressionTypes);
+TYPED_TEST_SUITE(DecoderStreamReaderTest, CompressionTypes);
 
 TYPED_TEST(DecoderStreamReaderTest, justCompressedData) {
   typedef typename TestFixture::CompressionInfo CompressionInfo;

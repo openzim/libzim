@@ -184,10 +184,10 @@ TEST_P(FaultyItemErrorTest, faultyItem)
 
 // It would be more natural to put the `#if defined` only around the
 // discarded values, but when crosscompiling on Windows, compiler fail to
-// understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
+// understand ``#if defined` when used inside the `INSTANTIATE_TEST_SUITE_P`
 // macro. I suspect some macro definition conflicts.
 #if defined(ENABLE_XAPIAN)
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
 CreatorError,
 FaultyItemErrorTest,
 ::testing::Values(
@@ -200,7 +200,7 @@ FaultyItemErrorTest,
     ERRORKIND::GET_INDEXDATA
 ));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
 CreatorError,
 FaultyItemErrorTest,
 ::testing::Values(
@@ -354,10 +354,10 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnfinishedCreator)
 }
 // It would be more natural to put the `#if defined` only around the
 // discarded values, but when crosscompiling on Windows, compiler fail to
-// understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
+// understand ``#if defined` when used inside the `INSTANTIATE_TEST_SUITE_P`
 // macro. I suspect some macro definition conflicts.
 #if defined(ENABLE_XAPIAN)
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
 CreatorError,
 FaultyDelayedItemErrorTest,
 ::testing::Values(
@@ -372,7 +372,7 @@ FaultyDelayedItemErrorTest,
     ERRORKIND::GET_INDEXDATA_POSITION
 ));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
 CreatorError,
 FaultyDelayedItemErrorTest,
 ::testing::Values(
