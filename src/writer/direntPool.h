@@ -44,6 +44,14 @@ namespace zim
           delete [] (reinterpret_cast<char*>(pool));
         }
 
+        /* Return a *NOT constructed* pointer to a dirent */
+        Dirent* getDirentSlot() {
+          if (direntIndex == 0xFFFF) {
+            allocate_new_pool();
+          }
+          auto dirent = pools.back() + direntIndex++;
+          return dirent;
+        }
 
       public:
         DirentPool() :
@@ -65,28 +73,19 @@ namespace zim
         }
 
         Dirent* getClassicDirent(NS ns, const std::string& path, const std::string& title, uint16_t mimetype) {
-          if (direntIndex == 0xFFFF) {
-            allocate_new_pool();
-          }
-          auto dirent = pools.back() + direntIndex++;
+          auto dirent = getDirentSlot();
           new (dirent) Dirent(ns, path, title, mimetype);
           return dirent;
         }
 
         Dirent* getRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath) {
-          if (direntIndex == 0xFFFF) {
-            allocate_new_pool();
-          }
-          auto dirent = pools.back() + direntIndex++;
+          auto dirent = getDirentSlot();
           new (dirent) Dirent(ns, path, title, targetNs, targetPath);
           return dirent;
         }
 
         Dirent* getCloneDirent(const std::string& path, const std::string& title, const Dirent& target) {
-          if (direntIndex == 0xFFFF) {
-            allocate_new_pool();
-          }
-          auto dirent = pools.back() + direntIndex++;
+          auto dirent = getDirentSlot();
           new (dirent) Dirent(path, title, target);
           return dirent;
         }
