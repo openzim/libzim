@@ -206,7 +206,7 @@ namespace zim
       data->handle(dirent, hints);
     }
 
-    void Creator::addClone(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
+    void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
     {
       checkError();
       Dirent tmpDirent(NS::C, targetPath);
@@ -214,12 +214,12 @@ namespace zim
 
       if (existing_dirent_it == data->dirents.end()) {
         std::ostringstream ss;
-        ss << "Impossible to clone C/" << targetPath << " to C/" << path << std::endl;
+        ss << "Impossible to alias C/" << targetPath << " as C/" << path << std::endl;
         ss << "C/" << targetPath << " doesn't exist." << std::endl;
         throw InvalidEntry(ss.str());
       }
 
-      auto dirent = data->createCloneDirent(path, title, **existing_dirent_it);
+      auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
       data->handle(dirent, hints);
     }
 
@@ -615,7 +615,7 @@ namespace zim
       return dirent;
     }
 
-    Dirent* CreatorData::createCloneDirent(const std::string& path, const std::string& title, const Dirent& target)
+    Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
     {
       auto dirent = pool.getCloneDirent(path, title, target);
       addDirent(dirent);

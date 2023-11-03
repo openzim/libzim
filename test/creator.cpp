@@ -185,13 +185,13 @@ TEST(ZimCreator, createZim)
   // Be sure that title order is not the same that url order
   item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
-  creator.addClone("foo_bis", "The same Foo", "foo2");
+  creator.addAlias("foo_bis", "The same Foo", "foo2");
   creator.addMetadata("Title", "This is a title");
   creator.addIllustration(48, "PNGBinaryContent48");
   creator.addIllustration(96, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // Not a front article.
-  creator.addClone("foo_ter", "The same redirection", "foo3", {{ zim::writer::FRONT_ARTICLE, true}}); // a clone of the previous redirect, but as a front article.
+  creator.addAlias("foo_ter", "The same redirection", "foo3", {{ zim::writer::FRONT_ARTICLE, true}}); // a clone of the previous redirect, but as a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistant", {{zim::writer::FRONT_ARTICLE, true}}); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
