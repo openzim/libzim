@@ -250,6 +250,24 @@ namespace zim
     throw EntryNotFound("Cannot find entry");
   }
 
+  Entry Archive::getEntryByUrl(const std::string& url) const
+  {
+    const auto [path, queryParams] = urlSplit(url);
+    try {
+      return getEntryByPath(path);
+    } catch (const EntryNotFound& e) {
+      for(const auto& path_to_try: m_impl->getFuzzyRules().get_fuzzy_paths(path, queryParams)) {
+        try {
+          return getEntryByPath(path_to_try);
+        } catch (const EntryNotFound& e) {
+          continue;
+        }
+      }
+    }
+
+    throw EntryNotFound("Cannot find entry");
+  }
+
   Entry Archive::getEntryByTitle(entry_index_type idx) const
   {
     return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(title_index_t(idx))));

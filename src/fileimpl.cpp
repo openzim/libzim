@@ -36,6 +36,7 @@
 #include "envvalue.h"
 #include "md5.h"
 #include "tools.h"
+#include "fuzzy_rules.h"
 
 log_define("zim.file.impl")
 
@@ -236,6 +237,7 @@ private: // data
     m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
     readMimeTypes();
+    readFuzzyRules();
   }
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const std::string& path)
@@ -363,6 +365,22 @@ private: // data
     } else {
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
+  }
+
+  void FileImpl::readFuzzyRules() {
+    auto r = findx('M', "FuzzyRules");
+    if (!r.first) {
+      // No rules
+      return;
+    }
+    auto fuzzy_rule_dirent = getDirent(r.second);
+    if (fuzzy_rule_dirent->isRedirect()) {
+      std::cerr << "Error: 'M/FuzzyRules' is a redirect." << std::endl;
+      return;
+    }
+    auto cluster = getCluster(fuzzy_rule_dirent->getClusterNumber());
+    auto blob = cluster->getBlob(fuzzy_rule_dirent->getBlobNumber());
+    fuzzyRules = FuzzyRules(blob);
   }
 
   FileImpl::FindxResult FileImpl::findx(char ns, const std::string& url)

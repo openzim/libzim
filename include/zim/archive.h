@@ -222,12 +222,26 @@ namespace zim
        *
        *  Get an entry using its path.
        *  The path must contains the namespace.
+       *  Path must be exact. Either a entry exists with the path or not.
        *
        *  @param path The entry's path.
        *  @return The Entry.
        *  @exception EntryNotFound If no entry has the asked path.
        */
       Entry getEntryByPath(const std::string& path) const;
+
+      /** Get an entry using a url.
+       *
+       *  Get an entry using a full url.
+       *  A full url is composed of a path and a querystring (separated by a '?')
+       *  If the path is not in the archive, libzim will try find the entry
+       *  using a combination of the querystring and fuzzyRules stored in the archive.
+       *
+       * @param url The url (including querystring) to search for.
+       * @return The Entry.
+       * @exception EntryNotFound If no entry has been found.
+       */
+      Entry getEntryByUrl(const std::string& url) const;
 
       /** Get an entry using its "title" index.
        *

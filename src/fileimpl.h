@@ -40,6 +40,7 @@
 #include "fileheader.h"
 #include "zim_types.h"
 #include "direntreader.h"
+#include "fuzzy_rules.h"
 
 
 namespace zim
@@ -67,6 +68,8 @@ namespace zim
 
       typedef std::vector<std::string> MimeTypes;
       MimeTypes mimeTypes;
+
+      FuzzyRules fuzzyRules;
 
       mutable std::vector<entry_index_type> m_articleListByCluster;
       mutable std::mutex m_articleListByClusterMutex;
@@ -148,6 +151,8 @@ namespace zim
 
       const std::string& getMimeType(uint16_t idx) const;
 
+      const FuzzyRules& getFuzzyRules() const { return fuzzyRules; };
+
       std::string getChecksum();
       bool verify();
       bool is_multiPart() const;
@@ -165,6 +170,7 @@ namespace zim
       ClusterHandle readCluster(cluster_index_t idx);
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
+      void readFuzzyRules();
       void quickCheckForCorruptFile();
 
       bool checkChecksum();
