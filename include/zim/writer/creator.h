@@ -23,6 +23,7 @@
 #define ZIM_WRITER_CREATOR_H
 
 #include <memory>
+#include <vector>
 #include <zim/zim.h>
 #include <zim/writer/item.h>
 
@@ -243,6 +244,13 @@ namespace zim
          * @param uuid The uuid of the archive.
          */
         void setUuid(const zim::Uuid& uuid) { m_uuid = uuid; }
+
+        /**
+         * Set the fuzzy rules of the archive.
+         *
+         * @param rules A vector of fuzzyRules.
+         */
+        void addFuzzyRules(const std::string& match, const std::string& replace, const std::string& split_str, bool splitlast, const std::vector<std::vector<std::string>>& arg_list);
 
       private:
         std::unique_ptr<CreatorData> data;

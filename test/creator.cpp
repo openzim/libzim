@@ -120,7 +120,7 @@ TEST(ZimCreator, createEmptyZim)
   Fileheader header;
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
-  ASSERT_EQ(header.getArticleCount(), 2u); // counter + titleListIndexesv0
+  ASSERT_EQ(header.getArticleCount(), 3u); // counter + fuzzyrules + titleListIndexesv0
 
   //Read the only one item existing.
   auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
@@ -131,6 +131,9 @@ TEST(ZimCreator, createEmptyZim)
   test_article_dirent(dirent, 'M', "Counter", None, 1, cluster_index_t(0), None);
 
   dirent = direntAccessor.getDirent(entry_index_t(1));
+  test_article_dirent(dirent, 'M', "FuzzyRules", None, 1, cluster_index_t(0), None);
+
+  dirent = direntAccessor.getDirent(entry_index_t(2));
   test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, 0, cluster_index_t(1), None);
   auto v0BlobIndex = dirent->getBlobNumber();
 
@@ -140,7 +143,7 @@ TEST(ZimCreator, createEmptyZim)
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
   ASSERT_EQ(cluster->count(), blob_index_t(1)); // Only titleListIndexesv0
   auto blob = cluster->getBlob(v0BlobIndex);
-  ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
+  ASSERT_EQ(blob.size(), 3*sizeof(title_index_t));
 }
 
 
@@ -202,7 +205,7 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 14; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo_bis + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 15; // counter + FuzzyRules + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo_bis + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
   int png_mimetype = 2;
@@ -210,7 +213,7 @@ TEST(ZimCreator, createZim)
   int plain_mimetype = 4;
   int plainutf8_mimetype = 5;
 #else
-  entry_index_type nb_entry = 12; // counter + 2*illustration + foo + foo_bis + foo2 + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 13; // counter + FuzzyRules + 2*illustration + foo + foo_bis + foo2 + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
   int listing_mimetype = 0;
   int png_mimetype = 1;
   int html_mimetype = 2;
@@ -246,6 +249,9 @@ TEST(ZimCreator, createZim)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
   auto counterBlobIndex = dirent->getBlobNumber();
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'M', "FuzzyRules", None, plain_mimetype, cluster_index_t(0), None);
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Illustration_48x48@1", None, png_mimetype, cluster_index_t(1), None);
@@ -286,7 +292,7 @@ TEST(ZimCreator, createZim)
   auto clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos)));
   auto cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::Zstd);
-  ASSERT_EQ(cluster->count(), blob_index_t(4)); // 4 entries are compressed content
+  ASSERT_EQ(cluster->count(), blob_index_t(5)); // 5 entries are compressed content
 
   auto blob = cluster->getBlob(fooBlobIndex);
   ASSERT_EQ(std::string(blob), "FooContent");
@@ -305,7 +311,7 @@ TEST(ZimCreator, createZim)
   clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos + 8)));
   cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
-  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-8)); // 7 entries are either compressed or redirections + 1 entry is a clone of content
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-9)); // 8 entries are either compressed or redirections + 1 entry is a clone of content
 
   ASSERT_EQ(header.getTitleIdxPos(), (clusterOffset+cluster->getBlobOffset(v0BlobIndex)).v);
 
@@ -324,10 +330,11 @@ TEST(ZimCreator, createZim)
     8, 0, 0, 0,
     9, 0, 0, 0,
     10, 0, 0, 0,
-    11, 0, 0, 0
+    11, 0, 0, 0,
+    12, 0, 0, 0
 #if defined(ENABLE_XAPIAN)
-    ,12, 0, 0, 0
     ,13, 0, 0, 0
+    ,14, 0, 0, 0
 #endif
     };
   ASSERT_EQ(blob0Data, expectedBlob0Data);

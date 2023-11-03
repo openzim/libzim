@@ -62,6 +62,7 @@
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"
+#include "../fuzzy_rules.h"
 
 log_define("zim.writer.creator")
 
@@ -223,9 +224,24 @@ namespace zim
       data->handle(dirent, hints);
     }
 
-    void Creator::finishZimCreation()
+    void Creator::addFuzzyRules(const std::string& match, const std::string& replace, const std::string& split_str, bool splitlast, const std::vector<std::vector<std::string>>& arg_list)
     {
       checkError();
+      FuzzyRule rule(match, replace, split_str, splitlast, arg_list);
+      data->m_fuzzyRules.push_back(rule);
+    }
+
+    void Creator::finishZimCreation()
+    {
+      // Write the fuzzyRules
+      std::ostringstream oss;
+      for(const auto& rule: data->m_fuzzyRules) {
+        rule.write(oss);
+      }
+      addMetadata("FuzzyRules", oss.str(), "text/plain");
+
+      checkError();
+
       // Create a redirection for the mainPage.
       // We need to keep the created dirent to set the fileheader.
       // Dirent doesn't have to be deleted.

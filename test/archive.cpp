@@ -173,18 +173,18 @@ TEST(ZimArchive, openCreatedArchive)
 
   zim::Archive archive(tempPath);
 #if !defined(ENABLE_XAPIAN)
-// 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
-#define ALL_ENTRY_COUNT 10U
+// 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection + fuzzyRules
+#define ALL_ENTRY_COUNT 11U
 #else
 // same as above + 2 xapian indexes.
-#define ALL_ENTRY_COUNT 12U
+#define ALL_ENTRY_COUNT 13U
 #endif
   ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
 #undef ALL_ENTRY_COUNT
   ASSERT_EQ(archive.getEntryCount(), 3U);
   ASSERT_EQ(archive.getArticleCount(), 1U);
   ASSERT_EQ(archive.getUuid(), uuid);
-  ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
+  ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "FuzzyRules", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
   ASSERT_TRUE(archive.hasMainEntry());
 

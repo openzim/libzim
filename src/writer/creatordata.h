@@ -35,6 +35,7 @@
 #include "config.h"
 
 #include "../fileheader.h"
+#include "../fuzzy_rules.h"
 #include "direntPool.h"
 #include "titleListingHandler.h"
 
@@ -115,6 +116,8 @@ namespace zim
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
         int out_fd;
+
+        std::vector<FuzzyRule> m_fuzzyRules;
 
         bool withIndex;
         std::string indexingLanguage;
