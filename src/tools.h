@@ -41,6 +41,7 @@ namespace zim {
   void microsleep(int microseconds);
 
   std::tuple<char, std::string> parseLongPath(const std::string& longPath);
+  std::tuple<std::string, std::vector<std::pair<std::string, std::string>>> urlSplit(const std::string& url);
 
   // Parse a illustration path ("Illustration_<width>x<height>@1") to a size.
   unsigned int parseIllustrationPathToSize(const std::string& s);

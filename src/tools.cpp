@@ -107,6 +107,32 @@ std::tuple<char, std::string> zim::parseLongPath(const std::string& longPath)
   return std::make_tuple(ns, shortPath);
 }
 
+std::tuple<std::string, std::vector<std::pair<std::string, std::string>>> zim::urlSplit(const std::string& url) {
+  auto k = url.find("?");
+  if (k == std::string::npos) {
+    return {url, {}};
+  }
+
+  auto path = url.substr(0, k);
+  auto queryParamsStr= url.substr(k+1);
+  std::vector<std::pair<std::string, std::string>> queryParams;
+  std::istringstream ss(queryParamsStr);
+  while (ss) {
+    std::string queryParamStr;
+    getline(ss, queryParamStr, '&');
+    k = queryParamStr.find("=");
+    if (k == std::string::npos) {
+      queryParams.push_back({queryParamStr, {}});
+    } else {
+      queryParams.push_back({
+        queryParamStr.substr(0, k),
+        queryParamStr.substr(k+1)
+      });
+    }
+  }
+  return {path, queryParams};
+}
+
 unsigned int zim::parseIllustrationPathToSize(const std::string& s)
 {
   int nw(0), nh(0), nEnd(0);
