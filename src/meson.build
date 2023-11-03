@@ -18,6 +18,7 @@ common_sources = [
     'fileimpl.cpp',
     'file_compound.cpp',
     'file_reader.cpp',
+    'fuzzy_rules.cpp',
     'item.cpp',
     'blob.cpp',
     'buffer.cpp',
@@ -58,7 +59,7 @@ xapian_sources = [
 ]
 
 sources = common_sources
-deps = [thread_dep, lzma_dep, zstd_dep]
+deps = [thread_dep, lzma_dep, zstd_dep, icu_dep]
 
 if target_machine.system() == 'freebsd'
     deps += [execinfo_dep]
@@ -67,7 +68,7 @@ endif
 if xapian_dep.found()
     sources += xapian_sources
     sources += lib_resources
-    deps += [xapian_dep, icu_dep]
+    deps += [xapian_dep]
 endif
 
 libzim = library('zim',

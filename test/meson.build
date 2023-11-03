@@ -23,7 +23,8 @@ tests = [
     'tinyString',
     'suggestion_iterator',
     'indexing_criteria',
-    'counterParsing'
+    'counterParsing',
+    'fuzzyRules'
 ]
 
 if xapian_dep.found()

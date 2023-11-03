@@ -72,12 +72,11 @@ else
   thread_dep = dependency('', required:false)
 endif
 
+icu_dep = dependency('icu-i18n', static:static_linkage)
+pkg_requires += ['icu-i18n']
+
 if xapian_dep.found()
     pkg_requires += ['xapian-core']
-    icu_dep = dependency('icu-i18n', static:static_linkage)
-    pkg_requires += ['icu-i18n']
-else
-    icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
 endif
 
 gtest_dep = dependency('gtest', version: '>=1.10.0', main:true, fallback:['gtest', 'gtest_main_dep'], required:false)
