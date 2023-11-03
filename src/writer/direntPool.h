@@ -84,7 +84,7 @@ namespace zim
           return dirent;
         }
 
-        Dirent* getCloneDirent(const std::string& path, const std::string& title, const Dirent& target) {
+        Dirent* getAliasDirent(const std::string& path, const std::string& title, const Dirent& target) {
           auto dirent = getDirentSlot();
           new (dirent) Dirent(path, title, target);
           return dirent;
