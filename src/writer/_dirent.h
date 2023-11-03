@@ -169,7 +169,7 @@ namespace zim
         // Creator for a "redirection" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
 
-        // Creator for a "clone" dirent
+        // Creator for a "clone" dirent. Reuse the namespace of the targeted Dirent.
         Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
         // Creator for "temporary" dirent, used to search for dirent in container.

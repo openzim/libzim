@@ -197,7 +197,26 @@ namespace zim
 
 
         /**
+         * Add a clone of a existing entry.
          *
+         * The existing entry pointed by `targetPath` is cloned and updated with
+         * `path` and `title`.
+         *
+         * The clone entry will shared the same type (redirection or item)
+         * and namespace than `targetPath`.
+         *
+         * If the `targetPath` is a item, the new entry will be item pointing
+         * to the same data than `targetPath` item. (Not a redirection to `targetPath`).
+         * However, the cloned entry is not counted in the media type counter
+         * and it is not fulltext indexed (only title indexed).
+         *
+         * Hints can be given to influence creator handling (front article, ...)
+         * as it is done for redirection.
+         *
+         * @param path the path of the clone
+         * @param title the title of the clone
+         * @param targetPath the path of the cloned entry.
+         * @param hints hints associated to the clone.
          */
         void addClone(
             const std::string& path,

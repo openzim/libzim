@@ -214,7 +214,7 @@ namespace zim
 
       if (existing_dirent_it == data->dirents.end()) {
         std::ostringstream ss;
-        ss << "Impossible to clone C/" << targetPath << " to " << path << std::endl;
+        ss << "Impossible to clone C/" << targetPath << " to C/" << path << std::endl;
         ss << "C/" << targetPath << " doesn't exist." << std::endl;
         throw InvalidEntry(ss.str());
       }
