@@ -68,7 +68,7 @@ Item Entry::getItem(bool follow) const
     return getRedirect();
  }
 
-  return Item(m_file, m_idx);
+  return Item(*this);
 }
 
 Item Entry::getRedirect() const {
