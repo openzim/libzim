@@ -252,7 +252,9 @@ namespace zim
 
   Entry Archive::getEntryByUrl(const std::string& url) const
   {
-    const auto [path, queryParams] = urlSplit(url);
+    std::string path;
+    std::vector<std::pair<std::string, std::string>> queryParams;
+    std::tie(path, queryParams) = urlSplit(url);
     try {
       return getEntryByPath(path);
     } catch (const EntryNotFound& e) {
