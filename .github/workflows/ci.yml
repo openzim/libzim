@@ -60,7 +60,7 @@ jobs:
       - name: Install deps
         shell: bash
         run: |
-          ARCHIVE_NAME=deps2_osx_${{matrix.target}}_libzim.tar.xz
+          ARCHIVE_NAME=deps2_macos_${{matrix.target}}_libzim.tar.xz
           wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
 
       - name: Compile
