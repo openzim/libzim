@@ -12,7 +12,6 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-11
           - macos-12
           - macos-13
           - macos-13-xlarge
@@ -22,10 +21,6 @@ jobs:
           - iOS_x86_64
         exclude:
           # iOS cross-compilation only on the 2 latest versions of macOS x86_64
-          - os: macos-11
-            target: iOS_arm64
-          - os: macos-11
-            target: iOS_x86_64
           - os: macos-13-xlarge
             target: iOS_arm64
           - os: macos-13-xlarge
