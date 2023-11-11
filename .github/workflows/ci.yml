@@ -12,21 +12,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-12
           - macos-13
-          - macos-13-xlarge
         target:
           - native_dyn
           - iOS_arm64
           - iOS_x86_64
-        exclude:
-          # iOS cross-compilation only on the 2 latest versions of macOS x86_64
-          - os: macos-13-xlarge
-            target: iOS_arm64
-          - os: macos-13-xlarge
-            target: iOS_x86_64
-          # TODO: M1 runner is still in beta and not reliable
-          - os: macos-13-xlarge
     runs-on: ${{ matrix.os }}
 
     steps:
