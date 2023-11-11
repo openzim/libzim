@@ -12,32 +12,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-11
-          - macos-12
           - macos-13
-          - macos-13-xlarge
         target:
           - native_dyn
           - iOS_arm64
           - iOS_x86_64
-        exclude:
-          # iOS cross-compilation only on the 2 latest versions of macOS x86_64
-          - os: macos-11
-            target: iOS_arm64
-          - os: macos-11
-            target: iOS_x86_64
-          - os: macos-13-xlarge
-            target: iOS_arm64
-          - os: macos-13-xlarge
-            target: iOS_x86_64
-          # TODO: iOS cross-compilation on macOS 13 compilation has to be fixed
-          # https://github.com/openzim/libzim/issues/834
-          - os: macos-13
-            target: iOS_arm64
-          - os: macos-13
-            target: iOS_x86_64
-          # TODO: M1 runner is still in beta and not reliable
-          - os: macos-13-xlarge
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -55,12 +34,12 @@ jobs:
           brew install gcovr pkg-config ninja || brew link --overwrite python
 
       - name: Install python modules
-        run: pip3 install meson==0.52.1 pytest
+        run: pip3 install meson pytest
 
       - name: Install deps
         shell: bash
         run: |
-          ARCHIVE_NAME=deps2_osx_${{matrix.target}}_libzim.tar.xz
+          ARCHIVE_NAME=deps2_macos_${{matrix.target}}_libzim.tar.xz
           wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
 
       - name: Compile
@@ -69,7 +48,7 @@ jobs:
           MESON_OPTION="--default-library=shared"
           MESON_CROSSFILE="$HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
           if [[ ! "${{matrix.target}}" =~ native_.* ]]; then
-            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
+            MESON_OPTION="$MESON_OPTION --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
             cat $MESON_CROSSFILE
           fi
           export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig
