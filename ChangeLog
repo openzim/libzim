@@ -1,3 +1,12 @@
+libzim 9.0.0
+============
+
+* getMediaCount() does not fail anymore if M/Counter is missing (@mgauthierfr #827)
+* Reintroduce optimization of Entry::getItem() (@kelson42 @mgauthierfr #836)
+* C++17 compatible code (@mgauthierfr #819)
+* Add support to recent googletest framework (@kelson42 #830)
+* Multiple fixes for Apple macOS/iOS compilation & CI (@mgauthierfr @kelson42 @rgaudin #832 #839)
+
 libzim 8.2.1
 ============
 
