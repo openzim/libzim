@@ -64,6 +64,7 @@ TEST(Search, indexFullPath)
 
   auto item = std::make_shared<TestItem>("testPath", "text/html", "Test Article", "This is a test article");
   creator.addItem(item);
+  creator.addAlias("anotherPath", "Another Test Article", "testPath");
 
   creator.setMainPath("testPath");
   creator.addMetadata("Title", "Test zim");
@@ -76,9 +77,14 @@ TEST(Search, indexFullPath)
   auto search = searcher.search(query);
 
   ASSERT_NE(0, search.getEstimatedMatches());
-  auto result = search.getResults(0, archive.getEntryCount());
-  ASSERT_EQ(result.begin().getPath(), "testPath");
-  ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
+  auto results = search.getResults(0, archive.getEntryCount());
+
+  auto result = results.begin();
+  ASSERT_EQ(result.getPath(), "testPath");
+  ASSERT_EQ(result.getDbData().substr(0, 2), "C/");
+
+  result++;
+  ASSERT_EQ(result, results.end());
 }
 
 TEST(Search, fulltextSnippet)
@@ -118,6 +124,7 @@ TEST(Search, multiSearch)
   creator.addItem(std::make_shared<TestItem>("path2", "text/html", "Test Article001", "This is a test article. Super. temp0"));
   creator.addItem(std::make_shared<TestItem>("path3", "text/html", "Test Article2", "This is a test article. Super."));
   creator.addItem(std::make_shared<TestItem>("path4", "text/html", "Test Article23", "This is a test article. bis."));
+  creator.addAlias("path5", "Test Article5", "path0"); // Should not be fulltext indexed
 
   creator.setMainPath("path0");
   creator.finishZimCreation();
@@ -133,7 +140,7 @@ TEST(Search, multiSearch)
   zim::Query query("test article");
   auto search0 = searcher.search(query);
 
-  ASSERT_EQ(archive.getEntryCount(), (unsigned int)search0.getEstimatedMatches());
+  ASSERT_EQ(5U, (unsigned int)search0.getEstimatedMatches());
   auto result0 = search0.getResults(0, 2);
   ASSERT_EQ(result0.size(), 2);
   auto it0 = result0.begin();

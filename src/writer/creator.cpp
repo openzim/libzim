@@ -206,6 +206,23 @@ namespace zim
       data->handle(dirent, hints);
     }
 
+    void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
+    {
+      checkError();
+      Dirent tmpDirent(NS::C, targetPath);
+      auto existing_dirent_it = data->dirents.find(&tmpDirent);
+
+      if (existing_dirent_it == data->dirents.end()) {
+        std::ostringstream ss;
+        ss << "Impossible to alias C/" << targetPath << " as C/" << path << std::endl;
+        ss << "C/" << targetPath << " doesn't exist." << std::endl;
+        throw InvalidEntry(ss.str());
+      }
+
+      auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
+      data->handle(dirent, hints);
+    }
+
     void Creator::finishZimCreation()
     {
       checkError();
@@ -594,6 +611,13 @@ namespace zim
     Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
     {
       auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
+      addDirent(dirent);
+      return dirent;
+    }
+
+    Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
+    {
+      auto dirent = pool.getAliasDirent(path, title, target);
       addDirent(dirent);
       return dirent;
     }

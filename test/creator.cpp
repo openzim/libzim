@@ -185,11 +185,13 @@ TEST(ZimCreator, createZim)
   // Be sure that title order is not the same that url order
   item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
+  creator.addAlias("foo_bis", "The same Foo", "foo2");
   creator.addMetadata("Title", "This is a title");
   creator.addIllustration(48, "PNGBinaryContent48");
   creator.addIllustration(96, "PNGBinaryContent96");
   creator.setMainPath("foo");
-  creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
+  creator.addRedirection("foo3", "FooRedirection", "foo"); // Not a front article.
+  creator.addAlias("foo_ter", "The same redirection", "foo3", {{ zim::writer::FRONT_ARTICLE, true}}); // a clone of the previous redirect, but as a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistant", {{zim::writer::FRONT_ARTICLE, true}}); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
@@ -200,7 +202,7 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 12; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 14; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo_bis + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
   int png_mimetype = 2;
@@ -208,7 +210,7 @@ TEST(ZimCreator, createZim)
   int plain_mimetype = 4;
   int plainutf8_mimetype = 5;
 #else
-  entry_index_type nb_entry = 10; // counter + 2*illustration + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 12; // counter + 2*illustration + foo + foo_bis + foo2 + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
   int listing_mimetype = 0;
   int png_mimetype = 1;
   int html_mimetype = 2;
@@ -234,6 +236,12 @@ TEST(ZimCreator, createZim)
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_redirect_dirent(dirent, 'C', "foo3", "FooRedirection", entry_index_t(0));
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'C', "foo_bis", "The same Foo", html_mimetype, cluster_index_t(0), foo2BlobIndex);
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_redirect_dirent(dirent, 'C', "foo_ter", "The same redirection", entry_index_t(0));
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
@@ -297,7 +305,7 @@ TEST(ZimCreator, createZim)
   clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos + 8)));
   cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
-  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-6)); // 6 entries are either compressed or redirections
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-8)); // 7 entries are either compressed or redirections + 1 entry is a clone of content
 
   ASSERT_EQ(header.getTitleIdxPos(), (clusterOffset+cluster->getBlobOffset(v0BlobIndex)).v);
 
@@ -314,20 +322,23 @@ TEST(ZimCreator, createZim)
     6, 0, 0, 0,
     7, 0, 0, 0,
     8, 0, 0, 0,
-    9, 0, 0, 0
+    9, 0, 0, 0,
+    10, 0, 0, 0,
+    11, 0, 0, 0
 #if defined(ENABLE_XAPIAN)
-    ,10, 0, 0, 0
-    ,11, 0, 0, 0
+    ,12, 0, 0, 0
+    ,13, 0, 0, 0
 #endif
     };
   ASSERT_EQ(blob0Data, expectedBlob0Data);
 
   blob = cluster->getBlob(v1BlobIndex);
-  ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
+  ASSERT_EQ(blob.size(), 3*sizeof(title_index_t));
   std::vector<char> blob1Data(blob.data(), blob.end());
   std::vector<char> expectedBlob1Data = {
     1, 0, 0, 0,
-    0, 0, 0, 0
+    0, 0, 0, 0,
+    4, 0, 0, 0 // "The same redirection" is the 5th entry "by title order"
   };
   ASSERT_EQ(blob1Data, expectedBlob1Data);
 

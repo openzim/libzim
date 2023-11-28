@@ -58,6 +58,7 @@ namespace zim
             ns(ns)
           {};
           Redirect(Redirect&& r) = default;
+          Redirect(const Redirect& r) = default;
           ~Redirect() {};
           TinyString targetPath;
           NS ns;
@@ -96,6 +97,21 @@ namespace zim
           resolved(std::move(r)),
           tag(DirentInfo::RESOLVED)
         {}
+        DirentInfo(const DirentInfo& other):
+          tag(other.tag)
+        {
+          switch (tag) {
+            case DIRECT:
+              new(&direct) Direct(other.direct);
+              break;
+            case REDIRECT:
+              new(&redirect) Redirect(other.redirect);
+              break;
+            case RESOLVED:
+              new(&resolved) Resolved(other.resolved);
+              break;
+          }
+        }
         DirentInfo::Direct& getDirect() {
           ASSERT(tag, ==, DIRECT);
           return direct;
@@ -152,6 +168,9 @@ namespace zim
 
         // Creator for a "redirection" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
+
+        // Creator for a "alias" dirent. Reuse the namespace of the targeted Dirent.
+        Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
         // Creator for "temporary" dirent, used to search for dirent in container.
         // We use them in url ordered container so we only need to set the namespace and the path.
