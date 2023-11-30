@@ -87,6 +87,12 @@ jobs:
       - name: Install python modules
         run: pip3 install meson
 
+      - name: Install dependences
+        if: false == startsWith(matrix.target, 'alpine_')
+        run: |
+          ARCHIVE_NAME=deps2_windows_native_mixed_libzim.tar.xz
+          wget -O- http://tmp.kiwix.org/ci/dev_preview/winCI/${ARCHIVE_NAME} | tar -xJ -C ${{env.HOME}}
+
       - name: Compile
         shell: cmd
         run: .github\script\build_libzim.cmd
