@@ -93,10 +93,10 @@ jobs:
           architecture: x64
 
       - name: Install dependences
-        shell: bash
-        run: |
-          ARCHIVE_NAME=deps2_windows_native_mixed_libzim.tar.xz
-          wget -O- http://tmp.kiwix.org/ci/dev_preview/winCI/${ARCHIVE_NAME} | tar -xJ -C ${{env.HOME}}
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@download_deps_action
+        with:
+          os_name: windows
+          target_platform: native_mixed
 
       - name: Compile
         shell: cmd
