@@ -98,9 +98,22 @@ jobs:
           os_name: windows
           target_platform: native_mixed
 
+      - name: debgu
+        shell: bash
+        run: |
+          ls
+          ls BUILD_native_mixed
+          ls BUILD_native_static/INSTALL/lib/pkgconfig
+
       - name: Compile
-        shell: cmd
-        run: .github\script\build_libzim.cmd
+        env:
+          PKG_CONFIG_PATH: BUILD_native_mixed\INSTALL\lib\pkgconfig;BUILD_native_static\INSTALL\lib\pkgconfig
+          CC: cl.exe
+          CXX: cl.exe
+        run: |
+          meson.exe setup build . -Ddefault_library=static
+          cd build
+          ninja.exe
 
       - name: Test
         shell: cmd
