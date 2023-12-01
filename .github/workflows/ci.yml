@@ -36,11 +36,11 @@ jobs:
       - name: Install python modules
         run: pip3 install meson pytest
 
-      - name: Install deps
-        shell: bash
-        run: |
-          ARCHIVE_NAME=deps2_macos_${{matrix.target}}_libzim.tar.xz
-          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
+      - name: Install dependences
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@download_deps_action
+        with:
+          os_name: macos
+          target_platform: ${{ matrix.target }}
 
       - name: Compile
         shell: bash
@@ -178,9 +178,9 @@ jobs:
     steps:
       - name: Install dependences
         if: false == startsWith(matrix.target, 'alpine_')
-        run: |
-          ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
-          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C ${{env.HOME}}
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@download_deps_action
+        with:
+          target_platform: ${{ matrix.target }}
 
       - name: Retrieve source code
         uses: actions/checkout@v3
