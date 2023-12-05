@@ -110,6 +110,7 @@ jobs:
           PKG_CONFIG_PATH: BUILD_native_mixed\INSTALL\lib\pkgconfig;BUILD_native_static\INSTALL\lib\pkgconfig
           CC: cl.exe
           CXX: cl.exe
+          CFLAGS: -IBUILD_native_static\INSTALL\include
         run: |
           meson.exe setup build . -Ddefault_library=static
           type build/meson-logs/meson-log.txt
