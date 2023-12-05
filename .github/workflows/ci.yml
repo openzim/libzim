@@ -112,8 +112,8 @@ jobs:
           CXX: cl.exe
         run: |
           meson.exe setup build . -Ddefault_library=static
-          cd build
-          ninja.exe
+          type build/meson-logs/meson-log.txt
+          meson.exe compile -C build --verbose
 
       - name: Test
         shell: cmd
