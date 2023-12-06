@@ -99,22 +99,20 @@ jobs:
           target_platform: native_mixed
 
       - name: debgu
-        shell: bash
         run: |
-          ls
-          ls BUILD_native_mixed
-          ls BUILD_native_static/INSTALL/lib/pkgconfig
+          dir ${{ github.workspace }}\BUILD_native_static\INSTALL\lib\pkgconfig
 
       - name: Compile
         env:
-          PKG_CONFIG_PATH: BUILD_native_mixed\INSTALL\lib\pkgconfig;BUILD_native_static\INSTALL\lib\pkgconfig
+          PKG_CONFIG_PATH: ${{ github.workspace }}\BUILD_native_mixed\INSTALL\lib\pkgconfig;${{ github.workspace }}\BUILD_native_static\INSTALL\lib\pkgconfig
           CC: cl.exe
           CXX: cl.exe
-          CFLAGS: -IBUILD_native_static\INSTALL\include
         run: |
-          meson.exe setup build . -Ddefault_library=static
-          type build/meson-logs/meson-log.txt
-          meson.exe compile -C build --verbose
+          mkdir build
+          cd build
+          meson.exe setup . .. -Ddefault_library=static
+          type meson-logs/meson-log.txt
+          meson.exe compile --verbose
 
       - name: Test
         shell: cmd
