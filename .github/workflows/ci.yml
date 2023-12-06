@@ -69,7 +69,7 @@ jobs:
           WAIT_TIME_FACTOR_TEST: 10
 
   Windows:
-    runs-on: windows-2019
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
