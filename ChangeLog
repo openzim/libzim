@@ -1,3 +1,9 @@
+libzim 9.1.0
+============
+
+* New addAlias() method in the creator (@mgauthierfr #833)
+* Bump-up ZIM format minor version to 6.1.2 (@mgauthierfr #847)
+
 libzim 9.0.0
 ============
 
