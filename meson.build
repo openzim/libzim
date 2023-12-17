@@ -37,7 +37,9 @@ static_linkage = static_linkage or get_option('default_library')=='static'
 lzma_dep = dependency('liblzma', static:static_linkage)
 if static_linkage
   add_project_arguments('-DLZMA_API_STATIC', language: 'cpp')
-else
+endif
+
+if get_option('default_library') != 'static'
   public_conf.set('LIBZIM_EXPORT_DLL', true)
 endif
 
@@ -57,8 +59,8 @@ public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
 pkg_requires = ['liblzma', 'libzstd']
 if build_machine.system() == 'windows'
-    extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin']
-    extra_cpp_args = ['-DSORTPP_PASS']
+    extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin', '-LD:\\a\\libzim\\libzim\\BUILD_native_static\\INSTALL\\lib']
+    extra_cpp_args = ['-DSORTPP_PASS', '-ID:\\a\\libzim\\libzim\\BUILD_native_static\\INSTALL\\include']
 else
     extra_link_args = []
     extra_cpp_args = []
