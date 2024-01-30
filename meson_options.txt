@@ -18,6 +18,8 @@ option('doc', type : 'boolean', value : false,
   description : 'Build the documentations.')
 option('examples', type : 'boolean', value : true,
   description : 'Build the examples.')
+option('tests', type : 'boolean', value : true,
+  description : 'Build the tests.')
 option('with_xapian', type : 'boolean', value: true,
   description: 'Build libzim with xapian support')
 option('test_data_dir', type : 'string', value: '',
