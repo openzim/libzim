@@ -17,10 +17,14 @@ jobs:
           # arm
           - macos-14
         target:
+          - macos-aarch64-dyn
           - macos-x86_64-dyn
           - ios-arm64-dyn
           - ios-x86_64-dyn
         include:
+          - target: macos-aarch64-dyn
+            arch_name: arm64-apple-macos
+            run_test: true
           - target: macos-x86_64-dyn
             arch_name: x86_64-apple-darwin
             run_test: true
