@@ -17,7 +17,8 @@ jobs:
           # arm
           - macos-14
         target:
-          - native_dyn
+          - macos_arm64
+          - macos_x86_64
           - iOS_arm64
           - iOS_x86_64
     runs-on: ${{ matrix.os }}
