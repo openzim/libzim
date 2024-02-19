@@ -51,6 +51,27 @@ namespace zim
    * An `Archive` is read-only, and internal states (as caches) are protected
    * from race-condition. Therefore, all methods of `Archive` are threadsafe.
    *
+   * Zim archives exist with two different namespace schemes: An old one and the new one.
+   * The method `hasNewNamespaceScheme` permit to know which namespace is used by the archive.
+   *
+   * When using old namespace scheme:
+   * - User entries may be stored in different namespaces (historically `A`, `I`, `J` or `-`).
+   *   So path of the entries contains the namespace as a "top level directory": `A/foo.html`, `I/image.png`, ...
+   * - All API taking or returning a path expect/will return a path with the namespace.
+   *
+   * When using new namespace scheme:
+   * - User entries are always stored without namespace.
+   *   (For information, they are stored in the same namespace `C`. Still consider there is no namespace as all API masks it)
+   *   As there is no namespace, paths don't contain it: `foo.hmtl`, `image.png`, ...
+   * - All API taking or returning a path expect/will return a path without namespace.
+   *
+   * This difference may seem complex to handle, but not so much.
+   * As all paths returned by API is consistent with paths expected, you simply have to use the path as it is.
+   * Forget about the namespace and if a path has it, simply consider it as a subdirectory.
+   * The only place it could be problematic is when you already have a path stored somewhere (bookmark, ...)
+   * using a scheme and use it on an archive with another scheme. For this case, the method `getEntryByPath`
+   * has a compatibility layer trying to transform a path to the new scheme as a fallback if the entry is not found.
+   *
    * All methods of archive may throw an `ZimFileFormatError` if the file is invalid.
    */
   class LIBZIM_API Archive
@@ -220,8 +241,15 @@ namespace zim
 
       /** Get an entry using a path.
        *
-       *  Get an entry using its path.
-       *  The path must contains the namespace.
+       *  Search an entry in the zim, using its path.
+       *  On archive with new namespace scheme, path must not contain the namespace.
+       *  On archive without new namespace scheme, path must contain the namespace.
+       *  A compatibility layer exists to accept "old" path on new archive (and the opposite)
+       *  to help using saved path (bookmark) on new archive.
+       *  On new archive, we first search the path in `C` namespace, then try to remove the potential namespace in path
+       *  and search again in `C` namespace with path "without namespace".
+       *  On old archive, we first assume path contains a namespace and if not (or no entry found) search in
+       *  namespaces `A`, `I`, `J` and `-`.
        *
        *  @param path The entry's path.
        *  @return The Entry.
@@ -242,7 +270,7 @@ namespace zim
 
       /** Get an entry using a title.
        *
-       *  Get an entry using its path.
+       *  Get an entry using its title.
        *
        *  @param title The entry's title.
        *  @return The Entry.
@@ -282,6 +310,8 @@ namespace zim
       Entry getRandomEntry() const;
 
       /** Check in an entry has path in the archive.
+       *
+       *  The path follows the same requirement than `getEntryByPath`.
        *
        *  @param path The entry's path.
        *  @return True if the path in the archive, false else.
@@ -386,7 +416,9 @@ namespace zim
 
       /** Find a range of entries starting with path.
        *
-       * The path is the "long path". (Ie, with the namespace)
+       * When using new namespace scheme, path must not contain the namespace (`foo.html`).
+       * When using old namespace scheme, path must contain the namespace (`A/foo.html`).
+       * Contrary to `getEntryByPath`, there is no compatibility layer, path must follow the archive scheme.
        *
        * @param path The path prefix to search for.
        * @return A range starting from the first entry starting with path
@@ -397,7 +429,7 @@ namespace zim
 
       /** Find a range of entry starting with title.
        *
-       * The entry title is search in `A` namespace.
+       * When using old namespace scheme, entry title is search in `A` namespace.
        *
        * @param title The title prefix to search for.
        * @return A range starting from the first entry starting with title
