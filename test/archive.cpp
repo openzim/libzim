@@ -192,7 +192,12 @@ TEST(ZimArchive, openCreatedArchive)
   auto titleMeta = archive.getMetadataItem("Title");
   ASSERT_EQ(std::string(titleMeta.getData()), "This is a title");
   ASSERT_EQ(titleMeta.getMimetype(), "text/plain;charset=utf-8");
+
+  auto titleMeta_with_ns = archive.getEntryByPathWithNamespace('M', "Title");
+  ASSERT_EQ(titleMeta.getIndex(), titleMeta_with_ns.getIndex());
+
   ASSERT_EQ(archive.getMetadata("Counter"), "text/html=2");
+
   auto illu48 = archive.getIllustrationItem(48);
   ASSERT_EQ(illu48.getPath(), "Illustration_48x48@1");
   ASSERT_EQ(std::string(illu48.getData()), "PNGBinaryContent48");
@@ -209,6 +214,9 @@ TEST(ZimArchive, openCreatedArchive)
   ASSERT_EQ(std::string(foo.getItem().getData()), "FooContent");
   ASSERT_THROW(foo.getRedirectEntry(), zim::InvalidType);
   ASSERT_THROW(foo.getRedirectEntryIndex(), zim::InvalidType);
+
+  auto foo_with_ns = archive.getEntryByPathWithNamespace('C', "foo");
+  ASSERT_EQ(foo.getIndex(), foo_with_ns.getIndex());
 
   auto foo2 = archive.getEntryByPath("foo2");
   ASSERT_EQ(foo2.getPath(), "foo2");
@@ -227,6 +235,11 @@ TEST(ZimArchive, openCreatedArchive)
   ASSERT_EQ(main.getRedirectEntry().getIndex(), foo.getIndex());
   ASSERT_EQ(main.getRedirectEntryIndex(), foo.getIndex());
   ASSERT_EQ(archive.getMainEntryIndex(), main.getIndex());
+
+  // NO existant entries
+  ASSERT_THROW(archive.getEntryByPath("non/existant/path"), zim::EntryNotFound);
+  ASSERT_THROW(archive.getEntryByPath("C/non/existant/path"), zim::EntryNotFound);
+  ASSERT_THROW(archive.getEntryByPathWithNamespace('C', "non/existant/path"), zim::EntryNotFound);
 }
 
 #if WITH_TEST_DATA

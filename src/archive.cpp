@@ -250,6 +250,15 @@ namespace zim
     throw EntryNotFound("Cannot find entry");
   }
 
+  Entry Archive::getEntryByPathWithNamespace(char ns, const std::string& path) const
+  {
+    auto r = m_impl->findx(ns, path);
+    if (r.first) {
+      return Entry(m_impl, entry_index_type(r.second));
+    }
+    throw EntryNotFound("Cannot find entry");
+  }
+
   Entry Archive::getEntryByTitle(entry_index_type idx) const
   {
     return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(title_index_t(idx))));

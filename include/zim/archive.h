@@ -505,6 +505,15 @@ namespace zim
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;
       entry_index_type getMainEntryIndex() const;
+
+      /** Get an entry using a path and a namespace.
+       *
+       * @param ns The namespace to search in
+       * @param path The entry's path (without namespace)
+       * @return The entry
+       * @exception EntryNotFound If no entry has been found.
+       */
+      Entry getEntryByPathWithNamespace(char ns, const std::string& path) const;
 #endif
 
     private:
