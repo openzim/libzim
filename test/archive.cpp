@@ -624,7 +624,7 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   for(auto i=0UL; i < normalZims.size(); i++) {
     const zim::Archive archive1(normalZims[i].path);
     const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
-    const zim::Archive archive2(fd, 8, archive1.getFilesize());
+    const zim::Archive archive2(zim::FdInput(fd, 8, archive1.getFilesize()));
 
     checkEquivalence(archive1, archive2);
   }
@@ -693,7 +693,7 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
   for(auto i=0UL; i < normalZims.size(); i++) {
     const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
     const auto size = zim::DEFAULTFS::openFile(normalZims[i].path).getSize();
-    const zim::Archive archive(fd, 8, size.v);
+    const zim::Archive archive(zim::FdInput(fd, 8, size.v));
     zim::entry_index_type checkedItemCount = 0;
     for ( auto entry : archive.iterEfficient() ) {
       if (!entry.isRedirect()) {

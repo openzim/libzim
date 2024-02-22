@@ -36,7 +36,9 @@ namespace zim {
  *
  * `FilePart` references a part(section) of a physical file.
  * Most of the time, `FilePart` will reference the whole file (m_offset==0 and m_size==m_fhandle->getSize())
- * but in some situation, it can reference only a part of the file (in case the content is store in a zip archive.)
+ * but in some situation, it can reference only a part of the file:
+ * We have this case on android where the zim file is split in different part and stored in a "resource" (zip) archive
+ * using no-compression.
  */
 class FilePart {
   typedef DEFAULTFS FS;
@@ -55,11 +57,11 @@ class FilePart {
     explicit FilePart(int fd) :
         FilePart(getFilePathFromFD(fd)) {}
 
-    FilePart(int fd, offset_t offset, zsize_t size):
-        m_filename(getFilePathFromFD(fd)),
+    explicit FilePart(FdInput fdInput):
+        m_filename(getFilePathFromFD(fdInput.fd)),
         m_fhandle(std::make_shared<FS::FD>(FS::openFile(m_filename))),
-        m_offset(offset),
-        m_size(size) {}
+        m_offset(fdInput.offset),
+        m_size(fdInput.size) {}
 #endif
 
     ~FilePart() = default;
@@ -76,7 +78,7 @@ class FilePart {
     const std::string m_filename;
     FDSharedPtr m_fhandle;
     offset_t m_offset;
-    zsize_t m_size;
+    zsize_t m_size; // The total size of the (starting at m_offset) of the part
 };
 
 };

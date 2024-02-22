@@ -20,7 +20,6 @@
 
 #include "file_compound.h"
 #include "buffer.h"
-#include "zim_types.h"
 
 #include <errno.h>
 #include <string.h>
@@ -79,11 +78,11 @@ FileCompound::FileCompound(int fd):
   addPart(new FilePart(fd));
 }
 
-FileCompound::FileCompound(int fd, offset_t offset, zsize_t size):
+FileCompound::FileCompound(FdInput fd):
   _filename(),
   _fsize(0)
 {
-  addPart(new FilePart(fd, offset, size));
+  addPart(new FilePart(fd));
 }
 #endif
 

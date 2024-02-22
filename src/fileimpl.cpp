@@ -170,8 +170,8 @@ private: // data
     : FileImpl(std::make_shared<FileCompound>(fd))
   {}
 
-  FileImpl::FileImpl(int fd, offset_t offset, zsize_t size)
-    : FileImpl(std::make_shared<FileCompound>(fd, offset, size))
+  FileImpl::FileImpl(FdInput fd)
+    : FileImpl(std::make_shared<FileCompound>(fd))
   {}
 #endif
 

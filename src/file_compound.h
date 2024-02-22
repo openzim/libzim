@@ -60,7 +60,7 @@ class FileCompound : private std::map<Range, FilePart*, less_range> {
 
 #ifndef _WIN32
     explicit FileCompound(int fd);
-    FileCompound(int fd, offset_t offset, zsize_t size);
+    explicit FileCompound(FdInput fd);
 #endif
 
     ~FileCompound();
