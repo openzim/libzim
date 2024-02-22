@@ -47,7 +47,6 @@ namespace zim
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
-      offset_t archiveStartOffset;
       std::shared_ptr<Reader> zimReader;
       std::shared_ptr<DirentReader> direntReader;
       Fileheader header;
@@ -107,7 +106,6 @@ namespace zim
       FileImpl(int fd, offset_t offset, zsize_t size);
 #endif
 
-      offset_t getArchiveStartOffset() const { return archiveStartOffset; }
       time_t getMTime() const;
 
       const std::string& getFilename() const   { return zimFile->filename(); }
