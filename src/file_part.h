@@ -39,13 +39,13 @@ class FilePart {
     using FDSharedPtr = std::shared_ptr<FS::FD>;
 
   public:
-    FilePart(const std::string& filename) :
+    explicit FilePart(const std::string& filename) :
         m_filename(filename),
         m_fhandle(std::make_shared<FS::FD>(FS::openFile(filename))),
         m_size(m_fhandle->getSize()) {}
 
 #ifndef _WIN32
-    FilePart(int fd) :
+    explicit FilePart(int fd) :
         FilePart(getFilePathFromFD(fd)) {}
 #endif
 
