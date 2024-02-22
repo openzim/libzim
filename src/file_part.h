@@ -32,6 +32,12 @@
 
 namespace zim {
 
+/** A part of file.
+ *
+ * `FilePart` references a part(section) of a physical file.
+ * Most of the time, `FilePart` will reference the whole file (m_offset==0 and m_size==m_fhandle->getSize())
+ * but in some situation, it can reference only a part of the file (in case the content is store in a zip archive.)
+ */
 class FilePart {
   typedef DEFAULTFS FS;
 
@@ -42,11 +48,18 @@ class FilePart {
     explicit FilePart(const std::string& filename) :
         m_filename(filename),
         m_fhandle(std::make_shared<FS::FD>(FS::openFile(filename))),
+        m_offset(0),
         m_size(m_fhandle->getSize()) {}
 
 #ifndef _WIN32
     explicit FilePart(int fd) :
         FilePart(getFilePathFromFD(fd)) {}
+
+    FilePart(int fd, offset_t offset, zsize_t size):
+        m_filename(getFilePathFromFD(fd)),
+        m_fhandle(std::make_shared<FS::FD>(FS::openFile(m_filename))),
+        m_offset(offset),
+        m_size(size) {}
 #endif
 
     ~FilePart() = default;
@@ -55,12 +68,14 @@ class FilePart {
     const FDSharedPtr& shareable_fhandle() const { return m_fhandle; };
 
     zsize_t size() const { return m_size; };
+    offset_t offset() const { return m_offset; }
     bool fail() const { return !m_size; };
     bool good() const { return bool(m_size); };
 
   private:
     const std::string m_filename;
     FDSharedPtr m_fhandle;
+    offset_t m_offset;
     zsize_t m_size;
 };
 

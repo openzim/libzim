@@ -66,11 +66,12 @@ char MultiPartFileReader::read(offset_t offset) const {
   offset += _offset;
   auto part_pair = source->locate(offset);
   auto& fhandle = part_pair->second->fhandle();
-  offset_t local_offset = offset - part_pair->first.min;
-  ASSERT(local_offset, <=, part_pair->first.max);
+  offset_t logical_local_offset = offset - part_pair->first.min;
+  ASSERT(logical_local_offset, <=, part_pair->first.max);
+  offset_t physical_local_offset = logical_local_offset + part_pair->second->offset();
   char ret;
   try {
-    fhandle.readAt(&ret, zsize_t(1), local_offset);
+    fhandle.readAt(&ret, zsize_t(1), physical_local_offset);
   } catch (std::runtime_error& e) {
     //Error while reading.
     std::ostringstream s;
@@ -79,7 +80,8 @@ char MultiPartFileReader::read(offset_t offset) const {
     s << " - File part size is " << part_pair->second->size().v << "\n";
     s << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
     s << " - Reading offset at " << offset.v << "\n";
-    s << " - local offset is " << local_offset.v << "\n";
+    s << " - logical local offset is " << logical_local_offset.v << "\n";
+    s << " - physical local offset is " << physical_local_offset.v << "\n";
     s << " - error is " << strerror(errno) << "\n";
     std::error_code ec(errno, std::generic_category());
     throw std::system_error(ec, s.str());
@@ -98,11 +100,12 @@ void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const 
   for(auto current = found_range.first; current!=found_range.second; current++){
     auto part = current->second;
     Range partRange = current->first;
-    offset_t local_offset = offset-partRange.min;
+    offset_t logical_local_offset = offset - partRange.min;
     ASSERT(size.v, >, 0U);
-    zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-local_offset.v));
+    zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-logical_local_offset.v));
+    offset_t physical_local_offset = logical_local_offset + part->offset();
     try {
-      part->fhandle().readAt(dest, size_to_get, local_offset);
+      part->fhandle().readAt(dest, size_to_get, physical_local_offset);
     } catch (std::runtime_error& e) {
       std::ostringstream s;
       s << "Cannot read chars.\n";
@@ -112,7 +115,8 @@ void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const 
       s << " - size_to_get is " << size_to_get.v << "\n";
       s << " - total size is " << size.v << "\n";
       s << " - Reading offset at " << offset.v << "\n";
-      s << " - local offset is " << local_offset.v << "\n";
+      s << " - logical local offset is " << logical_local_offset.v << "\n";
+      s << " - physical local offset is " << physical_local_offset.v << "\n";
       s << " - error is " << strerror(errno) << "\n";
       std::error_code ec(errno, std::generic_category());
       throw std::system_error(ec, s.str());
@@ -189,10 +193,11 @@ const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) cons
     // The range is in only one part
     auto range = found_range.first->first;
     auto part = found_range.first->second;
-    auto local_offset = offset + _offset - range.min;
+    auto logical_local_offset = offset + _offset - range.min;
     ASSERT(size, <=, part->size());
     int fd = part->fhandle().getNativeHandle();
-    return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
+    auto physical_local_offset = logical_local_offset + part->offset();
+    return Buffer::makeBuffer(makeMmappedBuffer(fd, physical_local_offset, size), size);
   } catch(MMapException& e)
 #endif
   {
