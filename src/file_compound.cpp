@@ -19,7 +19,6 @@
  */
 
 #include "file_compound.h"
-#include "buffer.h"
 
 #include <errno.h>
 #include <string.h>

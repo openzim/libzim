@@ -19,7 +19,6 @@
 
 #include "fs_unix.h"
 #include <stdexcept>
-#include <vector>
 #include <sstream>
 
 #include <sys/types.h>

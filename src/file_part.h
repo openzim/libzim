@@ -22,7 +22,6 @@
 #define ZIM_FILE_PART_H_
 
 #include <string>
-#include <cstdio>
 #include <memory>
 
 #include <zim/zim.h>

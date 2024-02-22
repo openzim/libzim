@@ -22,7 +22,6 @@
 #include <zim/suggestion.h>
 #include <zim/item.h>
 #include "suggestion_internal.h"
-#include <iostream>
 #include "fileimpl.h"
 #include "tools.h"
 #include "constants.h"

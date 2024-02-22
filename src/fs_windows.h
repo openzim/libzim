@@ -22,7 +22,6 @@
 
 #include "zim_types.h"
 
-#include <stdexcept>
 #include <memory>
 
 typedef void* HANDLE;

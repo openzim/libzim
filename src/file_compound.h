@@ -26,8 +26,6 @@
 #include "debug.h"
 #include <map>
 #include <vector>
-#include <memory>
-#include <cstdio>
 
 namespace zim {
 

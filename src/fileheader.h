@@ -21,10 +21,8 @@
 #ifndef ZIM_FILEHEADER_H
 #define ZIM_FILEHEADER_H
 
-#include <memory>
 #include <zim/zim.h>
 #include <zim/uuid.h>
-#include <iosfwd>
 #include <limits>
 
 // max may be defined as a macro by window includes

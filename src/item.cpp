@@ -22,8 +22,9 @@
 #include <zim/item.h>
 #include "cluster.h"
 #include "fileimpl.h"
-#include "file_part.h"
 #include "log.h"
+
+#include <cassert>
 
 log_define("zim.item")
 

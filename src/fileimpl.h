@@ -24,17 +24,14 @@
 
 #include <string>
 #include <vector>
-#include <map>
 #include <memory>
 #include <zim/zim.h>
 #include <mutex>
-#include "lrucache.h"
 #include "concurrent_cache.h"
 #include "_dirent.h"
 #include "dirent_accessor.h"
 #include "dirent_lookup.h"
 #include "cluster.h"
-#include "buffer.h"
 #include "file_reader.h"
 #include "file_compound.h"
 #include "fileheader.h"

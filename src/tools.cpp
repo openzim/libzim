@@ -28,11 +28,9 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <random>
-#include <errno.h>
 #include <sstream>
 
 #ifdef _WIN32

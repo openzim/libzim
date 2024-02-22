@@ -23,7 +23,6 @@
 
 #include "istreamreader.h"
 #include "reader.h"
-#include "debug.h"
 
 namespace zim
 {

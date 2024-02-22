@@ -21,11 +21,10 @@
 #ifndef ZIM_IDATASTREAM_H
 #define ZIM_IDATASTREAM_H
 
-#include <exception>
-#include <memory>
-
 #include "endian_tools.h"
 #include "reader.h"
+
+#include <memory>
 
 namespace zim
 {

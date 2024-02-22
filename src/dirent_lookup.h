@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <map>
 #include <mutex>
-#include <vector>
 #include <cassert>
 
 namespace zim

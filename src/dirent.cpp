@@ -24,9 +24,7 @@
 #include <zim/error.h>
 #include "buffer.h"
 #include "bufferstreamer.h"
-#include "endian_tools.h"
 #include "log.h"
-#include <algorithm>
 #include <cstring>
 
 log_define("zim.dirent")

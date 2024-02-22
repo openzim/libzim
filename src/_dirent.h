@@ -25,10 +25,8 @@
 #include <string>
 #include <zim/zim.h>
 #include <exception>
-#include <memory>
 
 #include "zim_types.h"
-#include "debug.h"
 
 namespace zim
 {
