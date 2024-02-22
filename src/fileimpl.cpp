@@ -173,6 +173,10 @@ private: // data
   FileImpl::FileImpl(FdInput fd)
     : FileImpl(std::make_shared<FileCompound>(fd))
   {}
+
+  FileImpl::FileImpl(const std::vector<FdInput>& fds)
+    : FileImpl(std::make_shared<FileCompound>(fds))
+  {}
 #endif
 
   FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)

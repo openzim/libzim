@@ -104,6 +104,7 @@ namespace zim
 #ifndef _WIN32
       explicit FileImpl(int fd);
       explicit FileImpl(FdInput fd);
+      explicit FileImpl(const std::vector<FdInput>& fds);
 #endif
 
       time_t getMTime() const;

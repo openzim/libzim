@@ -115,6 +115,19 @@ namespace zim
        *            referencing a continuous segment representing a complete ZIM archive.
        */
       explicit Archive(FdInput fd);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from several file descriptors.
+       *  Each part may be embedded in a file.
+       *  Fds (int) can be the same between FdInput if the parts belong to the same file.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fds A vector of FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *             referencing a series of segments representing a complete ZIM archive.
+       */
+      explicit Archive(const std::vector<FdInput>& fds);
 #endif
 
       /** Return the filename of the zim file.

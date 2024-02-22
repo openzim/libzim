@@ -84,6 +84,15 @@ FileCompound::FileCompound(FdInput fd):
 {
   addPart(new FilePart(fd));
 }
+
+FileCompound::FileCompound(const std::vector<FdInput>& fds):
+  _filename(),
+  _fsize(0)
+{
+  for (auto& fd: fds) {
+    addPart(new FilePart(fd));
+  }
+}
 #endif
 
 FileCompound::~FileCompound() {

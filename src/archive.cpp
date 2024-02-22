@@ -44,6 +44,10 @@ namespace zim
   Archive::Archive(FdInput fd)
     : m_impl(new FileImpl(fd))
     { }
+
+  Archive::Archive(const std::vector<FdInput>& fds)
+    : m_impl(new FileImpl(fds))
+    { }
 #endif
 
   const std::string& Archive::getFilename() const
