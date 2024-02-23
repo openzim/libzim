@@ -97,6 +97,8 @@ namespace zim
       /** Archive constructor.
        *
        *  Construct an archive from a file descriptor.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
        *
        *  Note: This function is not available under Windows.
        *
@@ -108,6 +110,8 @@ namespace zim
        *
        *  Construct an archive from a descriptor of a file with an embedded ZIM
        *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
        *
        *  Note: This function is not available under Windows.
        *
@@ -120,6 +124,8 @@ namespace zim
        *
        *  Construct an archive from several file descriptors.
        *  Each part may be embedded in a file.
+       *  Fds are used only at Archive creation.
+       *  Ownership of the fds is not taken and they must be closed by caller.
        *  Fds (int) can be the same between FdInput if the parts belong to the same file.
        *
        *  Note: This function is not available under Windows.

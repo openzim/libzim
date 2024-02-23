@@ -625,6 +625,7 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
     const zim::Archive archive1(normalZims[i].path);
     const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
     const zim::Archive archive2(zim::FdInput(fd, 8, archive1.getFilesize()));
+    close(fd);
 
     checkEquivalence(archive1, archive2);
   }
@@ -652,6 +653,10 @@ TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
     fds.push_back(zim::FdInput(fd, start_offset, archive_size));
 
     const zim::Archive archive2(fds);
+
+    for(auto &fd: fds) {
+      close(fd.fd);
+    }
 
     checkEquivalence(archive1, archive2);
   }
