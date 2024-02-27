@@ -26,14 +26,11 @@
 #include <zim/zim.h>
 #include "buffer.h"
 #include "zim_types.h"
-#include "file_reader.h"
-#include <iosfwd>
 #include <vector>
 #include <memory>
 #include <mutex>
 
 #include "zim_types.h"
-#include "zim/error.h"
 
 namespace zim
 {

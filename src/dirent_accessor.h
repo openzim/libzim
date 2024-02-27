@@ -21,7 +21,6 @@
 #define ZIM_DIRENT_ACCESSOR_H
 
 #include "zim_types.h"
-#include "debug.h"
 #include "lrucache.h"
 
 #include <memory>

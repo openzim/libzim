@@ -22,6 +22,7 @@
 #include <zim/writer/item.h>
 #include <zim/writer/contentProvider.h>
 #include <zim/archive.h>
+#include <zim/error.h>
 
 #include "tools.h"
 #include "../src/file_compound.h"

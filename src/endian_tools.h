@@ -21,9 +21,9 @@
 #ifndef ENDIAN_H
 #define ENDIAN_H
 
-#include <algorithm>
-#include <iostream>
 #include <zim/zim.h>
+
+#include <cstddef>
 
 namespace zim
 {

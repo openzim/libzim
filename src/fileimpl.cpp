@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
-#include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <numeric>
@@ -67,17 +66,15 @@ sectionSubReader(const Reader& zimReader, const std::string& sectionName,
 }
 
 std::shared_ptr<Reader>
-makeFileReader(std::shared_ptr<const FileCompound> zimFile, offset_t offset, zsize_t size)
+makeFileReader(std::shared_ptr<const FileCompound> zimFile)
 {
   if (zimFile->fail()) {
     return nullptr;
   } else if ( zimFile->is_multiPart() ) {
-    ASSERT(offset.v, ==, 0u);
-    ASSERT(size, ==, zimFile->fsize());
     return std::make_shared<MultiPartFileReader>(zimFile);
   } else {
     const auto& firstAndOnlyPart = zimFile->begin()->second;
-    return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle(), offset, size);
+    return std::make_shared<FileReader>(firstAndOnlyPart->shareable_fhandle(), firstAndOnlyPart->offset(), firstAndOnlyPart->size());
   }
 }
 
@@ -172,19 +169,18 @@ private: // data
     : FileImpl(std::make_shared<FileCompound>(fd))
   {}
 
-  FileImpl::FileImpl(int fd, offset_t offset, zsize_t size)
-    : FileImpl(std::make_shared<FileCompound>(fd), offset, size)
+  FileImpl::FileImpl(FdInput fd)
+    : FileImpl(std::make_shared<FileCompound>(fd))
+  {}
+
+  FileImpl::FileImpl(const std::vector<FdInput>& fds)
+    : FileImpl(std::make_shared<FileCompound>(fds))
   {}
 #endif
 
   FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)
-    : FileImpl(_zimFile, offset_t(0), _zimFile->fsize())
-  {}
-
-  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile, offset_t offset, zsize_t size)
     : zimFile(_zimFile),
-      archiveStartOffset(offset),
-      zimReader(makeFileReader(zimFile, offset, size)),
+      zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
       m_newNamespaceScheme(false),

@@ -21,6 +21,7 @@
 #define ZIM_BUFFERSTREAMER_H
 
 #include "debug.h"
+#include "endian_tools.h"
 
 #include <string.h>
 

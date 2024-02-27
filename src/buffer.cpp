@@ -19,14 +19,10 @@
  */
 
 #include "buffer.h"
+#include "debug.h"
 
 #include <sys/stat.h>
-#include <cstdio>
-#include <cstdlib>
 #include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-#include <sstream>
 
 #ifndef _WIN32
 #  include <sys/mman.h>

@@ -21,7 +21,6 @@
 #ifndef ZIM_NARROWDOWN_H
 #define ZIM_NARROWDOWN_H
 
-#include "zim_types.h"
 #include "debug.h"
 
 #include <algorithm>

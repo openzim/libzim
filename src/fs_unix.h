@@ -22,8 +22,6 @@
 
 #include "zim_types.h"
 
-#include <stdexcept>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

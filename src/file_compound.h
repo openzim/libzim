@@ -25,8 +25,7 @@
 #include "zim_types.h"
 #include "debug.h"
 #include <map>
-#include <memory>
-#include <cstdio>
+#include <vector>
 
 namespace zim {
 
@@ -60,6 +59,8 @@ class FileCompound : private std::map<Range, FilePart*, less_range> {
 
 #ifndef _WIN32
     explicit FileCompound(int fd);
+    explicit FileCompound(FdInput fd);
+    explicit FileCompound(const std::vector<FdInput>& fds);
 #endif
 
     ~FileCompound();

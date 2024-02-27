@@ -27,7 +27,6 @@
 #include <zim/item.h>
 #include "fileimpl.h"
 #include "search_internal.h"
-#include "fs.h"
 #include "tools.h"
 
 #include <sstream>
@@ -39,7 +38,6 @@
 #else
 # include <io.h>
 #endif
-#include <errno.h>
 
 #include "xapian.h"
 #include <unicode/locid.h>

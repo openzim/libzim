@@ -21,15 +21,10 @@
 #ifndef ZIM_BUFFER_H_
 #define ZIM_BUFFER_H_
 
-#include <cstddef>
-#include <exception>
 #include <memory>
-#include <iostream>
 
 #include "config.h"
 #include "zim_types.h"
-#include "endian_tools.h"
-#include "debug.h"
 #include <zim/blob.h>
 
 namespace zim {

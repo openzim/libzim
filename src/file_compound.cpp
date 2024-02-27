@@ -19,7 +19,6 @@
  */
 
 #include "file_compound.h"
-#include "buffer.h"
 
 #include <errno.h>
 #include <string.h>
@@ -76,6 +75,22 @@ FileCompound::FileCompound(int fd):
   _fsize(0)
 {
   addPart(new FilePart(fd));
+}
+
+FileCompound::FileCompound(FdInput fd):
+  _filename(),
+  _fsize(0)
+{
+  addPart(new FilePart(fd));
+}
+
+FileCompound::FileCompound(const std::vector<FdInput>& fds):
+  _filename(),
+  _fsize(0)
+{
+  for (auto& fd: fds) {
+    addPart(new FilePart(fd));
+  }
 }
 #endif
 

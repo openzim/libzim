@@ -22,8 +22,9 @@
 #include <zim/item.h>
 #include "cluster.h"
 #include "fileimpl.h"
-#include "file_part.h"
 #include "log.h"
+
+#include <cassert>
 
 log_define("zim.item")
 
@@ -70,8 +71,6 @@ std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
   auto full_offset = m_file->getBlobOffset(m_dirent->getClusterNumber(),
                                          m_dirent->getBlobNumber());
 
-  full_offset += m_file->getArchiveStartOffset().v;
-
   auto part_its = m_file->getFileParts(full_offset, zsize_t(getSize()));
   auto first_part = part_its.first;
   if (++part_its.first != part_its.second) {
@@ -80,8 +79,9 @@ std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
   }
   auto range = first_part->first;
   auto part = first_part->second;
-  const offset_type local_offset(full_offset - range.min);
-  return std::make_pair(part->filename(), local_offset);
+  const offset_type logical_local_offset(full_offset - range.min);
+  const auto physical_local_offset = logical_local_offset + part->offset().v;
+  return std::make_pair(part->filename(), physical_local_offset);
 }
 
 cluster_index_type Item::getClusterIndex() const

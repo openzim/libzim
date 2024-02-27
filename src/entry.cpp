@@ -21,9 +21,7 @@
 #include <zim/entry.h>
 #include <zim/error.h>
 #include <zim/item.h>
-#include "_dirent.h"
 #include "fileimpl.h"
-#include "file_part.h"
 #include "log.h"
 
 #include <sstream>

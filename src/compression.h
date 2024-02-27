@@ -22,10 +22,8 @@
 #ifndef _LIBZIM_COMPRESSION_
 #define _LIBZIM_COMPRESSION_
 
-#include <vector>
-#include "string.h"
+#include "reader.h"
 
-#include "file_reader.h"
 #include <zim/error.h>
 
 #include "config.h"
@@ -35,6 +33,10 @@
 
 #include "zim_types.h"
 #include "constants.h"
+
+#include <cstring>
+#include <vector>
+#include <memory>
 
 //#define DEB(X) std::cerr << __func__ << " " << X << std::endl ;
 #define DEB(X)

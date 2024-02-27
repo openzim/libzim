@@ -41,8 +41,12 @@ namespace zim
     : m_impl(new FileImpl(fd))
     { }
 
-  Archive::Archive(int fd, offset_type offset, size_type size)
-    : m_impl(new FileImpl(fd, offset_t(offset), zsize_t(size)))
+  Archive::Archive(FdInput fd)
+    : m_impl(new FileImpl(fd))
+    { }
+
+  Archive::Archive(const std::vector<FdInput>& fds)
+    : m_impl(new FileImpl(fds))
     { }
 #endif
 

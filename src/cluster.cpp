@@ -23,15 +23,12 @@
 #include <zim/blob.h>
 #include <zim/error.h>
 #include "buffer_reader.h"
-#include "endian_tools.h"
 #include "bufferstreamer.h"
 #include "decoderstreamreader.h"
 #include "rawstreamreader.h"
 #include <algorithm>
 #include <stdlib.h>
-#include <sstream>
 
-#include "compression.h"
 #include "log.h"
 
 #include "config.h"

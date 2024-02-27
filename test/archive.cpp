@@ -624,7 +624,39 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   for(auto i=0UL; i < normalZims.size(); i++) {
     const zim::Archive archive1(normalZims[i].path);
     const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
-    const zim::Archive archive2(fd, 8, archive1.getFilesize());
+    const zim::Archive archive2(zim::FdInput(fd, 8, archive1.getFilesize()));
+    close(fd);
+
+    checkEquivalence(archive1, archive2);
+  }
+}
+
+TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
+{
+  auto normalZims = getDataFilePath("small.zim");
+  auto embeddedZims = getDataFilePath("small.zim.embedded.multi");
+
+  ASSERT_EQ(normalZims.size(), embeddedZims.size()) << "We must have same number of zim files. (This is a test data issue)";
+  for(auto i=0UL; i < normalZims.size(); i++) {
+    const zim::Archive archive1(normalZims[i].path);
+    auto archive_size = archive1.getFilesize();
+
+    std::vector<zim::FdInput> fds;
+    zim::offset_type start_offset = std::string("BEGINZIMMULTIPART").size();
+    while (archive_size > 2048) {
+      int fd = OPEN_READ_ONLY(embeddedZims[i].path);
+      fds.push_back(zim::FdInput(fd, start_offset, 2048));
+      start_offset += 2048 + std::string("NEWSECTIONZIMMULTI").size();
+      archive_size -= 2048;
+    }
+    int fd = OPEN_READ_ONLY(embeddedZims[i].path);
+    fds.push_back(zim::FdInput(fd, start_offset, archive_size));
+
+    const zim::Archive archive2(fds);
+
+    for(auto &fd: fds) {
+      close(fd.fd);
+    }
 
     checkEquivalence(archive1, archive2);
   }
@@ -693,7 +725,7 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
   for(auto i=0UL; i < normalZims.size(); i++) {
     const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
     const auto size = zim::DEFAULTFS::openFile(normalZims[i].path).getSize();
-    const zim::Archive archive(fd, 8, size.v);
+    const zim::Archive archive(zim::FdInput(fd, 8, size.v));
     zim::entry_index_type checkedItemCount = 0;
     for ( auto entry : archive.iterEfficient() ) {
       if (!entry.isRedirect()) {

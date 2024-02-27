@@ -24,17 +24,14 @@
 
 #include <string>
 #include <vector>
-#include <map>
 #include <memory>
 #include <zim/zim.h>
 #include <mutex>
-#include "lrucache.h"
 #include "concurrent_cache.h"
 #include "_dirent.h"
 #include "dirent_accessor.h"
 #include "dirent_lookup.h"
 #include "cluster.h"
-#include "buffer.h"
 #include "file_reader.h"
 #include "file_compound.h"
 #include "fileheader.h"
@@ -47,7 +44,6 @@ namespace zim
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
-      offset_t archiveStartOffset;
       std::shared_ptr<Reader> zimReader;
       std::shared_ptr<DirentReader> direntReader;
       Fileheader header;
@@ -104,10 +100,10 @@ namespace zim
       explicit FileImpl(const std::string& fname);
 #ifndef _WIN32
       explicit FileImpl(int fd);
-      FileImpl(int fd, offset_t offset, zsize_t size);
+      explicit FileImpl(FdInput fd);
+      explicit FileImpl(const std::vector<FdInput>& fds);
 #endif
 
-      offset_t getArchiveStartOffset() const { return archiveStartOffset; }
       time_t getMTime() const;
 
       const std::string& getFilename() const   { return zimFile->filename(); }
