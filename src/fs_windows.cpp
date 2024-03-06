@@ -25,9 +25,9 @@
 #include <synchapi.h>
 #include <io.h>
 #include <fileapi.h>
+#include <zim/tools.h>
 
 #include <iostream>
-#include <sstream>
 
 namespace zim {
 
@@ -135,11 +135,10 @@ std::unique_ptr<wchar_t[]> FS::toWideChar(path_t path)
   auto wdata = std::unique_ptr<wchar_t[]>(new wchar_t[size]);
   auto ret = MultiByteToWideChar(CP_UTF8, 0,
                 path.c_str(), -1, wdata.get(), size);
-  if (0 == ret) {
-    std::ostringstream oss;
-    oss << "Cannot convert path to wchar : " << GetLastError();
-    throw std::runtime_error(oss.str());
-  }
+  if (0 == ret)
+    throw std::runtime_error(Formatter() << "Cannot convert path to wchar : "
+                                         << GetLastError());
+
   return wdata;
 }
 
@@ -154,11 +153,10 @@ FD FS::openFile(path_t filepath)
              OPEN_EXISTING,
              FILE_ATTRIBUTE_READONLY|FILE_FLAG_RANDOM_ACCESS,
              NULL);
-  if (handle == INVALID_HANDLE_VALUE) {
-    std::ostringstream oss;
-    oss << "Cannot open file : " << GetLastError();
-    throw std::runtime_error(oss.str());
-  }
+  if (handle == INVALID_HANDLE_VALUE)
+    throw std::runtime_error(Formatter()
+                             << "Cannot open file : " << GetLastError());
+
   return FD(handle);
 }
 
@@ -173,11 +171,9 @@ bool FS::makeDirectory(path_t path)
 void FS::rename(path_t old_path, path_t new_path)
 {
   auto ret = MoveFileExW(toWideChar(old_path).get(), toWideChar(new_path).get(), MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH);
-  if (!ret) {
-    std::ostringstream oss;
-    oss << "Cannot move file " << old_path << " to " << new_path;
-    throw std::runtime_error(oss.str());
-  }
+  if (!ret)
+    throw std::runtime_error(Formatter() << "Cannot move file " << old_path
+                                         << " to " << new_path);
 }
 
 std::string FS::join(path_t base, path_t name)

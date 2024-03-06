@@ -26,8 +26,7 @@
 #include "../compression.h"
 
 #include <zim/writer/contentProvider.h>
-
-#include <sstream>
+#include <zim/tools.h>
 #include <fstream>
 
 #include <fcntl.h>
@@ -202,10 +201,10 @@ void Cluster::write(int out_fd) const
       }
 
     default:
-      std::ostringstream msg;
-      msg << "invalid compression flag " << static_cast<uint8_t>(getCompression());
-      log_error(msg.str());
-      throw std::runtime_error(msg.str());
+      Formatter fmt_msg;
+      fmt_msg << "invalid compression flag " << static_cast<uint8_t>(getCompression());
+      log_error(fmt_msg);
+      throw std::runtime_error(fmt_msg);
   }
 }
 
@@ -243,12 +242,12 @@ void Cluster::write_data(writer_t writer) const
       size += blob.size();
       writer(blob);
     }
-    if (size != provider->getSize()) {
-      std::stringstream ss;
-      ss << "Declared provider's size (" << provider->getSize() << ")";
-      ss << " is not equal to total size returned by feed() calls (" << size << ").";
-      throw IncoherentImplementationError(ss.str());
-    }
+    if (size != provider->getSize())
+      throw IncoherentImplementationError(
+          Formatter()
+          << "Declared provider's size (" << provider->getSize() << ")"
+          << " is not equal to total size returned by feed() calls (" << size
+          << ").");
   }
 }
 

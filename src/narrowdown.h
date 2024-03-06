@@ -27,6 +27,7 @@
 #include <vector>
 
 #include <zim/error.h>
+#include <zim/tools.h>
 
 namespace zim
 {
@@ -107,11 +108,11 @@ public: // functions
     // It is somehow a bug and have been fixed then, but we still have to be tolerent here and accept that
     // two concecutive keys can be equal.
     if (key > nextKey) {
-      std::stringstream ss;
-      ss << "Dirent table is not properly sorted:\n";
-      ss << "  #" << i << ": " << key[0] << "/" << key.substr(1) << "\n";
-      ss << "  #" << i+1 << ": " << nextKey[0] << "/" << nextKey.substr(1);
-      throw ZimFileFormatError(ss.str());
+      Formatter fmt;
+      fmt << "Dirent table is not properly sorted:\n";
+      fmt << "  #" << i << ": " << key[0] << "/" << key.substr(1) << "\n";
+      fmt << "  #" << i+1 << ": " << nextKey[0] << "/" << nextKey.substr(1);
+      throw ZimFileFormatError(fmt);
     }
     if ( entries.empty() ) {
       addEntry(key, i);
@@ -120,10 +121,10 @@ public: // functions
     {
       const std::string pseudoKey = shortestStringInBetween(key, nextKey);
       if (pred(pseudoKey, entries.back())) {
-        std::stringstream ss;
-        ss << "Dirent table is not properly sorted:\n";
-        ss << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
-        throw ZimFileFormatError(ss.str());
+        Formatter fmt;
+        fmt << "Dirent table is not properly sorted:\n";
+        fmt << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
+        throw ZimFileFormatError(fmt);
       }
       ASSERT(entries.back().lindex, <, i);
       addEntry(pseudoKey, i);

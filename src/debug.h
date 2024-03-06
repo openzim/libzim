@@ -20,8 +20,8 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+#include <zim/tools.h>
 #include <iostream>
-#include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
 
@@ -36,10 +36,11 @@
 template<typename T, typename U>
 void _on_assert_fail(const char* vara, const char* op, const char* varb,
                      T a, U b, const char* file, int line)  {
-  std::ostringstream ss;
-  ss << "\nAssertion failed at "<< file << ":" << line << "\n " <<
-      vara << "[" << a << "] " << op << " " << varb << "[" << b << "]";
-  std::cerr << ss.str() << std::endl;
+  zim::Formatter fmt;
+  std::cerr << (fmt << "\nAssertion failed at " << file << ":" << line << "\n "
+                    << vara << "[" << a << "] " << op << " " << varb << "[" << b
+                    << "]")
+            << std::endl;
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__) && defined(__GNU_LIBRARY__)
   void *callstack[64];
@@ -51,7 +52,7 @@ void _on_assert_fail(const char* vara, const char* op, const char* varb,
   }
   free(strings);
 #endif
-  throw std::runtime_error(ss.str());
+  throw std::runtime_error(fmt);
 }
 
 # define ASSERT(left, operator, right) do { auto _left = left; auto _right = right; if (!((_left) operator (_right))) _on_assert_fail(#left, #operator, #right, _left, _right, __FILE__, __LINE__);  } while(0)

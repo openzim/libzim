@@ -22,8 +22,8 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sstream>
 #include <sys/stat.h>
+#include <zim/tools.h>
 
 #ifdef _WIN32
 #  include <io.h>
@@ -61,11 +61,9 @@ FileCompound::FileCompound(const std::string& filename):
     } catch (...) { }
 
     if (empty())
-    {
-      std::ostringstream msg;
-      msg << "error " << errnoSave << " opening file \"" << filename;
-      throw std::runtime_error(msg.str());
-    }
+      throw std::runtime_error(Formatter()
+                               << "error " << errnoSave << " opening file \""
+                               << filename << "\"");
   }
 }
 
@@ -115,11 +113,9 @@ time_t FileCompound::getMTime() const {
     int ret = ::stat(fname, &st);
   #endif
   if (ret != 0)
-  {
-    std::ostringstream msg;
-    msg << "stat failed with errno " << errno << " : " << strerror(errno);
-    throw std::runtime_error(msg.str());
-  }
+    throw std::runtime_error(Formatter() << "stat failed with errno " << errno
+                                          << " : " << strerror(errno));
+
   mtime = st.st_mtime;
 
   return mtime;

@@ -44,6 +44,7 @@ typedef SSIZE_T ssize_t;
 #include <zim/writer/creator.h>
 #include <zim/writer/item.h>
 #include <zim/writer/contentProvider.h>
+#include <zim/tools.h>
 
 namespace zim
 {
@@ -100,9 +101,7 @@ public:
 template<typename T>
 std::string to_string(const T& value)
 {
-  std::ostringstream ss;
-  ss << value;
-  return ss.str();
+  return Formatter() << value;
 }
 
 std::unique_ptr<TempFile>

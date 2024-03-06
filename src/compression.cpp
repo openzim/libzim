@@ -23,6 +23,7 @@
 
 #include "envvalue.h"
 
+#include <zim/tools.h>
 #include <stdexcept>
 
 const std::string LZMA_INFO::name = "lzma";
@@ -51,9 +52,8 @@ CompStatus LZMA_INFO::stream_run(stream_t* stream, CompStep step)
     case LZMA_OK:
       return CompStatus::OK;
     default: {
-      std::ostringstream ss;
-      ss << "Unexpected lzma status : " << errcode;
-      throw std::runtime_error(ss.str());
+      throw std::runtime_error(zim::Formatter()
+                               << "Unexpected lzma status : " << errcode);
     }
   }
 }

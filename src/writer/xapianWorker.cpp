@@ -24,8 +24,8 @@
 #include "xapianIndexer.h"
 
 #include <stdexcept>
-#include <sstream>
 #include <mutex>
+#include <zim/tools.h>
 
 static std::mutex s_dbaccessLock;
 
@@ -63,10 +63,7 @@ namespace zim
       std::string fullPath = "C/" + m_path;
       document.set_data(fullPath);
       document.add_value(0, mp_indexData->getTitle());
-
-      std::stringstream countWordStringStream;
-      countWordStringStream << mp_indexData->getWordCount();
-      document.add_value(1, countWordStringStream.str());
+      document.add_value(1, Formatter() << mp_indexData->getWordCount());
 
       auto geoInfo = mp_indexData->getGeoPosition();
       if (std::get<0>(geoInfo)) {

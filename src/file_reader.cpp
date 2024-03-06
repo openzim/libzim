@@ -20,6 +20,7 @@
 
 #include <zim/zim.h>
 #include <zim/error.h>
+#include <zim/tools.h>
 #include "file_reader.h"
 #include "file_compound.h"
 #include "buffer.h"
@@ -27,7 +28,6 @@
 #include <string.h>
 #include <cstring>
 #include <fcntl.h>
-#include <sstream>
 #include <system_error>
 #include <algorithm>
 
@@ -74,17 +74,17 @@ char MultiPartFileReader::read(offset_t offset) const {
     fhandle.readAt(&ret, zsize_t(1), physical_local_offset);
   } catch (std::runtime_error& e) {
     //Error while reading.
-    std::ostringstream s;
-    s << "Cannot read a char.\n";
-    s << " - File part is " <<  part_pair->second->filename() << "\n";
-    s << " - File part size is " << part_pair->second->size().v << "\n";
-    s << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - logical local offset is " << logical_local_offset.v << "\n";
-    s << " - physical local offset is " << physical_local_offset.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
+    Formatter fmt;
+    fmt << "Cannot read a char.\n";
+    fmt << " - File part is " <<  part_pair->second->filename() << "\n";
+    fmt << " - File part size is " << part_pair->second->size().v << "\n";
+    fmt << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
+    fmt << " - Reading offset at " << offset.v << "\n";
+    fmt << " - logical local offset is " << logical_local_offset.v << "\n";
+    fmt << " - physical local offset is " << physical_local_offset.v << "\n";
+    fmt << " - error is " << strerror(errno) << "\n";
     std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
+    throw std::system_error(ec, fmt);
   };
   return ret;
 }
@@ -107,19 +107,19 @@ void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const 
     try {
       part->fhandle().readAt(dest, size_to_get, physical_local_offset);
     } catch (std::runtime_error& e) {
-      std::ostringstream s;
-      s << "Cannot read chars.\n";
-      s << " - File part is " <<  part->filename() << "\n";
-      s << " - File part size is " << part->size().v << "\n";
-      s << " - File part range is " << partRange.min << "-" << partRange.max << "\n";
-      s << " - size_to_get is " << size_to_get.v << "\n";
-      s << " - total size is " << size.v << "\n";
-      s << " - Reading offset at " << offset.v << "\n";
-      s << " - logical local offset is " << logical_local_offset.v << "\n";
-      s << " - physical local offset is " << physical_local_offset.v << "\n";
-      s << " - error is " << strerror(errno) << "\n";
+      Formatter fmt;
+      fmt << "Cannot read chars.\n";
+      fmt << " - File part is " <<  part->filename() << "\n";
+      fmt << " - File part size is " << part->size().v << "\n";
+      fmt << " - File part range is " << partRange.min << "-" << partRange.max << "\n";
+      fmt << " - size_to_get is " << size_to_get.v << "\n";
+      fmt << " - total size is " << size.v << "\n";
+      fmt << " - Reading offset at " << offset.v << "\n";
+      fmt << " - logical local offset is " << logical_local_offset.v << "\n";
+      fmt << " - physical local offset is " << physical_local_offset.v << "\n";
+      fmt << " - error is " << strerror(errno) << "\n";
       std::error_code ec(errno, std::generic_category());
-      throw std::system_error(ec, s.str());
+      throw std::system_error(ec, fmt);
     };
     ASSERT(size_to_get, <=, size);
     dest += size_to_get.v;
@@ -147,13 +147,11 @@ mmapReadOnly(int fd, offset_type offset, size_type size)
 #endif
 
   const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
-  if (p == MAP_FAILED )
-  {
-    std::ostringstream s;
-    s << "Cannot mmap size " << size << " at off " << offset
-      << " : " << strerror(errno);
-    throw std::runtime_error(s.str());
-  }
+  if (p == MAP_FAILED)
+    throw std::runtime_error(Formatter()
+                             << "Cannot mmap size " << size << " at off "
+                             << offset << " : " << strerror(errno));
+
   return p;
 }
 
@@ -243,12 +241,12 @@ char FileReader::read(offset_t offset) const
     _fhandle->readAt(&ret, zsize_t(1), offset);
   } catch (std::runtime_error& e) {
     //Error while reading.
-    std::ostringstream s;
-    s << "Cannot read a char.\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
+    Formatter fmt;
+    fmt << "Cannot read a char.\n";
+    fmt << " - Reading offset at " << offset.v << "\n";
+    fmt << " - error is " << strerror(errno) << "\n";
     std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
+    throw std::system_error(ec, fmt);
   };
   return ret;
 }
@@ -264,13 +262,13 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const
   try {
     _fhandle->readAt(dest, size, offset);
   } catch (std::runtime_error& e) {
-    std::ostringstream s;
-    s << "Cannot read chars.\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - size is " << size.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
+    Formatter fmt;
+    fmt << "Cannot read chars.\n";
+    fmt << " - Reading offset at " << offset.v << "\n";
+    fmt << " - size is " << size.v << "\n";
+    fmt << " - error is " << strerror(errno) << "\n";
     std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
+    throw std::system_error(ec, fmt);
   };
 }
 

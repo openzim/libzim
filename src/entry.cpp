@@ -21,10 +21,9 @@
 #include <zim/entry.h>
 #include <zim/error.h>
 #include <zim/item.h>
+#include <zim/tools.h>
 #include "fileimpl.h"
 #include "log.h"
-
-#include <sstream>
 
 log_define("zim.entry")
 
@@ -57,14 +56,13 @@ bool Entry::isRedirect() const
 
 Item Entry::getItem(bool follow) const
 {
-  if (isRedirect()) {
-    if (! follow) {
-      std::ostringstream sstream;
-      sstream << "Entry " << getPath() << " is a redirect entry.";
-      throw InvalidType(sstream.str());
-    }
+  if (isRedirect())
+  {
+    if (!follow)
+      throw InvalidType(Formatter()
+                        << "Entry " << getPath() << " is a redirect entry.");
     return getRedirect();
- }
+  }
 
   return Item(*this);
 }
@@ -79,11 +77,10 @@ Item Entry::getRedirect() const {
 }
 
 entry_index_type Entry::getRedirectEntryIndex() const  {
-  if (!isRedirect()) {
-    std::ostringstream sstream;
-    sstream << "Entry " << getPath() << " is not a redirect entry.";
-    throw InvalidType(sstream.str());
-  }
+  if (!isRedirect())
+    throw InvalidType(Formatter()
+                      << "Entry " << getPath() << " is not a redirect entry.");
+
   return m_dirent->getRedirectIndex().v;
 }
 
