@@ -115,6 +115,23 @@ namespace zim
        *
        *  Note: This function is not available under Windows.
        *
+       *  @param fd The descriptor of a seekable file with a continuous segment
+       *  representing a complete ZIM archive.
+       *  @param offset The offset of the ZIM archive relative to the beginning
+       *  of the file (rather than the current position associated with fd).
+       *  @param size The size of the ZIM archive.
+       */
+       Archive(int fd, offset_type offset, size_type size);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
        *  @param fd A FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
        *            referencing a continuous segment representing a complete ZIM archive.
        */
