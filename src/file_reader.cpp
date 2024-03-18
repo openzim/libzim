@@ -146,12 +146,14 @@ mmapReadOnly(int fd, offset_type offset, size_type size)
   const auto MAP_FLAGS = MAP_PRIVATE|MAP_POPULATE;
 #endif
 
+  std::cerr << "mmap with flags:" << MAP_FLAGS << " offest:" << offset << " size:" << size << std::endl;
   const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
   if (p == MAP_FAILED )
   {
     std::ostringstream s;
     s << "Cannot mmap size " << size << " at off " << offset
       << " : " << strerror(errno);
+    std::cerr << s.str() << std::endl;
     throw std::runtime_error(s.str());
   }
   return p;
@@ -166,11 +168,13 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 
 #if !MMAP_SUPPORT_64
   if(pageAlignedOffset >= INT32_MAX) {
+    std::cerr << "pageAlignedOffset (" << pageAlignedOffset << ") is too big" << std::endl;
     throw MMapException();
   }
 #endif
   char* const mmappedAddress = mmapReadOnly(fd, pageAlignedOffset, size.v);
   const auto munmapDeleter = [mmappedAddress, size](char* ) {
+                               std::cerr << "munmap " << (long)mmappedAddress << " size:" << size << std::endl;
                                munmap(mmappedAddress, size.v);
                              };
 
@@ -182,11 +186,13 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 
 const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
+  std::cerr << "Get buffer at " << offset << " of size " << size << std::endl;
 #ifdef ENABLE_USE_MMAP
   try {
     auto found_range = source->locate(_offset+offset, size);
     auto first_part_containing_it = found_range.first;
     if (++first_part_containing_it != found_range.second) {
+      std::cerr << "Not in one part" << std::endl;
       throw MMapException();
     }
 
@@ -204,6 +210,7 @@ const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) cons
     // The range is several part, or we are on Windows.
     // We will have to do some memory copies :/
     // [TODO] Use Windows equivalent for mmap.
+    std::cerr << "Read in allocated memory of " << size << std::endl;
     auto ret_buffer = Buffer::makeBuffer(size);
     read(const_cast<char*>(ret_buffer.data()), offset, size);
     return ret_buffer;
