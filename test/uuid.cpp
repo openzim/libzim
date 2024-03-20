@@ -22,6 +22,7 @@
 #include <sstream>
 
 #include "gtest/gtest.h"
+#include "tools.h"
 #ifdef _WIN32
 # include <windows.h>
 # include <synchapi.h>
@@ -110,9 +111,7 @@ TEST(UuidTest, output)
 {
   zim::Uuid uuid(
       "\x55\x0e\x84\x00\xe2\x9b\x41\xd4\xa7\x16\x44\x66\x55\x44\x00\x00");
-  std::ostringstream out;
-  out << uuid;
-  std::string s = out.str();
+  std::string s = zim::unittests::to_string(uuid);
   ASSERT_EQ(s, "550e8400-e29b-41d4-a716-446655440000");
   ASSERT_EQ((std::string)uuid, "550e8400-e29b-41d4-a716-446655440000");
 }

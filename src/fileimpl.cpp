@@ -21,6 +21,7 @@
 
 #include "fileimpl.h"
 #include <zim/error.h>
+#include <zim/tools.h>
 #include "_dirent.h"
 #include "file_compound.h"
 #include "buffer_reader.h"
@@ -507,11 +508,7 @@ private: // data
   const std::string& FileImpl::getMimeType(uint16_t idx) const
   {
     if (idx >= mimeTypes.size())
-    {
-      std::ostringstream msg;
-      msg << "unknown mime type code " << idx;
-      throw ZimFileFormatError(msg.str());
-    }
+      throw ZimFileFormatError(Formatter() << "unknown mime type code " << idx);
 
     return mimeTypes[idx];
   }

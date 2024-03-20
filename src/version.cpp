@@ -18,10 +18,10 @@
  */
 
 #include <iostream>
-#include <sstream>
 
 #include <zim/version.h>
 #include <zim/zim_config.h>
+#include <zim/tools.h>
 #include <config.h>
 #include <zstd.h>
 #include <lzma.h>
@@ -45,9 +45,9 @@ namespace zim
     versions.push_back({ "libxapian", XAPIAN_VERSION });
 
     // U_ICU_VERSION does not include the patch level if 0
-    std::ostringstream libicu_version;
-    libicu_version << U_ICU_VERSION_MAJOR_NUM << "." << U_ICU_VERSION_MINOR_NUM << "." << U_ICU_VERSION_PATCHLEVEL_NUM;
-    versions.push_back({ "libicu", libicu_version.str() });
+    versions.push_back({"libicu", Formatter() << U_ICU_VERSION_MAJOR_NUM << "."
+                                              << U_ICU_VERSION_MINOR_NUM << "."
+                                              << U_ICU_VERSION_PATCHLEVEL_NUM});
 #endif
 
     return versions;

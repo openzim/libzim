@@ -24,6 +24,7 @@
 #include <zim/entry.h>
 #include <zim/item.h>
 #include <zim/error.h>
+#include <zim/tools.h>
 #include "fileimpl.h"
 #include "tools.h"
 #include "log.h"
@@ -154,9 +155,8 @@ namespace zim
   }
 
   Item Archive::getIllustrationItem(unsigned int size) const {
-    std::ostringstream ss;
-    ss  << "Illustration_" << size << "x" << size << "@" << 1;
-    auto r = m_impl->findx('M', ss.str());
+    auto r = m_impl->findx('M', Formatter() << "Illustration_" << size << "x"
+                                            << size << "@" << 1);
     if (r.first) {
       return getEntryByPath(entry_index_type(r.second)).getItem();
     }

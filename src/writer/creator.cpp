@@ -32,6 +32,7 @@
 #include <zim/blob.h>
 #include <zim/error.h>
 #include <zim/writer/contentProvider.h>
+#include <zim/tools.h>
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
@@ -190,9 +191,8 @@ namespace zim
     void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider)
     {
       checkError();
-      std::stringstream ss;
-      ss << "Illustration_" << size << "x" << size << "@1";
-      addMetadata(ss.str(), std::move(provider), "image/png");
+      addMetadata(Formatter() << "Illustration_" << size << "x" << size << "@1",
+                  std::move(provider), "image/png");
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
@@ -213,10 +213,10 @@ namespace zim
       auto existing_dirent_it = data->dirents.find(&tmpDirent);
 
       if (existing_dirent_it == data->dirents.end()) {
-        std::ostringstream ss;
-        ss << "Impossible to alias C/" << targetPath << " as C/" << path << std::endl;
-        ss << "C/" << targetPath << " doesn't exist." << std::endl;
-        throw InvalidEntry(ss.str());
+        Formatter fmt;
+        fmt << "Impossible to alias C/" << targetPath << " as C/" << path << std::endl;
+        fmt << "C/" << targetPath << " doesn't exist." << std::endl;
+        throw InvalidEntry(fmt);
       }
 
       auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
@@ -543,11 +543,11 @@ namespace zim
           existing->markRemoved();
           dirents.insert(dirent);
         } else {
-          std::ostringstream ss;
-          ss << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
-          ss << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
-          ss << "  existing dirent's title is : " << existing->getTitle() << std::endl;
-          throw InvalidEntry(ss.str());
+          Formatter fmt;
+          fmt << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
+          fmt << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
+          fmt << "  existing dirent's title is : " << existing->getTitle() << std::endl;
+          throw InvalidEntry(fmt);
         }
       };
 

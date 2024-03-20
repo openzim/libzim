@@ -23,6 +23,7 @@
 #include <zim/writer/contentProvider.h>
 #include <zim/archive.h>
 #include <zim/error.h>
+#include <zim/tools.h>
 
 #include "tools.h"
 #include "../src/file_compound.h"
@@ -358,11 +359,11 @@ TEST(ZimCreator, interruptedZimCreation)
     writer::Creator creator;
     creator.configClusterSize(16*1024);
     creator.startZimCreation(tmpFile.path());
-    std::ostringstream oss;
+    zim::Formatter fmt;
     for ( size_t i = 0; i < 12345; ++i ) {
-      oss << i;
+      fmt << i;
     }
-    const std::string content(oss.str());
+    const std::string content(fmt);
     for ( char c = 'a'; c <= 'z'; ++c ) {
       const std::string path(1, c);
       creator.addItem(std::make_shared<TestItem>(path, path, content));

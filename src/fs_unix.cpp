@@ -19,10 +19,10 @@
 
 #include "fs_unix.h"
 #include <stdexcept>
-#include <sstream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <zim/tools.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -138,10 +138,7 @@ bool FS::removeFile(path_t path) {
 
 std::string getFilePathFromFD(int fd)
 {
-  std::ostringstream oss;
-  oss << "/dev/fd/" << fd;
-
-  return oss.str();
+  return Formatter()  << "/dev/fd/" << fd;
 }
 
 }; // zim namespace

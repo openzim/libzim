@@ -21,7 +21,7 @@
 #define ZIM_TOOLS_H
 
 #include "zim.h"
-
+#include <sstream>
 namespace zim {
 #if defined(LIBZIM_WITH_XAPIAN)
 
@@ -34,6 +34,50 @@ namespace zim {
   LIBZIM_API void setICUDataDirectory(const std::string& path);
 
 #endif
+
+  /**
+   * @brief Stringstream Class to use itself as the stream object 
+   * returned by << operator. (std::stringstream returns an std::ostream). 
+   * Allows a one-line stringstream to str conversion, e.g. use_str(Formatter()
+   * << "foo" << variable);
+   *
+   */
+  class Formatter
+  {
+  public:
+    Formatter() {}
+    ~Formatter() {}
+
+    template <typename Type> Formatter &operator<<(const Type &value)
+    {
+      stream_ << value;
+      return *this;
+    }
+
+    /* Operator for function templates like std::endl */
+    Formatter &operator<<(std::ostream& (* __pf)(std::ostream&))
+    {
+      stream_ << __pf;
+      return *this;
+    }
+
+    /* Operator for working with other ostream like std::cerr */
+    friend std::ostream &operator<<(std::ostream &os, const Formatter &obj)
+    {
+      os << obj.stream_.str();
+      return os;
+    }
+
+    operator std::string() const { return stream_.str(); }
+
+  private:
+    /* Disable copy and assignment constructors */
+    Formatter(const Formatter &) = delete;
+    Formatter &operator=(Formatter &) = delete;
+
+    /* Simple composition with std::stringstream */
+    std::stringstream stream_;
+  };
 }
 
 #endif // ZIM_TOOLS_H
