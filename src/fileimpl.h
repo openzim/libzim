@@ -50,7 +50,7 @@ namespace zim
 
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      std::shared_ptr<const DirectDirentAccessor> mp_urlDirentAccessor;
+      std::shared_ptr<const DirectDirentAccessor> mp_pathDirentAccessor;
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
@@ -72,7 +72,7 @@ namespace zim
         typedef DirectDirentAccessor DirentAccessorType;
         typedef entry_index_t index_t;
         static const std::string& getDirentKey(const Dirent& d) {
-          return d.getUrl();
+          return d.getPath();
         }
       };
 
@@ -119,8 +119,8 @@ namespace zim
       entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
       entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
-      FindxResult findx(char ns, const std::string& url);
-      FindxResult findx(const std::string& url);
+      FindxResult findx(char ns, const std::string &path);
+      FindxResult findx(const std::string &path);
       FindxTitleResult findxByTitle(char ns, const std::string& title);
 
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);

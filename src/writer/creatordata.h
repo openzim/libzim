@@ -44,7 +44,7 @@ namespace zim
   {
     struct UrlCompare {
       bool operator() (const Dirent* d1, const Dirent* d2) const {
-        return compareUrl(d1, d2);
+        return comparePath(d1, d2);
       }
     };
 

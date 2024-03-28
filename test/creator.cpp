@@ -67,7 +67,7 @@ struct Optional<const std::string> {
 void test_article_dirent(
   std::shared_ptr<const Dirent> dirent,
   Optional<char> ns,
-  Optional<const std::string> url,
+  Optional<const std::string> path,
   Optional<const std::string> title,
   Optional<uint16_t> mimetype,
   Optional<cluster_index_t> clusterNumber,
@@ -75,7 +75,7 @@ void test_article_dirent(
 {
   ASSERT_TRUE(dirent->isArticle());
   ns.check(dirent->getNamespace());
-  url.check(dirent->getUrl());
+  path.check(dirent->getPath());
   title.check(dirent->getTitle());
   mimetype.check(dirent->getMimeType());
   clusterNumber.check(dirent->getClusterNumber());
@@ -85,13 +85,13 @@ void test_article_dirent(
 void test_redirect_dirent(
   std::shared_ptr<const Dirent> dirent,
   Optional<char> ns,
-  Optional<const std::string> url,
+  Optional<const std::string> path,
   Optional<const std::string> title,
   Optional<entry_index_t> target)
 {
   ASSERT_TRUE(dirent->isRedirect());
   ns.check(dirent->getNamespace());
-  url.check(dirent->getUrl());
+  path.check(dirent->getPath());
   title.check(dirent->getTitle());
   target.check(dirent->getRedirectIndex());
 }
@@ -125,8 +125,8 @@ TEST(ZimCreator, createEmptyZim)
   ASSERT_EQ(header.getArticleCount(), 2u); // counter + titleListIndexesv0
 
   //Read the only one item existing.
-  auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
-  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(urlPtrReader), entry_index_t(header.getArticleCount()));
+  auto pathPtrReader = reader->sub_reader(offset_t(header.getPathPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
+  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(pathPtrReader), entry_index_t(header.getArticleCount()));
   std::shared_ptr<const Dirent> dirent;
 
   dirent = direntAccessor.getDirent(entry_index_t(0));
@@ -184,7 +184,7 @@ TEST(ZimCreator, createZim)
   auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
   EXPECT_NO_THROW(creator.addItem(item));
   EXPECT_THROW(creator.addItem(item), std::runtime_error);
-  // Be sure that title order is not the same that url order
+  // Be sure that title order is not the same that path order
   item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
   creator.addAlias("foo_bis", "The same Foo", "foo2");
@@ -223,8 +223,8 @@ TEST(ZimCreator, createZim)
   ASSERT_EQ(header.getArticleCount(), nb_entry);
 
   // Read dirent
-  auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
-  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(urlPtrReader), entry_index_t(header.getArticleCount()));
+  auto pathPtrReader = reader->sub_reader(offset_t(header.getPathPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
+  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(pathPtrReader), entry_index_t(header.getArticleCount()));
   std::shared_ptr<const Dirent> dirent;
 
   entry_index_type direntIdx = 0;

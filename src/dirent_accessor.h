@@ -45,7 +45,9 @@ class DirentReader;
 class DirectDirentAccessor
 {
 public: // functions
-  DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
+  DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader,
+                       std::unique_ptr<const Reader> pathPtrReader,
+                       entry_index_t direntCount);
 
   offset_t    getOffset(entry_index_t idx) const;
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
@@ -56,7 +58,7 @@ private: // functions
 
 private: // data
   std::shared_ptr<DirentReader>  mp_direntReader;
-  std::unique_ptr<const Reader>  mp_urlPtrReader;
+  std::unique_ptr<const Reader>  mp_pathPtrReader;
   entry_index_t                  m_direntCount;
 
   mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>> m_direntCache;

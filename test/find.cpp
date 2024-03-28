@@ -54,9 +54,9 @@ TEST(FindTests, NotFoundByPath)
     for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
         zim::Archive archive (testfile.path);
 
-        auto range0 = archive.findByPath("unkwonUrl");
-        auto range1 = archive.findByPath("U/unkwonUrl");
-        auto range2 = archive.findByPath("A/unkwonUrl");
+        auto range0 = archive.findByPath("unkwonPath");
+        auto range1 = archive.findByPath("U/unkwonPath");
+        auto range2 = archive.findByPath("A/unkwonPath");
         auto range3 = archive.findByPath("X");
         auto range4 = archive.findByPath("X/");
         ASSERT_EQ(range0.begin(), range0.end());

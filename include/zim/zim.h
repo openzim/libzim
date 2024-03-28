@@ -95,7 +95,7 @@ namespace zim
     CHECKSUM,
 
     /**
-     * Checks that offsets in UrlPtrList are valid.
+     * Checks that offsets in PathPtrList are valid.
      */
     DIRENT_PTRS,
 

@@ -360,8 +360,8 @@ namespace zim
         dirent->write(out_fd);
       }
 
-      TINFO(" write url prt list");
-      header.setUrlPtrPos(lseek(out_fd, 0, SEEK_CUR));
+      TINFO(" write path prt list");
+      header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
       for (auto& dirent: data->dirents)
       {
         char tmp_buff[sizeof(offset_type)];

@@ -48,7 +48,7 @@ namespace zim
       Uuid uuid;
       entry_index_type articleCount;
       offset_type titleIdxPos;
-      offset_type urlPtrPos;
+      offset_type pathPtrPos;
       offset_type mimeListPos;
       cluster_index_type clusterCount;
       offset_type clusterPtrPos;
@@ -62,7 +62,7 @@ namespace zim
           minorVersion(zimMinorVersion),
           articleCount(0),
           titleIdxPos(0),
-          urlPtrPos(0),
+          pathPtrPos(0),
           clusterCount(0),
           clusterPtrPos(0),
           mainPage(std::numeric_limits<entry_index_type>::max()),
@@ -92,8 +92,8 @@ namespace zim
       offset_type getTitleIdxPos() const           { return titleIdxPos; }
       void        setTitleIdxPos(offset_type p)    { titleIdxPos = p; }
 
-      offset_type getUrlPtrPos() const             { return urlPtrPos; }
-      void        setUrlPtrPos(offset_type p)      { urlPtrPos = p; }
+      offset_type getPathPtrPos() const            { return pathPtrPos; }
+      void        setPathPtrPos(offset_type p)     { pathPtrPos = p; }
 
       offset_type getMimeListPos() const           { return mimeListPos; }
       void        setMimeListPos(offset_type p)    { mimeListPos = p; }

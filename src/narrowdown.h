@@ -104,7 +104,7 @@ public: // functions
   void add(const std::string& key, index_type i, const std::string& nextKey)
   {
     // It would be better to have `key >= nextKey`, but pretty old zim file were not enforce to
-    // have unique url, just that entries were sorted by url, but two entries could have the same url.
+    // have unique path, just that entries were sorted by path, but two entries could have the same path.
     // It is somehow a bug and have been fixed then, but we still have to be tolerent here and accept that
     // two concecutive keys can be equal.
     if (key > nextKey) {

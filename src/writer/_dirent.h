@@ -173,7 +173,7 @@ namespace zim
         Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
         // Creator for "temporary" dirent, used to search for dirent in container.
-        // We use them in url ordered container so we only need to set the namespace and the path.
+        // We use them in path ordered container so we only need to set the namespace and the path.
         // Other value are irrelevant.
         Dirent(NS ns, const std::string& path)
           : Dirent(ns, path, "", 0)
@@ -244,12 +244,11 @@ namespace zim
 
         void write(int out_fd) const;
 
-        friend bool compareUrl(const Dirent* d1, const Dirent* d2);
+        friend bool comparePath(const Dirent* d1, const Dirent* d2);
         friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
     } PACKED;
 
-
-    inline bool compareUrl(const Dirent* d1, const Dirent* d2)
+    inline bool comparePath(const Dirent* d1, const Dirent* d2)
     {
       return d1->getNamespace() < d2->getNamespace()
         || (d1->getNamespace() == d2->getNamespace() && d1->getPath() < d2->getPath());
