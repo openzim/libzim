@@ -36,6 +36,10 @@ class BaseFileReader : public Reader {
     zsize_t size() const { return _size; };
     offset_t offset() const { return _offset; };
 
+    virtual const Buffer get_mmap_buffer(offset_t offset,
+                                         zsize_t size) const = 0;
+    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+
   protected: // data
     offset_t _offset;
     zsize_t _size;
@@ -50,9 +54,9 @@ class FileReader : public BaseFileReader {
     ~FileReader() = default;
 
     char read(offset_t offset) const;
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+    void read(char *dest, offset_t offset, zsize_t size) const;
 
+    const Buffer get_mmap_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
   private: // data
@@ -68,9 +72,9 @@ class MultiPartFileReader : public BaseFileReader {
     ~MultiPartFileReader() {};
 
     char read(offset_t offset) const;
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+    void read(char *dest, offset_t offset, zsize_t size) const;
 
+    const Buffer get_mmap_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
   private:

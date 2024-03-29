@@ -177,24 +177,11 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 } // unnamed namespace
 #endif // ENABLE_USE_MMAP
 
-const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) const {
+const Buffer BaseFileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
   try {
-    auto found_range = source->locate(_offset+offset, size);
-    auto first_part_containing_it = found_range.first;
-    if (++first_part_containing_it != found_range.second) {
-      throw MMapException();
-    }
-
-    // The range is in only one part
-    auto range = found_range.first->first;
-    auto part = found_range.first->second;
-    auto logical_local_offset = offset + _offset - range.min;
-    ASSERT(size, <=, part->size());
-    int fd = part->fhandle().getNativeHandle();
-    auto physical_local_offset = logical_local_offset + part->offset();
-    return Buffer::makeBuffer(makeMmappedBuffer(fd, physical_local_offset, size), size);
+    return get_mmap_buffer(offset, size);
   } catch(MMapException& e)
 #endif
   {
@@ -208,6 +195,27 @@ const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) cons
     read(const_cast<char*>(ret_buffer.data()), offset, size);
     return ret_buffer;
   }
+}
+
+const Buffer MultiPartFileReader::get_mmap_buffer(offset_t offset, zsize_t size) const {
+#ifdef ENABLE_USE_MMAP
+  auto found_range = source->locate(_offset + offset, size);
+  auto first_part_containing_it = found_range.first;
+  if (++first_part_containing_it != found_range.second) {
+    throw MMapException();
+  }
+
+  // The range is in only one part
+  auto range = found_range.first->first;
+  auto part = found_range.first->second;
+  auto logical_local_offset = offset + _offset - range.min;
+  ASSERT(size, <=, part->size());
+  int fd = part->fhandle().getNativeHandle();
+  auto physical_local_offset = logical_local_offset + part->offset();
+  return Buffer::makeBuffer(makeMmappedBuffer(fd, physical_local_offset, size), size);
+#else
+  return Buffer::makeBuffer(size); // unreachable
+#endif
 }
 
 bool Reader::can_read(offset_t offset, zsize_t size) const
@@ -273,26 +281,14 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const
   };
 }
 
-const Buffer FileReader::get_buffer(offset_t offset, zsize_t size) const
-{
-  ASSERT(size, <=, _size);
+const Buffer FileReader::get_mmap_buffer(offset_t offset, zsize_t size) const {
 #ifdef ENABLE_USE_MMAP
-  try {
-    auto local_offset = offset + _offset;
-    int fd = _fhandle->getNativeHandle();
-    return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
-  } catch(MMapException& e)
+  auto local_offset = offset + _offset;
+  int fd = _fhandle->getNativeHandle();
+  return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
+#else
+  return Buffer::makeBuffer(size); // unreachable
 #endif
-  {
-    // We cannot do the mmap, for several possible reasons:
-    // - Mmap offset is too big (>4GB on 32 bits)
-    // - We are on Windows.
-    // We will have to do some memory copies :/
-    // [TODO] Use Windows equivalent for mmap.
-    auto ret_buffer = Buffer::makeBuffer(size);
-    read(const_cast<char*>(ret_buffer.data()), offset, size);
-    return ret_buffer;
-  }
 }
 
 std::unique_ptr<const Reader>
