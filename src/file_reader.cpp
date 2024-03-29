@@ -146,11 +146,13 @@ mmapReadOnly(int fd, offset_type offset, size_type size)
 #endif
 
   const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
-  if (p == MAP_FAILED)
-    throw std::runtime_error(Formatter()
-                             << "Cannot mmap size " << size << " at off "
-                             << offset << " : " << strerror(errno));
-
+  if (p == MAP_FAILED) {
+    // mmap may fails for a lot of reason.
+    // Most of them (io error, too big size...) may not recoverable but some of
+    // them may be relative to mmap only and a "simple" read from the file would work.
+    // Let's throw a MMapException to fallback to read (and potentially fail again there).
+    throw MMapException();
+  }
   return p;
 }
 
@@ -189,7 +191,8 @@ const Buffer BaseFileReader::get_buffer(offset_t offset, zsize_t size) const {
     // - Mmap offset is too big (>4GB on 32 bits)
     // - The range is several part
     // - We are on Windows.
-    // We will have to do some memory copies :/
+    // - Mmap itself has failed
+    // We will have to do some memory copies (or fail trying to) :/
     // [TODO] Use Windows equivalent for mmap.
     auto ret_buffer = Buffer::makeBuffer(size);
     read(const_cast<char*>(ret_buffer.data()), offset, size);
