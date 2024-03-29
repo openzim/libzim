@@ -33,7 +33,7 @@ class FileReader : public Reader {
     typedef std::shared_ptr<const DEFAULTFS::FD> FileHandle;
 
   public: // functions
-    explicit FileReader(FileHandle fh, offset_t offset, zsize_t size);
+    FileReader(FileHandle fh, offset_t offset, zsize_t size);
     ~FileReader() = default;
 
     zsize_t size() const { return _size; };
@@ -56,7 +56,7 @@ class FileReader : public Reader {
 
 class MultiPartFileReader : public Reader {
   public:
-    MultiPartFileReader(std::shared_ptr<const FileCompound> source);
+    explicit MultiPartFileReader(std::shared_ptr<const FileCompound> source);
     ~MultiPartFileReader() {};
 
     zsize_t size() const { return _size; };
