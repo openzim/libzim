@@ -28,16 +28,26 @@ namespace zim {
 
 class FileCompound;
 
-class FileReader : public Reader {
+class BaseFileReader : public Reader {
+  public: // functions
+    BaseFileReader(offset_t offset, zsize_t size)
+      : _offset(offset), _size(size) {}
+    ~BaseFileReader() = default;
+    zsize_t size() const { return _size; };
+    offset_t offset() const { return _offset; };
+
+  protected: // data
+    offset_t _offset;
+    zsize_t _size;
+};
+
+class FileReader : public BaseFileReader {
   public: // types
     typedef std::shared_ptr<const DEFAULTFS::FD> FileHandle;
 
   public: // functions
     FileReader(FileHandle fh, offset_t offset, zsize_t size);
     ~FileReader() = default;
-
-    zsize_t size() const { return _size; };
-    offset_t offset() const { return _offset; };
 
     char read(offset_t offset) const;
     void read(char* dest, offset_t offset, zsize_t size) const;
@@ -50,17 +60,12 @@ class FileReader : public Reader {
     // by a sub_reader (otherwise the file handle would be invalidated by
     // FD destructor when the sub-reader is destroyed).
     FileHandle _fhandle;
-    offset_t _offset;
-    zsize_t _size;
 };
 
-class MultiPartFileReader : public Reader {
+class MultiPartFileReader : public BaseFileReader {
   public:
     explicit MultiPartFileReader(std::shared_ptr<const FileCompound> source);
     ~MultiPartFileReader() {};
-
-    zsize_t size() const { return _size; };
-    offset_t offset() const { return _offset; };
 
     char read(offset_t offset) const;
     void read(char* dest, offset_t offset, zsize_t size) const;
@@ -72,8 +77,6 @@ class MultiPartFileReader : public Reader {
     MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size);
 
     std::shared_ptr<const FileCompound> source;
-    offset_t _offset;
-    zsize_t _size;
 };
 
 };

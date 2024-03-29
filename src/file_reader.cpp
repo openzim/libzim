@@ -53,9 +53,8 @@ MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> sou
   : MultiPartFileReader(source, offset_t(0), source->fsize()) {}
 
 MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size)
-  : source(source),
-    _offset(offset),
-    _size(size)
+  : BaseFileReader(offset, size),
+    source(source)
 {
   ASSERT(offset.v, <=, source->fsize().v);
   ASSERT(offset.v+size.v, <=, source->fsize().v);
@@ -229,9 +228,8 @@ std::unique_ptr<const Reader> MultiPartFileReader::sub_reader(offset_t offset, z
 ////////////////////////////////////////////////////////////////////////////////
 
 FileReader::FileReader(FileHandle fh, offset_t offset, zsize_t size)
-  : _fhandle(fh)
-  , _offset(offset)
-  , _size(size)
+  : BaseFileReader(offset, size)
+    , _fhandle(fh)
 {
 }
 
