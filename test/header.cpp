@@ -49,7 +49,7 @@ TEST(HeaderTest, read_write_header)
   zim::Fileheader header;
   header.setUuid("123456789\0abcd\nf");
   header.setArticleCount(4711);
-  header.setUrlPtrPos(12345);
+  header.setPathPtrPos(12345);
   header.setTitleIdxPos(23456);
   header.setClusterCount(14);
   header.setClusterPtrPos(45678);
@@ -59,7 +59,7 @@ TEST(HeaderTest, read_write_header)
 
   ASSERT_EQ(header.getUuid(), "123456789\0abcd\nf");
   ASSERT_EQ(header.getArticleCount(), 4711U);
-  ASSERT_EQ(header.getUrlPtrPos(), 12345U);
+  ASSERT_EQ(header.getPathPtrPos(), 12345U);
   ASSERT_EQ(header.getTitleIdxPos(), 23456U);
   ASSERT_EQ(header.getClusterCount(), 14U);
   ASSERT_EQ(header.getClusterPtrPos(), 45678U);
@@ -73,7 +73,7 @@ TEST(HeaderTest, read_write_header)
 
   ASSERT_EQ(header2.getUuid(), "123456789\0abcd\nf");
   ASSERT_EQ(header2.getArticleCount(), 4711U);
-  ASSERT_EQ(header2.getUrlPtrPos(), 12345U);
+  ASSERT_EQ(header2.getPathPtrPos(), 12345U);
   ASSERT_EQ(header2.getTitleIdxPos(), 23456U);
   ASSERT_EQ(header2.getClusterCount(), 14U);
   ASSERT_EQ(header2.getClusterPtrPos(), 45678U);

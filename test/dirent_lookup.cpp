@@ -30,7 +30,7 @@
 namespace
 {
 
-const std::vector<std::pair<char, std::string>> articleurl = {
+const std::vector<std::pair<char, std::string>> articlepath = {
   {'A', "aa"},       //0
   {'A', "aaaa"},     //1
   {'A', "aaaaaa"},   //2
@@ -51,17 +51,17 @@ struct GetDirentMock
   typedef GetDirentMock DirentAccessorType;
   typedef zim::entry_index_t index_t;
   static const std::string& getDirentKey(const zim::Dirent& d) {
-    return d.getUrl();
+    return d.getPath();
   }
 
   zim::entry_index_t getDirentCount() const {
-    return zim::entry_index_t(articleurl.size());
+    return zim::entry_index_t(articlepath.size());
   }
 
   std::shared_ptr<const zim::Dirent> getDirent(zim::entry_index_t idx) const {
-    auto info = articleurl.at(idx.v);
+    auto info = articlepath.at(idx.v);
     auto ret = std::make_shared<zim::Dirent>();
-    ret->setUrl(info.first, info.second);
+    ret->setPath(info.first, info.second);
     return ret;
   }
 };

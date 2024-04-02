@@ -76,21 +76,21 @@ namespace zim
       dirent.setItem(mimeType, cluster_index_t(clusterNumber), blob_index_t(blobNumber));
     }
 
-    std::string url;
+    std::string path;
     std::string title;
     std::string parameter;
 
-    log_debug("read url, title and parameters");
+    log_debug("read path, title and parameters");
 
-    size_type url_size = strnlen(
+    size_type path_size = strnlen(
       reader.current(),
       reader.left().v - extraLen
     );
-    if (url_size >= reader.left().v) {
+    if (path_size >= reader.left().v) {
       return false;
     }
-    url = std::string(reader.current(), url_size);
-    reader.skip(zsize_t(url_size+1));
+    path = std::string(reader.current(), path_size);
+    reader.skip(zsize_t(path_size + 1));
 
     size_type title_size = strnlen(
       reader.current(),
@@ -106,7 +106,7 @@ namespace zim
       return false;
     }
     parameter = std::string(reader.current(), extraLen);
-    dirent.setUrl(ns, url);
+    dirent.setPath(ns, path);
     dirent.setTitle(title);
     dirent.setParameter(parameter);
     return true;
@@ -120,12 +120,12 @@ namespace zim
     }
 
     // We don't know the size of the dirent because it depends of the size of
-    // the title, url and extra parameters.
+    // the title, path and extra parameters.
     // This is a pity but we have no choice.
     // We cannot take a buffer of the size of the file, it would be really
     // inefficient. Let's do try, catch and retry while chosing a smart value
     // for the buffer size. Most dirent will be "Article" entry (header's size
-    // == 16) without extra parameters. Let's hope that url + title size will
+    // == 16) without extra parameters. Let's hope that path + title size will
     // be < 256 and if not try again with a bigger size.
 
     size_t bufferSize(std::min(size_type(256), mp_zimReader->size().v-offset.v));
@@ -139,12 +139,12 @@ namespace zim
     }
   }
 
-  std::string Dirent::getLongUrl() const
+  std::string Dirent::getLongPath() const
   {
-    log_trace("Dirent::getLongUrl()");
+    log_trace("Dirent::getLongPath()");
     log_debug("namespace=" << getNamespace() << " title=" << getTitle());
 
-    return std::string(1, getNamespace()) + '/' + getUrl();
+    return std::string(1, getNamespace()) + '/' + getPath();
   }
 
 }

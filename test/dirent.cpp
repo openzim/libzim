@@ -84,13 +84,13 @@ TEST(DirentTest, size)
 TEST(DirentTest, set_get_data_dirent)
 {
   zim::Dirent dirent;
-  dirent.setUrl('C', "Bar");
+  dirent.setPath('C', "Bar");
   dirent.setItem(17, zim::cluster_index_t(45), zim::blob_index_t(1234));
   dirent.setVersion(54346);
 
   ASSERT_TRUE(!dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), 'C');
-  ASSERT_EQ(dirent.getUrl(), "Bar");
+  ASSERT_EQ(dirent.getPath(), "Bar");
   ASSERT_EQ(dirent.getTitle(), "Bar");
   ASSERT_EQ(dirent.getParameter(), "");
   ASSERT_EQ(dirent.getBlobNumber().v, 1234U);
@@ -98,7 +98,7 @@ TEST(DirentTest, set_get_data_dirent)
 
   dirent.setTitle("Foo");
   ASSERT_EQ(dirent.getNamespace(), 'C');
-  ASSERT_EQ(dirent.getUrl(), "Bar");
+  ASSERT_EQ(dirent.getPath(), "Bar");
   ASSERT_EQ(dirent.getTitle(), "Foo");
   ASSERT_EQ(dirent.getParameter(), "");
 }
@@ -151,7 +151,7 @@ TEST(DirentTest, read_write_article_dirent_unicode)
 
   ASSERT_TRUE(!dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'C');
-  ASSERT_EQ(dirent2.getUrl(), "L\xc3\xbcliang");
+  ASSERT_EQ(dirent2.getPath(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent2.getTitle(), "L\xc3\xbcliang");
   ASSERT_EQ(dirent2.getParameter(), "");
   ASSERT_EQ(dirent2.getClusterNumber().v, 45U);
@@ -177,18 +177,18 @@ TEST(DirentTest, read_write_redirect_dirent)
 
   ASSERT_TRUE(dirent2.isRedirect());
   ASSERT_EQ(dirent2.getNamespace(), 'C');
-  ASSERT_EQ(dirent2.getUrl(), "Bar");
+  ASSERT_EQ(dirent2.getPath(), "Bar");
   ASSERT_EQ(dirent2.getTitle(), "Bar");
   ASSERT_EQ(dirent2.getRedirectIndex().v, 321U);
 }
 
 TEST(DirentTest, dirent_size)
 {
-  // case url set, title empty, extralen empty
+  // case path set, title empty, extralen empty
   zim::writer::Dirent dirent(NS::C, "Bar", "", 17);
   ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
 
-  // case url set, title set, extralen empty
+  // case path set, title set, extralen empty
   zim::writer::Dirent dirent2(NS::C, "Bar", "Foo", 17);
   ASSERT_EQ(dirent2.getDirentSize(), writenDirentSize(dirent2));
 }

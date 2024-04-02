@@ -207,14 +207,13 @@ private: // data
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
-    auto urlPtrReader = sectionSubReader(*zimReader,
-                                         "Dirent pointer table",
-                                         offset_t(header.getUrlPtrPos()),
-                                         zsize_t(sizeof(offset_type)*header.getArticleCount()));
+    auto pathPtrReader = sectionSubReader(*zimReader,
+                                          "Dirent pointer table",
+                                          offset_t(header.getPathPtrPos()),
+                                          zsize_t(sizeof(offset_type)*header.getArticleCount()));
 
-    mp_urlDirentAccessor.reset(
-        new DirectDirentAccessor(direntReader, std::move(urlPtrReader), entry_index_t(header.getArticleCount())));
-
+    mp_pathDirentAccessor.reset(
+        new DirectDirentAccessor(direntReader, std::move(pathPtrReader), entry_index_t(header.getArticleCount())));
 
     clusterOffsetReader = sectionSubReader(*zimReader,
                                            "Cluster pointer table",
@@ -243,7 +242,7 @@ private: // data
       return nullptr;
     }
 
-    auto dirent = mp_urlDirentAccessor->getDirent(result.second);
+    auto dirent = mp_pathDirentAccessor->getDirent(result.second);
     auto cluster = getCluster(dirent->getClusterNumber());
     if (cluster->isCompressed()) {
       // This is a ZimFileFormatError.
@@ -263,7 +262,7 @@ private: // data
                                                size);
 
       return std::unique_ptr<IndirectDirentAccessor>(
-        new IndirectDirentAccessor(mp_urlDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/sizeof(entry_index_type))));
+        new IndirectDirentAccessor(mp_pathDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/sizeof(entry_index_type))));
   }
 
   FileImpl::DirentLookup& FileImpl::direntLookup() const
@@ -278,7 +277,7 @@ private: // data
       std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
       if ( !m_direntLookup ) {
         const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-        m_direntLookup.reset(new DirentLookup(mp_urlDirentAccessor.get(), cacheSize));
+        m_direntLookup.reset(new DirentLookup(mp_pathDirentAccessor.get(), cacheSize));
       }
     }
     return *m_direntLookup;
@@ -306,13 +305,13 @@ private: // data
 
   offset_type FileImpl::getMimeListEndUpperLimit() const
   {
-    offset_type result(header.getUrlPtrPos());
+    offset_type result(header.getPathPtrPos());
     result = std::min(result, header.getTitleIdxPos());
     result = std::min(result, header.getClusterPtrPos());
     if ( getCountArticles().v != 0 ) {
       // assuming that dirents are placed in the zim file in the same
       // order as the corresponding entries in the dirent pointer table
-      result = std::min(result, mp_urlDirentAccessor->getOffset(entry_index_t(0)).v);
+      result = std::min(result, mp_pathDirentAccessor->getOffset(entry_index_t(0)).v);
 
       // assuming that clusters are placed in the zim file in the same
       // order as the corresponding entries in the cluster pointer table
@@ -325,11 +324,12 @@ private: // data
   {
     // read mime types
     // libzim write zims files two ways :
-    // - The old way by putting the urlPtrPos just after the mimetype.
-    // - The new way by putting the urlPtrPos at the end of the zim files.
-    //   In this case, the cluster data are always at 1024 bytes offset and we know that
-    //   mimetype list is before this.
-    // 1024 seems to be a good maximum size for the mimetype list, even for the "old" way.
+    // - The old way by putting the pathPtrPos just after the mimetype.
+    // - The new way by putting the pathPtrPos at the end of the zim files.
+    //   In this case, the cluster data are always at 1024 bytes offset and we
+    //   know that mimetype list is before this.
+    // 1024 seems to be a good maximum size for the mimetype list, even for the
+    // "old" way.
     const auto endMimeList = getMimeListEndUpperLimit();
     if ( endMimeList <= header.getMimeListPos() ) {
         throw(ZimFileFormatError("Bad ZIM archive"));
@@ -363,17 +363,17 @@ private: // data
     }
   }
 
-  FileImpl::FindxResult FileImpl::findx(char ns, const std::string& url)
+  FileImpl::FindxResult FileImpl::findx(char ns, const std::string& path)
   {
-    return direntLookup().find(ns, url);
+    return direntLookup().find(ns, path);
   }
 
-  FileImpl::FindxResult FileImpl::findx(const std::string& url)
+  FileImpl::FindxResult FileImpl::findx(const std::string& longPath)
   {
     char ns;
     std::string path;
     try {
-      std::tie(ns, path) = parseLongPath(url);
+      std::tie(ns, path) = parseLongPath(longPath);
       return findx(ns, path);
     } catch (...) {}
     return { false, entry_index_t(0) };
@@ -392,7 +392,7 @@ private: // data
 
   std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx)
   {
-    return mp_urlDirentAccessor->getDirent(idx);
+    return mp_pathDirentAccessor->getDirent(idx);
   }
 
   std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx)
@@ -418,7 +418,7 @@ private: // data
     for(auto i = startIdx; i < endIdx; i++)
     {
       // This is the offset of the dirent in the zimFile
-      auto indexOffset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
+      auto indexOffset = mp_pathDirentAccessor->getOffset(entry_index_t(i));
       // Get the mimeType of the dirent (offset 0) to know the type of the dirent
       uint16_t mimeType = zimReader->read_uint<uint16_t>(indexOffset);
       if (mimeType==Dirent::redirectMimeType || mimeType==Dirent::linktargetMimeType || mimeType == Dirent::deletedMimeType) {
@@ -643,7 +643,7 @@ private: // data
     const zsize_t direntMinSize(11);
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const auto offset = mp_urlDirentAccessor->getOffset(entry_index_t(i));
+      const auto offset = mp_pathDirentAccessor->getOffset(entry_index_t(i));
       if ( offset < validDirentRangeStart ||
            offset + direntMinSize > validDirentRangeEnd ) {
         std::cerr << "Invalid dirent pointer" << std::endl;
@@ -658,12 +658,12 @@ private: // data
     std::shared_ptr<const Dirent> prevDirent;
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const std::shared_ptr<const Dirent> dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
-      if ( prevDirent && !(prevDirent->getLongUrl() < dirent->getLongUrl()) )
+      const std::shared_ptr<const Dirent> dirent = mp_pathDirentAccessor->getDirent(entry_index_t(i));
+      if ( prevDirent && !(prevDirent->getLongPath() < dirent->getLongPath()) )
       {
         std::cerr << "Dirent table is not properly sorted:\n"
-                  << "  #" << i-1 << ": " << prevDirent->getLongUrl() << "\n"
-                  << "  #" << i   << ": " << dirent->getLongUrl() << std::endl;
+                  << "  #" << i-1 << ": " << prevDirent->getLongPath() << "\n"
+                  << "  #" << i   << ": " << dirent->getLongPath() << std::endl;
         return false;
       }
       prevDirent = dirent;
@@ -738,9 +738,9 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     const entry_index_type articleCount = getCountArticles().v;
     for ( entry_index_type i = 0; i < articleCount; ++i )
     {
-      const auto dirent = mp_urlDirentAccessor->getDirent(entry_index_t(i));
+      const auto dirent = mp_pathDirentAccessor->getDirent(entry_index_t(i));
       if ( dirent->isArticle() && dirent->getMimeType() >= mimeTypes.size() ) {
-        std::cerr << "Entry " << dirent->getLongUrl()
+        std::cerr << "Entry " << dirent->getLongPath()
                   << " has invalid MIME-type value " << dirent->getMimeType()
                   << "." << std::endl;
         return false;

@@ -53,7 +53,7 @@ namespace zim
     std::copy(getUuid().data, getUuid().data + sizeof(Uuid), header + 8);
     toLittleEndian(getArticleCount(), header + 24);
     toLittleEndian(getClusterCount(), header + 28);
-    toLittleEndian(getUrlPtrPos(), header + 32);
+    toLittleEndian(getPathPtrPos(), header + 32);
     toLittleEndian(getTitleIdxPos(), header + 40);
     toLittleEndian(getClusterPtrPos(), header + 48);
     toLittleEndian(getMimeListPos(), header + 56);
@@ -100,7 +100,7 @@ namespace zim
 
     setArticleCount(seqReader.read<uint32_t>());
     setClusterCount(seqReader.read<uint32_t>());
-    setUrlPtrPos(seqReader.read<uint64_t>());
+    setPathPtrPos(seqReader.read<uint64_t>());
     setTitleIdxPos(seqReader.read<uint64_t>());
     setClusterPtrPos(seqReader.read<uint64_t>());
     setMimeListPos(seqReader.read<uint64_t>());
@@ -120,8 +120,8 @@ namespace zim
       throw ZimFileFormatError("mimelistPos must be 80.");
     }
 
-    if (urlPtrPos < mimeListPos) {
-      throw ZimFileFormatError("urlPtrPos must be > mimelistPos.");
+    if (pathPtrPos < mimeListPos) {
+      throw ZimFileFormatError("pathPtrPos must be > mimelistPos.");
     }
     if (titleIdxPos < mimeListPos) {
       throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");

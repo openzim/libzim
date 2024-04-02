@@ -136,7 +136,7 @@ namespace zim
     auto end = m_impl->getNamespaceEndOffset('M');
     for (auto idx=start; idx!=end; idx++) {
       auto dirent = m_impl->getDirent(idx);
-      ret.push_back(dirent->getUrl());
+      ret.push_back(dirent->getPath());
     }
     return ret;
   }
