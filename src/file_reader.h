@@ -28,21 +28,35 @@ namespace zim {
 
 class FileCompound;
 
-class FileReader : public Reader {
+class BaseFileReader : public Reader {
+  public: // functions
+    BaseFileReader(offset_t offset, zsize_t size)
+      : _offset(offset), _size(size) {}
+    ~BaseFileReader() = default;
+    zsize_t size() const { return _size; };
+    offset_t offset() const { return _offset; };
+
+    virtual const Buffer get_mmap_buffer(offset_t offset,
+                                         zsize_t size) const = 0;
+    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+
+  protected: // data
+    offset_t _offset;
+    zsize_t _size;
+};
+
+class FileReader : public BaseFileReader {
   public: // types
     typedef std::shared_ptr<const DEFAULTFS::FD> FileHandle;
 
   public: // functions
-    explicit FileReader(FileHandle fh, offset_t offset, zsize_t size);
+    FileReader(FileHandle fh, offset_t offset, zsize_t size);
     ~FileReader() = default;
 
-    zsize_t size() const { return _size; };
-    offset_t offset() const { return _offset; };
-
     char read(offset_t offset) const;
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+    void read(char *dest, offset_t offset, zsize_t size) const;
 
+    const Buffer get_mmap_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
   private: // data
@@ -50,30 +64,23 @@ class FileReader : public Reader {
     // by a sub_reader (otherwise the file handle would be invalidated by
     // FD destructor when the sub-reader is destroyed).
     FileHandle _fhandle;
-    offset_t _offset;
-    zsize_t _size;
 };
 
-class MultiPartFileReader : public Reader {
+class MultiPartFileReader : public BaseFileReader {
   public:
-    MultiPartFileReader(std::shared_ptr<const FileCompound> source);
+    explicit MultiPartFileReader(std::shared_ptr<const FileCompound> source);
     ~MultiPartFileReader() {};
 
-    zsize_t size() const { return _size; };
-    offset_t offset() const { return _offset; };
-
     char read(offset_t offset) const;
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    const Buffer get_buffer(offset_t offset, zsize_t size) const;
+    void read(char *dest, offset_t offset, zsize_t size) const;
 
+    const Buffer get_mmap_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
   private:
     MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size);
 
     std::shared_ptr<const FileCompound> source;
-    offset_t _offset;
-    zsize_t _size;
 };
 
 };

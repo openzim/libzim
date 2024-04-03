@@ -53,9 +53,8 @@ MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> sou
   : MultiPartFileReader(source, offset_t(0), source->fsize()) {}
 
 MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size)
-  : source(source),
-    _offset(offset),
-    _size(size)
+  : BaseFileReader(offset, size),
+    source(source)
 {
   ASSERT(offset.v, <=, source->fsize().v);
   ASSERT(offset.v+size.v, <=, source->fsize().v);
@@ -147,11 +146,13 @@ mmapReadOnly(int fd, offset_type offset, size_type size)
 #endif
 
   const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
-  if (p == MAP_FAILED)
-    throw std::runtime_error(Formatter()
-                             << "Cannot mmap size " << size << " at off "
-                             << offset << " : " << strerror(errno));
-
+  if (p == MAP_FAILED) {
+    // mmap may fails for a lot of reason.
+    // Most of them (io error, too big size...) may not recoverable but some of
+    // them may be relative to mmap only and a "simple" read from the file would work.
+    // Let's throw a MMapException to fallback to read (and potentially fail again there).
+    throw MMapException();
+  }
   return p;
 }
 
@@ -178,34 +179,46 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 } // unnamed namespace
 #endif // ENABLE_USE_MMAP
 
-const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) const {
+const Buffer BaseFileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
   try {
-    auto found_range = source->locate(_offset+offset, size);
-    auto first_part_containing_it = found_range.first;
-    if (++first_part_containing_it != found_range.second) {
-      throw MMapException();
-    }
-
-    // The range is in only one part
-    auto range = found_range.first->first;
-    auto part = found_range.first->second;
-    auto logical_local_offset = offset + _offset - range.min;
-    ASSERT(size, <=, part->size());
-    int fd = part->fhandle().getNativeHandle();
-    auto physical_local_offset = logical_local_offset + part->offset();
-    return Buffer::makeBuffer(makeMmappedBuffer(fd, physical_local_offset, size), size);
+    return get_mmap_buffer(offset, size);
   } catch(MMapException& e)
 #endif
   {
-    // The range is several part, or we are on Windows.
-    // We will have to do some memory copies :/
+    // We cannot do the mmap, for several possible reasons:
+    // - Mmap offset is too big (>4GB on 32 bits)
+    // - The range is several part
+    // - We are on Windows.
+    // - Mmap itself has failed
+    // We will have to do some memory copies (or fail trying to) :/
     // [TODO] Use Windows equivalent for mmap.
     auto ret_buffer = Buffer::makeBuffer(size);
     read(const_cast<char*>(ret_buffer.data()), offset, size);
     return ret_buffer;
   }
+}
+
+const Buffer MultiPartFileReader::get_mmap_buffer(offset_t offset, zsize_t size) const {
+#ifdef ENABLE_USE_MMAP
+  auto found_range = source->locate(_offset + offset, size);
+  auto first_part_containing_it = found_range.first;
+  if (++first_part_containing_it != found_range.second) {
+    throw MMapException();
+  }
+
+  // The range is in only one part
+  auto range = found_range.first->first;
+  auto part = found_range.first->second;
+  auto logical_local_offset = offset + _offset - range.min;
+  ASSERT(size, <=, part->size());
+  int fd = part->fhandle().getNativeHandle();
+  auto physical_local_offset = logical_local_offset + part->offset();
+  return Buffer::makeBuffer(makeMmappedBuffer(fd, physical_local_offset, size), size);
+#else
+  return Buffer::makeBuffer(size); // unreachable
+#endif
 }
 
 bool Reader::can_read(offset_t offset, zsize_t size) const
@@ -226,9 +239,8 @@ std::unique_ptr<const Reader> MultiPartFileReader::sub_reader(offset_t offset, z
 ////////////////////////////////////////////////////////////////////////////////
 
 FileReader::FileReader(FileHandle fh, offset_t offset, zsize_t size)
-  : _fhandle(fh)
-  , _offset(offset)
-  , _size(size)
+  : BaseFileReader(offset, size)
+    , _fhandle(fh)
 {
 }
 
@@ -272,17 +284,13 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const
   };
 }
 
-const Buffer FileReader::get_buffer(offset_t offset, zsize_t size) const
-{
-  ASSERT(size, <=, _size);
+const Buffer FileReader::get_mmap_buffer(offset_t offset, zsize_t size) const {
 #ifdef ENABLE_USE_MMAP
-  offset += _offset;
+  auto local_offset = offset + _offset;
   int fd = _fhandle->getNativeHandle();
-  return Buffer::makeBuffer(makeMmappedBuffer(fd, offset, size), size);
-#else // We are on Windows. [TODO] Use Windows equivalent for mmap.
-  auto ret_buffer = Buffer::makeBuffer(size);
-  read(const_cast<char*>(ret_buffer.data()), offset, size);
-  return ret_buffer;
+  return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
+#else
+  return Buffer::makeBuffer(size); // unreachable
 #endif
 }
 
