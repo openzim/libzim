@@ -14,9 +14,19 @@ jobs:
         os:
           - macos-13
         target:
-          - native_dyn
-          - iOS_arm64
-          - iOS_x86_64
+          - macos-x86_64-dyn
+          - ios-arm64-dyn
+          - ios-x86_64-dyn
+        include:
+          - target: macos-x86_64-dyn
+            arch_name: x86_64-apple-darwin
+            run_test: true
+          - target: ios-arm64-dyn
+            arch_name: aarch64-apple-ios
+            run_test: false
+          - target: ios-x86_64-dyn
+            arch_name: x86-apple-ios-simulator
+            run_test: false
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -46,21 +56,21 @@ jobs:
         shell: bash
         run: |
           MESON_OPTION="--default-library=shared"
-          MESON_CROSSFILE="$HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
-          if [[ ! "${{matrix.target}}" =~ native_.* ]]; then
+          MESON_CROSSFILE="$HOME/BUILD_${{matrix.arch_name}}/meson_cross_file.txt"
+          if [ -e $MESON_CROSSFILE ]; then
             MESON_OPTION="$MESON_OPTION --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
             cat $MESON_CROSSFILE
           fi
-          export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig
+          export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib/pkgconfig
           meson . build ${MESON_OPTION}
           cd build
           ninja
 
       - name: Test
-        if: startsWith(matrix.target, 'native_')
+        if: matrix.run_test
         shell: bash
         run: |
-          export LD_LIBRARY_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib:$HOME/BUILD_${{matrix.target}}/INSTALL/lib64
+          export LD_LIBRARY_PATH=$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib:$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib64
           cd build
           ninja download_test_data
           meson test --verbose
@@ -105,46 +115,73 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - native_static
-          - native_dyn
-          - alpine_dyn
-          - aarch64_dyn
-          - android_arm
-          - android_arm64
-          - win32_static
-          - win32_dyn
+          - linux-x86_64-static
+          - linux-x86_64-dyn
+          - linux-aarch64-musl-dyn
+          - linux-aarch64-dyn
+          - android-arm
+          - android-arm64
+          - win32-static
+          - win32-dyn
           - wasm
         with_xapian:
           - true
           - false
         include:
-          - target: native_static
+          - target: linux-x86_64-static
             image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
-          - target: native_dyn
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: true
+          - target: linux-x86_64-dyn
             image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
-          - target: alpine_dyn
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: true
+          - target: linux-aarch64-musl-dyn
             image_variant: alpine
             lib_postfix: '/x86_64-linux-musl'
-          - target: aarch64_dyn
+            arch_name: linux-aarch64-musl
+            run_test: true
+            coverage: false
+          - target: linux-aarch64-dyn
             image_variant: focal
             lib_postfix: '/aarch64-linux-gnu'
-          - target: android_arm
+            arch_name: aarch64-linux-gnu
+            run_test: false
+            coverage: false
+          - target: android-arm
             image_variant: focal
             lib_postfix: '/arm-linux-androideabi'
-          - target: android_arm64
+            arch_name: arm-linux-androideabi
+            run_test: false
+            coverage: false
+          - target: android-arm64
             image_variant: focal
             lib_postfix: '/aarch64-linux-android'
-          - target: win32_static
+            arch_name: aarch64-linux-android
+            run_test: false
+            coverage: false
+          - target: win32-static
             image_variant: f35
             lib_postfix: '64'
-          - target: win32_dyn
+            arch_name: i686-w64-mingw32
+            run_test: false
+            coverage: false
+          - target: win32-dyn
             image_variant: f35
             lib_postfix: '64'
+            arch_name: i686-w64-mingw32
+            run_test: false
+            coverage: false
           - target: wasm
             image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
+            arch_name: wasm64-emscripten
+            run_test: false
+            coverage: false
     env:
       HOME: /home/runner
     runs-on: ubuntu-22.04
@@ -153,7 +190,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        if: false == startsWith(matrix.target, 'alpine_')
+        if: ${{ !contains(matrix.target, 'musl') }}
         uses: kiwix/kiwix-build/actions/dl_deps_archive@main
         with:
           target_platform: ${{ matrix.target }}
@@ -164,50 +201,53 @@ jobs:
       - name: Compile source code
         shell: bash
         env:
-          PKG_CONFIG_PATH: ${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig
+          PKG_CONFIG_PATH: ${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib/pkgconfig:${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig
         run: |
-          if [[ "${{matrix.target}}" =~ .*_dyn ]]
+          if [[ "${{matrix.target}}" =~ .*-dyn ]]
           then
             MESON_OPTION="--default-library=shared"
           else
             MESON_OPTION="--default-library=static"
           fi
-          if [[ "${{matrix.target}}" =~ native_.* ]]
+          
+          if [ -e "${{ env.HOME }}/BUILD_${{ matrix.arch_name }}/meson_cross_file.txt" ]
           then
+            MESON_OPTION="$MESON_OPTION --cross-file ${{ env.HOME }}/BUILD_${{ matrix.arch_name }}/meson_cross_file.txt"
+          else
             MESON_OPTION="$MESON_OPTION -Db_coverage=true"
-          elif [[ "${{matrix.target}}" != alpine_* ]]
-          then
-            MESON_OPTION="$MESON_OPTION --cross-file ${{ env.HOME }}/BUILD_${{ matrix.target }}/meson_cross_file.txt"
           fi
+          
           if [[ "${{matrix.target}}" =~ android_.* ]]
           then
             MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
           fi
+          
           if [[ "${{matrix.target}}" == wasm ]]
           then
             MESON_OPTION="$MESON_OPTION -Dexamples=false"
           fi
+
           meson setup . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
           cd build
           ninja
 
       - name: Run automated tests
         shell: bash
-        if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
+        if: matrix.run_test
         env:
-          LD_LIBRARY_PATH: "${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib:${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
+          LD_LIBRARY_PATH: "${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib:${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib${{matrix.lib_postfix}}"
           SKIP_BIG_MEMORY_TEST: 1
           WAIT_TIME_FACTOR_TEST: 10
         run: |
           cd build
           ninja download_test_data
           meson test --verbose
-          if [[ "${{matrix.target}}" =~ native_.* ]]; then
+          if [[ "${{matrix.coverage}}" = "true" ]]; then
             ninja coverage
           fi
 
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
-        if: startsWith(matrix.target, 'native_')
+        if: matrix.coverage
         with:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
