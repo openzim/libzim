@@ -108,25 +108,37 @@ struct SearchIterator::InternalData {
     {};
 
     Xapian::Document get_document() {
-        if ( !document_fetched ) {
-            _document = iterator().get_document();
-            document_fetched = true;
+        try {
+            if ( !document_fetched ) {
+                _document = iterator().get_document();
+                document_fetched = true;
+            }
+            return _document;
+        } catch ( Xapian::DatabaseError& e) {
+            throw zim::ZimFileFormatError(e.get_description());
         }
-        return _document;
     }
 
     int get_databasenumber() {
-        Xapian::docid docid = *iterator();
-        return (docid - 1) % mp_internalDb->m_archives.size();
+        try {
+            Xapian::docid docid = *iterator();
+            return (docid - 1) % mp_internalDb->m_archives.size();
+        } catch ( Xapian::DatabaseError& e) {
+            throw zim::ZimFileFormatError(e.get_description());
+        }
     }
 
     Entry& get_entry() {
-        if ( !_entry ) {
-            int databasenumber = get_databasenumber();
-            auto archive = mp_internalDb->m_archives.at(databasenumber);
-            _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
-        }
+        try {
+            if ( !_entry ) {
+                int databasenumber = get_databasenumber();
+                auto archive = mp_internalDb->m_archives.at(databasenumber);
+                _entry.reset(new Entry(archive.getEntryByPath(get_document().get_data())));
+            }
         return *_entry.get();
+        } catch ( Xapian::DatabaseError& e) {
+            throw zim::ZimFileFormatError(e.get_description());
+        }
     }
 
     bool operator==(const InternalData& other) const {
