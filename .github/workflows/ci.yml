@@ -34,6 +34,9 @@ jobs:
           - target: ios-x86_64-dyn
             arch_name: x86-apple-ios-simulator
             run_test: false
+        exclude:
+          - target: macos-x86_64-dyn
+            os: macos-14
     runs-on: ${{ matrix.os }}
 
     steps:
