@@ -17,6 +17,7 @@
  *
  */
 
+#include <zim/error.h>
 #define ZIM_PRIVATE
 
 #include <zim/suggestion.h>
@@ -39,7 +40,11 @@ SuggestionDataBase::SuggestionDataBase(const Archive& archive, bool verbose)
 {
 // Initialize Xapian DB if it is enabled
 #if defined(ENABLE_XAPIAN)
-  initXapianDb();
+  try {
+    initXapianDb();
+  } catch ( Xapian::DatabaseError& e) {
+     throw zim::ZimFileFormatError(e.get_description());
+  }
 #endif  // ENABLE_XAPIAN
 }
 
@@ -190,7 +195,7 @@ void SuggestionSearcher::setVerbose(bool verbose)
 
 void SuggestionSearcher::initDatabase()
 {
-    mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
+  mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
 }
 
 SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)

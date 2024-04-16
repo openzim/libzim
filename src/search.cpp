@@ -22,6 +22,7 @@
  *
  */
 
+#include <zim/error.h>
 #include <zim/search.h>
 #include <zim/archive.h>
 #include <zim/item.h>
@@ -77,51 +78,57 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
           continue;
         }
 
-        if ( first ) {
-            m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            auto language = database.get_metadata("language");
-            if (language.empty() ) {
-                // Database created before 2017/03 has no language metadata.
-                // However, term were stemmed anyway and we need to stem our
-                // search query the same the database was created.
-                // So we need a language, let's use the one of the zim.
-                // If zimfile has no language metadata, we can't do lot more here :/
-                try {
-                    language = archive.getMetadata("Language");
-                } catch(...) {}
-            }
-            if (!language.empty()) {
-                icu::Locale languageLocale(language.c_str());
-                /* Configuring language base steemming */
-                try {
-                    m_stemmer = Xapian::Stem(languageLocale.getLanguage());
-                    m_queryParser.set_stemmer(m_stemmer);
-                    m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
-                } catch (...) {
-                    std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+        try {
+            if ( first ) {
+                m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
+                auto language = database.get_metadata("language");
+                if (language.empty() ) {
+                    // Database created before 2017/03 has no language metadata.
+                    // However, term were stemmed anyway and we need to stem our
+                    // search query the same the database was created.
+                    // So we need a language, let's use the one of the zim.
+                    // If zimfile has no language metadata, we can't do lot more here :/
+                    try {
+                        language = archive.getMetadata("Language");
+                    } catch(...) {}
+                }
+                if (!language.empty()) {
+                    icu::Locale languageLocale(language.c_str());
+                    /* Configuring language base steemming */
+                    try {
+                        m_stemmer = Xapian::Stem(languageLocale.getLanguage());
+                        m_queryParser.set_stemmer(m_stemmer);
+                        m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
+                    } catch (...) {
+                        std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+                    }
+                }
+                auto stopwords = database.get_metadata("stopwords");
+                if ( !stopwords.empty() ){
+                    std::string stopWord;
+                    std::istringstream file(stopwords);
+                    Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
+                    while (std::getline(file, stopWord, '\n')) {
+                        stopper->add(stopWord);
+                    }
+                    stopper->release();
+                    m_queryParser.set_stopper(stopper);
+                }
+            } else {
+                std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
+                if (m_valuesmap != valuesmap ) {
+                    // [TODO] Ignore the database, raise a error ?
                 }
             }
-            auto stopwords = database.get_metadata("stopwords");
-            if ( !stopwords.empty() ){
-                std::string stopWord;
-                std::istringstream file(stopwords);
-                Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
-                while (std::getline(file, stopWord, '\n')) {
-                    stopper->add(stopWord);
-                }
-                stopper->release();
-                m_queryParser.set_stopper(stopper);
-            }
-        } else {
-            std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-            if (m_valuesmap != valuesmap ) {
-                // [TODO] Ignore the database, raise a error ?
-            }
+            m_xapianDatabases.push_back(database);
+            m_database.add_database(database);
+            m_archives.push_back(archive);
+            first = false;
+        } catch( Xapian::DatabaseError& e ) {
+            // [TODO] Ignore the database or raise a error ?
+            // As we already ignore the database if `getDbFromAccessInfo` "detects" a DatabaseError,
+            // we also ignore here.
         }
-        m_xapianDatabases.push_back(database);
-        m_database.add_database(database);
-        m_archives.push_back(archive);
-        first = false;
     }
 }
 
@@ -278,6 +285,8 @@ int Search::getEstimatedMatches() const
       return mset.get_matches_estimated();
     } catch(Xapian::QueryParserError& e) {
       return 0;
+    } catch(Xapian::DatabaseError& e) {
+      throw zim::ZimFileFormatError(e.get_description());
     }
 }
 
@@ -288,6 +297,8 @@ const SearchResultSet Search::getResults(int start, int maxResults) const {
       return SearchResultSet(mp_internalDb, std::move(mset));
     } catch(Xapian::QueryParserError& e) {
       return SearchResultSet(mp_internalDb);
+    } catch(Xapian::DatabaseError& e) {
+      throw zim::ZimFileFormatError(e.get_description());
     }
 }
 
@@ -325,7 +336,11 @@ int SearchResultSet::size() const
   if (! mp_mset) {
       return 0;
   }
-  return mp_mset->size();
+  try {
+      return mp_mset->size();
+  } catch(Xapian::DatabaseError& e) {
+    throw zim::ZimFileFormatError(e.get_description());
+  }
 }
 
 SearchResultSet::iterator SearchResultSet::begin() const
@@ -333,7 +348,11 @@ SearchResultSet::iterator SearchResultSet::begin() const
     if ( ! mp_mset ) {
         return nullptr;
     }
-    return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
+    try {
+        return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
+    } catch(Xapian::DatabaseError& e) {
+        throw zim::ZimFileFormatError(e.get_description());
+    }
 }
 
 SearchResultSet::iterator SearchResultSet::end() const
@@ -341,7 +360,11 @@ SearchResultSet::iterator SearchResultSet::end() const
     if ( ! mp_mset ) {
         return nullptr;
     }
-    return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
+    try {
+        return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
+    } catch(Xapian::DatabaseError& e) {
+        throw zim::ZimFileFormatError(e.get_description());
+    }
 }
 
 } //namespace zim

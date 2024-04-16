@@ -18,6 +18,7 @@
  *
  */
 
+#include <zim/error.h>
 #define ZIM_PRIVATE
 
 #include "xapian/myhtmlparse.h"
@@ -106,20 +107,24 @@ std::string SearchIterator::getPath() const {
         return "";
     }
 
-    std::string path = internal->get_document().get_data();
-    bool hasNewNamespaceScheme = internal->mp_internalDb->m_archives.at(getFileIndex()).hasNewNamespaceScheme();
+    try {
+        std::string path = internal->get_document().get_data();
+        bool hasNewNamespaceScheme = internal->mp_internalDb->m_archives.at(getFileIndex()).hasNewNamespaceScheme();
 
-    std::string dbDataType = internal->mp_internalDb->m_database.get_metadata("data");
-    if (dbDataType.empty()) {
-        dbDataType = "fullPath";
-    }
+        std::string dbDataType = internal->mp_internalDb->m_database.get_metadata("data");
+        if (dbDataType.empty()) {
+            dbDataType = "fullPath";
+        }
 
-    // If the archive has new namespace scheme and the type of its indexed data
-    // is `fullPath` we return only the `path` without namespace
-    if (hasNewNamespaceScheme && dbDataType == "fullPath") {
-        path = path.substr(2);
+        // If the archive has new namespace scheme and the type of its indexed data
+        // is `fullPath` we return only the `path` without namespace
+        if (hasNewNamespaceScheme && dbDataType == "fullPath") {
+            path = path.substr(2);
+        }
+        return path;
+    } catch (Xapian::DatabaseError& e) {
+            throw zim::ZimFileFormatError(e.get_description());
     }
-    return path;
 }
 
 std::string SearchIterator::getDbData() const {
@@ -149,37 +154,41 @@ std::string SearchIterator::getSnippet() const {
         return "";
     }
 
-    // Generate full text snippet
-    if ( ! internal->mp_internalDb->hasValuesmap() )
-    {
-        /* This is the old legacy version. Guess and try */
-        std::string stored_snippet = internal->get_document().get_value(1);
-        if ( ! stored_snippet.empty() )
-            return stored_snippet;
-        /* Let's continue here, and see if we can genenate one */
-    }
-    else if ( internal->mp_internalDb->hasValue("snippet") )
-    {
-        return internal->get_document().get_value(internal->mp_internalDb->valueSlot("snippet"));
-    }
-
-    Entry& entry = internal->get_entry();
-    /* No reader, no snippet */
     try {
-        /* Get the content of the item to generate a snippet.
-           We parse it and use the html dump to avoid remove html tags in the
-           content and be able to nicely cut the text at random place. */
-        zim::MyHtmlParser htmlParser;
-        std::string content = entry.getItem().getData();
+        // Generate full text snippet
+        if ( ! internal->mp_internalDb->hasValuesmap() )
+        {
+            /* This is the old legacy version. Guess and try */
+            std::string stored_snippet = internal->get_document().get_value(1);
+            if ( ! stored_snippet.empty() )
+                return stored_snippet;
+            /* Let's continue here, and see if we can genenate one */
+        }
+        else if ( internal->mp_internalDb->hasValue("snippet") )
+        {
+            return internal->get_document().get_value(internal->mp_internalDb->valueSlot("snippet"));
+        }
+
+        Entry& entry = internal->get_entry();
+        /* No reader, no snippet */
         try {
-          htmlParser.parse_html(content, "UTF-8", true);
-        } catch (...) {}
-        return internal->mp_mset->snippet(htmlParser.dump,
-                                          /*length=*/500,
-                                          /*stemmer=*/internal->mp_internalDb->m_stemmer,
-                                          /*flags=*/0);
-    } catch (...) {
-      return "";
+            /* Get the content of the item to generate a snippet.
+               We parse it and use the html dump to avoid remove html tags in the
+               content and be able to nicely cut the text at random place. */
+            zim::MyHtmlParser htmlParser;
+            std::string content = entry.getItem().getData();
+            try {
+              htmlParser.parse_html(content, "UTF-8", true);
+            } catch (...) {}
+            return internal->mp_mset->snippet(htmlParser.dump,
+                                              /*length=*/500,
+                                              /*stemmer=*/internal->mp_internalDb->m_stemmer,
+                                              /*flags=*/0);
+        } catch (...) {
+          return "";
+        }
+    } catch (Xapian::DatabaseError& e) {
+            throw zim::ZimFileFormatError(e.get_description());
     }
 }
 
@@ -187,20 +196,24 @@ int SearchIterator::getSize() const {
     return -1;
 }
 
-int SearchIterator::getWordCount() const      {
+int SearchIterator::getWordCount() const {
     if ( ! internal ) {
         return -1;
     }
-    if ( ! internal->mp_internalDb->hasValuesmap() )
-    {
-        /* This is the old legacy version. Guess and try */
-        return internal->get_document().get_value(3).empty() == true ? -1 : atoi(internal->get_document().get_value(3).c_str());
+    try {
+        if ( ! internal->mp_internalDb->hasValuesmap() )
+        {
+            /* This is the old legacy version. Guess and try */
+            return internal->get_document().get_value(3).empty() == true ? -1 : atoi(internal->get_document().get_value(3).c_str());
+        }
+        else if ( internal->mp_internalDb->hasValue("wordcount") )
+        {
+            return atoi(internal->get_document().get_value(internal->mp_internalDb->valueSlot("wordcount")).c_str());
+        }
+        return -1;
+    } catch (Xapian::DatabaseError& e) {
+        throw zim::ZimFileFormatError(e.get_description());
     }
-    else if ( internal->mp_internalDb->hasValue("wordcount") )
-    {
-        return atoi(internal->get_document().get_value(internal->mp_internalDb->valueSlot("wordcount")).c_str());
-    }
-    return -1;
 }
 
 int SearchIterator::getFileIndex() const {
@@ -214,7 +227,11 @@ Uuid SearchIterator::getZimId() const {
     if (! internal ) {
         throw std::runtime_error("Cannot get zimId from uninitialized iterator");
     }
-    return internal->mp_internalDb->m_archives.at(getFileIndex()).getUuid();
+    try {
+        return internal->mp_internalDb->m_archives.at(getFileIndex()).getUuid();
+    } catch (Xapian::DatabaseError& e) {
+        throw zim::ZimFileFormatError(e.get_description());
+    }
 }
 
 SearchIterator::reference SearchIterator::operator*() const {
