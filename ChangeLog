@@ -3,6 +3,7 @@ libzim 9.2.0
 
  * Allow open Archive with a set of (positionned) file descriptors (@mgautierfr #860)
  * Introduce new (private) method `getEntryByPathWithNamespace` (@mgautierfr #859)
+ * Internally catch xapian exception and rethrow ZimFileFormatError instead (@mgautierfr #873)
  * Fix compilation on Haiku (@Begasus #857)
  * Fix macos mmap (@mgautierfr #867)
  * Optimize checksum calculation (@aryanA101a #861)
