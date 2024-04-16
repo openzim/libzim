@@ -1,17 +1,31 @@
+libzim 9.2.0
+============
+
+ * Allow open Archive with a set of (positionned) file descriptors (@mgautierfr #860)
+ * Introduce new (private) method `getEntryByPathWithNamespace` (@mgautierfr #859)
+ * Fix compilation on Haiku (@Begasus #857)
+ * Fix macos mmap (@mgautierfr #867)
+ * Optimize checksum calculation (@aryanA101a #861)
+ * Introduce `Formatter` helper (@ShaopengLin #862)
+ * Rename all `*Url*` symbols to `*Path*` (@mgautierfr #869)
+ * Build script: Allow to disable compilation of test (@kelson42 #854)
+ * [CI] Use kiwix-build github's action to download deps archive (@mgautierfr #850)
+ * [CI] Build libzim on macos-14 (@kelson42 #856)
+
 libzim 9.1.0
 ============
 
-* New addAlias() method in the creator (@mgauthierfr #833)
-* Bump-up ZIM format minor version to 6.1.2 (@mgauthierfr #847)
+ * New addAlias() method in the creator (@mgautierfr #833)
+ * Bump-up ZIM format minor version to 6.1.2 (@mgautierfr #847)
 
 libzim 9.0.0
 ============
 
-* getMediaCount() does not fail anymore if M/Counter is missing (@mgauthierfr #827)
-* Reintroduce optimization of Entry::getItem() (@kelson42 @mgauthierfr #836)
-* C++17 compatible code (@mgauthierfr #819)
-* Add support to recent googletest framework (@kelson42 #830)
-* Multiple fixes for Apple macOS/iOS compilation & CI (@mgauthierfr @kelson42 @rgaudin #832 #839)
+ * getMediaCount() does not fail anymore if M/Counter is missing (@mgautierfr #827)
+ * Reintroduce optimization of Entry::getItem() (@kelson42 @mgautierfr #836)
+ * C++17 compatible code (@mgautierfr #819)
+ * Add support to recent googletest framework (@kelson42 #830)
+ * Multiple fixes for Apple macOS/iOS compilation & CI (@mgautierfr @kelson42 @rgaudin #832 #839)
 
 libzim 8.2.1
 ============
