@@ -25,6 +25,7 @@
 #include "zim_types.h"
 #include "debug.h"
 #include <map>
+#include <memory>
 #include <vector>
 
 namespace zim {
@@ -53,9 +54,12 @@ class FileCompound : private std::map<Range, FilePart*, less_range> {
   public: // types
     typedef const_iterator PartIterator;
     typedef std::pair<PartIterator, PartIterator> PartRange;
+    enum class MultiPartToken { Multi };
 
   public: // functions
+    static std::shared_ptr<FileCompound> openSinglePieceOrSplitZimFile(const std::string& filename);
     explicit FileCompound(const std::string& filename);
+    explicit FileCompound(const std::string& filename, MultiPartToken token);
 
 #ifndef _WIN32
     explicit FileCompound(int fd);

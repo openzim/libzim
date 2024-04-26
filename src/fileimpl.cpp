@@ -163,7 +163,7 @@ private: // data
   // FileImpl
   //
   FileImpl::FileImpl(const std::string& fname)
-    : FileImpl(std::make_shared<FileCompound>(fname))
+    : FileImpl(FileCompound::openSinglePieceOrSplitZimFile(fname))
   {}
 
 #ifndef _WIN32

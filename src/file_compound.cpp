@@ -21,6 +21,7 @@
 #include "file_compound.h"
 
 #include <errno.h>
+#include <stdexcept>
 #include <string.h>
 #include <sys/stat.h>
 #include <zim/tools.h>
@@ -40,30 +41,40 @@ void FileCompound::addPart(FilePart* fpart)
   _fsize += fpart->size();
 }
 
+std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const std::string& filename) {
+  try {
+    return std::make_shared<FileCompound>(filename);
+  } catch (...) {
+    return std::make_shared<FileCompound>(filename, FileCompound::MultiPartToken::Multi);
+  }
+}
+
 FileCompound::FileCompound(const std::string& filename):
   _filename(filename),
   _fsize(0)
 {
-  try {
-    addPart(new FilePart(filename));
-  } catch(...) {
-    int errnoSave = errno;
-    _fsize = zsize_t(0);
-    try {
-      for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
-      {
-        const std::string fname0 = filename + ch0;
-        for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
-        {
-          addPart(new FilePart(fname0 + ch1));
-        }
-      }
-    } catch (...) { }
+  addPart(new FilePart(filename));
+}
 
-    if (empty())
-      throw std::runtime_error(Formatter()
-                               << "error " << errnoSave << " opening file \""
-                               << filename << "\"");
+FileCompound::FileCompound(const std::string& base_filename, MultiPartToken _token):
+  _filename(base_filename),
+  _fsize(0)
+{
+  try {
+    for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
+    {
+      const std::string fname0 = base_filename + ch0;
+      for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
+      {
+        addPart(new FilePart(fname0 + ch1));
+      }
+    }
+  } catch (std::runtime_error& e) {
+    // This catch acts as a break for the double loop.
+  }
+  if (empty()) {
+    // We haven't found any part
+    throw std::runtime_error(Formatter() << "Error opening as a split file: " << base_filename);
   }
 }
 
