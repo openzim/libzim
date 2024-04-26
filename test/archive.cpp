@@ -264,6 +264,31 @@ TEST(ZimArchive, openRealZimArchive)
   }
 }
 
+TEST(ZimArchive, openSplitZimArchive)
+{
+  const char* fname = "wikibooks_be_all_nopic_2017-02_splitted.zim";
+
+  for (auto& testfile: getDataFilePath(fname)) {
+    const TestContext ctx{ {"path", testfile.path+"aa" } };
+    std::unique_ptr<zim::Archive> archive;
+    EXPECT_NO_THROW( archive.reset(new zim::Archive(testfile.path+"aa")) ) << ctx;
+    if ( archive ) {
+      EXPECT_TRUE( archive->check() ) << ctx;
+    }
+  }
+}
+
+TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
+{
+  const char* fname = "wikibooks_be_all_nopic_2017-02.zim";
+
+  for (auto& testfile: getDataFilePath(fname)) {
+    const TestContext ctx{ {"path", testfile.path+"aa" } };
+    std::unique_ptr<zim::Archive> archive;
+    EXPECT_THROW( archive.reset(new zim::Archive(testfile.path+"aa")), std::runtime_error) << ctx;
+  }
+}
+
 TEST(ZimArchive, randomEntry)
 {
   const char* const zimfiles[] = {
@@ -434,7 +459,7 @@ TEST(ZimArchive, validate)
 
   TEST_BROKEN_ZIM_NAME(
     "invalid.invalid_checksumpos.zim",
-    "Checksum position is not valid\n"
+    "Zim file(s) is of bad size or corrupted.\n"
   );
 
   TEST_BROKEN_ZIM_NAME(

@@ -207,6 +207,15 @@ private: // data
       throw ZimFileFormatError("error reading zim-file header.");
     }
 
+    // This can happen for several reasons:
+    // - Zim file is corrupted (corrupted header)
+    // - Zim file is too small (ongoing download, truncated file...)
+    // - Zim file is embedded at beginning of another file (and we try to open the file as a zim file)
+    //   If open through a FdInput, size should be set in FdInput.
+    if (header.hasChecksum() && (header.getChecksumPos() + 16) != size_type(zimReader->size())) {
+      throw ZimFileFormatError("Zim file(s) is of bad size or corrupted.");
+    }
+
     auto pathPtrReader = sectionSubReader(*zimReader,
                                           "Dirent pointer table",
                                           offset_t(header.getPathPtrPos()),
@@ -296,10 +305,6 @@ private: // data
         log_fatal("last offset (" << lastOffset << ") larger than file size (" << getFilesize() << ')');
         throw ZimFileFormatError("last cluster offset larger than file size; file corrupt");
       }
-    }
-
-    if (header.hasChecksum() && header.getChecksumPos() != (getFilesize().v-16) ) {
-      throw ZimFileFormatError("Checksum position is not valid");
     }
   }
 

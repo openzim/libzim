@@ -41,12 +41,20 @@ void FileCompound::addPart(FilePart* fpart)
   _fsize += fpart->size();
 }
 
-std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const std::string& filename) {
+std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(std::string filename) {
+  std::shared_ptr<FileCompound> fileCompound;
+  if (filename.size() > 6 && filename.substr(filename.size()-6) == ".zimaa") {
+    filename.resize(filename.size()-2);
+  } else {
   try {
-    return std::make_shared<FileCompound>(filename);
-  } catch (...) {
-    return std::make_shared<FileCompound>(filename, FileCompound::MultiPartToken::Multi);
+      fileCompound = std::make_shared<FileCompound>(filename);
+    } catch(...) { }
   }
+
+  if ( !fileCompound ) {
+    fileCompound = std::make_shared<FileCompound>(filename, FileCompound::MultiPartToken::Multi);
+  }
+  return fileCompound;
 }
 
 FileCompound::FileCompound(const std::string& filename):
