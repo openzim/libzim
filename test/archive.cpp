@@ -669,7 +669,7 @@ TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
 zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
 {
   zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
-  std::shared_ptr<char> data(new char[size]);
+  std::shared_ptr<char> data(new char[size], std::default_delete<char[]>());
   fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.second));
   return zim::Blob(data, size);
 }
