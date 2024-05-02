@@ -40,11 +40,16 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
 
       - name: Setup Python 3.10
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: '3.10'
 
@@ -57,7 +62,7 @@ jobs:
         run: pip3 install meson pytest
 
       - name: Install dependencies
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@804193835086c0bed79f55d4c373302ab729db3d # main
         with:
           target_platform: ${{ matrix.target }}
 
@@ -91,11 +96,16 @@ jobs:
     runs-on: windows-2019
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
 
       - name: Setup python 3.10
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: '3.10'
 
@@ -198,14 +208,19 @@ jobs:
       image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:2023-10-30"
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
+        with:
+          egress-policy: audit
+
       - name: Install dependencies
         if: ${{ !contains(matrix.target, 'musl') }}
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@804193835086c0bed79f55d4c373302ab729db3d # main
         with:
           target_platform: ${{ matrix.target }}
 
       - name: Retrieve source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
 
       - name: Compile source code
         shell: bash
@@ -256,7 +271,7 @@ jobs:
           fi
 
       - name: Upload code coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@5ecb98a3c6b747ed38dc09f787459979aebb39be # v4.3.1
         if: matrix.coverage
         with:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -274,6 +289,11 @@ jobs:
       # actions: read
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
+        with:
+          egress-policy: audit
+
       - name: "Checkout code"
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
