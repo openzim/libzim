@@ -41,10 +41,13 @@ void FileCompound::addPart(FilePart* fpart)
   _fsize += fpart->size();
 }
 
-std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(std::string filename) {
+std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const std::string& original_filename) {
   std::shared_ptr<FileCompound> fileCompound;
+  bool multi_parts_asked = false;
+  auto filename = original_filename;
   if (filename.size() > 6 && filename.substr(filename.size()-6) == ".zimaa") {
     filename.resize(filename.size()-2);
+    multi_parts_asked = true;
   } else {
   try {
       fileCompound = std::make_shared<FileCompound>(filename);
@@ -53,6 +56,13 @@ std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(std::s
 
   if ( !fileCompound ) {
     fileCompound = std::make_shared<FileCompound>(filename, FileCompound::MultiPartToken::Multi);
+  }
+
+  if (fileCompound->empty()) {
+    // We haven't found any part
+    throw std::runtime_error(Formatter() << "Error opening "
+                             << (multi_parts_asked ? "as a split " : "")
+                             << "ZIM file: " << original_filename);
   }
   return fileCompound;
 }
@@ -79,10 +89,6 @@ FileCompound::FileCompound(const std::string& base_filename, MultiPartToken _tok
     }
   } catch (std::runtime_error& e) {
     // This catch acts as a break for the double loop.
-  }
-  if (empty()) {
-    // We haven't found any part
-    throw std::runtime_error(Formatter() << "Error opening as a split file: " << base_filename);
   }
 }
 

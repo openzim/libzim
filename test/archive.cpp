@@ -284,8 +284,39 @@ TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
 
   for (auto& testfile: getDataFilePath(fname)) {
     const TestContext ctx{ {"path", testfile.path+"aa" } };
-    std::unique_ptr<zim::Archive> archive;
-    EXPECT_THROW( archive.reset(new zim::Archive(testfile.path+"aa")), std::runtime_error) << ctx;
+    try {
+      zim::Archive(testfile.path+"aa");
+      FAIL(); // Exception is expected
+    } catch(const std::runtime_error& e) {
+      const std::string expected = std::string("Error opening as a split ZIM file: ") + testfile.path + "aa";
+      EXPECT_EQ(expected, e.what()) << ctx;
+    }
+  }
+}
+
+TEST(ZimArchive, openNonExistantZimArchive)
+{
+  const std::string fname = "non_existant.zim";
+
+  try {
+    zim::Archive archive(fname);
+    FAIL(); // Exception is expected
+  } catch(const std::runtime_error& e) {
+    const std::string expected = std::string("Error opening ZIM file: ") + fname;
+    EXPECT_EQ(expected, e.what()) << fname;
+  }
+}
+
+TEST(ZimArchive, openNonExistantZimSplitArchive)
+{
+  const std::string fname = "non_existant.zimaa";
+
+  try {
+    zim::Archive archive(fname);
+    FAIL(); // Exception is expected
+  } catch(const std::runtime_error& e) {
+    const std::string expected = std::string("Error opening as a split ZIM file: ") + fname;
+    EXPECT_EQ(expected, e.what()) << fname;
   }
 }
 
