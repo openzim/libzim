@@ -57,7 +57,7 @@ class FileCompound : private std::map<Range, FilePart*, less_range> {
     enum class MultiPartToken { Multi };
 
   public: // functions
-    static std::shared_ptr<FileCompound> openSinglePieceOrSplitZimFile(std::string filename);
+    static std::shared_ptr<FileCompound> openSinglePieceOrSplitZimFile(const std::string& filename);
     explicit FileCompound(const std::string& filename);
     explicit FileCompound(const std::string& filename, MultiPartToken token);
 
