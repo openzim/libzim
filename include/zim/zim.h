@@ -23,6 +23,10 @@
 #define ZIM_ZIM_H
 
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <stdexcept>
+#include <exception>
 
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -37,8 +41,21 @@
 
 #if defined(_MSC_VER) && defined(LIBZIM_EXPORT_DLL)
     #define LIBZIM_API __declspec(dllexport)
+    #define REEXPORT_STD template class __declspec(dllexport)
+    // dllexport stl structure we use in our classes
+    REEXPORT_STD std::_Compressed_pair<std::default_delete<char []>,char *,true>;
+    REEXPORT_STD std::_String_val<std::_Simple_types<char>>;
+    REEXPORT_STD std::_Compressed_pair<std::allocator<char>,std::_String_val<std::_Simple_types<char>>,true>;
+    REEXPORT_STD std::shared_ptr<const char>;
+    REEXPORT_STD std::basic_string<char,std::char_traits<char>,std::allocator<char>>;
+    REEXPORT_STD std::shared_ptr<const std::string>;
+    REEXPORT_STD std::unique_ptr<char [],std::default_delete<char []>>;
+    class __declspec(dllexport) std::runtime_error;
+    class __declspec(dllexport) std::exception_ptr;
+    class __declspec(dllexport) std::logic_error;
 #else
     #define LIBZIM_API
+    #define REEXPORT_STD
 #endif
 
 namespace zim
