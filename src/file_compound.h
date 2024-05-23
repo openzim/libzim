@@ -48,7 +48,7 @@ struct less_range
   }
 };
 
-class FileCompound : private std::map<Range, FilePart*, less_range> {
+class LIBZIM_API FileCompound : private std::map<Range, FilePart*, less_range> {
     typedef std::map<Range, FilePart*, less_range> ImplType;
 
   public: // types

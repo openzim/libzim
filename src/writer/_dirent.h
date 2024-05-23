@@ -148,7 +148,7 @@ namespace zim
         enum : char {DIRECT, REDIRECT, RESOLVED} tag;
     } PACKED;
 
-    class Dirent
+    class LIBZIM_API Dirent
     {
         static const uint16_t redirectMimeType = 0xffff;
         static const uint32_t version = 0;

@@ -29,7 +29,7 @@
 
 namespace zim {
 
-class Buffer {
+class LIBZIM_API Buffer {
   public: // types
     typedef std::shared_ptr<const char> DataPtr;
 

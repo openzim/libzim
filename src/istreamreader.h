@@ -44,7 +44,7 @@ namespace zim
 //     }
 //   }
 //
-class IStreamReader
+class LIBZIM_API IStreamReader
 {
 public: // functions
   virtual ~IStreamReader() = default;

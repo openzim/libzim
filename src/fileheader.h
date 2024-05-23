@@ -33,7 +33,7 @@
 namespace zim
 {
   class Reader;
-  class Fileheader
+  class LIBZIM_API Fileheader
   {
     public:
       static const uint32_t zimMagic;

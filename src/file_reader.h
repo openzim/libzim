@@ -28,7 +28,7 @@ namespace zim {
 
 class FileCompound;
 
-class BaseFileReader : public Reader {
+class LIBZIM_API BaseFileReader : public Reader {
   public: // functions
     BaseFileReader(offset_t offset, zsize_t size)
       : _offset(offset), _size(size) {}
@@ -45,7 +45,7 @@ class BaseFileReader : public Reader {
     zsize_t _size;
 };
 
-class FileReader : public BaseFileReader {
+class LIBZIM_API FileReader : public BaseFileReader {
   public: // types
     typedef std::shared_ptr<const DEFAULTFS::FD> FileHandle;
 
@@ -66,7 +66,7 @@ class FileReader : public BaseFileReader {
     FileHandle _fhandle;
 };
 
-class MultiPartFileReader : public BaseFileReader {
+class LIBZIM_API MultiPartFileReader : public BaseFileReader {
   public:
     explicit MultiPartFileReader(std::shared_ptr<const FileCompound> source);
     ~MultiPartFileReader() {};

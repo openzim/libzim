@@ -22,6 +22,7 @@
 #ifndef OMEGA_INCLUDED_MYHTMLPARSE_H
 #define OMEGA_INCLUDED_MYHTMLPARSE_H
 
+#include <zim/zim.h>
 #include "htmlparse.h"
 
 // FIXME: Should we include \xa0 which is non-breaking space in iso-8859-1, but
@@ -31,7 +32,7 @@
 
 namespace zim {
 
-class MyHtmlParser : public HtmlParser {
+class LIBZIM_API MyHtmlParser : public HtmlParser {
     public:
 	bool in_script_tag;
 	bool in_style_tag;

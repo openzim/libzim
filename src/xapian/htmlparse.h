@@ -22,6 +22,7 @@
 #ifndef OMEGA_INCLUDED_HTMLPARSE_H
 #define OMEGA_INCLUDED_HTMLPARSE_H
 
+#include <zim/zim.h>
 #include <string>
 #include <map>
 
@@ -30,7 +31,7 @@ using std::map;
 
 namespace zim {
 
-class HtmlParser {
+class LIBZIM_API HtmlParser {
 	map<string, string> parameters;
     protected:
 	void decode_entities(string &s);

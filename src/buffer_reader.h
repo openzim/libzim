@@ -24,7 +24,7 @@
 
 namespace zim {
 
-class BufferReader : public Reader {
+class LIBZIM_API BufferReader : public Reader {
   public:
     BufferReader(const Buffer& source)
       : source(source) {}

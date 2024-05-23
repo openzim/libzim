@@ -32,7 +32,7 @@ namespace zim
 {
   class Buffer;
   class InvalidSize : public std::exception {};
-  class Dirent
+  class LIBZIM_API Dirent
   {
     protected:
       uint16_t mimeType;

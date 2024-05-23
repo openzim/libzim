@@ -34,7 +34,7 @@ using path_t = const std::string&;
 
 struct ImplFD;
 
-class FD {
+class LIBZIM_API FD {
   public:
     typedef HANDLE fd_t;
   private:
@@ -55,7 +55,7 @@ class FD {
     bool    close();
 };
 
-struct FS {
+struct LIBZIM_API FS {
     using FD = zim::windows::FD;
     static std::string join(path_t base, path_t name);
     static std::unique_ptr<wchar_t[]> toWideChar(path_t path);

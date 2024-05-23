@@ -729,7 +729,7 @@ private:
    * @param checksToRun The set of checks to perform.
    * @return False if any check fails, true otherwise.
    */
-  bool validate(const std::string& zimPath, IntegrityCheckList checksToRun);
+  bool LIBZIM_API validate(const std::string& zimPath, IntegrityCheckList checksToRun);
 }
 
 #endif // ZIM_ARCHIVE_H

@@ -38,7 +38,7 @@ namespace writer {
 using writer_t = std::function<void(const Blob& data)>;
 class ContentProvider;
 
-class Cluster {
+class LIBZIM_API Cluster {
   typedef std::vector<offset_t> Offsets;
   typedef std::vector<std::unique_ptr<ContentProvider>> ClusterProviders;
 

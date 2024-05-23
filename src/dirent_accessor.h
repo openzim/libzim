@@ -42,7 +42,7 @@ class DirentReader;
  *
  */
 
-class DirectDirentAccessor
+class LIBZIM_API DirectDirentAccessor
 {
 public: // functions
   DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader,
