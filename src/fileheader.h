@@ -59,19 +59,7 @@ namespace zim
       offset_type checksumPos;
 
     public:
-      Fileheader()
-        : majorVersion(zimMajorVersion),
-          minorVersion(zimMinorVersion),
-          articleCount(0),
-          titleIdxPos(0),
-          pathPtrPos(0),
-          clusterCount(0),
-          clusterPtrPos(0),
-          mainPage(std::numeric_limits<entry_index_type>::max()),
-          layoutPage(std::numeric_limits<entry_index_type>::max()),
-          checksumPos(std::numeric_limits<offset_type>::max())
-      {}
-
+      Fileheader();
       void write(int out_fd) const;
       void read(const Reader& reader);
 

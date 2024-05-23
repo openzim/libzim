@@ -44,6 +44,19 @@ namespace zim
   const uint16_t Fileheader::zimMinorVersion = 2;
   const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
 
+  Fileheader::Fileheader()
+    : majorVersion(zimMajorVersion),
+      minorVersion(zimMinorVersion),
+      articleCount(0),
+      titleIdxPos(0),
+      pathPtrPos(0),
+      clusterCount(0),
+      clusterPtrPos(0),
+      mainPage(std::numeric_limits<entry_index_type>::max()),
+      layoutPage(std::numeric_limits<entry_index_type>::max()),
+      checksumPos(std::numeric_limits<offset_type>::max())
+  {}
+
   void Fileheader::write(int out_fd) const
   {
     char header[Fileheader::size];
