@@ -23,6 +23,8 @@
 
 #include <zim/zim.h>
 #include <zim/uuid.h>
+#include "config.h"
+
 #include <limits>
 
 // max may be defined as a macro by window includes
@@ -33,7 +35,7 @@
 namespace zim
 {
   class Reader;
-  class Fileheader
+  class LIBZIM_PRIVATE_API Fileheader
   {
     public:
       static const uint32_t zimMagic;

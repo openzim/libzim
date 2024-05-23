@@ -1,3 +1,11 @@
+#ifndef ZIM_CONFIG_H
+#define ZIM_CONFIG_H
+
+#if defined(_MSC_VER) && defined(LIBZIM_EXPORT_PRIVATE_DLL)
+    #define LIBZIM_PRIVATE_API __declspec(dllexport)
+#else
+    #define LIBZIM_PRIVATE_API
+#endif
 
 #mesondefine VERSION
 
@@ -20,3 +28,5 @@
 #mesondefine ENV64BIT
 
 #mesondefine ENV32BIT
+
+#endif // ZIM_CONFIG_H

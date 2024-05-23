@@ -27,12 +27,13 @@
 #include <exception>
 
 #include "zim_types.h"
+#include "config.h"
 
 namespace zim
 {
   class Buffer;
   class InvalidSize : public std::exception {};
-  class Dirent
+  class LIBZIM_PRIVATE_API Dirent
   {
     protected:
       uint16_t mimeType;

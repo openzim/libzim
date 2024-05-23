@@ -37,19 +37,19 @@ namespace Xapian {
 #endif  // ENABLE_XAPIAN
 namespace zim {
   bool isCompressibleMimetype(const std::string& mimetype);
-  uint32_t countWords(const std::string& text);
-  void microsleep(int microseconds);
+  uint32_t LIBZIM_PRIVATE_API countWords(const std::string& text);
+  void LIBZIM_PRIVATE_API microsleep(int microseconds);
 
-  std::tuple<char, std::string> parseLongPath(const std::string& longPath);
+  std::tuple<char, std::string> LIBZIM_PRIVATE_API parseLongPath(const std::string& longPath);
 
   // Parse a illustration path ("Illustration_<width>x<height>@1") to a size.
-  unsigned int parseIllustrationPathToSize(const std::string& s);
+  unsigned int LIBZIM_PRIVATE_API parseIllustrationPathToSize(const std::string& s);
 
   /** Return a random number from range [0, max]
    *
    * This function is threadsafe
    **/
-  uint32_t randomNumber(uint32_t max);
+  uint32_t LIBZIM_PRIVATE_API randomNumber(uint32_t max);
 
   std::vector<std::string> split(const std::string & str,
                                 const std::string & delims=" *-");
@@ -57,7 +57,7 @@ namespace zim {
   std::map<std::string, int> read_valuesmap(const std::string& s);
 
   using MimeCounterType = std::map<const std::string, zim::entry_index_type>;
-  MimeCounterType parseMimetypeCounter(const std::string& counterData);
+  MimeCounterType LIBZIM_PRIVATE_API parseMimetypeCounter(const std::string& counterData);
 
   template<class Filter>
   entry_index_type countMimeType(const std::string& counterData, Filter filter) {
@@ -72,7 +72,7 @@ namespace zim {
 
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
-  std::string removeAccents(const std::string& text);
+  std::string LIBZIM_PRIVATE_API removeAccents(const std::string& text);
   bool getDbFromAccessInfo(Item::DirectAccessInfo accessInfo, Xapian::Database& database);
 #endif
 }

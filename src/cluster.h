@@ -38,7 +38,7 @@ namespace zim
   class Reader;
   class IStreamReader;
 
-  class Cluster : public std::enable_shared_from_this<Cluster> {
+  class LIBZIM_PRIVATE_API Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<offset_t> BlobOffsets;
       typedef std::vector<std::unique_ptr<const Reader>> BlobReaders;
 

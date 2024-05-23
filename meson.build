@@ -41,6 +41,7 @@ endif
 
 if get_option('default_library') == 'shared'
   public_conf.set('LIBZIM_EXPORT_DLL', true)
+  add_project_arguments('-DLIBZIM_EXPORT_PRIVATE_DLL', language: 'cpp')
 endif
 
 zstd_dep = dependency('libzstd', static:static_linkage, default_options:['werror=false'])

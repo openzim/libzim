@@ -22,6 +22,7 @@
 
 #include "zim_types.h"
 #include "lrucache.h"
+#include "config.h"
 
 #include <memory>
 #include <mutex>
@@ -42,7 +43,7 @@ class DirentReader;
  *
  */
 
-class DirectDirentAccessor
+class LIBZIM_PRIVATE_API DirectDirentAccessor
 {
 public: // functions
   DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader,
