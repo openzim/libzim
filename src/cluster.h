@@ -30,7 +30,6 @@
 #include <memory>
 #include <mutex>
 
-#include "zim_types.h"
 
 namespace zim
 {
@@ -79,6 +78,7 @@ namespace zim
 
     public:
       Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended);
+      ~Cluster();
       Compression getCompression() const   { return compression; }
       bool isCompressed() const                { return compression != Compression::None; }
 
