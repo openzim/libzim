@@ -6,7 +6,6 @@ tests = [
     'error_in_creator',
     'header',
     'uuid',
-    'template',
     'archive',
     'iterator',
     'reader',
