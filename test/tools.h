@@ -40,7 +40,6 @@ typedef SSIZE_T ssize_t;
 
 #define ZIM_PRIVATE
 #include <zim/archive.h>
-#include <zim/search.h>
 #include <zim/writer/creator.h>
 #include <zim/writer/item.h>
 #include <zim/writer/contentProvider.h>

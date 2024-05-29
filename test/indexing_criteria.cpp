@@ -20,7 +20,9 @@
 #define ZIM_PRIVATE
 #include <zim/archive.h>
 #include <zim/item.h>
+#if defined(ENABLE_XAPIAN)
 #include <zim/search.h>
+#endif
 #include <zim/suggestion.h>
 #include <zim/writer/item.h>
 

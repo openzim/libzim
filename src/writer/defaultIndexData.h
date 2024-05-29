@@ -22,7 +22,10 @@
 
 #include <zim/writer/item.h>
 #include <zim/tools.h>
+
+#if defined(ENABLE_XAPIAN)
 #include "xapian/myhtmlparse.h"
+#endif
 #include "../tools.h"
 
 #include <atomic>
