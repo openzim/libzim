@@ -53,11 +53,12 @@ class LIBZIM_PRIVATE_API FileReader : public BaseFileReader {
     FileReader(FileHandle fh, offset_t offset, zsize_t size);
     ~FileReader() = default;
 
-    char read(offset_t offset) const;
-    void read(char *dest, offset_t offset, zsize_t size) const;
-
     const Buffer get_mmap_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
+
+  private: // functions
+    char readImpl(offset_t offset) const override;
+    void readImpl(char *dest, offset_t offset, zsize_t size) const override;
 
   private: // data
     // The file handle is stored via a shared pointer so that it can be shared
@@ -71,13 +72,14 @@ class LIBZIM_PRIVATE_API MultiPartFileReader : public BaseFileReader {
     explicit MultiPartFileReader(std::shared_ptr<const FileCompound> source);
     ~MultiPartFileReader() {};
 
-    char read(offset_t offset) const;
-    void read(char *dest, offset_t offset, zsize_t size) const;
-
     const Buffer get_mmap_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
-  private:
+  private: // functions
+    char readImpl(offset_t offset) const override;
+    void readImpl(char *dest, offset_t offset, zsize_t size) const override;
+
+  private: // data
     MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size);
 
     std::shared_ptr<const FileCompound> source;

@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <system_error>
 #include <algorithm>
+#include <stdexcept>
 
 
 #ifndef _WIN32
@@ -60,8 +61,7 @@ MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> sou
   ASSERT(offset.v+size.v, <=, source->fsize().v);
 }
 
-char MultiPartFileReader::read(offset_t offset) const {
-  ASSERT(offset.v, <, _size.v);
+char MultiPartFileReader::readImpl(offset_t offset) const {
   offset += _offset;
   auto part_pair = source->locate(offset);
   auto& fhandle = part_pair->second->fhandle();
@@ -88,12 +88,7 @@ char MultiPartFileReader::read(offset_t offset) const {
   return ret;
 }
 
-void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <=, _size.v);
-  ASSERT(offset.v+size.v, <=, _size.v);
-  if (! size ) {
-    return;
-  }
+void MultiPartFileReader::readImpl(char* dest, offset_t offset, zsize_t size) const {
   offset += _offset;
   auto found_range = source->locate(offset, size);
   for(auto current = found_range.first; current!=found_range.second; current++){
@@ -244,9 +239,8 @@ FileReader::FileReader(FileHandle fh, offset_t offset, zsize_t size)
 {
 }
 
-char FileReader::read(offset_t offset) const
+char FileReader::readImpl(offset_t offset) const
 {
-  ASSERT(offset.v, <, _size.v);
   offset += _offset;
   char ret;
   try {
@@ -263,13 +257,8 @@ char FileReader::read(offset_t offset) const
   return ret;
 }
 
-void FileReader::read(char* dest, offset_t offset, zsize_t size) const
+void FileReader::readImpl(char* dest, offset_t offset, zsize_t size) const
 {
-  ASSERT(offset.v, <=, _size.v);
-  ASSERT(offset.v+size.v, <=, _size.v);
-  if (! size ) {
-    return;
-  }
   offset += _offset;
   try {
     _fhandle->readAt(dest, size, offset);

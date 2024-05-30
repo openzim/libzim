@@ -22,6 +22,7 @@
 #define ZIM_READER_H_
 
 #include <memory>
+#include <stdexcept>
 
 #include "zim_types.h"
 #include "endian_tools.h"
@@ -31,13 +32,23 @@
 
 namespace zim {
 
-class Reader {
+class LIBZIM_PRIVATE_API Reader {
   public:
     Reader() {};
     virtual zsize_t size() const = 0;
     virtual ~Reader() {};
 
-    virtual void read(char* dest, offset_t offset, zsize_t size) const = 0;
+    void read(char* dest, offset_t offset, zsize_t size) const {
+      if (can_read(offset, size)) {
+        if (size) {
+          // Do the actuall read only if we have a size to read
+          readImpl(dest, offset, size);
+        }
+        return;
+      }
+      throw std::runtime_error("Cannot read after the end of the reader");
+    }
+
     template<typename T>
     T read_uint(offset_t offset) const {
       ASSERT(offset.v, <, size().v);
@@ -46,7 +57,13 @@ class Reader {
       read(tmp_buf, offset, zsize_t(sizeof(T)));
       return fromLittleEndian<T>(tmp_buf);
     }
-    virtual char read(offset_t offset) const = 0;
+
+    char read(offset_t offset) const {
+      if (can_read(offset, zsize_t(1))) {
+        return readImpl(offset);
+      }
+      throw std::runtime_error("Cannot read after the end of the reader");
+    }
 
     virtual const Buffer get_buffer(offset_t offset, zsize_t size) const = 0;
     const Buffer get_buffer(offset_t offset) const {
@@ -59,6 +76,15 @@ class Reader {
     virtual offset_t offset() const = 0;
 
     bool can_read(offset_t offset, zsize_t size) const;
+
+  private:
+    // Implementation of the read method.
+    // Check of the validity of the offset/size has already been done.
+    virtual void readImpl(char* dest, offset_t offset, zsize_t size) const = 0;
+
+    // Implementation of the read method.
+    // Check of the validity of the offset has already been done.
+    virtual char readImpl(offset_t offset) const = 0;
 };
 
 };

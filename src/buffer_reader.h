@@ -33,12 +33,14 @@ class LIBZIM_PRIVATE_API BufferReader : public Reader {
     zsize_t size() const;
     offset_t offset() const;
 
-    void read(char* dest, offset_t offset, zsize_t size) const;
-    char read(offset_t offset) const;
     const Buffer get_buffer(offset_t offset, zsize_t size) const;
     std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
 
-  private:
+  private: // functions
+    void readImpl(char* dest, offset_t offset, zsize_t size) const override;
+    char readImpl(offset_t offset) const override;
+
+  private: // data
     const Buffer source;
 };
 
