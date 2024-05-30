@@ -69,7 +69,7 @@ FD::~FD()
 zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
 {
   if (!mp_impl)
-    return zsize_t(-1);
+    throw std::runtime_error("FD is not open");
   EnterCriticalSection(&mp_impl->m_criticalSection);
   LARGE_INTEGER off;
   off.QuadPart = offset.v;
@@ -88,7 +88,7 @@ zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
   return size;
 err:
   LeaveCriticalSection(&mp_impl->m_criticalSection);
-  return zsize_t(-1);
+  throw std::runtime_error("Cannot read");
 }
 
 bool FD::seek(offset_t offset)
