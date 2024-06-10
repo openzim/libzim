@@ -73,22 +73,37 @@ zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
   EnterCriticalSection(&mp_impl->m_criticalSection);
   LARGE_INTEGER off;
   off.QuadPart = offset.v;
+  std::string errorMsg;
+  auto size_to_read = size.v;
+
   if (!SetFilePointerEx(mp_impl->m_handle, off, NULL, FILE_BEGIN)) {
+    errorMsg = "Seek fail";
     goto err;
   }
 
   DWORD size_read;
-  if (!ReadFile(mp_impl->m_handle, dest, size.v, &size_read, NULL)) {
-    goto err;
-  }
-  if (size_read != size.v) {
-    goto err;
+  while (size_to_read > 0) {
+    // Read by batch < 4GiB
+    // Lets use a batch of 1GiB
+    auto batch_to_read = std::min(size_to_read, (size_type)1024*1024*1024);
+    if (!ReadFile(mp_impl->m_handle, dest, batch_to_read, &size_read, NULL)) {
+      errorMsg = "Read fail";
+      goto err;
+    }
+
+    if (size_read == 0) {
+      errorMsg = "Cannot read past the end of the file";
+      goto err;
+    }
+
+    size_to_read -= size_read;
+    dest += size_read;
   }
   LeaveCriticalSection(&mp_impl->m_criticalSection);
   return size;
 err:
   LeaveCriticalSection(&mp_impl->m_criticalSection);
-  throw std::runtime_error("Cannot read");
+  throw std::runtime_error(errorMsg);
 }
 
 bool FD::seek(offset_t offset)
