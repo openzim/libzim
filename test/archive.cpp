@@ -520,6 +520,11 @@ TEST(ZimArchive, validate)
     "Invalid cluster pointer\n"
   );
 
+  TEST_BROKEN_ZIM_NAME(
+    "invalid.offset_in_cluster.zim",
+     "Error parsing cluster. Offsets are not ordered.\n"
+  )
+
 
   for(auto& testfile: getDataFilePath("invalid.nonsorted_dirent_table.zim")) {
     std::string expected;
