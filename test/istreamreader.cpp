@@ -54,8 +54,8 @@ TEST(IStreamReader, read_zero)
 {
   InfiniteZeroStream izs;
   IStreamReader& ids = izs;
-  EXPECT_EQ(0, ids.read<int>());
-  EXPECT_EQ(0L, ids.read<long>());
+  EXPECT_EQ(0, ids.read<uint32_t>());
+  EXPECT_EQ(0L, ids.read<uint64_t>());
 
   // zim::fromLittleEndian() handles only integer types
   // EXPECT_EQ(0.0, ids.read<double>());
@@ -78,8 +78,8 @@ TEST(IStreamReader, read_increasing)
 {
   InfiniteIncreasingStream iis;
   IStreamReader& ids = iis;
-  EXPECT_EQ(0x03020100, ids.read<int>());
-  EXPECT_EQ(0x0B0A090807060504, ids.read<long>());
+  EXPECT_EQ(0x03020100, ids.read<uint32_t>());
+  EXPECT_EQ(0x0B0A090807060504, ids.read<uint64_t>());
 
   // zim::fromLittleEndian() handles only integer types
   // EXPECT_EQ(0.0, ids.read<double>());
