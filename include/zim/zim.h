@@ -115,6 +115,11 @@ namespace zim
     CLUSTER_PTRS,
 
     /**
+     * Checks that offsets inside each clusters are valid.
+     */
+    CLUSTERS_OFFSETS,
+
+    /**
      * Checks that mime-type values in dirents are valid.
      */
     DIRENT_MIMETYPES,

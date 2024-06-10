@@ -625,6 +625,7 @@ private: // data
       case IntegrityCheck::DIRENT_ORDER: return FileImpl::checkDirentOrder();
       case IntegrityCheck::TITLE_INDEX: return FileImpl::checkTitleIndex();
       case IntegrityCheck::CLUSTER_PTRS: return FileImpl::checkClusterPtrs();
+      case IntegrityCheck::CLUSTERS_OFFSETS: return FileImpl::checkClusters();
       case IntegrityCheck::DIRENT_MIMETYPES: return FileImpl::checkDirentMimeTypes();
       case IntegrityCheck::COUNT: ASSERT("shouldn't have reached here", ==, "");
     }
@@ -672,6 +673,21 @@ private: // data
         return false;
       }
       prevDirent = dirent;
+    }
+    return true;
+  }
+
+  bool FileImpl::checkClusters() {
+    const cluster_index_type clusterCount = getCountClusters().v;
+    for ( cluster_index_type i = 0; i < clusterCount; ++i )
+    {
+      // Force a read of each clusters (which will throw ZimFileFormatError in case of error)
+      try {
+        readCluster(cluster_index_t(i));
+      } catch (ZimFileFormatError& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+      }
     }
     return true;
   }
