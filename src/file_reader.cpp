@@ -44,6 +44,19 @@
   typedef SSIZE_T ssize_t;
 #endif
 
+namespace {
+  [[noreturn]] void throwSystemError(const std::string& errorText)
+  {
+#ifdef _WIN32
+    // Windows doesn't use errno.
+    throw std::system_error(std::error_code(), errorText);
+#else
+    std::error_code ec(errno, std::generic_category());
+    throw std::system_error(ec, errorText);
+#endif
+  }
+}
+
 namespace zim {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,9 +94,8 @@ char MultiPartFileReader::readImpl(offset_t offset) const {
     fmt << " - Reading offset at " << offset.v << "\n";
     fmt << " - logical local offset is " << logical_local_offset.v << "\n";
     fmt << " - physical local offset is " << physical_local_offset.v << "\n";
-    fmt << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, fmt);
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
   return ret;
 }
@@ -111,9 +123,8 @@ void MultiPartFileReader::readImpl(char* dest, offset_t offset, zsize_t size) co
       fmt << " - Reading offset at " << offset.v << "\n";
       fmt << " - logical local offset is " << logical_local_offset.v << "\n";
       fmt << " - physical local offset is " << physical_local_offset.v << "\n";
-      fmt << " - error is " << strerror(errno) << "\n";
-      std::error_code ec(errno, std::generic_category());
-      throw std::system_error(ec, fmt);
+      fmt << " - error is " << e.what() << "\n";
+      throwSystemError(fmt);
     };
     ASSERT(size_to_get, <=, size);
     dest += size_to_get.v;
@@ -250,9 +261,8 @@ char FileReader::readImpl(offset_t offset) const
     Formatter fmt;
     fmt << "Cannot read a char.\n";
     fmt << " - Reading offset at " << offset.v << "\n";
-    fmt << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, fmt);
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
   return ret;
 }
@@ -267,9 +277,8 @@ void FileReader::readImpl(char* dest, offset_t offset, zsize_t size) const
     fmt << "Cannot read chars.\n";
     fmt << " - Reading offset at " << offset.v << "\n";
     fmt << " - size is " << size.v << "\n";
-    fmt << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, fmt);
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
 }
 
