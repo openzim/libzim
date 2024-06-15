@@ -22,7 +22,6 @@ common_sources = [
     'blob.cpp',
     'buffer.cpp',
     'md5.c',
-    'template.cpp',
     'uuid.cpp',
     'tools.cpp',
     'compression.cpp',

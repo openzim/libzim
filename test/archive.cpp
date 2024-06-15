@@ -21,7 +21,9 @@
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/item.h>
+#if defined(ENABLE_XAPIAN)
 #include <zim/search.h>
+#endif
 #include <zim/suggestion.h>
 #include <zim/error.h>
 

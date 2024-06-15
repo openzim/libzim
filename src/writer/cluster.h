@@ -30,6 +30,7 @@
 #include <zim/writer/item.h>
 #include "../zim_types.h"
 #include "../debug.h"
+#include "config.h"
 
 namespace zim {
 
@@ -38,7 +39,7 @@ namespace writer {
 using writer_t = std::function<void(const Blob& data)>;
 class ContentProvider;
 
-class Cluster {
+class LIBZIM_PRIVATE_API Cluster {
   typedef std::vector<offset_t> Offsets;
   typedef std::vector<std::unique_ptr<ContentProvider>> ClusterProviders;
 

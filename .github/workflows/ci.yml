@@ -111,21 +111,36 @@ jobs:
 
       - name: Install packages
         run:
-          choco install ninja
+          choco install pkgconfiglite ninja
 
       - name: Install python modules
         run: pip3 install meson
 
+      - name: Setup MSVC compiler
+        uses: bus1/cabuild/action/msdevshell@v1
+        with:
+          architecture: x64
+
+      - name: Install dependencies
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@804193835086c0bed79f55d4c373302ab729db3d # main
+        with:
+          target_platform: win-x86_64-dyn
+
       - name: Compile
         shell: cmd
-        run: .github\script\build_libzim.cmd
+        run: |
+          set PKG_CONFIG_PATH=%cd%\BUILD_win-amd64\INSTALL\lib\pkgconfig
+          dir %PKG_CONFIG_PATH%
+          meson.exe setup . build -Dwith_xapian=false -Dwerror=false
+          cd build
+          ninja.exe
 
       - name: Test
         shell: cmd
         run: |
           cd build
-          ninja download_test_data
-          meson test --verbose
+          ninja.exe download_test_data
+          meson.exe test --verbose
         env:
           WAIT_TIME_FACTOR_TEST: 10
 

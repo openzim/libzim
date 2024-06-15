@@ -95,6 +95,8 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     }
   }
 
+  Cluster::~Cluster() = default;
+
   /* This return the number of char read */
   template<typename OFFSET_TYPE>
   void Cluster::read_header()

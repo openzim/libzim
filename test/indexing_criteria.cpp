@@ -20,7 +20,9 @@
 #define ZIM_PRIVATE
 #include <zim/archive.h>
 #include <zim/item.h>
+#if defined(LIBZIM_WITH_XAPIAN)
 #include <zim/search.h>
+#endif
 #include <zim/suggestion.h>
 #include <zim/writer/item.h>
 
@@ -64,7 +66,7 @@ class IndexDataItem : public TestItem {
     std::shared_ptr<zim::writer::IndexData> mp_indexData;
 };
 
-#if defined(ENABLE_XAPIAN)
+#if defined(LIBZIM_WITH_XAPIAN)
 
 TEST(IndexCriteria, defaultIndexingBaseOnMimeType)
 {
@@ -145,7 +147,7 @@ TEST(IndexCriteria, specificIndexData)
   ASSERT_EQ(++begin, result.end());
 }
 
-#endif // ENABLE_XAPIAN
+#endif // LIBZIM_WITH_XAPIAN
 
 TEST(IndexCriteria, suggestion) {
   TempZimArchive tza("testZim");

@@ -37,8 +37,11 @@ static_linkage = static_linkage or get_option('default_library')=='static'
 lzma_dep = dependency('liblzma', static:static_linkage)
 if static_linkage
   add_project_arguments('-DLZMA_API_STATIC', language: 'cpp')
-else
+endif
+
+if get_option('default_library') == 'shared'
   public_conf.set('LIBZIM_EXPORT_DLL', true)
+  add_project_arguments('-DLIBZIM_EXPORT_PRIVATE_DLL', language: 'cpp')
 endif
 
 zstd_dep = dependency('libzstd', static:static_linkage, default_options:['werror=false'])

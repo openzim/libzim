@@ -24,6 +24,8 @@
 #include "file_part.h"
 #include "zim_types.h"
 #include "debug.h"
+#include "config.h"
+
 #include <map>
 #include <memory>
 #include <vector>
@@ -48,7 +50,7 @@ struct less_range
   }
 };
 
-class FileCompound : private std::map<Range, FilePart*, less_range> {
+class LIBZIM_PRIVATE_API FileCompound : private std::map<Range, FilePart*, less_range> {
     typedef std::map<Range, FilePart*, less_range> ImplType;
 
   public: // types

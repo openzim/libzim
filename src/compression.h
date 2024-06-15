@@ -68,8 +68,8 @@ struct LZMA_INFO {
 };
 
 
-struct ZSTD_INFO {
-  struct stream_t
+struct LIBZIM_PRIVATE_API ZSTD_INFO {
+  struct LIBZIM_PRIVATE_API stream_t
   {
     const unsigned char* next_in;
     size_t avail_in;
