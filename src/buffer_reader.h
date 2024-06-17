@@ -30,11 +30,11 @@ class LIBZIM_PRIVATE_API BufferReader : public Reader {
       : source(source) {}
     virtual ~BufferReader() {};
 
-    zsize_t size() const;
-    offset_t offset() const;
+    zsize_t size() const override;
+    offset_t offset() const override;
 
-    const Buffer get_buffer(offset_t offset, zsize_t size) const;
-    std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const;
+    const Buffer get_buffer(offset_t offset, zsize_t size) const override;
+    std::unique_ptr<const Reader> sub_reader(offset_t offset, zsize_t size) const override;
 
   private: // functions
     void readImpl(char* dest, offset_t offset, zsize_t size) const override;
