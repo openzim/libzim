@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <system_error>
 #include <algorithm>
+#include <stdexcept>
 
 
 #ifndef _WIN32
@@ -42,6 +43,19 @@
 # include <BaseTsd.h>
   typedef SSIZE_T ssize_t;
 #endif
+
+namespace {
+  [[noreturn]] void throwSystemError(const std::string& errorText)
+  {
+#ifdef _WIN32
+    // Windows doesn't use errno.
+    throw std::system_error(std::error_code(), errorText);
+#else
+    std::error_code ec(errno, std::generic_category());
+    throw std::system_error(ec, errorText);
+#endif
+  }
+}
 
 namespace zim {
 
@@ -60,8 +74,7 @@ MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> sou
   ASSERT(offset.v+size.v, <=, source->fsize().v);
 }
 
-char MultiPartFileReader::read(offset_t offset) const {
-  ASSERT(offset.v, <, _size.v);
+char MultiPartFileReader::readImpl(offset_t offset) const {
   offset += _offset;
   auto part_pair = source->locate(offset);
   auto& fhandle = part_pair->second->fhandle();
@@ -81,19 +94,13 @@ char MultiPartFileReader::read(offset_t offset) const {
     fmt << " - Reading offset at " << offset.v << "\n";
     fmt << " - logical local offset is " << logical_local_offset.v << "\n";
     fmt << " - physical local offset is " << physical_local_offset.v << "\n";
-    fmt << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, fmt);
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
   return ret;
 }
 
-void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <=, _size.v);
-  ASSERT(offset.v+size.v, <=, _size.v);
-  if (! size ) {
-    return;
-  }
+void MultiPartFileReader::readImpl(char* dest, offset_t offset, zsize_t size) const {
   offset += _offset;
   auto found_range = source->locate(offset, size);
   for(auto current = found_range.first; current!=found_range.second; current++){
@@ -116,9 +123,8 @@ void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const 
       fmt << " - Reading offset at " << offset.v << "\n";
       fmt << " - logical local offset is " << logical_local_offset.v << "\n";
       fmt << " - physical local offset is " << physical_local_offset.v << "\n";
-      fmt << " - error is " << strerror(errno) << "\n";
-      std::error_code ec(errno, std::generic_category());
-      throw std::system_error(ec, fmt);
+      fmt << " - error is " << e.what() << "\n";
+      throwSystemError(fmt);
     };
     ASSERT(size_to_get, <=, size);
     dest += size_to_get.v;
@@ -244,9 +250,8 @@ FileReader::FileReader(FileHandle fh, offset_t offset, zsize_t size)
 {
 }
 
-char FileReader::read(offset_t offset) const
+char FileReader::readImpl(offset_t offset) const
 {
-  ASSERT(offset.v, <, _size.v);
   offset += _offset;
   char ret;
   try {
@@ -256,20 +261,14 @@ char FileReader::read(offset_t offset) const
     Formatter fmt;
     fmt << "Cannot read a char.\n";
     fmt << " - Reading offset at " << offset.v << "\n";
-    fmt << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, fmt);
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
   return ret;
 }
 
-void FileReader::read(char* dest, offset_t offset, zsize_t size) const
+void FileReader::readImpl(char* dest, offset_t offset, zsize_t size) const
 {
-  ASSERT(offset.v, <=, _size.v);
-  ASSERT(offset.v+size.v, <=, _size.v);
-  if (! size ) {
-    return;
-  }
   offset += _offset;
   try {
     _fhandle->readAt(dest, size, offset);
@@ -278,9 +277,8 @@ void FileReader::read(char* dest, offset_t offset, zsize_t size) const
     fmt << "Cannot read chars.\n";
     fmt << " - Reading offset at " << offset.v << "\n";
     fmt << " - size is " << size.v << "\n";
-    fmt << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, fmt);
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
 }
 
