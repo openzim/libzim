@@ -1,3 +1,11 @@
+libzim 9.2.2
+============
+
+ * Avoid crash scenario in case of invalid offset in clusters (@mgautierfr #895)
+ * Many improvements around testing (@mgautierfr #889 #897)
+ * Windows CI using GitHub Windows runner (@mgautierfr #894)
+ * Better error message when failin to open (split) ZIM file (@mgautierfr #884)
+
 libzim 9.2.1
 ============
 
