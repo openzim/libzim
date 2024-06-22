@@ -168,6 +168,7 @@ namespace zim
       bool checkDirentOrder();
       bool checkTitleIndex();
       bool checkClusterPtrs();
+      bool checkClusters();
       bool checkDirentMimeTypes();
   };
 

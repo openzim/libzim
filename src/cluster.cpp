@@ -118,7 +118,9 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     while (--n_offset)
     {
       OFFSET_TYPE new_offset = seqReader.read<OFFSET_TYPE>();
-      ASSERT(new_offset, >=, offset);
+      if (new_offset < offset) {
+        throw zim::ZimFileFormatError("Error parsing cluster. Offsets are not ordered.");
+      }
 
       m_blobOffsets.push_back(offset_t(new_offset));
       offset = new_offset;
