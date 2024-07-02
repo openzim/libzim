@@ -474,6 +474,9 @@ namespace zim
     // See `Archive::findByPath` for the rational.
     auto ns = m_impl->hasNewNamespaceScheme() ? 'C' : 'A';
     auto begin_idx = m_impl->findxByTitle(ns, title).second;
+    if (title.empty()) {
+        return Archive::EntryRange<EntryOrder::titleOrder>(m_impl, begin_idx.v, begin_idx.v);
+    }
     title.back()++;
     auto end_idx = m_impl->findxByTitle(ns, title).second;
     return Archive::EntryRange<EntryOrder::titleOrder>(m_impl, begin_idx.v, end_idx.v);
