@@ -174,7 +174,7 @@ TEST(ZimArchive, openCreatedArchive)
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);
-#if !defined(ENABLE_XAPIAN)
+#if !defined(ENABLE_XAPIAN_CREATOR)
 // 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
 #define ALL_ENTRY_COUNT 10U
 #else

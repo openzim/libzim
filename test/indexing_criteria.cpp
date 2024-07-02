@@ -66,7 +66,7 @@ class IndexDataItem : public TestItem {
     std::shared_ptr<zim::writer::IndexData> mp_indexData;
 };
 
-#if defined(LIBZIM_WITH_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
 
 TEST(IndexCriteria, defaultIndexingBaseOnMimeType)
 {
@@ -147,7 +147,7 @@ TEST(IndexCriteria, specificIndexData)
   ASSERT_EQ(++begin, result.end());
 }
 
-#endif // LIBZIM_WITH_XAPIAN
+#endif // ENABLE_XAPIAN_CREATOR
 
 TEST(IndexCriteria, suggestion) {
   TempZimArchive tza("testZim");

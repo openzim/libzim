@@ -203,7 +203,7 @@ TEST(ZimCreator, createZim)
   Fileheader header;
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
   entry_index_type nb_entry = 14; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo_bis + foo3 + foo_ter + Title + mainPage + titleListIndexes*2
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
@@ -264,7 +264,7 @@ TEST(ZimCreator, createZim)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_redirect_dirent(dirent, 'W', "mainPage", "mainPage", entry_index_t(0));
 
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'X', "fulltext/xapian", "fulltext/xapian", xapian_mimetype, cluster_index_t(1), None);
 #endif
@@ -277,7 +277,7 @@ TEST(ZimCreator, createZim)
   test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(1), None);
   auto v1BlobIndex = dirent->getBlobNumber();
 
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'X', "title/xapian", "title/xapian", xapian_mimetype, cluster_index_t(1), None);
 #endif
@@ -327,7 +327,7 @@ TEST(ZimCreator, createZim)
     9, 0, 0, 0,
     10, 0, 0, 0,
     11, 0, 0, 0
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
     ,12, 0, 0, 0
     ,13, 0, 0, 0
 #endif

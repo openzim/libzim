@@ -52,8 +52,10 @@ endif
 
 if get_option('with_xapian')
     xapian_dep = dependency('xapian-core', static:static_linkage)
+    private_conf.set('ENABLE_XAPIAN_CREATOR', get_option('with_xapian_creator'))
 else
     xapian_dep = dependency('', required:false)
+    private_conf.set('ENABLE_XAPIAN_CREATOR', false)
 endif
 private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
 public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())

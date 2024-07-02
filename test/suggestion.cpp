@@ -142,9 +142,11 @@ TEST(Suggestion, singleTermOrder) {
   std::vector<std::string> expectedResult = {
                                               "berlin",
                                               "berlin wall",
+#if defined(ENABLE_XAPIAN_CREATOR)
                                               "hotel berlin, berlin",
                                               "again berlin",
                                               "not berlin"
+#endif
                                             };
 
   ASSERT_EQ(expectedResult , resultSet);
@@ -163,9 +165,11 @@ TEST(Suggestion, caseDiacriticsAndHomogrpaphsHandling) {
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
   const std::vector<std::string> expectedResult{
+#if defined(ENABLE_XAPIAN_CREATOR)
                                                  "accented bérlin",
                                                  "simply berlin",
                                                  "uppercase BERLIN",
+#endif
                                                };
 
   ASSERT_EQ(getSuggestions(archive, "berlin", archive.getEntryCount()),
@@ -180,10 +184,16 @@ TEST(Suggestion, caseDiacriticsAndHomogrpaphsHandling) {
             expectedResult
   );
 
+#if defined(ENABLE_XAPIAN_CREATOR)
   // е in the query string "bеrlin" below is a cyrillic character
   ASSERT_EQ(getSuggestions(archive, "bеrlin", archive.getEntryCount()),
             std::vector<std::string>{"homograph bеrlin"}
   );
+#else
+  ASSERT_EQ(getSuggestions(archive, "bеrlin", archive.getEntryCount()),
+            std::vector<std::string>{}
+  );
+#endif
 }
 
 TEST(Suggestion, resultsGreaterThanLimit) {
@@ -224,10 +234,12 @@ TEST(Suggestion, partialQuery) {
   std::vector<std::string> resultSet = getSuggestions(archive, "Wo", archive.getEntryCount());
   std::vector<std::string> expectedResult = {
                                               "Wolf",
+#if defined(ENABLE_XAPIAN_CREATOR)
                                               "Hour of the wolf",
                                               "The wolf of Shingashina",
                                               "The wolf of Wall Street",
                                               "Terma termb the wolf of wall street termc"
+#endif
                                             };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -248,8 +260,10 @@ TEST(Suggestion, phraseOrder) {
   std::vector<std::string> resultSet = getSuggestions(archive, "winter autumn summer", archive.getEntryCount());
   std::vector<std::string> expectedResult = {
                                               "winter autumn summer terma",
+#if defined(ENABLE_XAPIAN_CREATOR)
                                               "autumn summer winter",
                                               "summer winter autumn"
+#endif
                                             };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -276,12 +290,14 @@ TEST(Suggestion, incrementalSearch) {
   resultSet = getSuggestions(archive, "Wolf", archive.getEntryCount());
   expectedResult = {
                      "Wolf",
+#if defined(ENABLE_XAPIAN_CREATOR)
                      "Hour of the wolf",
                      "The wolf among sheeps",
                      "The wolf of Shingashina",
                      "The wolf of Wall Street",
                      "The wolf of Wall Street Book",
                      "Terma termb the wolf of wall street termc"
+#endif
                    };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -289,6 +305,7 @@ TEST(Suggestion, incrementalSearch) {
   // "the"
   resultSet = getSuggestions(archive, "the", archive.getEntryCount());
   expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
                      "The chocolate factory",
                      "The wolf among sheeps",
                      "The wolf of Shingashina",
@@ -296,6 +313,7 @@ TEST(Suggestion, incrementalSearch) {
                      "The wolf of Wall Street Book",
                      "Hour of the wolf",
                      "Terma termb the wolf of wall street termc"
+#endif
                    };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -303,12 +321,14 @@ TEST(Suggestion, incrementalSearch) {
   // "the wolf"
   resultSet = getSuggestions(archive, "the wolf", archive.getEntryCount());
   expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
                      "The wolf among sheeps",
                      "The wolf of Shingashina",
                      "The wolf of Wall Street",
                      "The wolf of Wall Street Book",
                      "Hour of the wolf",
                      "Terma termb the wolf of wall street termc"
+#endif
                    };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -316,11 +336,13 @@ TEST(Suggestion, incrementalSearch) {
   // "the wolf of"
   resultSet = getSuggestions(archive, "the wolf of", archive.getEntryCount());
   expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
                      "The wolf of Shingashina",
                      "The wolf of Wall Street",
                      "The wolf of Wall Street Book",
                      "Terma termb the wolf of wall street termc",
                      "Hour of the wolf"
+#endif
                    };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -328,9 +350,11 @@ TEST(Suggestion, incrementalSearch) {
   // "the wolf of wall"
   resultSet = getSuggestions(archive, "the wolf of wall", archive.getEntryCount());
   expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
                      "The wolf of Wall Street",
                      "The wolf of Wall Street Book",
                      "Terma termb the wolf of wall street termc"
+#endif
                    };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -349,9 +373,11 @@ TEST(Suggestion, phraseOutOfWindow) {
 
   std::vector<std::string> resultSet = getSuggestions(archive, "the dummy query", archive.getEntryCount());
   std::vector<std::string> expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
                                               "This is the dummy query phrase",
                                               "aterm the bterm dummy query cterm",
                                               "the aterm bterm dummy cterm query"
+#endif
                                             };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -424,8 +450,16 @@ TEST(Suggestion, checkRedirectionChain) {
 
   // We should get only one result
   std::vector<std::string> expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
+// Using xapian, redirect suggestions by relevant score.
+// So `Article Target` is sorted first as it has less word and so is closer than single word `Article`
                                               "Article Target",
                                               "Article Redirect 2"
+#else
+// Without xapian, we sort by alphabetical order, so `R` before `T`
+                                              "Article Redirect 2",
+                                              "Article Target"
+#endif
                                             };
   ASSERT_EQ(resultSet, expectedResult);
 }
@@ -469,9 +503,11 @@ TEST(Suggestion, anchorQueryToBeginning) {
 
   std::vector<std::string> resultSet = getSuggestions(archive, "This is a title", archive.getEntryCount());
   std::vector<std::string> expectedResult = {
+#if defined(ENABLE_XAPIAN_CREATOR)
                                               "this is a title aterm bterm cterm",
                                               "aterm bterm this is a title cterm",
                                               "aterm this is a title bterm cterm"
+#endif
                                             };
 
   ASSERT_EQ(expectedResult, resultSet);
@@ -498,7 +534,9 @@ TEST(Suggestion, indexFullPath) {
   auto result = suggestionSearch.getResults(0, archive.getEntryCount());
 
   ASSERT_EQ(result.begin()->getPath(), "testPath");
+#if defined(ENABLE_XAPIAN_CREATOR)
   ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
+#endif
 }
 
 TEST(Suggestion, nonWordCharacters) {
@@ -522,15 +560,27 @@ TEST(Suggestion, nonWordCharacters) {
       "Alice Bob",
     );
 
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "Alice Bob",
       "Alice & Bob",
       "Alice Bob"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "Alice Bob",
+      "Alice Bob"
+    );
+#endif
 
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "Alice & Bob",
       "Alice & Bob",
       "Alice Bob"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "Alice & Bob",
+      "Alice & Bob"
+    );
+#endif
 
     EXPECT_SUGGESTION_RESULTS(archive, "Bonnie + Clyde",
       "Bonnie + Clyde"
@@ -540,13 +590,23 @@ TEST(Suggestion, nonWordCharacters) {
       "Jack & Jill, on the hill"
     );
 
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "4",
       "Ali Baba & the 40 thieves"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "4",
+    );
+#endif
 
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "40",
       "Ali Baba & the 40 thieves"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "40",
+    );
+#endif
 
     EXPECT_SUGGESTION_RESULTS(archive, "&",
       "&",
@@ -573,19 +633,38 @@ TEST(Suggestion, TitlesMadeOfStopWordsOnly) {
       "Do not act before you have to"
     });
 
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "the",
         "The"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "the",
+    );
+#endif
 
+    EXPECT_SUGGESTION_RESULTS(archive, "The",
+        "The"
+    );
+
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "not",
         "Not at all",
         "Do not act before you have to"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "not",
+    );
+#endif
 
+#if defined(ENABLE_XAPIAN_CREATOR)
     EXPECT_SUGGESTION_RESULTS(archive, "at",
         "Not at all",
         "Are you at home?"
     );
+#else
+    EXPECT_SUGGESTION_RESULTS(archive, "at",
+    );
+#endif
   }
 }
 
@@ -598,6 +677,7 @@ TEST(Suggestion, titleSnippet) {
     "this is a long title to ensure that the snippets generated contain the entire title even if match is one word"
   });
 
+#if defined(ENABLE_XAPIAN_CREATOR)
   EXPECT_SNIPPET_EQ(
     archive,
     1,
@@ -606,7 +686,16 @@ TEST(Suggestion, titleSnippet) {
       "this is a <b>straight</b> <b>run</b> <b>of</b> <b>matching</b> words"
     }
   );
+#else
+  EXPECT_SNIPPET_EQ(
+    archive,
+    1,
+    "straight run of matching",
+  );
+#endif
 
+
+#if defined(ENABLE_XAPIAN_CREATOR)
   EXPECT_SNIPPET_EQ(
     archive,
     1,
@@ -615,7 +704,15 @@ TEST(Suggestion, titleSnippet) {
       "this is a <b>broken</b> set of <b>likely</b> words"
     }
   );
+#else
+  EXPECT_SNIPPET_EQ(
+    archive,
+    1,
+    "broken likely",
+  );
+#endif
 
+#if defined(ENABLE_XAPIAN_CREATOR)
   EXPECT_SNIPPET_EQ(
     archive,
     1,
@@ -624,7 +721,15 @@ TEST(Suggestion, titleSnippet) {
       "this is a long title to ensure that the snippets <b>generated</b> contain the entire title even if match is one word"
     }
   );
+#else
+  EXPECT_SNIPPET_EQ(
+    archive,
+    1,
+    "generated",
+  );
+#endif
 
+#if defined(ENABLE_XAPIAN_CREATOR)
   EXPECT_SNIPPET_EQ(
     archive,
     archive.getEntryCount(),
@@ -635,6 +740,18 @@ TEST(Suggestion, titleSnippet) {
       "<b>this</b> <b>is</b> a long title to ensure that the snippets generated contain the entire title even if match <b>is</b> one word"
     }
   );
+#else
+  EXPECT_SNIPPET_EQ(
+    archive,
+    archive.getEntryCount(),
+    "this is",
+    {
+      "",
+      "",
+      ""
+    }
+  );
+#endif
 }
 
 TEST(Suggestion, reuseSearcher) {
@@ -664,7 +781,11 @@ TEST(Suggestion, reuseSearcher) {
   for (auto entry : suggestionResult2) {
     count++;
   }
+#if defined(ENABLE_XAPIAN_CREATOR)
   ASSERT_EQ(count, 3);
+#else
+  ASSERT_EQ(count, 1);
+#endif
 }
 
 TEST(Suggestion, CJK) {

@@ -186,7 +186,7 @@ TEST_P(FaultyItemErrorTest, faultyItem)
 // discarded values, but when crosscompiling on Windows, compiler fail to
 // understand ``#if defined` when used inside the `INSTANTIATE_TEST_SUITE_P`
 // macro. I suspect some macro definition conflicts.
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
 INSTANTIATE_TEST_SUITE_P(
 CreatorError,
 FaultyItemErrorTest,
@@ -356,7 +356,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnfinishedCreator)
 // discarded values, but when crosscompiling on Windows, compiler fail to
 // understand ``#if defined` when used inside the `INSTANTIATE_TEST_SUITE_P`
 // macro. I suspect some macro definition conflicts.
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
 INSTANTIATE_TEST_SUITE_P(
 CreatorError,
 FaultyDelayedItemErrorTest,

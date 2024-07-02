@@ -40,8 +40,9 @@
 #include "../constants.h"
 #include "counterHandler.h"
 
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
 # include "xapianHandler.h"
+# include <xapian.h>
 #endif
 
 #ifdef _WIN32
@@ -463,7 +464,7 @@ namespace zim
       compCluster = new Cluster(compression);
       uncompCluster = new Cluster(Compression::None);
 
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
       auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
       m_direntHandlers.push_back(xapianIndexer);
 #endif

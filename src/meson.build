@@ -40,21 +40,24 @@ common_sources = [
     'version.cpp'
 ]
 
+xapian_sources = [
+    'search.cpp',
+    'search_iterator.cpp',
+    'xapian/htmlparse.cc',
+    'xapian/myhtmlparse.cc'
+]
+
+xapian_creator_sources = [
+    'writer/xapianIndexer.cpp',
+    'writer/xapianWorker.cpp',
+    'writer/xapianHandler.cpp'
+]
+
 if host_machine.system() == 'windows'
     common_sources += 'fs_windows.cpp'
 else
     common_sources += 'fs_unix.cpp'
 endif
-
-xapian_sources = [
-    'search.cpp',
-    'search_iterator.cpp',
-    'xapian/htmlparse.cc',
-    'xapian/myhtmlparse.cc',
-    'writer/xapianIndexer.cpp',
-    'writer/xapianWorker.cpp',
-    'writer/xapianHandler.cpp'
-]
 
 sources = common_sources
 deps = [thread_dep, lzma_dep, zstd_dep]
@@ -66,6 +69,9 @@ endif
 if xapian_dep.found()
     sources += xapian_sources
     sources += lib_resources
+    if get_option('with_xapian_creator')
+        sources += xapian_creator_sources
+    endif
     deps += [xapian_dep, icu_dep]
 endif
 

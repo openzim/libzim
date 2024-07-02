@@ -167,7 +167,7 @@ TEST(suggestion_iterator, rangeBased) {
   ASSERT_EQ(it2->getTitle(), "random c");
 }
 
-#if defined(ENABLE_XAPIAN)
+#if defined(ENABLE_XAPIAN_CREATOR)
 TEST(search_iterator, stemmedSearch) {
   TempZimArchive tza("testZim");
 
@@ -196,6 +196,6 @@ TEST(search_iterator, stemmedSearch) {
   result = search.getResults(0, 1);
   ASSERT_EQ(result.begin()->getSnippet(), "an <b>apple</b> a day, keeps the doctor away");
 }
-#endif  // ENABLE_XAPIAN
+#endif  // ENABLE_XAPIAN_CREATOR
 
 } // anonymous namespace
