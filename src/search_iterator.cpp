@@ -21,7 +21,9 @@
 #include <zim/error.h>
 #define ZIM_PRIVATE
 
+#if !defined(_WIN32) && defined(ENABLE_XAPIAN)
 #include "xapian/myhtmlparse.h"
+#endif
 #include <zim/search_iterator.h>
 #include <zim/search.h>
 #include <zim/archive.h>
@@ -169,6 +171,7 @@ std::string SearchIterator::getSnippet() const {
             return internal->get_document().get_value(internal->mp_internalDb->valueSlot("snippet"));
         }
 
+#if !defined(_WIN32)  && defined(ENABLE_XAPIAN)
         Entry& entry = internal->get_entry();
         /* No reader, no snippet */
         try {
@@ -187,6 +190,9 @@ std::string SearchIterator::getSnippet() const {
         } catch (...) {
           return "";
         }
+#else
+    return "";
+#endif
     } catch (Xapian::DatabaseError& e) {
             throw zim::ZimFileFormatError(e.get_description());
     }

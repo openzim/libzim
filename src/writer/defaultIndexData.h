@@ -24,8 +24,10 @@
 #include <zim/tools.h>
 
 #include "config.h"
+#ifndef _WIN32
 #if defined(ENABLE_XAPIAN)
 #include "xapian/myhtmlparse.h"
+#endif
 #endif
 #include "../tools.h"
 
@@ -42,7 +44,7 @@ namespace zim
         DefaultIndexData(std::unique_ptr<ContentProvider> contentProvider, const std::string& title)
           : m_initialized(false),
             mp_contentProvider(std::move(contentProvider)),
-#if defined(ENABLE_XAPIAN)
+#if !defined(_WIN32) && defined(ENABLE_XAPIAN)
             m_title(zim::removeAccents(title)),
 #else
             m_title(""),
@@ -64,7 +66,7 @@ namespace zim
           if (m_initialized) {
             return;
           }
-#if defined(ENABLE_XAPIAN)
+#if !defined(_WIN32) && defined(ENABLE_XAPIAN)
           Formatter fmt;
           while (true) {
             auto blob = mp_contentProvider->feed();

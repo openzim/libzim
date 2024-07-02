@@ -43,6 +43,7 @@ TEST(search_iterator, uninitialized) {
   ASSERT_THROW(it.operator->(), std::runtime_error);
 }
 
+#if !defined(_WIN32) && defined(ENABLE_XAPIAN)
 TEST(search_iterator, end) {
   TempZimArchive tza("testZim");
 
@@ -149,5 +150,6 @@ TEST(search_iterator, iteration) {
   it++; it++;
   ASSERT_TRUE(it == result.end());
 }
+#endif
 
 } // anonymous namespace

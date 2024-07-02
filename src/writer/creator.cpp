@@ -40,8 +40,11 @@
 #include "../constants.h"
 #include "counterHandler.h"
 
+#ifndef _WIN32
 #if defined(ENABLE_XAPIAN)
 # include "xapianHandler.h"
+# include <xapian.h>
+#endif
 #endif
 
 #ifdef _WIN32
@@ -463,9 +466,11 @@ namespace zim
       compCluster = new Cluster(compression);
       uncompCluster = new Cluster(Compression::None);
 
+#ifndef _WIN32
 #if defined(ENABLE_XAPIAN)
       auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
       m_direntHandlers.push_back(xapianIndexer);
+#endif
 #endif
 
       mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
