@@ -205,7 +205,7 @@ TEST(FindTests, ByPath)
     count = 0;
     for(auto& entry: range1) {
       count++;
-      std::cout << entry.getPath() << std::endl;
+      //std::cout << entry.getPath() << std::endl;
       ASSERT_EQ(entry.getPath().find("I/s/"), 0U);
     }
     ASSERT_EQ(count, 31U);
@@ -222,7 +222,7 @@ TEST(FindTests, ByPath)
     count = 0;
     for(auto& entry: range3) {
       count++;
-      std::cout << entry.getPath() << std::endl;
+      //std::cout << entry.getPath() << std::endl;
       ASSERT_EQ(entry.getPath().find("I"), 0U);
     }
     ASSERT_EQ(count, 34U);
@@ -231,7 +231,7 @@ TEST(FindTests, ByPath)
     count = 0;
     for(auto& entry: range4) {
       count++;
-      std::cout << entry.getPath() << std::endl;
+      //std::cout << entry.getPath() << std::endl;
       ASSERT_EQ(entry.getPath().find("I/"), 0U);
     }
     ASSERT_EQ(count, 34U);
@@ -273,7 +273,7 @@ TEST(FindTests, ByPathNons)
     count = 0;
     for(auto& entry: range1) {
       count++;
-      std::cout << entry.getPath() << std::endl;
+      //std::cout << entry.getPath() << std::endl;
       ASSERT_EQ(entry.getPath().find("П"), 0U);
     }
     ASSERT_EQ(count, 2U);
