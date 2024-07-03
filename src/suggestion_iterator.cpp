@@ -151,7 +151,14 @@ Entry SuggestionIterator::getEntry() const {
 #endif  // LIBZIM_WITH_XAPIAN
 
     if (mp_rangeIterator) {
-        return **mp_rangeIterator;
+        try {
+            return **mp_rangeIterator;
+        } catch(const std::out_of_range& e) {
+            // Archive will throw a out_of_range is iterator is end.
+            // But xapian version will throw a std::runtime_error, let's throw the same exception
+            // for consistent api
+            throw std::runtime_error(e.what());
+        }
     }
     throw std::runtime_error("Cannot dereference iterator");
 }
@@ -232,8 +239,15 @@ const SuggestionItem& SuggestionIterator::operator*() {
 #endif  // LIBZIM_WITH_XAPIAN
 
     if (mp_rangeIterator) {
-        m_suggestionItem.reset(new SuggestionItem((*mp_rangeIterator)->getTitle(),
-                                                (*mp_rangeIterator)->getPath()));
+        try {
+          m_suggestionItem.reset(new SuggestionItem((*mp_rangeIterator)->getTitle(),
+                                                    (*mp_rangeIterator)->getPath()));
+        } catch(const std::out_of_range& e) {
+            // Archive will throw a out_of_range is iterator is end.
+            // But xapian version will throw a std::runtime_error, let's throw the same exception
+            // for consistent api
+            throw std::runtime_error(e.what());
+        }
     }
 
     if (!m_suggestionItem){
