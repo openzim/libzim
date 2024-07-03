@@ -244,7 +244,7 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults
 #endif  // ENABLE_XAPIAN
 
     auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
-    entryRange.offset(start, maxResults);
+    entryRange = entryRange.offset(start, maxResults);
     return SuggestionResultSet(entryRange);
 }
 
