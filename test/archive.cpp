@@ -18,6 +18,7 @@
  */
 
 #define ZIM_PRIVATE
+#include "../src/config.h"
 #include <zim/zim.h>
 #include <zim/archive.h>
 #include <zim/item.h>
@@ -265,6 +266,32 @@ TEST(ZimArchive, openRealZimArchive)
     }
   }
 }
+
+#if defined(ENABLE_XAPIAN)
+TEST(ZimArchive, weCanSearchInArchive)
+{
+  const char* fname = "wikipedia_en_climate_change_nopic_2024-06.zim";
+
+  for (auto& testfile: getDataFilePath(fname)) {
+    const TestContext ctx{ {"path", testfile.path } };
+    zim::Archive archive(testfile.path);
+
+    zim::Searcher searcher(archive);
+    zim::Query query("crisis");
+    auto search = searcher.search(query);
+
+    ASSERT_NE(0, search.getEstimatedMatches());
+    auto results = search.getResults(0, archive.getEntryCount());
+
+    auto result = results.begin();
+    if (testfile.category == "withns") {
+      ASSERT_EQ(result.getPath(), "A/Climate_crisis");
+    } else {
+      ASSERT_EQ(result.getPath(), "Climate_crisis");
+    }
+  }
+}
+#endif
 
 TEST(ZimArchive, openSplitZimArchive)
 {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Copyright 2021 Matthieu Gautier <mgautier@kymeria.fr>
 
 This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
-'''
+"""
 
 import argparse
 from pathlib import Path
@@ -26,19 +26,20 @@ from urllib.error import *
 import tarfile
 import sys
 
-TEST_DATA_VERSION = "0.6.0"
+TEST_DATA_VERSION = "0.7.0"
 ARCHIVE_URL_TEMPL = "https://github.com/openzim/zim-testing-suite/releases/download/{version}/zim-testing-suite-{version}.tar.gz"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', '-v',
-                        help="The version to download.",
-                        default=TEST_DATA_VERSION)
-    parser.add_argument('--remove-top-dir',
-                        help="Remove the top directory when extracting",
-                        action='store_true')
-    parser.add_argument('outdir',
-                        help='The directory where to install the test data.')
+    parser.add_argument(
+        "--version", "-v", help="The version to download.", default=TEST_DATA_VERSION
+    )
+    parser.add_argument(
+        "--remove-top-dir",
+        help="Remove the top directory when extracting",
+        action="store_true",
+    )
+    parser.add_argument("outdir", help="The directory where to install the test data.")
     args = parser.parse_args()
 
     test_data_url = ARCHIVE_URL_TEMPL.format(version=args.version)
@@ -51,7 +52,7 @@ if __name__ == "__main__":
                     if member is None:
                         break
                     if args.remove_top_dir:
-                        member.name = '/'.join(member.name.split('/')[1:])
+                        member.name = "/".join(member.name.split("/")[1:])
                     archive.extract(member, path=args.outdir)
 
     except HTTPError as e:
