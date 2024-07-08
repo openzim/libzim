@@ -143,7 +143,7 @@ TEST(IteratorTests, beginByPath)
 
 TEST(IteartorTests, iteratorFunctions)
 {
-    for(auto& testfile:getDataFilePath("wikipedia_en_climate_change_nopic_2020-01.zim")) {
+    for(auto& testfile:getDataFilePath("wikipedia_en_climate_change_mini_2024-06.zim")) {
         const zim::Archive archive(testfile.path);
         ASSERT_TRUE(archive.hasTitleIndex());
         const auto mainItem = archive.getMainEntry().getItem(true);

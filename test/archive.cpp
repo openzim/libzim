@@ -252,7 +252,7 @@ TEST(ZimArchive, openRealZimArchive)
     "small.zim",
     "wikibooks_be_all_nopic_2017-02.zim",
     "wikibooks_be_all_nopic_2017-02_splitted.zim",
-    "wikipedia_en_climate_change_nopic_2020-01.zim"
+    "wikipedia_en_climate_change_mini_2024-06.zim"
   };
 
   for ( const std::string fname : zimfiles ) {
@@ -270,7 +270,7 @@ TEST(ZimArchive, openRealZimArchive)
 #if defined(ENABLE_XAPIAN)
 TEST(ZimArchive, weCanSearchInArchive)
 {
-  const char* fname = "wikipedia_en_climate_change_nopic_2024-06.zim";
+  const char* fname = "wikipedia_en_climate_change_mini_2024-06.zim";
 
   for (auto& testfile: getDataFilePath(fname)) {
     const TestContext ctx{ {"path", testfile.path } };
@@ -354,7 +354,7 @@ TEST(ZimArchive, randomEntry)
   const char* const zimfiles[] = {
     "wikibooks_be_all_nopic_2017-02.zim",
     "wikibooks_be_all_nopic_2017-02_splitted.zim",
-    "wikipedia_en_climate_change_nopic_2020-01.zim"
+    "wikipedia_en_climate_change_mini_2024-06.zim"
   };
 
   for ( const std::string fname : zimfiles ) {
@@ -425,7 +425,7 @@ TEST(ZimArchive, articleNumber)
     {"small.zim",                                     1,           { 1,       17,          17,       }, { 1,       2,           16        }},
     {"wikibooks_be_all_nopic_2017-02.zim",            34,          { 66,      118,         118,      }, { 66,      109,         123       }},
     {"wikibooks_be_all_nopic_2017-02_splitted.zim",   34,          { 66,      118,         118,      }, { 66,      109,         123       }},
-    {"wikipedia_en_climate_change_nopic_2020-01.zim", 333,         { 1837,    7646,        7646,     }, { 1837,    7633,        7649      }}
+    {"wikipedia_en_climate_change_mini_2024-06.zim",  111,         { 3821,    20565,       20565,    }, { 3821,    20551,       20568     }}
   };
   // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
   // for small.zim, there is always 1 article, whatever the article is in 'A' namespace or in specific index.
