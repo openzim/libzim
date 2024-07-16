@@ -87,20 +87,16 @@ class LIBZIM_PRIVATE_API FileCompound : private std::map<Range, FilePart*, less_
     }
 
     PartRange locate(offset_t offset, zsize_t size) const {
-#if ! defined(__APPLE__)
-        return equal_range(Range(offset, offset+size));
-#else
-        // Workaround for https://github.com/openzim/libzim/issues/398
-        // Under MacOS the implementation of std::map::equal_range() makes
-        // assumptions about the properties of the key comparison function and
-        // abuses the std::map requirement that it must contain unique keys. As
-        // a result, when a map m is queried with an element k that is
-        // equivalent to more than one keys present in m,
-        // m.equal_range(k).first may be different from m.lower_bound(k) (the
-        // latter one returning the correct result).
-        const Range queryRange(offset, offset+size);
-        return {lower_bound(queryRange), upper_bound(queryRange)};
-#endif // ! defined(__APPLE__)
+      const Range queryRange(offset, offset+size);
+      // equal_range expects comparator to satisfy the `Compare` requirement.
+      // (ie `comp(a, b) == !comp(b, a)`) which is not the case for `less_range`
+      // If not satisfy, this is UB.
+      // Even if UB, stdlib's equal_range behaves "correctly".
+      // But libc++ (used in Apple, Android, ..) is not.
+      // In all case, we are triggering a UB and it is to us to not call equal_range.
+      // So let's use lower_bound and upper_bound which doesn't need such requirement.
+      // See https://stackoverflow.com/questions/67042750/should-setequal-range-return-pair-setlower-bound-setupper-bound
+      return {lower_bound(queryRange), upper_bound(queryRange)};
     }
 
   private: // functions
