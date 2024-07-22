@@ -30,6 +30,7 @@ else
     private_conf.set('ENABLE_USE_MMAP', get_option('USE_MMAP'))
 endif
 private_conf.set('ENABLE_USE_BUFFER_HEADER', get_option('USE_BUFFER_HEADER'))
+private_conf.set('ENABLE_XAPIAN_FULLER', get_option('with_xapian_fuller'))
 
 static_linkage = get_option('static-linkage')
 static_linkage = static_linkage or get_option('default_library')=='static'
