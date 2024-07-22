@@ -83,7 +83,10 @@ namespace {
     auto accentedString(ss.str());
     // Check our input data (that we have a char in the middle of a batch boundary)
     // Indexing is made on u16
-    icu::UnicodeString ustring(accentedString.c_str());
+    // `zim::removeAccents` calls `ucnv_setDefaultName` before creating the UnicodeString
+    // so it will be converted using the right encoding ("utf8").
+    // But we don't so we need to be explicit on the encoding here.
+    icu::UnicodeString ustring(accentedString.c_str(), "utf8");
 
     // Test input data.
     // "bépo" is 4 chars
