@@ -67,14 +67,14 @@ uint32_t zim::countWords(const std::string& text)
   unsigned int i = 0;
 
   // Find first word
-  while ( i < length && std::isspace(text[i]) ) i++;
+  while ( i < length && std::isspace(static_cast<unsigned char>(text[i])) ) i++;
 
   while ( i < length ) {
     // Find end of word
-    while ( i < length && !std::isspace(text[i]) ) i++;
+    while ( i < length && !std::isspace(static_cast<unsigned char>(text[i])) ) i++;
     numWords++;
     // Find start of next word
-    while ( i < length && std::isspace(text[i]) ) i++;
+    while ( i < length && std::isspace(static_cast<unsigned char>(text[i])) ) i++;
   }
   return numWords;
 }
