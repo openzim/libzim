@@ -16,6 +16,7 @@ jobs:
       matrix:
         distro:
           - debian-unstable
+          - debian-bookworm
           - debian-bullseye
           - ubuntu-jammy
           - ubuntu-focal
@@ -40,20 +41,27 @@ jobs:
         env:
           REF: ${{ github.ref }}
 
-      - uses: legoktm/gh-action-auto-dch@18025761b70898aac9ddb5bdc726bcd083926714 # master
+      - uses: legoktm/gh-action-auto-dch@main
         with:
           fullname: Kiwix builder
           email: release+launchpad@kiwix.org
           distro: ${{ matrix.distro }}
 
-      - uses: legoktm/gh-action-build-deb@4f3fbf87de8bf0870f44624693cae17b7ad34ca2 # debian-unstable
+      - uses: legoktm/gh-action-build-deb@debian-unstable
         if: matrix.distro == 'debian-unstable'
         name: Build package for debian-unstable
         id: build-debian-unstable
         with:
           args: --no-sign
 
-      - uses: legoktm/gh-action-build-deb@1f7501377e7c229f373748af433e5c3818eeae6e # debian-bullseye
+      - uses: legoktm/gh-action-build-deb@debian-bookworm
+        if: matrix.distro == 'debian-bookworm'
+        name: Build package for debian-bookworm
+        id: build-debian-bookworm
+        with:
+          args: --no-sign
+
+      - uses: legoktm/gh-action-build-deb@debian-bullseye
         if: matrix.distro == 'debian-bullseye'
         name: Build package for debian-bullseye
         id: build-debian-bullseye
