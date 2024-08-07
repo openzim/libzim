@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 13),
  libgtest-dev,
  meson,
  ninja-build,
- pkg-config
+ pkgconf
 Maintainer: Kiwix team <kiwix@kiwix.org>
 Homepage: https://www.openzim.org/wiki/Libzim
 Standards-Version: 4.4.1
