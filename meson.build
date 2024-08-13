@@ -5,6 +5,8 @@ project('libzim', ['c', 'cpp'],
 
 if build_machine.system() != 'windows'
   add_project_arguments('-D_LARGEFILE64_SOURCE=1', '-D_FILE_OFFSET_BITS=64', language: 'cpp')
+else
+  add_project_arguments('-D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR', language: 'cpp')
 endif
 
 cpp = meson.get_compiler('cpp')
