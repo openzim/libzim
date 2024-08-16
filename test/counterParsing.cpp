@@ -25,7 +25,7 @@
 #include "../src/tools.h"
 
 using namespace zim;
-#define parse parseMimetypeCounter
+const auto parse = parseMimetypeCounter;
 
 namespace
 {
