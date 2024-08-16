@@ -25,7 +25,7 @@ namespace zim {
   std::tuple<char, std::string> parseLongPath(const std::string& longPath);
 };
 
-using namespace zim;
+using zim::parseLongPath;
 
 namespace
 {
@@ -44,55 +44,17 @@ TEST(ParseLongPathTest, invalid)
 
 TEST(ParseLongPathTest, valid)
 {
-  char ns;
-  std::string path;
-
-  std::tie(ns, path) = parseLongPath("A/path");
-  ASSERT_EQ(ns, 'A');
-  ASSERT_EQ(path, "path");
-
-  std::tie(ns, path) = parseLongPath("A/p");
-  ASSERT_EQ(ns, 'A');
-  ASSERT_EQ(path, "p");
-
-  std::tie(ns, path) = parseLongPath("/B/path");
-  ASSERT_EQ(ns, 'B');
-  ASSERT_EQ(path, "path");
-
-  std::tie(ns, path) = parseLongPath("/B/p");
-  ASSERT_EQ(ns, 'B');
-  ASSERT_EQ(path, "p");
-
-  std::tie(ns, path) = parseLongPath("C//path");
-  ASSERT_EQ(ns, 'C');
-  ASSERT_EQ(path, "/path");
-
-  std::tie(ns, path) = parseLongPath("/C//path");
-  ASSERT_EQ(ns, 'C');
-  ASSERT_EQ(path, "/path");
-
-  std::tie(ns, path) = parseLongPath("L/path/with/separator");
-  ASSERT_EQ(ns, 'L');
-  ASSERT_EQ(path, "path/with/separator");
-
-  std::tie(ns, path) = parseLongPath("L//path/with/separator");
-  ASSERT_EQ(ns, 'L');
-  ASSERT_EQ(path, "/path/with/separator");
-
-  std::tie(ns, path) = parseLongPath("A");
-  ASSERT_EQ(ns, 'A');
-  ASSERT_EQ(path, "");
-
-  std::tie(ns, path) = parseLongPath("/A");
-  ASSERT_EQ(ns, 'A');
-  ASSERT_EQ(path, "");
-
-  std::tie(ns, path) = parseLongPath("A/");
-  ASSERT_EQ(ns, 'A');
-  ASSERT_EQ(path, "");
-
-  std::tie(ns, path) = parseLongPath("/A/");
-  ASSERT_EQ(ns, 'A');
-  ASSERT_EQ(path, "");
+  ASSERT_EQ(parseLongPath("A/path"), std::make_tuple('A', "path"));
+  ASSERT_EQ(parseLongPath("A/p"), std::make_tuple('A', "p"));
+  ASSERT_EQ(parseLongPath("/B/path"), std::make_tuple('B', "path"));
+  ASSERT_EQ(parseLongPath("/B/p"), std::make_tuple('B', "p"));
+  ASSERT_EQ(parseLongPath("C//path"), std::make_tuple('C', "/path"));
+  ASSERT_EQ(parseLongPath("/C//path"), std::make_tuple('C', "/path"));
+  ASSERT_EQ(parseLongPath("L/path/with/separator"), std::make_tuple('L', "path/with/separator"));
+  ASSERT_EQ(parseLongPath("L//path/with/separator"), std::make_tuple('L', "/path/with/separator"));
+  ASSERT_EQ(parseLongPath("A"), std::make_tuple('A', ""));
+  ASSERT_EQ(parseLongPath("/A"), std::make_tuple('A', ""));
+  ASSERT_EQ(parseLongPath("A/"), std::make_tuple('A', ""));
+  ASSERT_EQ(parseLongPath("/A/"), std::make_tuple('A', ""));
 }
 };
