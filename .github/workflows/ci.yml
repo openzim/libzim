@@ -62,7 +62,7 @@ jobs:
         run: pip3 install meson pytest
 
       - name: Install dependencies
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@804193835086c0bed79f55d4c373302ab729db3d # main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@main
         with:
           target_platform: ${{ matrix.target }}
 
@@ -122,7 +122,7 @@ jobs:
           architecture: x64
 
       - name: Install dependencies
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@804193835086c0bed79f55d4c373302ab729db3d # main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@main
         with:
           target_platform: win-x86_64-dyn
 
@@ -230,7 +230,7 @@ jobs:
 
       - name: Install dependencies
         if: ${{ !contains(matrix.target, 'musl') }}
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@804193835086c0bed79f55d4c373302ab729db3d # main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@main
         with:
           target_platform: ${{ matrix.target }}
 
