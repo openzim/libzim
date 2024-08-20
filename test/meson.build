@@ -54,7 +54,6 @@ if gtest_dep.found() and not meson.is_cross_build()
                               implicit_include_directories: false,
                               include_directories: [include_directory, src_directory],
                               link_with: libzim,
-                              link_args: extra_link_args,
                               cpp_args: test_cpp_args,
                               dependencies: deps + [gtest_dep],
                               build_rpath: '$ORIGIN')

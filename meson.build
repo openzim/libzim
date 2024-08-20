@@ -60,11 +60,12 @@ private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
 public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
 if build_machine.system() == 'windows'
-    extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin']
-    extra_cpp_args = ['-DSORTPP_PASS']
+    win_deps = declare_dependency(
+        compile_args: ['-DSORTPP_PASS'],
+        link_args: ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-lshlwapi']
+    )
 else
-    extra_link_args = []
-    extra_cpp_args = []
+    win_deps = declare_dependency()
 endif
 
 compiler = meson.get_compiler('cpp')
