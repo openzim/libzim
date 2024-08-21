@@ -59,13 +59,13 @@ endif
 private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
 public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
-pkg_requires = ['liblzma', 'libzstd']
 if build_machine.system() == 'windows'
-    extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin']
-    extra_cpp_args = ['-DSORTPP_PASS']
+    win_deps = declare_dependency(
+        compile_args: ['-DSORTPP_PASS'],
+        link_args: ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-lshlwapi']
+    )
 else
-    extra_link_args = []
-    extra_cpp_args = []
+    win_deps = declare_dependency()
 endif
 
 compiler = meson.get_compiler('cpp')
@@ -77,9 +77,7 @@ else
 endif
 
 if xapian_dep.found()
-    pkg_requires += ['xapian-core']
     icu_dep = dependency('icu-i18n', static:static_linkage)
-    pkg_requires += ['icu-i18n']
 else
     icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
 endif
@@ -107,5 +105,4 @@ pkg_mod.generate(libraries : libzim,
                  version : meson.project_version(),
                  name : 'libzim',
                  filebase : 'libzim',
-                 description : 'A Library to read/write ZIM files.',
-                 requires : pkg_requires)
+                 description : 'A Library to read/write ZIM files.')
