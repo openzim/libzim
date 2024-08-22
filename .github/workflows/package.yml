@@ -85,7 +85,6 @@ jobs:
         id: build-ubuntu-noble
         with:
           args: --no-sign
-          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: legoktm/gh-action-build-deb@1553bc52b826020691af83a7354a047f2727106c # pin@ubuntu-jammy
         if: matrix.distro == 'ubuntu-jammy'
