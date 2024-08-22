@@ -32,6 +32,19 @@ jobs:
 
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
 
+      # Determine which PPA we should upload to
+      - name: PPA
+        id: ppa
+        run: |
+          if [[ $REF == refs/tags* ]]
+          then
+            echo "::set-output name=ppa::kiwixteam/release"
+          else
+            echo "::set-output name=ppa::kiwixteam/dev"
+          fi
+        env:
+          REF: ${{ github.ref }}
+
       - uses: legoktm/gh-action-auto-dch@2b7d6a33db93a408d4b5e2edf38be7fd578b11d7 # pin@main
         with:
           fullname: Kiwix builder
@@ -86,6 +99,7 @@ jobs:
         id: build-ubuntu-focal
         with:
           args: --no-sign
+          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # pin@v4
         with:
