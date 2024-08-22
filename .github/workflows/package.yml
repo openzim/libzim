@@ -92,7 +92,6 @@ jobs:
         id: build-ubuntu-jammy
         with:
           args: --no-sign
-          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: legoktm/gh-action-build-deb@77900afcbdc12874b7177e0e9fca2f4da043cd05 # pin@ubuntu-focal
         if: matrix.distro == 'ubuntu-focal'
