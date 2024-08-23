@@ -93,7 +93,13 @@ jobs:
           WAIT_TIME_FACTOR_TEST: 10
 
   Windows:
-    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-2019
+          - windows-2022
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Harden Runner
