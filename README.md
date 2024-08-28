@@ -26,6 +26,19 @@ compilation. If you experience difficulties with the dependencies or
 with the Libzim compilation itself, we recommend to have a look to
 [kiwix-build](https://github.com/kiwix/kiwix-build).
 
+Usage
+-----
+
+Beside the source code, compiled versions of the libzim are made
+[available for various
+platforms](https://download.openzim.org/release/libzim/).
+
+Please notice that on Microsoft Windows with Microsoft compiler, you
+need to be careful to not compile in debug mode (because our released
+binaries are not). If you want to compile with the debug flag `/MDd`,
+then please use our
+[nightlies](https://download.openzim.org/nightly/).
+
 Preamble
 --------
 
