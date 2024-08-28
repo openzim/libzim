@@ -1,3 +1,11 @@
+libzim 9.2.3
+============
+
+ * Correctly locate part range in which read data in case of ZIM chunks (@mgautierfr #903)
+ * Fix test compilation GCC12 #899 (#mgautierfr #899)
+ * Move Windows CI/CD to native MS Windows via GitHub Actions (@mgautierfr #899 #914)
+ * Update deb package CI/CD for Debian & Ubuntu with latest releases (@kelson42 #905 #906 #922)
+
 libzim 9.2.2
 ============
 
