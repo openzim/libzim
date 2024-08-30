@@ -143,12 +143,12 @@ class MMapException : std::exception {};
 char*
 mmapReadOnly(int fd, offset_type offset, size_type size)
 {
-#if defined(__APPLE__) || defined(__OpenBSD__) || defined(__HAIKU__)
-  const auto MAP_FLAGS = MAP_PRIVATE;
+#if defined(__linux__)
+  const auto MAP_FLAGS = MAP_PRIVATE|MAP_POPULATE;
 #elif defined(__FreeBSD__)
   const auto MAP_FLAGS = MAP_PRIVATE|MAP_PREFAULT_READ;
 #else
-  const auto MAP_FLAGS = MAP_PRIVATE|MAP_POPULATE;
+  const auto MAP_FLAGS = MAP_PRIVATE;
 #endif
 
   const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
