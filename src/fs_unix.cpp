@@ -36,10 +36,10 @@ namespace unix {
 
 zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
 {
-#if defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__)
-# define PREAD pread
-#else
+#if defined(__linux__)
 # define PREAD pread64
+#else
+# define PREAD pread
 #endif
   ssize_t full_size_read = 0;
   auto size_to_read = size.v;
