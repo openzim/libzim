@@ -35,9 +35,7 @@ platforms](https://download.openzim.org/release/libzim/).
 
 Please notice that on Microsoft Windows with Microsoft compiler, you
 need to be careful to not compile in debug mode (because our released
-binaries are not). If you want to compile with the debug flag `/MDd`,
-then please use our
-[nightlies](https://download.openzim.org/nightly/).
+binaries are not).
 
 Preamble
 --------
