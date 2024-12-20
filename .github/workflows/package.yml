@@ -15,10 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         distro:
-          - debian-unstable
-          - debian-trixie
-          - debian-bookworm
-          - debian-bullseye
+#          - debian-unstable
+#          - debian-trixie
+#          - debian-bookworm
+#          - debian-bullseye
           - ubuntu-noble
           - ubuntu-jammy
           - ubuntu-focal
@@ -26,11 +26,11 @@ jobs:
     # Pin your dependencies with https://github.com/mheap/pin-github-action
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@0d381219ddf674d61a7572ddd19d7941e271515c # pin@v2
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # pin@v2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # pin@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v4
 
       # Determine which PPA we should upload to
       - name: PPA
@@ -38,9 +38,9 @@ jobs:
         run: |
           if [[ $REF == refs/tags* ]]
           then
-            echo "::set-output name=ppa::kiwixteam/release"
+            echo "ppa=kiwixteam/release" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=ppa::kiwixteam/dev"
+            echo "ppa=kiwixteam/dev" >> $GITHUB_OUTPUT
           fi
         env:
           REF: ${{ github.ref }}
@@ -51,33 +51,33 @@ jobs:
           email: release+launchpad@kiwix.org
           distro: ${{ matrix.distro }}
 
-      - uses: legoktm/gh-action-build-deb@7a6b22239275ae4e425fefc6f1aeb1118160500d # pin@debian-unstable
-        if: matrix.distro == 'debian-unstable'
-        name: Build package for debian-unstable
-        id: build-debian-unstable
-        with:
-          args: --no-sign
+#      - uses: legoktm/gh-action-build-deb@7a6b22239275ae4e425fefc6f1aeb1118160500d # pin@debian-unstable
+#        if: matrix.distro == 'debian-unstable'
+#        name: Build package for debian-unstable
+#        id: build-debian-unstable
+#        with:
+#          args: --no-sign
 
-      - uses: legoktm/gh-action-build-deb@b47978ba8498dc8b8153cc3b5f99a5fc1afa5de1 # pin@debian-trixie
-        if: matrix.distro == 'debian-trixie'
-        name: Build package for debian-trixie
-        id: build-debian-trixie
-        with:
-          args: --no-sign
+#      - uses: legoktm/gh-action-build-deb@b47978ba8498dc8b8153cc3b5f99a5fc1afa5de1 # pin@debian-trixie
+#        if: matrix.distro == 'debian-trixie'
+#        name: Build package for debian-trixie
+#        id: build-debian-trixie
+#        with:
+#          args: --no-sign
 
-      - uses: legoktm/gh-action-build-deb@1f4e86a6bb34aaad388167eaf5eb85d553935336 # pin@debian-bookworm
-        if: matrix.distro == 'debian-bookworm'
-        name: Build package for debian-bookworm
-        id: build-debian-bookworm
-        with:
-          args: --no-sign
+#      - uses: legoktm/gh-action-build-deb@1f4e86a6bb34aaad388167eaf5eb85d553935336 # pin@debian-bookworm
+#        if: matrix.distro == 'debian-bookworm'
+#        name: Build package for debian-bookworm
+#        id: build-debian-bookworm
+#        with:
+#          args: --no-sign
 
-      - uses: legoktm/gh-action-build-deb@084b4263209252ec80a75d2c78a586192c17f18d # pin@debian-bullseye
-        if: matrix.distro == 'debian-bullseye'
-        name: Build package for debian-bullseye
-        id: build-debian-bullseye
-        with:
-          args: --no-sign
+#      - uses: legoktm/gh-action-build-deb@084b4263209252ec80a75d2c78a586192c17f18d # pin@debian-bullseye
+#        if: matrix.distro == 'debian-bullseye'
+#        name: Build package for debian-bullseye
+#        id: build-debian-bullseye
+#        with:
+#          args: --no-sign
 
       - uses: legoktm/gh-action-build-deb@9114a536498b65c40b932209b9833aa942bf108d # pin@ubuntu-noble
         if: matrix.distro == 'ubuntu-noble'
@@ -101,7 +101,7 @@ jobs:
           args: --no-sign
           ppa: ${{ steps.ppa.outputs.ppa }}
 
-      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # pin@v4
+      - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # pin@v4
         with:
           name: Packages for ${{ matrix.distro }}
           path: output
