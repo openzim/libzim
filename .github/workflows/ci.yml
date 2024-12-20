@@ -56,7 +56,7 @@ jobs:
       - name: Install packages
         run: |
           brew update
-          brew install gcovr pkg-config ninja || brew link --overwrite python
+          brew install gcovr ninja || brew link --overwrite python
 
       - name: Install Python modules
         run: pip3 install meson pytest
