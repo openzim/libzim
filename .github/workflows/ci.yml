@@ -160,8 +160,6 @@ jobs:
           - linux-aarch64-dyn
           - android-arm
           - android-arm64
-          - win32-static
-          - win32-dyn
           - wasm
         with_xapian:
           - true
@@ -201,18 +199,6 @@ jobs:
             image_variant: focal
             lib_postfix: '/aarch64-linux-android'
             arch_name: aarch64-linux-android
-            run_test: false
-            coverage: false
-          - target: win32-static
-            image_variant: f35
-            lib_postfix: '64'
-            arch_name: i686-w64-mingw32
-            run_test: false
-            coverage: false
-          - target: win32-dyn
-            image_variant: f35
-            lib_postfix: '64'
-            arch_name: i686-w64-mingw32
             run_test: false
             coverage: false
           - target: wasm
