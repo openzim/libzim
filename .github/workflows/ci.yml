@@ -136,7 +136,7 @@ jobs:
         run: |
           set PKG_CONFIG_PATH=%cd%\BUILD_win-amd64\INSTALL\lib\pkgconfig
           dir %PKG_CONFIG_PATH%
-          meson.exe setup . build -Dwith_xapian_fuller=false -Dwerror=false
+          meson.exe setup . build -Dwith_xapian_fuller=false -Dwerror=false --buildtype=release
           cd build
           ninja.exe
 
