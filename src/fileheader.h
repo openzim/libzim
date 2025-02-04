@@ -79,6 +79,7 @@ namespace zim
       entry_index_type getArticleCount() const            { return articleCount; }
       void      setArticleCount(entry_index_type s)       { articleCount = s; }
 
+      bool hasTitleListingV0() const               { return titleIdxPos != 0; }
       offset_type getTitleIdxPos() const           { return titleIdxPos; }
       void        setTitleIdxPos(offset_type p)    { titleIdxPos = p; }
 
