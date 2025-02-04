@@ -139,7 +139,7 @@ struct TestFile {
   const std::string path;
 };
 
-const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category = "");
+const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::vector<std::string>& categories = {});
 
 // Helper class to create temporary zim and remove it once the test is done
 class TempZimArchive : zim::unittests::TempFile {

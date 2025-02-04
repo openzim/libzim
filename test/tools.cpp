@@ -120,15 +120,17 @@ TestFile::TestFile(const std::string& dataDir, const std::string& category, cons
 {
 }
 
-const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category)
+const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::vector<std::string>& categories)
 {
   std::vector<TestFile> filePaths;
   std::string dataDirPath;
   setDataDir(dataDirPath);
 
-  if (!category.empty()) {
-      // We have asked for a particular category.
+  if (!categories.empty()) {
+    // We have asked for a particular category.
+    for (auto& category: categories) {
       filePaths.emplace_back(dataDirPath, category, filename);
+    }
   } else {
 #ifdef _WIN32
     // We don't have dirent.h in windows.
