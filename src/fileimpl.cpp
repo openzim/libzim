@@ -37,6 +37,7 @@
 #include "envvalue.h"
 #include "md5.h"
 #include "tools.h"
+#include "fileheader.h"
 
 log_define("zim.file.impl")
 
