@@ -70,8 +70,7 @@ class ListingProvider : public ContentProvider {
 } // end of anonymous namespace
 
 TitleListingHandler::TitleListingHandler(CreatorData* data)
-  : mp_creatorData(data),
-    m_hasFrontArticles(false)
+  : mp_creatorData(data)
 {}
 
 TitleListingHandler::~TitleListingHandler() = default;
@@ -89,18 +88,14 @@ void TitleListingHandler::stop() {
 DirentHandler::Dirents TitleListingHandler::createDirents() const {
   Dirents ret;
   ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v0", "application/octet-stream+zimlisting", ""));
-  if (m_hasFrontArticles) {
-    ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", ""));
-  }
+  ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", ""));
   return ret;
 }
 
 DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const {
   ContentProviders ret;
   ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, false)));
-  if (m_hasFrontArticles) {
-    ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, true)));
-  }
+  ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, true)));
   return ret;
 }
 
@@ -120,7 +115,6 @@ void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 
   try {
     if(bool(hints.at(FRONT_ARTICLE))) {
-      m_hasFrontArticles = true;
       dirent->setFrontArticle();
     }
   } catch(std::out_of_range&) {}
