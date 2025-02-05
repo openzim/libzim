@@ -534,6 +534,21 @@ namespace zim
        */
       std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
 
+      /** Get the size of the cluster cache.
+       *
+       * @return The maximum number of clusters stored in  the cache.
+       */
+      size_t get_cluster_cache_max_size() const;
+
+      /** Set the size of the cluster cache.
+       *
+       * If the new size is lower than the number of currently stored clusters
+       * some clusters will be dropped from cache to respect the new size.
+       *
+       * @param nb_clusters The maximum number of clusters stored in the cache.
+       */
+      void set_cluster_cache_max_size(size_t nb_clusters);
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;

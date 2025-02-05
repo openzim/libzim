@@ -185,7 +185,7 @@ private: // data
     : zimFile(_zimFile),
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
-      clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      clusterCache(CLUSTER_CACHE_SIZE),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0)
@@ -778,4 +778,11 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return true;
   }
 
+
+  size_t FileImpl::get_cluster_cache_max_size() const {
+    return clusterCache.get_max_size();
+  }
+  void FileImpl::set_cluster_cache_max_size(size_t nb_clusters) {
+    clusterCache.set_max_size(nb_clusters);
+  }
 }
