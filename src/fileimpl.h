@@ -75,9 +75,11 @@ namespace zim
         }
       };
 
-      using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
+      using DirentLookup = zim::DirentLookup<DirentLookupConfig>;
+      using FastDirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
       mutable std::mutex m_direntLookupCreationMutex;
+      size_t m_direntLookupSize;
 
 
       struct ByTitleDirentLookupConfig
@@ -153,6 +155,8 @@ namespace zim
       void setClusterCacheMaxSize(size_t nbClusters);
       size_t getDirentCacheMaxSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
+      size_t getDirentLookupCacheMaxSize() const { return m_direntLookupSize; };
+      void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);

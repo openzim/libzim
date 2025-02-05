@@ -524,6 +524,17 @@ namespace zim
     m_impl->setDirentCacheMaxSize(nbDirents);
   }
 
+
+  size_t Archive::getDirentLookupCacheMaxSize() const
+  {
+    return m_impl->getDirentLookupCacheMaxSize();
+  }
+
+  void Archive::setDirentLookupCacheMaxSize(size_t nbRanges)
+  {
+    m_impl->setDirentLookupCacheMaxSize(nbRanges);
+  }
+
   cluster_index_type Archive::getClusterCount() const
   {
     return cluster_index_type(m_impl->getCountClusters());

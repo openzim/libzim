@@ -19,6 +19,8 @@
  *
  */
 
+#include "dirent_lookup.h"
+#include <memory>
 #define CHUNK_SIZE 1024
 #include "fileimpl.h"
 #include <zim/error.h>
@@ -34,7 +36,6 @@
 #include <numeric>
 #include "config.h"
 #include "log.h"
-#include "envvalue.h"
 #include "md5.h"
 #include "tools.h"
 #include "fileheader.h"
@@ -188,7 +189,8 @@ private: // data
       clusterCache(CLUSTER_CACHE_SIZE),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
-      m_endUserEntry(0)
+      m_endUserEntry(0),
+      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE)
   {
     log_trace("read file \"" << zimFile->filename() << '"');
 
@@ -288,8 +290,11 @@ private: // data
     if ( !m_direntLookup ) {
       std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
       if ( !m_direntLookup ) {
-        const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-        m_direntLookup.reset(new DirentLookup(mp_pathDirentAccessor.get(), cacheSize));
+        if (m_direntLookupSize == 0) {
+          m_direntLookup = std::make_unique<DirentLookup>(mp_pathDirentAccessor.get());
+        } else {
+          m_direntLookup = std::make_unique<FastDirentLookup>(mp_pathDirentAccessor.get(), m_direntLookupSize);
+        }
       }
     }
     return *m_direntLookup;
