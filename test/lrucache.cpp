@@ -35,6 +35,7 @@
 
 const int NUM_OF_TEST2_RECORDS = 100;
 const unsigned int TEST2_CACHE_CAPACITY = 50u;
+const unsigned int TEST2_CACHE_CAPACITY_SMALL = 10u;
 
 TEST(CacheTest, SimplePut) {
     zim::lru_cache<int, int> cache_lru(1);
@@ -104,6 +105,31 @@ TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
 
     size_t size = cache_lru.size();
     EXPECT_EQ(TEST2_CACHE_CAPACITY, size);
+}
+
+TEST(CacheTest1, ChangeCacheCapacity) {
+    zim::lru_cache<int, int> cache_lru(TEST2_CACHE_CAPACITY);
+
+    for (int i = 0; i < NUM_OF_TEST2_RECORDS; ++i) {
+        cache_lru.put(i, i);
+    }
+
+    EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.size());
+    EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY))
+    EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1)
+
+    cache_lru.setMaxSize(TEST2_CACHE_CAPACITY_SMALL);
+    EXPECT_EQ(TEST2_CACHE_CAPACITY_SMALL, cache_lru.size());
+    EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY_SMALL))
+    EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY_SMALL), NUM_OF_TEST2_RECORDS, 1)
+
+    cache_lru.setMaxSize(TEST2_CACHE_CAPACITY);
+    for (int i = 0; i < NUM_OF_TEST2_RECORDS; ++i) {
+        cache_lru.put(i, 1000*i);
+    }
+    EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.size());
+    EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY))
+    EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1000)
 }
 
 TEST(ConcurrentCacheTest, handleException) {
