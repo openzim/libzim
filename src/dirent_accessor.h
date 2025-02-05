@@ -24,6 +24,7 @@
 #include "lrucache.h"
 #include "config.h"
 
+#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -53,6 +54,9 @@ public: // functions
   offset_t    getOffset(entry_index_t idx) const;
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
   entry_index_t getDirentCount() const  {  return m_direntCount; }
+
+  size_t get_max_cache_size() const { return m_direntCache.get_max_size(); }
+  void set_max_cache_size(size_t nb_dirents) const { m_direntCache.set_max_size(nb_dirents); }
 
 private: // functions
   std::shared_ptr<const Dirent> readDirent(offset_t) const;

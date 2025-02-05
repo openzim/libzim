@@ -549,6 +549,21 @@ namespace zim
        */
       void set_cluster_cache_max_size(size_t nb_clusters);
 
+      /** Get the size of the dirent cache.
+       *
+       * @return The maximum number of dirents stored in  the cache.
+       */
+      size_t get_dirent_cache_max_size() const;
+
+      /** Set the size of the dirent cache.
+       *
+       * If the new size is lower than the number of currently stored dirents
+       * some dirents will be dropped from cache to respect the new size.
+       *
+       * @param nb_dirents The maximum number of dirents stored in the cache.
+       */
+      void set_dirent_cache_max_size(size_t new_dirents);
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;

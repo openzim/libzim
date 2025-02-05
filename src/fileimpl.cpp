@@ -785,4 +785,12 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
   void FileImpl::set_cluster_cache_max_size(size_t nb_clusters) {
     clusterCache.set_max_size(nb_clusters);
   }
+
+  size_t FileImpl::get_dirent_cache_max_size() const {
+    return mp_pathDirentAccessor->get_max_cache_size();
+  }
+  void FileImpl::set_dirent_cache_max_size(size_t nb_dirents) {
+    mp_pathDirentAccessor->set_max_cache_size(nb_dirents);
+  }
+
 }
