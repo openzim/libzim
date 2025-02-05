@@ -148,6 +148,9 @@ namespace zim
       bool is_multiPart() const;
 
       bool checkIntegrity(IntegrityCheck checkType);
+
+      size_t getClusterCacheMaxSize() const;
+      void setClusterCacheMaxSize(size_t nbClusters);
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);

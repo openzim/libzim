@@ -504,6 +504,16 @@ namespace zim
     return m_impl->hasNewNamespaceScheme();
   }
 
+  size_t Archive::getClusterCacheMaxSize() const
+  {
+    return m_impl->getClusterCacheMaxSize();
+  }
+
+  void Archive::setClusterCacheMaxSize(size_t nbClusters)
+  {
+    m_impl->setClusterCacheMaxSize(nbClusters);
+  }
+
   cluster_index_type Archive::getClusterCount() const
   {
     return cluster_index_type(m_impl->getCountClusters());
