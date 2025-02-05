@@ -151,6 +151,8 @@ namespace zim
 
       size_t getClusterCacheMaxSize() const;
       void setClusterCacheMaxSize(size_t nbClusters);
+      size_t getDirentCacheMaxSize() const;
+      void setDirentCacheMaxSize(size_t nbDirents);
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);

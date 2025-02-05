@@ -514,6 +514,16 @@ namespace zim
     m_impl->setClusterCacheMaxSize(nbClusters);
   }
 
+  size_t Archive::getDirentCacheMaxSize() const
+  {
+    return m_impl->getDirentCacheMaxSize();
+  }
+
+  void Archive::setDirentCacheMaxSize(size_t nbDirents)
+  {
+    m_impl->setDirentCacheMaxSize(nbDirents);
+  }
+
   cluster_index_type Archive::getClusterCount() const
   {
     return cluster_index_type(m_impl->getCountClusters());
