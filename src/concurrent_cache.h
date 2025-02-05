@@ -23,6 +23,7 @@
 
 #include "lrucache.h"
 
+#include <cstddef>
 #include <future>
 #include <mutex>
 
@@ -84,9 +85,19 @@ public: // types
     return impl_.drop(key);
   }
 
+  size_t get_max_size() const {
+    std::unique_lock<std::mutex> l(lock_);
+    return impl_.get_max_size();
+  }
+
+  void set_max_size(size_t new_size) {
+    std::unique_lock<std::mutex> l(lock_);
+    return impl_.set_max_size(new_size);
+  }
+
 private: // data
   Impl impl_;
-  std::mutex lock_;
+  mutable std::mutex lock_;
 };
 
 } // namespace zim
