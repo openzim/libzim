@@ -139,13 +139,17 @@ public: // functions
   }
 
 private: // functions
+  void dropLast() {
+    _cache_items_map.erase(_cache_items_list.back().first);
+    _cache_items_list.pop_back();
+  }
+
   void putMissing(const key_t& key, const value_t& value) {
     assert(_cache_items_map.find(key) == _cache_items_map.end());
     _cache_items_list.push_front(key_value_pair_t(key, value));
     _cache_items_map[key] = _cache_items_list.begin();
     if (_cache_items_map.size() > _max_size) {
-      _cache_items_map.erase(_cache_items_list.back().first);
-      _cache_items_list.pop_back();
+      dropLast();
     }
   }
 
