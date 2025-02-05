@@ -138,6 +138,17 @@ public: // functions
     return _cache_items_map.size();
   }
 
+  size_t get_max_size() const {
+    return _max_size;
+  }
+
+  void set_max_size(size_t new_size) {
+    while (new_size < this->size()) {
+      drop_last();
+    }
+    _max_size = new_size;
+  }
+
 private: // functions
   void drop_last() {
     _cache_items_map.erase(_cache_items_list.back().first);
