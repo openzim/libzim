@@ -798,4 +798,12 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     mp_pathDirentAccessor->setMaxCacheSize(nbDirents);
   }
 
+  size_t FileImpl::getDirentLookupCacheMaxSize() const {
+    std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
+    if ( !m_direntLookup ) {
+      return m_direntLookupSize;
+    } else {
+      return m_direntLookup->getSize();
+    }
+  }
 }

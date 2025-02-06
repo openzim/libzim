@@ -155,7 +155,7 @@ namespace zim
       void setClusterCacheMaxSize(size_t nbClusters);
       size_t getDirentCacheMaxSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
-      size_t getDirentLookupCacheMaxSize() const { return m_direntLookupSize; };
+      size_t getDirentLookupCacheMaxSize() const;
       void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);

@@ -328,6 +328,10 @@ TEST(ZimArchive, cacheDontImpactReading)
       test_archive.setDirentLookupCacheMaxSize(cacheConfig.direntLookupCacheSize);
       test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
 
+      EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
+      EXPECT_EQ(test_archive.getDirentLookupCacheMaxSize(), cacheConfig.direntLookupCacheSize);
+      EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
+
       ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
     }
   }
