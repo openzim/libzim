@@ -46,6 +46,7 @@ public: // functions
 
   index_t getNamespaceRangeBegin(char ns) const;
   index_t getNamespaceRangeEnd(char ns) const;
+  virtual size_t getSize() const { return 0; };
 
   virtual Result find(char ns, const std::string& key) const;
 
@@ -84,6 +85,7 @@ class FastDirentLookup : public DirentLookup<TConfig>
 public: // functions
   FastDirentLookup(const DirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
 
+  virtual size_t getSize() const;
   virtual typename BaseType::Result find(char ns, const std::string& key) const;
 
 private: // functions
@@ -204,6 +206,12 @@ DirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
   return findInRange(0, direntCount, ns, key);
 }
+
+template<typename TConfig>
+size_t FastDirentLookup<TConfig>::getSize() const {
+  return lookupGrid.getSize();
+}
+
 
 template<typename TConfig>
 typename DirentLookup<TConfig>::Result

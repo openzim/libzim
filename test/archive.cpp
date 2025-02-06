@@ -328,6 +328,10 @@ TEST(ZimArchive, cacheDontImpactReading)
       test_archive.set_dirent_lookup_cache_max_size(cache_config.dirent_lookup_cache_size);
       test_archive.set_cluster_cache_max_size(cache_config.cluster_cache_size);
 
+      EXPECT_EQ(test_archive.get_dirent_cache_max_size(), cache_config.dirent_cache_size);
+      EXPECT_EQ(test_archive.get_dirent_lookup_cache_max_size(), cache_config.dirent_lookup_cache_size);
+      EXPECT_EQ(test_archive.get_cluster_cache_max_size(), cache_config.cluster_cache_size);
+
       ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
     }
   }
