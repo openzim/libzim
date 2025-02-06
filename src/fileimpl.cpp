@@ -234,14 +234,16 @@ private: // data
 
     quickCheckForCorruptFile();
 
+    DirentLookup tmpDirentLookup(mp_pathDirentAccessor.get());
+
     if (header.useNewNamespaceScheme()) {
-      const_cast<entry_index_t&>(m_startUserEntry) = direntLookup().getNamespaceRangeBegin('C');
-      const_cast<entry_index_t&>(m_endUserEntry) = direntLookup().getNamespaceRangeEnd('C');
+      const_cast<entry_index_t&>(m_startUserEntry) = tmpDirentLookup.getNamespaceRangeBegin('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = tmpDirentLookup.getNamespaceRangeEnd('C');
     } else {
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
 
-    auto result = direntLookup().find('X', "listing/titleOrdered/v1");
+    auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
     if (result.first) {
       mp_titleDirentAccessor = getTitleAccessorV1(result.second);
     }
