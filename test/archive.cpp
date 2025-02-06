@@ -280,6 +280,59 @@ TEST(ZimArchive, openSplitZimArchive)
   }
 }
 
+struct TestCacheConfig {
+  size_t direntCacheSize;
+  size_t clusterCacheSize;
+  size_t direntLookupCacheSize;
+};
+
+#define ASSERT_ARCHIVE_EQUIVALENT(REF_ARCHIVE, TEST_ARCHIVE)                  \
+  for (auto ref_entry:REF_ARCHIVE.iterEfficient()) {                          \
+    auto test_entry = TEST_ARCHIVE.getEntryByPath(ref_entry.getPath());       \
+    EXPECT_EQ(ref_entry.getPath(), test_entry.getPath());                     \
+    EXPECT_EQ(ref_entry.getTitle(), test_entry.getTitle());                   \
+    EXPECT_EQ(ref_entry.isRedirect(), test_entry.isRedirect());               \
+    if (ref_entry.isRedirect()) {                                             \
+      EXPECT_EQ(ref_entry.getRedirectEntryIndex(), test_entry.getRedirectEntryIndex()); \
+    } else {                                                                  \
+      auto ref_item = ref_entry.getItem();                                    \
+      auto test_item = test_entry.getItem();                                  \
+      EXPECT_EQ(ref_item.getClusterIndex(), test_item.getClusterIndex());     \
+      EXPECT_EQ(ref_item.getBlobIndex(), test_item.getBlobIndex());           \
+      EXPECT_EQ(ref_item.getData(), test_item.getData());                     \
+    }                                                                         \
+  }
+
+TEST(ZimArchive, cacheDontImpactReading)
+{
+  const TestCacheConfig cacheConfigs[] = {
+    {0, 0, 0},
+    {1, 1, 1},
+    {2, 2, 2},
+    {10, 10, 10},
+    {1000, 2000, 1000},
+    {0, 2000, 1000},
+    {1000, 0, 1000},
+    {1000, 2000, 0},
+    {1, 2000, 1000},
+    {1000, 1, 1000},
+    {1000, 2000, 1},
+  };
+
+  for (auto& testfile: getDataFilePath("small.zim")) {
+    auto ref_archive = zim::Archive(testfile.path);
+
+    for (auto cacheConfig: cacheConfigs) {
+      auto test_archive = zim::Archive(testfile.path);
+      test_archive.setDirentCacheMaxSize(cacheConfig.direntCacheSize);
+      test_archive.setDirentLookupCacheMaxSize(cacheConfig.direntLookupCacheSize);
+      test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
+
+      ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
+    }
+  }
+}
+
 TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02.zim";
