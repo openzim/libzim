@@ -233,6 +233,13 @@ private: // data
 
     quickCheckForCorruptFile();
 
+    if (header.useNewNamespaceScheme()) {
+      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
+    } else {
+      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
+    }
+
     mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
 
     if (!mp_titleDirentAccessor) {
@@ -368,13 +375,6 @@ private: // data
       mimeTypes.push_back(mimeType);
 
       p = zp+1;
-    }
-
-    if (header.useNewNamespaceScheme()) {
-      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
-      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
-    } else {
-      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
   }
 
