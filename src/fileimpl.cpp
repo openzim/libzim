@@ -191,6 +191,7 @@ private: // data
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0),
+      m_direntLookupCreated(false),
       m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE)
   {
     log_trace("read file \"" << zimFile->filename() << '"');
@@ -295,7 +296,7 @@ private: // data
     //    in the call stack.
     // 2. With `glibc` an exceptional execution of `std::call_once` doesn't
     //    unlock the mutex associated with the `std::once_flag` object.
-    if ( !m_direntLookup ) {
+    if (!m_direntLookupCreated.load(std::memory_order_acquire)) {
       std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
       if ( !m_direntLookup ) {
         if (m_direntLookupSize == 0) {
@@ -303,6 +304,7 @@ private: // data
         } else {
           m_direntLookup = std::make_unique<FastDirentLookup>(mp_pathDirentAccessor.get(), m_direntLookupSize);
         }
+        m_direntLookupCreated.store(true, std::memory_order_release);
       }
     }
     return *m_direntLookup;
@@ -804,8 +806,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
   }
 
   size_t FileImpl::getDirentLookupCacheMaxSize() const {
-    std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
-    if ( !m_direntLookup ) {
+    if (!m_direntLookupCreated.load(std::memory_order_acquire)) {
       return m_direntLookupSize;
     } else {
       return m_direntLookup->getSize();
