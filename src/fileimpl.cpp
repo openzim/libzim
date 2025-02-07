@@ -20,6 +20,7 @@
  */
 
 #include "dirent_lookup.h"
+#include "zim_types.h"
 #include <memory>
 #define CHUNK_SIZE 1024
 #include "fileimpl.h"
@@ -234,13 +235,16 @@ private: // data
     quickCheckForCorruptFile();
 
     if (header.useNewNamespaceScheme()) {
-      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
-      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
+      const_cast<entry_index_t&>(m_startUserEntry) = direntLookup().getNamespaceRangeBegin('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = direntLookup().getNamespaceRangeEnd('C');
     } else {
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
 
-    mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    auto result = direntLookup().find('X', "listing/titleOrdered/v1");
+    if (result.first) {
+      mp_titleDirentAccessor = getTitleAccessorV1(result.second);
+    }
 
     if (!mp_titleDirentAccessor) {
       if (!header.hasTitleListingV0()) {
@@ -256,14 +260,9 @@ private: // data
     readMimeTypes();
   }
 
-  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const std::string& path)
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
   {
-    auto result = direntLookup().find('X', path);
-    if (!result.first) {
-      return nullptr;
-    }
-
-    auto dirent = mp_pathDirentAccessor->getDirent(result.second);
+    auto dirent = mp_pathDirentAccessor->getDirent(idx);
     auto cluster = getCluster(dirent->getClusterNumber());
     if (cluster->isCompressed()) {
       // This is a ZimFileFormatError.
@@ -272,7 +271,7 @@ private: // data
     }
     auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + cluster->getBlobOffset(dirent->getBlobNumber());
     auto titleSize = cluster->getBlobSize(dirent->getBlobNumber());
-    return getTitleAccessor(titleOffset, titleSize, "Title index table" + path);
+    return getTitleAccessor(titleOffset, titleSize, "Title index v1");
   }
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name)
@@ -761,7 +760,11 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       ret = checkTitleListing(*titleDirentAccessor, articleCount);
     }
 
-    auto titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    auto titleDirentAccessor = std::unique_ptr<IndirectDirentAccessor>();
+    auto result = direntLookup().find('X', "listing/titleOrdered/v1");
+    if (result.first) {
+      titleDirentAccessor = getTitleAccessorV1(result.second);
+    }
     if (titleDirentAccessor) {
       ret &= checkTitleListing(*titleDirentAccessor, articleCount);
     }
