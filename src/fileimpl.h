@@ -22,6 +22,7 @@
 #ifndef ZIM_FILEIMPL_H
 #define ZIM_FILEIMPL_H
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include <memory>
@@ -79,6 +80,7 @@ namespace zim
       using FastDirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
       mutable std::mutex m_direntLookupCreationMutex;
+      mutable std::atomic_bool m_direntLookupCreated;
       size_t m_direntLookupSize;
 
 
