@@ -44,7 +44,7 @@ class ConcurrentCache
 {
 private: // types
   typedef std::shared_future<Value> ValuePlaceholder;
-  typedef lru_cache<Key, ValuePlaceholder> Impl;
+  typedef lru_cache<Key, ValuePlaceholder, UnitCostEstimation> Impl;
 
 public: // types
   explicit ConcurrentCache(size_t maxEntries)
