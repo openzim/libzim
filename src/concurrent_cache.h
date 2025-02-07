@@ -30,6 +30,31 @@
 namespace zim
 {
 
+template<typename CostEstimation>
+struct FutureToValueCostEstimation {
+  template<typename T>
+  static size_t cost(const std::shared_future<T>& future) {
+    // The future is the value in the cache.
+    // When calling getOrPut, if the key is not in the cache,
+    // we add a future and then we compute the value and set the future.
+    // But lrucache call us when we add the future, meaning before we have
+    // computed the value. If we wait here (or use future.get), we will dead lock
+    // as we need to exit before setting the value.
+    // So in this case, we return 0. `ConcurrentCache::getOrPut` will correctly increase
+    // the current cache size when it have an actual value.
+    // We still need to compute the size of the value if the future has a value as it
+    // is also use to decrease the cache size when the value is drop.
+    using namespace std::chrono_literals;
+    std::future_status status = future.wait_for(0s);
+    if (status == std::future_status::ready) {
+      return CostEstimation::cost(future.get());
+    } else {
+      return 0;
+    }
+  }
+
+};
+
 /**
    ConcurrentCache implements a concurrent thread-safe cache
 
@@ -39,12 +64,12 @@ namespace zim
    safe, and, in case of a cache miss, will block until that element becomes
    available.
  */
-template <typename Key, typename Value>
+template <typename Key, typename Value, typename CostEstimation>
 class ConcurrentCache
 {
 private: // types
   typedef std::shared_future<Value> ValuePlaceholder;
-  typedef lru_cache<Key, ValuePlaceholder, UnitCostEstimation> Impl;
+  typedef lru_cache<Key, ValuePlaceholder, FutureToValueCostEstimation<CostEstimation>> Impl;
 
 public: // types
   explicit ConcurrentCache(size_t maxEntries)
@@ -70,6 +95,10 @@ public: // types
     if ( x.miss() ) {
       try {
         valuePromise.set_value(f());
+        {
+          std::unique_lock<std::mutex> l(lock_);
+          impl_.increaseSize(CostEstimation::cost(x.value().get()));
+        }
       } catch (std::exception& e) {
         drop(key);
         throw;

@@ -133,7 +133,7 @@ TEST(CacheTest1, ChangeCacheCapacity) {
 }
 
 TEST(ConcurrentCacheTest, handleException) {
-    zim::ConcurrentCache<int, int> cache(1);
+    zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(1);
     auto val = cache.getOrPut(7, []() { return 777; });
     EXPECT_EQ(val, 777);
     EXPECT_THROW(cache.getOrPut(8, []() { throw std::runtime_error("oups"); return 0; }), std::runtime_error);

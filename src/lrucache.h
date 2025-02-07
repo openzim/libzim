@@ -112,7 +112,7 @@ public: // functions
     if (it != _cache_items_map.end()) {
       _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
       _current_size -= CostEstimation::cost(it->second->second);
-      _current_size += CostEstimation::cost(value);
+      increaseSize(CostEstimation::cost(value));
       it->second->second = value;
     } else {
       putMissing(key, value);
@@ -160,6 +160,26 @@ public: // functions
     _max_size = new_size;
   }
 
+  void increaseSize(size_t extra_size) {
+    // increaseSize is called after we have added a value to the cache to update
+    // the size of the current cache.
+    // We must ensure that we don't drop the value we just added.
+    // While it is technically ok to keep no value if max cache size is 0 (or memory size < of the size of one cluster)
+    // it will make recreate the value all the time.
+    // This is especially problematic with clusters.
+    // Let's be nice with our user and be tolerent to miss configuration.
+    if (!extra_size) {
+      // Don't try to remove an item if we have new size == 0.
+      // This is the case when concurent cache add a future without value.
+      // We will handle the real increase size when concurent cache will directly call us.
+      return;
+    }
+    _current_size += extra_size;
+    while (_current_size > _max_size && _cache_items_list.size() > 1) {
+      drop_last();
+    }
+  }
+
 private: // functions
   void drop_last() {
     auto list_it = _cache_items_list.back();
@@ -172,10 +192,7 @@ private: // functions
     assert(_cache_items_map.find(key) == _cache_items_map.end());
     _cache_items_list.push_front(key_value_pair_t(key, value));
     _cache_items_map[key] = _cache_items_list.begin();
-    _current_size += CostEstimation::cost(value);
-    if (_current_size > _max_size) {
-      drop_last();
-    }
+    increaseSize(CostEstimation::cost(value));
   }
 
 private: // data
