@@ -90,6 +90,11 @@ public: // types
     return impl_.get_max_size();
   }
 
+  size_t get_current_size() const {
+    std::unique_lock<std::mutex> l(lock_);
+    return impl_.size();
+  }
+
   void set_max_size(size_t new_size) {
     std::unique_lock<std::mutex> l(lock_);
     return impl_.set_max_size(new_size);

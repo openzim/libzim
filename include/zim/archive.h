@@ -534,11 +534,17 @@ namespace zim
        */
       std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
 
-      /** Get the size of the cluster cache.
+      /** Get the maximum size of the cluster cache.
        *
        * @return The maximum number of clusters stored in  the cache.
        */
       size_t get_cluster_cache_max_size() const;
+
+      /** Get the current size of the cluster cache.
+       *
+       * @return The number of clusters currently stored in  the cache.
+       */
+      size_t get_cluster_cache_current_size() const;
 
       /** Set the size of the cluster cache.
        *
@@ -554,6 +560,12 @@ namespace zim
        * @return The maximum number of dirents stored in  the cache.
        */
       size_t get_dirent_cache_max_size() const;
+
+      /** Get the current size of the dirent cache.
+       *
+       * @return The number of dirents currently stored in  the cache.
+       */
+      size_t get_dirent_cache_current_size() const;
 
       /** Set the size of the dirent cache.
        *
