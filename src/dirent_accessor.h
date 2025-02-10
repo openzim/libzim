@@ -56,6 +56,7 @@ public: // functions
   entry_index_t getDirentCount() const  {  return m_direntCount; }
 
   size_t getMaxCacheSize() const { return m_direntCache.getMaxSize(); }
+  size_t getCurrentCacheSize() const { return m_direntCache.size(); }
   void setMaxCacheSize(size_t nbDirents) const { m_direntCache.setMaxSize(nbDirents); }
 
 private: // functions

@@ -154,8 +154,10 @@ namespace zim
       bool checkIntegrity(IntegrityCheck checkType);
 
       size_t getClusterCacheMaxSize() const;
+      size_t getClusterCacheCurrentSize() const;
       void setClusterCacheMaxSize(size_t nbClusters);
       size_t getDirentCacheMaxSize() const;
+      size_t getDirentCacheCurrentSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
       size_t getDirentLookupCacheMaxSize() const;
       void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
