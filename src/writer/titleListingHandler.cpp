@@ -21,6 +21,7 @@
 #include "creatordata.h"
 
 #include "../endian_tools.h"
+#include "tools.h"
 
 #include <zim/writer/contentProvider.h>
 #include <zim/blob.h>
@@ -90,17 +91,11 @@ void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   handle(dirent, item->getAmendedHints());
 }
 
+
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  // By definition, dirent not in `C` namespace are not FRONT_ARTICLE
-  if (dirent->getNamespace() != NS::C) {
-    return;
+  if (isFrontArticle(dirent, hints)) {
+    m_handledDirents.push_back(dirent);
   }
-
-  try {
-    if(bool(hints.at(FRONT_ARTICLE))) {
-      m_handledDirents.push_back(dirent);
-    }
-  } catch(std::out_of_range&) {}
 }
 
