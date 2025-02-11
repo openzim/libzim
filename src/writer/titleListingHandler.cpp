@@ -31,27 +31,16 @@ namespace {
 
 class ListingProvider : public ContentProvider {
   public:
-    ListingProvider(const TitleListingHandler::Dirents* dirents, bool frontOnly)
+    explicit ListingProvider(const TitleListingHandler::Dirents* dirents)
       : mp_dirents(dirents),
-        m_it(dirents->begin()),
-        m_frontOnly(frontOnly)
+        m_it(dirents->begin())
     {}
 
     zim::size_type getSize() const override {
-      if (m_frontOnly) {
-        auto nbFrontArticles = std::count_if(mp_dirents->begin(), mp_dirents->end(), [](Dirent* d) { return d->isFrontArticle();});
-        return nbFrontArticles * sizeof(zim::entry_index_type);
-      } else {
         return mp_dirents->size() * sizeof(zim::entry_index_type);
-      }
     }
 
     zim::Blob feed() override {
-      if (m_frontOnly) {
-        while (m_it != mp_dirents->end() && !(*m_it)->isFrontArticle()) {
-          m_it++;
-        }
-      }
       if (m_it == mp_dirents->end()) {
         return zim::Blob(nullptr, 0);
       }
@@ -64,7 +53,6 @@ class ListingProvider : public ContentProvider {
     const TitleListingHandler::Dirents* mp_dirents;
     char buffer[sizeof(zim::entry_index_type)];
     TitleListingHandler::Dirents::const_iterator m_it;
-    bool m_frontOnly;
 };
 
 } // end of anonymous namespace
@@ -93,7 +81,7 @@ DirentHandler::Dirents TitleListingHandler::createDirents() const {
 
 DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const {
   ContentProviders ret;
-  ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, true)));
+  ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents)));
   return ret;
 }
 
@@ -104,8 +92,6 @@ void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  m_handledDirents.push_back(dirent);
-
   // By definition, dirent not in `C` namespace are not FRONT_ARTICLE
   if (dirent->getNamespace() != NS::C) {
     return;
@@ -114,6 +100,7 @@ void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
   try {
     if(bool(hints.at(FRONT_ARTICLE))) {
       dirent->setFrontArticle();
+      m_handledDirents.push_back(dirent);
     }
   } catch(std::out_of_range&) {}
 }
