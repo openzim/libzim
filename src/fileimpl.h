@@ -56,7 +56,7 @@ namespace zim
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_type, ClusterHandle, UnitCostEstimation> clusterCache;
+      ConcurrentCache<cluster_index_type, ClusterHandle, ClusterMemorySize> clusterCache;
 
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;

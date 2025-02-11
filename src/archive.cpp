@@ -514,9 +514,9 @@ namespace zim
     return m_impl->get_cluster_cache_current_size();
   }
 
-  void Archive::set_cluster_cache_max_size(size_t nb_clusters)
+  void Archive::set_cluster_cache_max_size(size_t size_in_b)
   {
-    m_impl->set_cluster_cache_max_size(nb_clusters);
+    m_impl->set_cluster_cache_max_size(size_in_b);
   }
 
   size_t Archive::get_dirent_cache_max_size() const

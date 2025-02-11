@@ -318,16 +318,16 @@ TEST(ZimArchive, cacheDontImpactReading)
 {
   const TestCacheConfig cache_configs[] = {
     {0, 0, 0},
-    {1, 1, 1},
-    {2, 2, 2},
-    {10, 10, 10},
-    {1000, 2000, 1000},
-    {0, 2000, 1000},
-    {1000, 0, 1000},
-    {1000, 2000, 0},
-    {1, 2000, 1000},
-    {1000, 1, 1000},
-    {1000, 2000, 1},
+    {1, 1<<20, 1},
+    {2, 2<<20, 2},
+    {10, 10<<20, 10},
+    {1000, 2000<<20, 1000},
+    {0, 2000<<20, 1000},
+    {1000, 0<<20, 1000},
+    {1000, 2000<<20, 0},
+    {1, 2000<<20, 1000},
+    {1000, 1<<20, 1000},
+    {1000, 2000<<20, 1},
   };
 
   for (auto& testfile: getDataFilePath("small.zim")) {
@@ -351,32 +351,48 @@ TEST(ZimArchive, cacheDontImpactReading)
 
 TEST(ZimArchive, cacheChange)
 {
-  for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+  // We test only one variant here.
+  // Each variant has cluster of different size (especially the old "withns" which
+  // have a cluster compressed with a algorithm/compression level making input stream
+  // having a size of 64MB),
+  // this make all the following reasoning about cluster size a bit too complex.
+  // As the test here don't test that we can read all variant, we don't have too.
+  for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", {"noTitleListingV0"})) {
+    // wikibooks has only 2 clusters. One of 492121 bytes and one of 823716 bytes.
+    // For a total of 1315837 bytes.
+    // Has we try to keep one cluster in the cache, any size under the size of one
+    // cluster will not be respected.
+    // So we will define 2 limits:
+    // 850<<10 : size higher than a cluster size but under 2
+    // 2 << 20 : size higher than two clusters
+    const size_t L1_SIZE = 850 << 10;
+    const size_t L2_SIZE = 2 << 20;
+
     auto ref_archive = zim::Archive(testfile.path);
     auto archive = zim::Archive(testfile.path);
 
     archive.set_dirent_cache_max_size(30);
-    archive.set_cluster_cache_max_size(5);
+    archive.set_cluster_cache_max_size(L2_SIZE);
 
     auto range = ref_archive.iterEfficient();
     auto ref_it = range.begin();
     ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
     EXPECT_EQ(archive.get_dirent_cache_current_size(), 30);
-    EXPECT_EQ(archive.get_cluster_cache_current_size(), 2); // Only 2 clusters in the file
+    EXPECT_LE(archive.get_cluster_cache_current_size(), L2_SIZE);
 
     // Reduce cache size
     archive.set_dirent_cache_max_size(10);
-    archive.set_cluster_cache_max_size(1);
+    archive.set_cluster_cache_max_size(L1_SIZE);
 
     EXPECT_EQ(archive.get_dirent_cache_current_size(), 10);
-    EXPECT_EQ(archive.get_cluster_cache_current_size(), 1);
+    EXPECT_LE(archive.get_cluster_cache_current_size(), L1_SIZE);
 
     // We want to test change of cache while we are iterating on the archive.
     // So we don't reset the ref_it to `range.begin()`.
     ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
 
     EXPECT_EQ(archive.get_dirent_cache_current_size(), 10);
-    EXPECT_EQ(archive.get_cluster_cache_current_size(), 1);
+    EXPECT_LE(archive.get_cluster_cache_current_size(), L1_SIZE);
 
     // Clean cache
     // (More than testing the value, this is needed as we want to be sure the cache is actually populated later)
@@ -388,13 +404,13 @@ TEST(ZimArchive, cacheChange)
 
     // Increase the cache
     archive.set_dirent_cache_max_size(20);
-    archive.set_cluster_cache_max_size(1);
+    archive.set_cluster_cache_max_size(L1_SIZE);
     EXPECT_EQ(archive.get_dirent_cache_current_size(), 0);
     EXPECT_EQ(archive.get_cluster_cache_current_size(), 0);
 
     ASSERT_ARCHIVE_EQUIVALENT(ref_archive, archive)
     EXPECT_EQ(archive.get_dirent_cache_current_size(), 20);
-    EXPECT_EQ(archive.get_cluster_cache_current_size(), 1);
+    EXPECT_LE(archive.get_cluster_cache_current_size(), L1_SIZE);
   }
 }
 

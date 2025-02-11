@@ -36,6 +36,8 @@ namespace zim
   class Blob;
   class Reader;
   class IStreamReader;
+  class Cluster;
+
 
   class LIBZIM_PRIVATE_API Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<offset_t> BlobOffsets;
@@ -70,6 +72,8 @@ namespace zim
 
       mutable std::mutex m_readerAccessMutex;
       mutable BlobReaders m_blobReaders;
+      mutable size_t m_memorySize;
+      mutable size_t m_streamSize;
 
 
       template<typename OFFSET_TYPE>
@@ -91,6 +95,15 @@ namespace zim
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
       static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+      friend struct ClusterMemorySize;
+  };
+
+  struct ClusterMemorySize {
+    static size_t cost(const std::shared_ptr<const Cluster>& cluster) {
+      return get_cluster_size(*cluster);
+    }
+
+    static size_t get_cluster_size(const Cluster& cluster);
   };
 
 }
