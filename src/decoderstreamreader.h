@@ -23,6 +23,7 @@
 
 #include "compression.h"
 #include "istreamreader.h"
+#include <cstddef>
 
 namespace zim
 {
@@ -47,6 +48,13 @@ public: // functions
   ~DecoderStreamReader()
   {
     Decoder::stream_end_decode(&m_decoderState);
+  }
+
+  size_t getMemorySize() const override {
+    const auto s1 = m_encodedDataReader->getMemorySize();
+    const auto s2 = m_encodedDataChunk.size().v;
+    const auto s3 = Decoder::state_size(m_decoderState);
+    return s1 + s2 + s3;
   }
 
 private: // functions

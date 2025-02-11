@@ -29,17 +29,17 @@
 namespace zim
 {
 
-// IDataStream is a simple interface for sequential iteration over a stream
+// IStreamReader is a simple interface for sequential iteration over a stream
 // of values of built-in/primitive types and/or opaque binary objects (blobs).
 // An example usage:
 //
-//   void foo(IDataStream& s)
+//   void foo(IStreamReader& s)
 //   {
 //     const uint32_t n = s.read<uint32_t>();
 //     for(uint32_t i=0; i < n; ++i)
 //     {
 //        const uint16_t blobSize = s.read<uint16_t>();
-//        IDataStream::Blob blob = s.readBlob(blobSize);
+//        IStreamReader::Blob blob = s.readBlob(blobSize);
 //        bar(blob, blobSize);
 //     }
 //   }
@@ -59,6 +59,9 @@ public: // functions
   // Reads a blob of the specified size from the stream
   virtual std::unique_ptr<const Reader> sub_reader(zsize_t size);
 
+  // Get the total memory consumption by the reader object
+  virtual size_t getMemorySize() const = 0;
+
 private: // virtual methods
   // Reads exactly 'nbytes' bytes into the provided buffer 'buf'
   // (which must be at least that big). Throws an exception if
@@ -67,7 +70,7 @@ private: // virtual methods
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// Implementation of IDataStream
+// Implementation of IStreamReader
 ////////////////////////////////////////////////////////////////////////////////
 
 // XXX: Assuming that opaque binary data retrieved via 'readImpl()'

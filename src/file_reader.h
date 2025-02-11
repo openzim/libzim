@@ -34,6 +34,26 @@ class LIBZIM_PRIVATE_API BaseFileReader : public Reader {
       : _offset(offset), _size(size) {}
     ~BaseFileReader() = default;
     zsize_t size() const override { return _size; };
+
+    size_t getMemorySize() const override {
+      // XXX: We cannot implement this method properly for our purposes
+      // XXX: of measuring and limiting memory consumption by the cluster
+      // XXX: cache. There are several problems:
+      // XXX: - Consumption of which memory (resident or virtual) is measured?
+      // XXX: - For uncompressed clusters the underlying data may be mmapped
+      // XXX:   whereupon it should be managed not by our caching system but by
+      // XXX:   the kernel paging subsystem.
+      // XXX: - For compressed clusters the end of the compressed data is not
+      // XXX:   known - the cluster sub-reader behaves as if the data extends
+      // XXX:   till the end of the file and the actual end of the compressed
+      // XXX:   data is discovered during decompression.
+      // XXX: Thus returning 0 is the safer option. It is justified by the
+      // XXX: interpretation that on-disk data (which can be mmapped) shouldn't
+      // XXX: be counted in memory consumption; only data derived from it that
+      // XXX: is constructed in RAM should be accounted for.
+      return 0;
+    }
+
     offset_t offset() const override { return _offset; };
 
     virtual const Buffer get_mmap_buffer(offset_t offset,
