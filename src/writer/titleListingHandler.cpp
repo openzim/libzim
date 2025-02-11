@@ -99,7 +99,6 @@ void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 
   try {
     if(bool(hints.at(FRONT_ARTICLE))) {
-      dirent->setFrontArticle();
       m_handledDirents.push_back(dirent);
     }
   } catch(std::out_of_range&) {}
