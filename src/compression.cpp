@@ -60,6 +60,11 @@ void LZMA_INFO::stream_end_decode(stream_t* stream)
   lzma_end(stream);
 }
 
+size_t LZMA_INFO::state_size(const stream_t& stream)
+{
+  return lzma_memusage(&stream);
+}
+
 
 const std::string ZSTD_INFO::name = "zstd";
 
@@ -169,4 +174,12 @@ void ZSTD_INFO::stream_end_decode(stream_t* stream)
 
 void ZSTD_INFO::stream_end_encode(stream_t* stream)
 {
+}
+
+size_t ZSTD_INFO::state_size(const stream_t& stream) {
+  if (stream.decoder_stream) {
+    return ZSTD_sizeof_CStream(stream.encoder_stream);
+  } else {
+    return ZSTD_sizeof_DStream(stream.decoder_stream);
+  }
 }

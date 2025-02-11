@@ -65,6 +65,7 @@ struct LZMA_INFO {
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
   static CompStatus stream_run(stream_t* stream, CompStep step);
   static void stream_end_decode(stream_t* stream);
+  static size_t state_size(const stream_t& stream);
 };
 
 
@@ -94,6 +95,7 @@ struct LIBZIM_PRIVATE_API ZSTD_INFO {
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
   static void stream_end_encode(stream_t* stream);
   static void stream_end_decode(stream_t* stream);
+  static size_t state_size(const stream_t& stream);
 };
 
 

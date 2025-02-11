@@ -59,6 +59,9 @@ public: // functions
   // Reads a blob of the specified size from the stream
   virtual std::unique_ptr<const Reader> sub_reader(zsize_t size);
 
+  // Get the total size occuped by the reader
+  virtual size_t getMemorySize() const = 0;
+
 private: // virtual methods
   // Reads exactly 'nbytes' bytes into the provided buffer 'buf'
   // (which must be at least that big). Throws an exception if
