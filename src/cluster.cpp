@@ -31,8 +31,6 @@
 
 #include "log.h"
 
-#include "config.h"
-
 log_define("zim.cluster")
 
 #define log_debug1(e)
@@ -86,7 +84,8 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
   Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, Compression comp, bool isExtended)
     : compression(comp),
       isExtended(isExtended),
-      m_reader(std::move(reader_))
+      m_reader(std::move(reader_)),
+      m_memorySize(0)
   {
     if (isExtended) {
       read_header<uint64_t>();
@@ -179,4 +178,44 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     }
   }
 
+  // This function must return a constant size for a given cluster.
+  // This is important as we want to remove the same size that what we add when we remove
+  // the cluster from the cache.
+  // However, because of partial decompression, this size can change:
+  // - As we advance in the compression, we can create new blob readers in `m_blobReaders`
+  // - The stream itself may allocate memory.
+  // To solve this, we take the average and say a cluster's blob readers will half be created and
+  // so we assume a readers size of half the full uncompressed cluster data size.
+  // If cluster is not compressed, we never store its content (mmap is created on demand and not cached),
+  // so we use a size of 0 for the readers.
+  // It also appears that when we get the size of the stream, we reach a state where no
+  // futher allocation will be done by it. Probably because:
+  // - We already started to decompress the stream to read the offsets
+  // - Cluster data size is smaller than window size associated to compression level (?)
+  // We anyway check that and print a warning if this is not the case, hopping that user will create
+  // an issue allowing us for further analysis.
+  // Note:
+  //  - No need to protect this method from concurent access as it will be called by the concurent_cache which will
+  //    have a lock (on lru cache) to ensure only one thread access it in the same time.
+  size_t Cluster::getMemorySize() const {
+    if (!m_memorySize) {
+      auto offsets_size = sizeof(offset_t) * m_blobOffsets.size();
+      auto readers_size = 0;
+      if (isCompressed()) {
+        readers_size = m_blobOffsets.back().v / 2;
+      }
+      m_streamSize = m_reader->getMemorySize();
+      // Compression level define a huge window and make decompression stream allocate a huge memory to store it.
+      // However, the used memory will not be greater than the content itself, even if window is bigger.
+      // On linux (at least), the real used memory will be the actual memory used, not the one allocated.
+      // So, let's clamm the the stream size to the size of the content itself.
+      m_memorySize = offsets_size + readers_size + std::min<size_type>(m_streamSize, m_blobOffsets.back().v);
+    }
+    auto streamSize = m_reader->getMemorySize();
+    if (streamSize != m_streamSize) {
+      std::cerr << "WARNING: stream size have changed from " << m_streamSize << " to " << streamSize << std::endl;
+      std::cerr << "Please open an issue on https://github.com/openzim/libzim/issues with this message and the zim file you use" << std::endl;
+    }
+    return m_memorySize;
+  }
 }
