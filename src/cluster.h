@@ -90,7 +90,15 @@ namespace zim
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
+      size_t getMemorySize() const;
+
       static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+  };
+
+  struct ClusterMemorySize {
+    static size_t cost(const std::shared_ptr<const Cluster>& cluster) {
+      return cluster->getMemorySize();
+    }
   };
 
 }

@@ -681,13 +681,13 @@ namespace zim
 
       /** Get the maximum size of the cluster cache.
        *
-       * @return The maximum number of clusters stored in  the cache.
+       * @return The maximum memory size used by the cluster cache.
        */
       size_t getClusterCacheMaxSize() const;
 
       /** Get the current size of the cluster cache.
        *
-       * @return The number of clusters currently stored in  the cache.
+       * @return The current memory size used by the cluster cache.
        */
       size_t getClusterCacheCurrentSize() const;
 
@@ -696,9 +696,9 @@ namespace zim
        * If the new size is lower than the number of currently stored clusters
        * some clusters will be dropped from cache to respect the new size.
        *
-       * @param nbClusters The maximum number of clusters stored in the cache.
+       * @param sizeInBytes The memory limit (in bytes) for the cluster cache.
        */
-      void setClusterCacheMaxSize(size_t nbClusters);
+      void setClusterCacheMaxSize(size_t sizeInBytes);
 
       /** Get the size of the dirent cache.
        *
