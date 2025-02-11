@@ -34,17 +34,24 @@ using namespace zim;
 // Implement the IStreamReader interface in the simplest way
 class InfiniteZeroStream : public IStreamReader
 {
-  void readImpl(char* buf, zim::zsize_t nbytes) { memset(buf, 0, nbytes.v); }
+  void readImpl(char* buf, zim::zsize_t nbytes) override { memset(buf, 0, nbytes.v); }
+  size_t getSize() const override {
+    return 0;
+  }
 };
 
 class InfiniteIncreasingStream: public IStreamReader
 {
   zim::offset_type current_offset = 0;
 
-  void readImpl(char* buf, zim::zsize_t nbytes) {
+  void readImpl(char* buf, zim::zsize_t nbytes) override {
     for (size_type i=0; i<nbytes.v; i++) {
       buf[i] = (current_offset++)%256;
     }
+  }
+
+  size_t getSize() const override {
+    return 0;
   }
 };
 
