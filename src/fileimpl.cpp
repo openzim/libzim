@@ -186,7 +186,6 @@ private: // data
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
-      m_newNamespaceScheme(false),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0)
@@ -366,8 +365,7 @@ private: // data
       p = zp+1;
     }
 
-    const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
-    if (m_newNamespaceScheme) {
+    if (header.useNewNamespaceScheme()) {
       const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
       const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
     } else {

@@ -106,6 +106,9 @@ namespace zim
       bool        hasChecksum() const              { return getMimeListPos() >= 80; }
       offset_type getChecksumPos() const           { return hasChecksum() ? checksumPos : 0; }
       void        setChecksumPos(offset_type p)    { checksumPos = p; }
+
+      bool        useNewNamespaceScheme() const    { return minorVersion >= 1; }
+
   };
 
 }
