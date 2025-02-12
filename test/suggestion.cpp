@@ -254,7 +254,8 @@ TEST(Suggestion, incrementalSearch) {
                                       "The wolf of Wall Street Book" ,
                                       "Hour of the wolf",
                                       "Wolf",
-                                      "Terma termb the wolf of wall street termc"
+                                      "Terma termb the wolf of wall street termc",
+                                      "Are there any beasts in this country?"
                                     };
 
   TempZimArchive tza("testZim");
@@ -277,10 +278,29 @@ TEST(Suggestion, incrementalSearch) {
     "The wolf of Wall Street",
     "The wolf of Wall Street Book",
     "Hour of the wolf",
+    "Terma termb the wolf of wall street termc",
+    "Are there any beasts in this country?"
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "the wol",
+    "Hour of the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
     "Terma termb the wolf of wall street termc"
   );
 
   EXPECT_SUGGESTION_RESULTS(archive, "the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Hour of the wolf",
+    "Terma termb the wolf of wall street termc"
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "the wolf ",
     "The wolf among sheeps",
     "The wolf of Shingashina",
     "The wolf of Wall Street",
