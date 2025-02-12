@@ -29,6 +29,7 @@
 #include "config.h"
 
 #include <zim/item.h>
+#include "zim/writer/item.h"
 
 #if defined(ENABLE_XAPIAN)
 namespace Xapian {
@@ -68,6 +69,11 @@ namespace zim {
       }
     }
     return count;
+  }
+
+  namespace writer {
+    class Dirent;
+    bool isFrontArticle(const Dirent* dirent, const Hints& hints);
   }
 
 // Xapian based tools

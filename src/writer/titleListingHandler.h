@@ -53,7 +53,6 @@ class TitleListingHandler : public DirentHandler {
     Dirents createDirents() const override;
     CreatorData* mp_creatorData;
     Dirents m_handledDirents;
-    bool m_hasFrontArticles;
 };
 }
 }

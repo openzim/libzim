@@ -56,7 +56,6 @@ namespace zim
       typedef std::shared_ptr<const Cluster> ClusterHandle;
       ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
-      const bool m_newNamespaceScheme;
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;
       const entry_index_t m_endUserEntry;
@@ -109,7 +108,7 @@ namespace zim
       const std::string& getFilename() const   { return zimFile->filename(); }
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
-      bool hasNewNamespaceScheme() const { return m_newNamespaceScheme; }
+      bool hasNewNamespaceScheme() const { return header.useNewNamespaceScheme(); }
       bool hasFrontArticlesIndex() const { return m_hasFrontArticlesIndex; }
 
       FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);

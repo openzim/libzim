@@ -37,6 +37,7 @@
 #include "envvalue.h"
 #include "md5.h"
 #include "tools.h"
+#include "fileheader.h"
 
 log_define("zim.file.impl")
 
@@ -185,7 +186,6 @@ private: // data
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
       clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
-      m_newNamespaceScheme(false),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0)
@@ -234,6 +234,9 @@ private: // data
     mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
 
     if (!mp_titleDirentAccessor) {
+      if (!header.hasTitleListingV0()) {
+        throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+      }
       offset_t titleOffset(header.getTitleIdxPos());
       zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
       mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
@@ -311,7 +314,10 @@ private: // data
   offset_type FileImpl::getMimeListEndUpperLimit() const
   {
     offset_type result(header.getPathPtrPos());
-    result = std::min(result, header.getTitleIdxPos());
+    auto titleIdxPos = header.getTitleIdxPos();
+    if (titleIdxPos != 0) {
+      result = std::min(result, titleIdxPos);
+    }
     result = std::min(result, header.getClusterPtrPos());
     if ( getCountArticles().v != 0 ) {
       // assuming that dirents are placed in the zim file in the same
@@ -359,8 +365,7 @@ private: // data
       p = zp+1;
     }
 
-    const_cast<bool&>(m_newNamespaceScheme) = header.getMinorVersion() >= 1;
-    if (m_newNamespaceScheme) {
+    if (header.useNewNamespaceScheme()) {
       const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
       const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
     } else {
@@ -743,12 +748,15 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
   bool FileImpl::checkTitleIndex() {
     const entry_index_type articleCount = getCountArticles().v;
 
-    offset_t titleOffset(header.getTitleIdxPos());
-    zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
-    auto titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Full Title index table");
-    auto ret = checkTitleListing(*titleDirentAccessor, articleCount);
+    auto ret = true;
+    if (header.hasTitleListingV0()) {
+      offset_t titleOffset(header.getTitleIdxPos());
+      zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
+      auto titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Full Title index table");
+      ret = checkTitleListing(*titleDirentAccessor, articleCount);
+    }
 
-    titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    auto titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
     if (titleDirentAccessor) {
       ret &= checkTitleListing(*titleDirentAccessor, articleCount);
     }

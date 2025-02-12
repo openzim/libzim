@@ -175,11 +175,11 @@ TEST(ZimArchive, openCreatedArchive)
 
   zim::Archive archive(tempPath);
 #if !defined(ENABLE_XAPIAN)
-// 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
-#define ALL_ENTRY_COUNT 10U
+// listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
+#define ALL_ENTRY_COUNT 9U
 #else
 // same as above + 2 xapian indexes.
-#define ALL_ENTRY_COUNT 12U
+#define ALL_ENTRY_COUNT 11U
 #endif
   ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
 #undef ALL_ENTRY_COUNT
@@ -251,7 +251,7 @@ TEST(ZimArchive, openRealZimArchive)
     "small.zim",
     "wikibooks_be_all_nopic_2017-02.zim",
     "wikibooks_be_all_nopic_2017-02_splitted.zim",
-    "wikipedia_en_climate_change_nopic_2020-01.zim"
+    "wikipedia_en_climate_change_mini_2024-06.zim"
   };
 
   for ( const std::string fname : zimfiles ) {
@@ -327,7 +327,7 @@ TEST(ZimArchive, randomEntry)
   const char* const zimfiles[] = {
     "wikibooks_be_all_nopic_2017-02.zim",
     "wikibooks_be_all_nopic_2017-02_splitted.zim",
-    "wikipedia_en_climate_change_nopic_2020-01.zim"
+    "wikipedia_en_climate_change_mini_2024-06.zim"
   };
 
   for ( const std::string fname : zimfiles ) {
@@ -360,10 +360,10 @@ TEST(ZimArchive, illustration)
       const zim::Archive archive(testfile.path);
       ASSERT_TRUE(archive.hasIllustration(48)) << ctx;
       auto illustrationItem = archive.getIllustrationItem(48);
-      if(testfile.category == "nons") {
-        ASSERT_EQ(illustrationItem.getPath(), "Illustration_48x48@1") << ctx;
-      } else {
+      if(testfile.category == "withns") {
         ASSERT_EQ(illustrationItem.getPath(), "I/favicon.png") << ctx;
+      } else {
+        ASSERT_EQ(illustrationItem.getPath(), "Illustration_48x48@1") << ctx;
       }
       ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48}));
     }
@@ -377,7 +377,7 @@ struct ZimFileInfo {
 struct TestDataInfo {
   const char* const name;
   zim::entry_index_type mediaCount;
-  ZimFileInfo withnsInfo, nonsInfo;
+  ZimFileInfo withnsInfo, nonsInfo, noTitleListingV0Info;
 
 
   const ZimFileInfo& getZimFileInfo(const std::string& category) const {
@@ -385,6 +385,8 @@ struct TestDataInfo {
       return nonsInfo;
     } else if (category == "withns") {
       return withnsInfo;
+    } else if (category == "noTitleListingV0") {
+      return noTitleListingV0Info;
     }
     throw std::runtime_error("Unknown category");
   }
@@ -393,12 +395,15 @@ struct TestDataInfo {
 TEST(ZimArchive, articleNumber)
 {
   TestDataInfo zimfiles[] = {
-     // Name                                          mediaCount,  withns                                           nons
-     //                                                            {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
-    {"small.zim",                                     1,           { 1,       17,          17,       }, { 1,       2,           16        }},
-    {"wikibooks_be_all_nopic_2017-02.zim",            34,          { 66,      118,         118,      }, { 66,      109,         123       }},
-    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   34,          { 66,      118,         118,      }, { 66,      109,         123       }},
-    {"wikipedia_en_climate_change_nopic_2020-01.zim", 333,         { 1837,    7646,        7646,     }, { 1837,    7633,        7649      }}
+     // Name                                          mediaCount,  withns                               nons                                 noTitleListingV0
+     //                                                            {articles, userEntries, allEntries}, {articles, userEntries, allEntries}, {articles, userEntries, allEntries}
+    {"small.zim",                                     1,           { 1,       17,          17,       }, { 1,       2,           16        }, { 1,       2,           16        }},
+// For some unknown reason, nons wikibooks already doesn't contain a v0 title index so number of allEntries is equal to noTitleListingV0.
+// But header titlePtrPos is initialized in nons and is 0 in noTitleListingV0.
+// I suspect here that nons file was generated using a local dev buggy zimrecreate.
+    {"wikibooks_be_all_nopic_2017-02.zim",            34,          { 66,      118,         118,      }, { 66,      109,         123       }, { 66,      109,         123       }},
+    {"wikibooks_be_all_nopic_2017-02_splitted.zim",   34,          { 66,      118,         118,      }, { 66,      109,         123       }, { 66,      109,         123       }},
+    {"wikipedia_en_climate_change_mini_2024-06.zim",  111,         { 3821,    20565,       20565,    }, { 3821,    20551,       20568     }, { 3821,    20551,       20567     }}
   };
   // "withns" zim files have no notion of user entries, so EntryCount == allEntryCount.
   // for small.zim, there is always 1 article, whatever the article is in 'A' namespace or in specific index.
@@ -446,6 +451,12 @@ public:
 #define TEST_BROKEN_ZIM_NAME(ZIMNAME, EXPECTED)                \
 for(auto& testfile: getDataFilePath(ZIMNAME)) {EXPECT_BROKEN_ZIMFILE(testfile.path, EXPECTED)}
 
+#define TEST_BROKEN_ZIM_NAME_CAT(ZIMNAME, CAT, EXPECTED)                \
+for(auto& testfile: getDataFilePath(ZIMNAME, CAT)) {EXPECT_BROKEN_ZIMFILE(testfile.path, EXPECTED)}
+
+// Use an intermediate define to avoid CPP to interpreted the comma as a parameter separator.
+#define WITH_TITLE_IDX_CAT {"withns", "nons"}
+
 #if WITH_TEST_DATA
 TEST(ZimArchive, validate)
 {
@@ -474,8 +485,10 @@ TEST(ZimArchive, validate)
     std::string expected;
     if (testfile.category == "withns") {
       expected = "Title index table outside (or not fully inside) ZIM file.\n";
-    } else {
+    } else if ( testfile.category == "nons") {
       expected = "Full Title index table outside (or not fully inside) ZIM file.\n";
+    } else {
+      continue;
     }
     EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
   }
@@ -505,13 +518,15 @@ TEST(ZimArchive, validate)
     "Invalid dirent pointer\n"
   );
 
-  TEST_BROKEN_ZIM_NAME(
+  TEST_BROKEN_ZIM_NAME_CAT(
     "invalid.outofbounds_first_title_entry.zim",
+    WITH_TITLE_IDX_CAT,
     "Invalid title index entry.\n"
   );
 
-  TEST_BROKEN_ZIM_NAME(
+  TEST_BROKEN_ZIM_NAME_CAT(
     "invalid.outofbounds_last_title_entry.zim",
+    WITH_TITLE_IDX_CAT,
     "Invalid title index entry.\n"
   );
 
@@ -540,8 +555,9 @@ TEST(ZimArchive, validate)
     EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
   }
 
-  TEST_BROKEN_ZIM_NAME(
+  TEST_BROKEN_ZIM_NAME_CAT(
     "invalid.nonsorted_title_index.zim",
+    WITH_TITLE_IDX_CAT,
     "Title index is not properly sorted.\n"
   );
 
@@ -554,8 +570,10 @@ TEST(ZimArchive, validate)
     std::string expected;
     if (testfile.category == "withns") {
       expected = "Entry M/Language has invalid MIME-type value 1234.\n";
-    } else {
+    } else if (testfile.category == "nons") {
       expected = "Entry M/Publisher has invalid MIME-type value 1234.\n";
+    } else {
+      expected = "Entry M/Name has invalid MIME-type value 1234.\n";
     }
     EXPECT_BROKEN_ZIMFILE(testfile.path, expected)
   }

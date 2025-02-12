@@ -22,6 +22,7 @@
 #include "tools.h"
 #include "zim/tools.h"
 #include "fs.h"
+#include "writer/_dirent.h"
 
 #include <sys/types.h>
 #include <string.h>
@@ -217,6 +218,20 @@ zim::MimeCounterType zim::parseMimetypeCounter(const std::string& counterData)
 
   return counters;
 }
+
+bool zim::writer::isFrontArticle(const zim::writer::Dirent* dirent, const zim::writer::Hints& hints)
+{
+  // By definition, dirent not in `C` namespace are not FRONT_ARTICLE
+  if (dirent->getNamespace() != NS::C) {
+    return false;
+  }
+  try {
+    return bool(hints.at(FRONT_ARTICLE));
+  } catch(std::out_of_range&) {
+    return false;
+  }
+}
+
 
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)

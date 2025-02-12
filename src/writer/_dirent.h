@@ -160,7 +160,6 @@ namespace zim
         offset_t offset;
         uint8_t _ns : 2;
         bool removed : 1;
-        bool frontArticle : 1;
 
       public:
         // Creator for a "classic" dirent
@@ -238,9 +237,6 @@ namespace zim
 
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }
-
-        bool isFrontArticle() const { return frontArticle; }
-        void setFrontArticle() { frontArticle = true; }
 
         void write(int out_fd) const;
 

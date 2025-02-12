@@ -182,7 +182,7 @@ TEST(FindTests, ByTitleWithDuplicate)
 // By Path
 TEST(FindTests, ByPath)
 {
-  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "withns")) {
+  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", {"withns"})) {
     zim::Archive archive (testfile.path);
 
     auto range0 = archive.findByPath("A/Main_Page.html");
@@ -255,7 +255,7 @@ TEST(FindTests, ByPath)
 // By Path
 TEST(FindTests, ByPathNons)
 {
-  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", "nons")) {
+  for(auto& testfile:getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", {"nons", "noTitleListingV0"})) {
     zim::Archive archive (testfile.path);
 
     auto range0 = archive.findByPath("Першая_старонка.html");
