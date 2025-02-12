@@ -143,7 +143,7 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
   m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
   xquery = m_queryParser.parse_query(query, flags);
 
-  if ( !query.empty() && xquery.get_num_subqueries() == 0 ) {
+  if ( !query.empty() && xquery.empty() ) {
     // a non-empty query string produced an empty xapian query which means
     // that the query string is made solely of punctuation.
     xquery = Xapian::Query(Xapian::Query::OP_WILDCARD, query);
