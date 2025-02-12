@@ -39,6 +39,7 @@
 #include "../md5.h"
 #include "../constants.h"
 #include "counterHandler.h"
+#include "writer/_dirent.h"
 
 #if defined(ENABLE_XAPIAN)
 # include "xapianHandler.h"
@@ -236,12 +237,10 @@ namespace zim
 
       TPROGRESS();
 
-      // mp_titleListingHandler is a special case, it have to handle all dirents (including itself)
+      // We need to create all dirents before resolving redirects and setting entry indexes.
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents.
-        for(auto dirent:handler->getDirents()) {
-          data->mp_titleListingHandler->handle(dirent, Hints());
-        }
+        handler->getDirents();
       }
 
       // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
@@ -256,7 +255,6 @@ namespace zim
       data->resolveMimeTypes();
 
       // We can now stop the direntHandlers, and get their content
-      bool titleListDirentSeen = false;
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
         const auto& dirents = handler->getDirents();
@@ -270,13 +268,6 @@ namespace zim
           // As we use a "handler level" isCompressible, all content of the same handler
           // must have the same compression.
           data->addItemData(dirent, std::move(*provider_it), handler->isCompressible());
-          if (handler == data->mp_titleListingHandler && !titleListDirentSeen) {
-            // We have to get the offset of the titleList in the cluster before
-            // we close the cluster. Once the cluster is close, the offset information is dropped.
-            // This works only if titleListingHandler create the full (V0) titlelist in its first dirent.
-            data->m_titleListBlobOffset = data->uncompCluster->getBlobOffset(dirent->getBlobNumber());
-            titleListDirentSeen = true;
-          }
           provider_it++;
         }
       }
@@ -326,11 +317,7 @@ namespace zim
 
       header->setMimeListPos( Fileheader::size );
 
-      // We assume here that titleListingHandler create the V0 listing in its first dirent.
-      auto cluster = data->mp_titleListingHandler->getDirents()[0]->getCluster();
-      header->setTitleIdxPos(
-        offset_type(cluster->getOffset() + cluster->getDataOffset() + data->m_titleListBlobOffset));
-
+      header->setTitleIdxPos(0);
       header->setClusterCount( data->clustersList.size() );
     }
 
@@ -468,8 +455,7 @@ namespace zim
       m_direntHandlers.push_back(xapianIndexer);
 #endif
 
-      mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
-      m_direntHandlers.push_back(mp_titleListingHandler);
+      m_direntHandlers.push_back(std::make_shared<TitleListingHandler>(this));
       m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
       for(auto& handler:m_direntHandlers) {

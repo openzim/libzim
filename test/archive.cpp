@@ -175,11 +175,11 @@ TEST(ZimArchive, openCreatedArchive)
 
   zim::Archive archive(tempPath);
 #if !defined(ENABLE_XAPIAN)
-// 2*listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
-#define ALL_ENTRY_COUNT 10U
+// listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
+#define ALL_ENTRY_COUNT 9U
 #else
 // same as above + 2 xapian indexes.
-#define ALL_ENTRY_COUNT 12U
+#define ALL_ENTRY_COUNT 11U
 #endif
   ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
 #undef ALL_ENTRY_COUNT

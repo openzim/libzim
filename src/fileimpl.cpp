@@ -311,7 +311,10 @@ private: // data
   offset_type FileImpl::getMimeListEndUpperLimit() const
   {
     offset_type result(header.getPathPtrPos());
-    result = std::min(result, header.getTitleIdxPos());
+    auto titleIdxPos = header.getTitleIdxPos();
+    if (titleIdxPos != 0) {
+      result = std::min(result, titleIdxPos);
+    }
     result = std::min(result, header.getClusterPtrPos());
     if ( getCountArticles().v != 0 ) {
       // assuming that dirents are placed in the zim file in the same

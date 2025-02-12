@@ -119,9 +119,6 @@ namespace zim
         bool withIndex;
         std::string indexingLanguage;
 
-        std::shared_ptr<TitleListingHandler> mp_titleListingHandler;
-        offset_t m_titleListBlobOffset;  // The offset the title list blob,
-                                         // related to the beginning of the start of cluster's data.
         std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
         void handle(Dirent* dirent, const Hints& hints = Hints()) {
           for(auto& handler: m_direntHandlers) {

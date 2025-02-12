@@ -136,7 +136,7 @@ namespace zim
     if (pathPtrPos < mimeListPos) {
       throw ZimFileFormatError("pathPtrPos must be > mimelistPos.");
     }
-    if (titleIdxPos < mimeListPos) {
+    if (titleIdxPos != 0 && titleIdxPos < mimeListPos) {
       throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
     }
     if (clusterPtrPos < mimeListPos) {

@@ -87,14 +87,12 @@ void TitleListingHandler::stop() {
 
 DirentHandler::Dirents TitleListingHandler::createDirents() const {
   Dirents ret;
-  ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v0", "application/octet-stream+zimlisting", ""));
   ret.push_back(mp_creatorData->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", ""));
   return ret;
 }
 
 DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const {
   ContentProviders ret;
-  ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, false)));
   ret.push_back(std::unique_ptr<ContentProvider>(new ListingProvider(&m_handledDirents, true)));
   return ret;
 }
