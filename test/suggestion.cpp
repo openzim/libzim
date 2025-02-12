@@ -271,6 +271,16 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
+  EXPECT_SUGGESTION_RESULTS(archive, "Wolf ",
+    "Wolf",
+    "Hour of the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Terma termb the wolf of wall street termc"
+  );
+
   EXPECT_SUGGESTION_RESULTS(archive, "the",
     "The chocolate factory",
     "The wolf among sheeps",
@@ -280,6 +290,16 @@ TEST(Suggestion, incrementalSearch) {
     "Hour of the wolf",
     "Terma termb the wolf of wall street termc",
     "Are there any beasts in this country?"
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "the ",
+    "The chocolate factory",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Hour of the wolf",
+    "Terma termb the wolf of wall street termc"
   );
 
   EXPECT_SUGGESTION_RESULTS(archive, "the wol",
