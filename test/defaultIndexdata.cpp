@@ -96,7 +96,7 @@ namespace {
     ASSERT_EQ(indexData->getWordCount(), 3U);
     auto geoPos = indexData->getGeoPosition();
     ASSERT_TRUE(std::get<0>(geoPos));
-    ASSERT_TRUE(std::abs(std::get<1>(geoPos)-45.005) < 0.00001);
-    ASSERT_TRUE(std::abs(std::get<2>(geoPos)-10.1) < 0.00001);
+    ASSERT_NEAR(std::get<1>(geoPos), 45.005, 0.00001);
+    ASSERT_NEAR(std::get<2>(geoPos), 10.1, 0.00001);
   }
 }
