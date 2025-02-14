@@ -43,6 +43,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <cassert>
+#include <vector>
 
 namespace zim {
 
@@ -138,6 +139,21 @@ public: // functions
       return true;
     } catch (std::out_of_range& e) {
       return false;
+    }
+  }
+
+  template<class F>
+  void drop_all(F f) {
+    std::vector<key_t> key_to_drop;
+    for (auto key_iter:_cache_items_map) {
+      key_t key = key_iter.first;
+      if (f(key)) {
+        key_to_drop.push_back(key);
+      }
+    }
+
+    for(auto key:key_to_drop) {
+      drop(key);
     }
   }
 

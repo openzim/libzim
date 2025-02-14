@@ -115,6 +115,12 @@ public: // types
     return impl_.drop(key);
   }
 
+  template<class F>
+  void dropAll(F f) {
+    std::unique_lock<std::mutex> l(lock_);
+    impl_.drop_all(f);
+  }
+
   size_t getMaxSize() const {
     std::unique_lock<std::mutex> l(lock_);
     return impl_.getMaxSize();
