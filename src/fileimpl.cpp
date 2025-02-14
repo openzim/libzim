@@ -281,6 +281,11 @@ private: // data
     readMimeTypes();
   }
 
+  FileImpl::~FileImpl() {
+    // Remove clusters of this ZIM file from the cache
+    clusterCache.dropAll([=](const cluster_index_type key) {return true;});
+  }
+
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
   {
     auto dirent = mp_pathDirentAccessor->getDirent(idx);

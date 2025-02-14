@@ -114,6 +114,7 @@ namespace zim
       FileImpl(FdInput fd, OpenConfig openConfig);
       FileImpl(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
+      ~FileImpl();
 
       time_t getMTime() const;
 
