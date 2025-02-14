@@ -138,16 +138,13 @@ TEST(Suggestion, singleTermOrder) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "berlin", archive.getEntryCount());
-  std::vector<std::string> expectedResult = {
-                                              "berlin",
-                                              "berlin wall",
-                                              "hotel berlin, berlin",
-                                              "again berlin",
-                                              "not berlin"
-                                            };
-
-  ASSERT_EQ(expectedResult , resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "berlin",
+    "berlin",
+    "berlin wall",
+    "hotel berlin, berlin",
+    "again berlin",
+    "not berlin"
+  );
 }
 
 TEST(Suggestion, caseDiacriticsAndHomogrpaphsHandling) {
@@ -220,17 +217,13 @@ TEST(Suggestion, partialQuery) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  // "wo"
-  std::vector<std::string> resultSet = getSuggestions(archive, "Wo", archive.getEntryCount());
-  std::vector<std::string> expectedResult = {
-                                              "Wolf",
-                                              "Hour of the wolf",
-                                              "The wolf of Shingashina",
-                                              "The wolf of Wall Street",
-                                              "Terma termb the wolf of wall street termc"
-                                            };
-
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "Wo",
+    "Wolf",
+    "Hour of the wolf",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "Terma termb the wolf of wall street termc"
+  );
 }
 
 TEST(Suggestion, phraseOrder) {
@@ -245,14 +238,11 @@ TEST(Suggestion, phraseOrder) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "winter autumn summer", archive.getEntryCount());
-  std::vector<std::string> expectedResult = {
-                                              "winter autumn summer terma",
-                                              "autumn summer winter",
-                                              "summer winter autumn"
-                                            };
-
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "winter autumn summer",
+    "winter autumn summer terma",
+    "autumn summer winter",
+    "summer winter autumn"
+  );
 }
 
 TEST(Suggestion, incrementalSearch) {
@@ -264,76 +254,94 @@ TEST(Suggestion, incrementalSearch) {
                                       "The wolf of Wall Street Book" ,
                                       "Hour of the wolf",
                                       "Wolf",
-                                      "Terma termb the wolf of wall street termc"
+                                      "Terma termb the wolf of wall street termc",
+                                      "Are there any beasts in this country?"
                                     };
-
-  std::vector<std::string> resultSet, expectedResult;
 
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  // "wolf"
-  resultSet = getSuggestions(archive, "Wolf", archive.getEntryCount());
-  expectedResult = {
-                     "Wolf",
-                     "Hour of the wolf",
-                     "The wolf among sheeps",
-                     "The wolf of Shingashina",
-                     "The wolf of Wall Street",
-                     "The wolf of Wall Street Book",
-                     "Terma termb the wolf of wall street termc"
-                   };
+  EXPECT_SUGGESTION_RESULTS(archive, "Wolf",
+    "Wolf",
+    "Hour of the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Terma termb the wolf of wall street termc"
+  );
 
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "Wolf ",
+    "Wolf",
+    "Hour of the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Terma termb the wolf of wall street termc"
+  );
 
-  // "the"
-  resultSet = getSuggestions(archive, "the", archive.getEntryCount());
-  expectedResult = {
-                     "The chocolate factory",
-                     "The wolf among sheeps",
-                     "The wolf of Shingashina",
-                     "The wolf of Wall Street",
-                     "The wolf of Wall Street Book",
-                     "Hour of the wolf",
-                     "Terma termb the wolf of wall street termc"
-                   };
+  EXPECT_SUGGESTION_RESULTS(archive, "the",
+    "The chocolate factory",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Hour of the wolf",
+    "Terma termb the wolf of wall street termc",
+    "Are there any beasts in this country?"
+  );
 
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "the ",
+    "The chocolate factory",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Hour of the wolf",
+    "Terma termb the wolf of wall street termc"
+  );
 
-  // "the wolf"
-  resultSet = getSuggestions(archive, "the wolf", archive.getEntryCount());
-  expectedResult = {
-                     "The wolf among sheeps",
-                     "The wolf of Shingashina",
-                     "The wolf of Wall Street",
-                     "The wolf of Wall Street Book",
-                     "Hour of the wolf",
-                     "Terma termb the wolf of wall street termc"
-                   };
+  EXPECT_SUGGESTION_RESULTS(archive, "the wol",
+    "Hour of the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Terma termb the wolf of wall street termc"
+  );
 
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "the wolf",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Hour of the wolf",
+    "Terma termb the wolf of wall street termc"
+  );
 
-  // "the wolf of"
-  resultSet = getSuggestions(archive, "the wolf of", archive.getEntryCount());
-  expectedResult = {
-                     "The wolf of Shingashina",
-                     "The wolf of Wall Street",
-                     "The wolf of Wall Street Book",
-                     "Terma termb the wolf of wall street termc",
-                     "Hour of the wolf"
-                   };
+  EXPECT_SUGGESTION_RESULTS(archive, "the wolf ",
+    "The wolf among sheeps",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Hour of the wolf",
+    "Terma termb the wolf of wall street termc"
+  );
 
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "the wolf of",
+    "The wolf of Shingashina",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Terma termb the wolf of wall street termc",
+    "Hour of the wolf"
+  );
 
-  // "the wolf of wall"
-  resultSet = getSuggestions(archive, "the wolf of wall", archive.getEntryCount());
-  expectedResult = {
-                     "The wolf of Wall Street",
-                     "The wolf of Wall Street Book",
-                     "Terma termb the wolf of wall street termc"
-                   };
-
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "the wolf of wall",
+    "The wolf of Wall Street",
+    "The wolf of Wall Street Book",
+    "Terma termb the wolf of wall street termc"
+  );
 }
 
 TEST(Suggestion, phraseOutOfWindow) {
@@ -347,14 +355,11 @@ TEST(Suggestion, phraseOutOfWindow) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "the dummy query", archive.getEntryCount());
-  std::vector<std::string> expectedResult = {
-                                              "This is the dummy query phrase",
-                                              "aterm the bterm dummy query cterm",
-                                              "the aterm bterm dummy cterm query"
-                                            };
-
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "the dummy query",
+    "This is the dummy query phrase",
+    "aterm the bterm dummy query cterm",
+    "the aterm bterm dummy cterm query"
+  );
 }
 
 TEST(Suggestion, checkStopword) {
@@ -369,11 +374,9 @@ TEST(Suggestion, checkStopword) {
 
   // "she", "and", "the" are stopwords, If stopwords are properly handled, they
   // should be included in the result documents.
-  std::vector<std::string> resultSet = getSuggestions(archive, "she and the apple", archive.getEntryCount());
-  std::vector<std::string> expectedResult = {
-                                              "she and the apple"
-                                            };
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "she and the apple",
+    "she and the apple"
+  );
 }
 
 TEST(Suggestion, checkRedirectionCollapse) {
@@ -467,14 +470,11 @@ TEST(Suggestion, anchorQueryToBeginning) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "This is a title", archive.getEntryCount());
-  std::vector<std::string> expectedResult = {
-                                              "this is a title aterm bterm cterm",
-                                              "aterm bterm this is a title cterm",
-                                              "aterm this is a title bterm cterm"
-                                            };
-
-  ASSERT_EQ(expectedResult, resultSet);
+  EXPECT_SUGGESTION_RESULTS(archive, "This is a title",
+    "this is a title aterm bterm cterm",
+    "aterm bterm this is a title cterm",
+    "aterm this is a title bterm cterm"
+  );
 }
 
 // To secure compatibity of new zim files with older kiwixes, we need to index
@@ -682,24 +682,14 @@ TEST(Suggestion, CJK) {
   creator.finishZimCreation();
 
   zim::Archive archive(tza.getPath());
-  {
-    std::vector<std::string> resultSet = getSuggestions(archive, "平方", archive.getEntryCount());
+  EXPECT_SUGGESTION_RESULTS(archive, "平方",
+    "平方",
+    "平方根"
+  );
 
-    // We should get two results
-    std::vector<std::string> expectedResult = {
-                                                "平方",
-                                                "平方根"
-                                              };
-    ASSERT_EQ(resultSet, expectedResult);
-  }
-
-  {
-    std::vector<std::string> resultSet = getSuggestions(archive, "平方根", archive.getEntryCount());
-
-    // We should get only one result
-    std::vector<std::string> expectedResult = {"平方根"};
-    ASSERT_EQ(resultSet, expectedResult);
-  }
+  EXPECT_SUGGESTION_RESULTS(archive, "平方根",
+    "平方根"
+  );
 }
 
 } // unnamed namespace
