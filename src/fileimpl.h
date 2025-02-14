@@ -107,6 +107,7 @@ namespace zim
       explicit FileImpl(FdInput fd);
       explicit FileImpl(const std::vector<FdInput>& fds);
 #endif
+      ~FileImpl();
 
       time_t getMTime() const;
 
