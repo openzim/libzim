@@ -123,6 +123,12 @@ public: // types
     return Impl::drop(key);
   }
 
+  template<class F>
+  void dropAll(F f) {
+    std::unique_lock<std::mutex> l(lock_);
+    Impl::dropAll(f);
+  }
+
   size_t getMaxCost() const {
     std::unique_lock<std::mutex> l(lock_);
     return Impl::getMaxCost();

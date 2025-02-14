@@ -43,6 +43,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <cassert>
+#include <vector>
 #include <iostream>
 
 namespace zim {
@@ -161,6 +162,21 @@ public: // functions
     _cache_items_list.erase(list_it);
     _cache_items_map.erase(key);
     return true;
+  }
+
+  template<class F>
+  void dropAll(F f) {
+    std::vector<key_t> keys_to_drop;
+    for (auto key_iter:_cache_items_map) {
+      key_t key = key_iter.first;
+      if (f(key)) {
+        keys_to_drop.push_back(key);
+      }
+    }
+
+    for(auto key:keys_to_drop) {
+      drop(key);
+    }
   }
 
   bool exists(const key_t& key) const {
