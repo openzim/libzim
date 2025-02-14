@@ -188,7 +188,7 @@ private: // data
   {}
 #endif
 
-  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)
+  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile) try
     : zimFile(_zimFile),
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
@@ -265,6 +265,9 @@ private: // data
     m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
     readMimeTypes();
+  } catch (...) {
+    getClusterCache().drop_all([=](const std::tuple<FileImpl*, cluster_index_type>& key) {return std::get<0>(key) == this;});
+    throw;
   }
 
   FileImpl::~FileImpl() {
