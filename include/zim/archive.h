@@ -42,6 +42,27 @@ namespace zim
     efficientOrder
   };
 
+  /** Get the maximum size of the cluster cache.
+   *
+   * @return The maximum memory size used the cluster cache.
+   */
+  size_t LIBZIM_API getClusterCacheMaxSize();
+
+  /** Get the current size of the cluster cache.
+   *
+   * @return The current memory size used by the cluster cache.
+   */
+  size_t LIBZIM_API getClusterCacheCurrentSize();
+
+  /** Set the size of the cluster cache.
+   *
+   * If the new size is lower than the number of currently stored clusters
+   * some clusters will be dropped from cache to respect the new size.
+   *
+   * @param sizeInB The memory limit (in bytes) for the cluster cache.
+   */
+  void LIBZIM_API setClusterCacheMaxSize(size_t sizeInB);
+
   /**
    * The Archive class to access content in a zim file.
    *
@@ -533,27 +554,6 @@ namespace zim
        *  @return The shared_ptr
        */
       std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
-
-      /** Get the maximum size of the cluster cache.
-       *
-       * @return The maximum memory size used the cluster cache.
-       */
-      size_t getClusterCacheMaxSize() const;
-
-      /** Get the current size of the cluster cache.
-       *
-       * @return The current memory size used by the cluster cache.
-       */
-      size_t getClusterCacheCurrentSize() const;
-
-      /** Set the size of the cluster cache.
-       *
-       * If the new size is lower than the number of currently stored clusters
-       * some clusters will be dropped from cache to respect the new size.
-       *
-       * @param sizeInB The memory limit (in bytes) for the cluster cache.
-       */
-      void setClusterCacheMaxSize(size_t sizeInB);
 
       /** Get the size of the dirent cache.
        *
