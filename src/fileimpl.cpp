@@ -248,29 +248,40 @@ private: // data
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
 
-    auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
-    if (result.first) {
-      mp_titleDirentAccessor = getTitleAccessorV1(result.second);
-    }
-
-    if (!mp_titleDirentAccessor) {
-      if (!header.hasTitleListingV0()) {
-        throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+    // Following code will may create cluster and we want to remove them from cache
+    // if something goes wrong.
+    try {
+      auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
+      if (result.first) {
+        mp_titleDirentAccessor = getTitleAccessorV1(result.second);
       }
-      offset_t titleOffset(header.getTitleIdxPos());
-      zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
-      mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
-      const_cast<bool&>(m_hasFrontArticlesIndex) = false;
-    }
-    m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
-    readMimeTypes();
+      if (!mp_titleDirentAccessor) {
+        if (!header.hasTitleListingV0()) {
+          throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+        }
+        offset_t titleOffset(header.getTitleIdxPos());
+        zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
+        mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
+        const_cast<bool&>(m_hasFrontArticlesIndex) = false;
+      }
+      m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
+
+      readMimeTypes();
+    } catch (...) {
+      dropCachedClusters();
+      throw;
+    }
   }
 
   FileImpl::~FileImpl() {
-    // We have to clean the global cache for our clusters.
+    dropCachedClusters();
+  }
+
+  void FileImpl::dropCachedClusters() const {
     getClusterCache().dropAll([=](const std::tuple<FileImpl*, cluster_index_type>& key) {return std::get<0>(key) == this;});
   }
+
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
   {
