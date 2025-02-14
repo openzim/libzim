@@ -353,17 +353,35 @@ TEST(ZimArchive, cacheDontImpactReading)
       auto test_archive = zim::Archive(testfile.path);
       test_archive.setDirentCacheMaxSize(cacheConfig.direntCacheSize);
       test_archive.setDirentLookupCacheMaxSize(cacheConfig.direntLookupCacheSize);
-      test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
+      zim::setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
 
       EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
       EXPECT_EQ(test_archive.getDirentLookupCacheMaxSize(), cacheConfig.direntLookupCacheSize);
-      EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
+      EXPECT_EQ(zim::getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
 
       ref_archive.test_is_equal(test_archive);
     }
   }
 }
 
+TEST(ZimArchive, cacheClean) {
+  for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
+    {
+      auto archive = zim::Archive(testfile.path);
+      auto range = archive.iterEfficient();
+      auto it = range.begin();
+      for (auto i = 0; i<50 && it != range.end(); i++, it++) {
+        // Be sure to search by path to populate the dirent cache
+        auto entry = archive.getEntryByPath(it->getPath());
+        auto item = entry.getItem(true);
+        auto data = item.getData();
+      }
+      EXPECT_GT(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
+    }
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
+  }
+}
 
 TEST(ZimArchive, cacheChange)
 {
@@ -384,11 +402,12 @@ TEST(ZimArchive, cacheChange)
     const size_t L1_SIZE = 850 << 10;
     const size_t L2_SIZE = 2 << 20;
 
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
     RefArchiveContent ref_archive(zim::Archive(testfile.path));
     auto archive = zim::Archive(testfile.path);
 
     archive.setDirentCacheMaxSize(30);
-    archive.setClusterCacheMaxSize(L2_SIZE);
+    zim::setClusterCacheMaxSize(L2_SIZE);
 
     auto ref_it = ref_archive.ref_entries.begin();
     for (auto i = 0; i<50 && ref_it != ref_archive.ref_entries.end(); i++, ref_it++) {
@@ -396,14 +415,14 @@ TEST(ZimArchive, cacheChange)
       ref_it->test_is_equal(entry);
     }
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 30);
-    EXPECT_LE(archive.getClusterCacheCurrentSize(), L2_SIZE); // Only 2 clusters in the file
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L2_SIZE); // Only 2 clusters in the file
 
     // Reduce cache size
     archive.setDirentCacheMaxSize(10);
-    archive.setClusterCacheMaxSize(L1_SIZE);
+    zim::setClusterCacheMaxSize(L1_SIZE);
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
-    EXPECT_LE(archive.getClusterCacheCurrentSize(), L1_SIZE);
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L1_SIZE);
 
     // We want to test change of cache while we are iterating on the archive.
     // So we don't reset the ref_it to `range.begin()`.
@@ -413,26 +432,88 @@ TEST(ZimArchive, cacheChange)
     }
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
-    EXPECT_LE(archive.getClusterCacheCurrentSize(), L1_SIZE);
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L1_SIZE);
 
     // Clean cache
     // (More than testing the value, this is needed as we want to be sure the cache is actually populated later)
     archive.setDirentCacheMaxSize(0);
-    archive.setClusterCacheMaxSize(0);
+    zim::setClusterCacheMaxSize(0);
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 
     // Increase the cache
     archive.setDirentCacheMaxSize(20);
-    archive.setClusterCacheMaxSize(L1_SIZE);
+    zim::setClusterCacheMaxSize(L1_SIZE);
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 
     ref_archive.test_is_equal(archive);
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 20);
-    EXPECT_LE(archive.getClusterCacheCurrentSize(), L1_SIZE);
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L1_SIZE);
   }
+}
+
+
+TEST(ZimArchive, MultiZimCache)
+{
+  // Get a list of several zim files to open (whatever the variant)
+  std::vector<std::string> zimPaths;
+  const char* const zimfiles[] = {
+    "wikibooks_be_all_nopic_2017-02.zim",
+    "wikibooks_be_all_nopic_2017-02_splitted.zim",
+    "wikipedia_en_climate_change_mini_2024-06.zim"
+  };
+
+  for ( const std::string fname : zimfiles ) {
+    for (auto& testfile: getDataFilePath(fname)) {
+      zimPaths.push_back(testfile.path);
+    }
+  }
+
+
+  const size_t SMALL_LIMIT = 5 << 20;
+  const size_t BIG_LIMIT = 200 << 20;
+  zim::setClusterCacheMaxSize(BIG_LIMIT);
+
+  std::vector<zim::Archive> archives;
+  for (auto path:zimPaths) {
+    auto archive = zim::Archive(path);
+    for (auto entry:archive.iterEfficient()) {
+      auto item = entry.getItem(true);
+      auto data = item.getData();
+    }
+    archives.push_back(archive);
+  }
+
+  EXPECT_LE(zim::getClusterCacheCurrentSize(), BIG_LIMIT);
+  zim::setClusterCacheMaxSize(SMALL_LIMIT);
+  EXPECT_LE(zim::getClusterCacheCurrentSize(), SMALL_LIMIT);
+
+  // Opening an archive should increase the cluster cache
+  zim::setClusterCacheMaxSize(BIG_LIMIT);
+  auto current_limit = zim::getClusterCacheCurrentSize();
+  {
+    auto archive = zim::Archive(zimPaths[0]);
+    for (auto entry:archive.iterEfficient()) {
+      auto item = entry.getItem(true);
+      auto data = item.getData();
+    }
+    EXPECT_GT(zim::getClusterCacheCurrentSize(), current_limit);
+    current_limit = zim::getClusterCacheCurrentSize();
+  }
+  // Destroying an archive should decrease the cluster cache
+  EXPECT_LT(zim::getClusterCacheCurrentSize(), current_limit);
+
+  // Be sure that decreasing the number of archives open also decrease the
+  // current cache size, until we reach 0.
+  current_limit = zim::getClusterCacheCurrentSize();
+  while (!archives.empty()) {
+    archives.pop_back();
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), current_limit);
+    current_limit = zim::getClusterCacheCurrentSize();
+  }
+  EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 }
 
 TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)

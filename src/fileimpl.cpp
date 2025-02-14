@@ -20,6 +20,7 @@
  */
 
 #include "dirent_lookup.h"
+#include "zim/zim.h"
 #include "zim_types.h"
 #include <memory>
 #define CHUNK_SIZE 1024
@@ -31,7 +32,6 @@
 #include "buffer_reader.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sstream>
 #include <cstring>
 #include <fstream>
 #include <numeric>
@@ -162,6 +162,11 @@ private: // data
 
 } //unnamed namespace
 
+  ClusterCache& getClusterCache() {
+    static ClusterCache clusterCache(CLUSTER_CACHE_SIZE);
+    return clusterCache;
+  }
+
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
@@ -187,7 +192,6 @@ private: // data
     : zimFile(_zimFile),
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
-      clusterCache(CLUSTER_CACHE_SIZE),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0),
@@ -265,7 +269,7 @@ private: // data
 
   FileImpl::~FileImpl() {
     // We have to clean the global cache for our clusters.
-    clusterCache.dropAll([=](const cluster_index_type key) {return true;});
+    getClusterCache().dropAll([=](const std::tuple<FileImpl*, cluster_index_type>& key) {return std::get<0>(key) == this;});
   }
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
@@ -470,19 +474,21 @@ private: // data
     return entry_index_t(m_articleListByCluster[idx.v]);
   }
 
-  FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
+  ClusterHandle FileImpl::readCluster(cluster_index_t idx)
   {
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     return Cluster::read(*zimReader, clusterOffset);
   }
 
-  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
+  ClusterHandle FileImpl::getCluster(cluster_index_t idx)
   {
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    auto cluster = clusterCache.getOrPut(idx.v, [=](){ return readCluster(idx); });
+    auto cluster_index_type = idx.v;
+    auto key = std::make_tuple(this, cluster_index_type);
+    auto cluster = getClusterCache().getOrPut(key, [=](){ return readCluster(idx); });
 #if ENV32BIT
     // There was a bug in the way we create the zim files using ZSTD compression.
     // We were using a too hight compression level and so a window of 128Mb.
@@ -497,7 +503,7 @@ private: // data
       // 5.0 is not a perfect way to detect faulty zim file (it will generate false
       // positives) but it should be enough.
       if (header.getMajorVersion() == 5 && header.getMinorVersion() == 0) {
-        clusterCache.drop(idx.v);
+        getClusterCache().drop(key);
       }
     }
 #endif
@@ -793,17 +799,6 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       }
     }
     return true;
-  }
-
-
-  size_t FileImpl::getClusterCacheMaxSize() const {
-    return clusterCache.getMaxCost();
-  }
-  size_t FileImpl::getClusterCacheCurrentSize() const {
-    return clusterCache.getCurrentCost();
-  }
-  void FileImpl::setClusterCacheMaxSize(size_t sizeInB) {
-    clusterCache.setMaxCost(sizeInB);
   }
 
   size_t FileImpl::getDirentCacheMaxSize() const {

@@ -504,19 +504,19 @@ namespace zim
     return m_impl->hasNewNamespaceScheme();
   }
 
-  size_t Archive::getClusterCacheMaxSize() const
+  size_t getClusterCacheMaxSize()
   {
-    return m_impl->getClusterCacheMaxSize();
+    return getClusterCache().getMaxCost();
   }
 
-  size_t Archive::getClusterCacheCurrentSize() const
+  size_t getClusterCacheCurrentSize()
   {
-    return m_impl->getClusterCacheCurrentSize();
+    return getClusterCache().getCurrentCost();
   }
 
-  void Archive::setClusterCacheMaxSize(size_t sizeInB)
+  void setClusterCacheMaxSize(size_t sizeInB)
   {
-    m_impl->setClusterCacheMaxSize(sizeInB);
+    getClusterCache().setMaxCost(sizeInB);
   }
 
   size_t Archive::getDirentCacheMaxSize() const
@@ -533,7 +533,6 @@ namespace zim
   {
     m_impl->setDirentCacheMaxSize(nbDirents);
   }
-
 
   size_t Archive::getDirentLookupCacheMaxSize() const
   {
