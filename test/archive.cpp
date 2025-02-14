@@ -43,6 +43,18 @@ using zim::unittests::TempFile;
 using zim::unittests::TestItem;
 using zim::unittests::IsFrontArticle;
 
+class ZimArchive: public testing::Test {
+  protected:
+  void SetUp() override {
+    zim::setClusterCacheMaxSize(0);
+    zim::setClusterCacheMaxSize(CLUSTER_CACHE_SIZE);
+    ASSERT_EQ(zim::getClusterCacheCurrentSize(), 0);
+  }
+  void TearDown() override {
+    ASSERT_EQ(zim::getClusterCacheCurrentSize(), 0);
+  }
+};
+
 using TestContextImpl = std::vector<std::pair<std::string, std::string> >;
 struct TestContext : TestContextImpl {
   TestContext(const std::initializer_list<value_type>& il)
@@ -80,7 +92,7 @@ emptyZimArchiveContent()
   return content;
 }
 
-TEST(ZimArchive, openingAnInvalidZimArchiveFails)
+TEST_F(ZimArchive, openingAnInvalidZimArchiveFails)
 {
   const char* const prefixes[] = { "ZIM\x04", "" };
   const unsigned char bytes[] = {0x00, 0x01, 0x11, 0x30, 0xFF};
@@ -101,7 +113,7 @@ TEST(ZimArchive, openingAnInvalidZimArchiveFails)
   }
 }
 
-TEST(ZimArchive, openingAnEmptyZimArchiveSucceeds)
+TEST_F(ZimArchive, openingAnEmptyZimArchiveSucceeds)
 {
   const auto tmpfile = makeTempFile("empty_zim_file", emptyZimArchiveContent());
 
@@ -122,7 +134,7 @@ bool isNastyOffset(int offset) {
   return true;
 }
 
-TEST(ZimArchive, nastyEmptyZimArchive)
+TEST_F(ZimArchive, nastyEmptyZimArchive)
 {
   const std::string correctContent = emptyZimArchiveContent();
   for ( int offset = 0; offset < 80; ++offset ) {
@@ -136,7 +148,7 @@ TEST(ZimArchive, nastyEmptyZimArchive)
   }
 }
 
-TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
+TEST_F(ZimArchive, wrongChecksumInEmptyZimArchive)
 {
   std::string zimfileContent = emptyZimArchiveContent();
   zimfileContent[85] = '\xff';
@@ -147,7 +159,7 @@ TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
 }
 
 
-TEST(ZimArchive, openCreatedArchive)
+TEST_F(ZimArchive, openCreatedArchive)
 {
   TempFile temp("zimfile");
   auto tempPath = temp.path();
@@ -245,7 +257,7 @@ TEST(ZimArchive, openCreatedArchive)
 }
 
 #if WITH_TEST_DATA
-TEST(ZimArchive, openRealZimArchive)
+TEST_F(ZimArchive, openRealZimArchive)
 {
   const char* const zimfiles[] = {
     "small.zim",
@@ -266,7 +278,7 @@ TEST(ZimArchive, openRealZimArchive)
   }
 }
 
-TEST(ZimArchive, openSplitZimArchive)
+TEST_F(ZimArchive, openSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02_splitted.zim";
 
@@ -330,7 +342,7 @@ struct RefArchiveContent {
 };
 
 
-TEST(ZimArchive, cacheDontImpactReading)
+TEST_F(ZimArchive, cacheDontImpactReading)
 {
   const TestCacheConfig cacheConfigs[] = {
     {0, 0, 0},
@@ -362,7 +374,7 @@ TEST(ZimArchive, cacheDontImpactReading)
   }
 }
 
-TEST(ZimArchive, cacheClean) {
+TEST_F(ZimArchive, cacheClean) {
   for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
     EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
     {
@@ -381,7 +393,7 @@ TEST(ZimArchive, cacheClean) {
   }
 }
 
-TEST(ZimArchive, cacheChange)
+TEST_F(ZimArchive, cacheChange)
 {
   // We test only one variant here.
   // Each variant has cluster of different size (especially the old "withns" which
@@ -453,7 +465,7 @@ TEST(ZimArchive, cacheChange)
 }
 
 
-TEST(ZimArchive, MultiZimCache)
+TEST_F(ZimArchive, MultiZimCache)
 {
   // Get a list of several zim files to open (whatever the variant)
   std::vector<std::string> zimPaths;
@@ -514,7 +526,7 @@ TEST(ZimArchive, MultiZimCache)
   EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 }
 
-TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
+TEST_F(ZimArchive, openDontFallbackOnNonSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02.zim";
 
@@ -530,7 +542,7 @@ TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
   }
 }
 
-TEST(ZimArchive, openNonExistantZimArchive)
+TEST_F(ZimArchive, openNonExistantZimArchive)
 {
   const std::string fname = "non_existant.zim";
 
@@ -543,7 +555,7 @@ TEST(ZimArchive, openNonExistantZimArchive)
   }
 }
 
-TEST(ZimArchive, openNonExistantZimSplitArchive)
+TEST_F(ZimArchive, openNonExistantZimSplitArchive)
 {
   const std::string fname = "non_existant.zimaa";
 
@@ -556,7 +568,7 @@ TEST(ZimArchive, openNonExistantZimSplitArchive)
   }
 }
 
-TEST(ZimArchive, randomEntry)
+TEST_F(ZimArchive, randomEntry)
 {
   const char* const zimfiles[] = {
     "wikibooks_be_all_nopic_2017-02.zim",
@@ -581,7 +593,7 @@ TEST(ZimArchive, randomEntry)
   }
 }
 
-TEST(ZimArchive, illustration)
+TEST_F(ZimArchive, illustration)
 {
   const char* const zimfiles[] = {
     "small.zim",
@@ -626,7 +638,7 @@ struct TestDataInfo {
   }
 };
 
-TEST(ZimArchive, articleNumber)
+TEST_F(ZimArchive, articleNumber)
 {
   TestDataInfo zimfiles[] = {
      // Name                                          mediaCount,  withns                               nons                                 noTitleListingV0
@@ -693,7 +705,7 @@ for(auto& testfile: getDataFilePath(ZIMNAME, CAT)) {EXPECT_BROKEN_ZIMFILE(testfi
 #define WITH_TITLE_IDX_CAT {"withns", "nons"}
 
 #if WITH_TEST_DATA
-TEST(ZimArchive, validate)
+TEST_F(ZimArchive, validate)
 {
   zim::IntegrityCheckList all;
   all.set();
@@ -891,7 +903,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 #endif
 }
 
-TEST(ZimArchive, multipart)
+TEST_F(ZimArchive, multipart)
 {
   auto nonSplittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02.zim");
   auto splittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02_splitted.zim");
@@ -920,7 +932,7 @@ TEST(ZimArchive, multipart)
 #endif
 
 #ifndef _WIN32
-TEST(ZimArchive, openByFD)
+TEST_F(ZimArchive, openByFD)
 {
   for(auto& testfile: getDataFilePath("small.zim")) {
     const zim::Archive archive1(testfile.path);
@@ -931,7 +943,7 @@ TEST(ZimArchive, openByFD)
   }
 }
 
-TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
+TEST_F(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 {
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded");
@@ -947,7 +959,7 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   }
 }
 
-TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
+TEST_F(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
 {
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded.multi");
@@ -990,7 +1002,7 @@ zim::Blob readItemData(const zim::ItemDataDirectAccessInfo& dai, zim::size_type 
   return zim::Blob(data, size);
 }
 
-TEST(ZimArchive, getDirectAccessInformation)
+TEST_F(ZimArchive, getDirectAccessInformation)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
     const zim::Archive archive(testfile.path);
@@ -1011,7 +1023,7 @@ TEST(ZimArchive, getDirectAccessInformation)
 }
 
 #ifndef _WIN32
-TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
+TEST_F(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
     const int fd = OPEN_READ_ONLY(testfile.path);
@@ -1032,7 +1044,7 @@ TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
   }
 }
 
-TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
+TEST_F(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
 {
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded");
