@@ -98,6 +98,10 @@ public: // functions
     : pred(&keyContentArea)
   {}
 
+  size_t getSize() const {
+    return entries.size();
+  }
+
   // Add another entry to the search index. The key of the next item is used
   // to derive and store a shorter pseudo-key as explained in the long comment
   // above the class.

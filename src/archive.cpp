@@ -504,6 +504,47 @@ namespace zim
     return m_impl->hasNewNamespaceScheme();
   }
 
+  size_t Archive::get_cluster_cache_max_size() const
+  {
+    return m_impl->get_cluster_cache_max_size();
+  }
+
+  size_t Archive::get_cluster_cache_current_size() const
+  {
+    return m_impl->get_cluster_cache_current_size();
+  }
+
+  void Archive::set_cluster_cache_max_size(size_t nb_clusters)
+  {
+    m_impl->set_cluster_cache_max_size(nb_clusters);
+  }
+
+  size_t Archive::get_dirent_cache_max_size() const
+  {
+    return m_impl->get_dirent_cache_max_size();
+  }
+
+  size_t Archive::get_dirent_cache_current_size() const
+  {
+    return m_impl->get_dirent_cache_current_size();
+  }
+
+  void Archive::set_dirent_cache_max_size(size_t nb_dirents)
+  {
+    m_impl->set_dirent_cache_max_size(nb_dirents);
+  }
+
+
+  size_t Archive::get_dirent_lookup_cache_max_size() const
+  {
+    return m_impl->get_dirent_lookup_cache_max_size();
+  }
+
+  void Archive::set_dirent_lookup_cache_max_size(size_t nb_ranges)
+  {
+    m_impl->set_dirent_lookup_cache_max_size(nb_ranges);
+  }
+
   cluster_index_type Archive::getClusterCount() const
   {
     return cluster_index_type(m_impl->getCountClusters());

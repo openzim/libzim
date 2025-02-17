@@ -22,6 +22,7 @@
 #ifndef ZIM_FILEIMPL_H
 #define ZIM_FILEIMPL_H
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include <memory>
@@ -75,9 +76,12 @@ namespace zim
         }
       };
 
-      using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
+      using DirentLookup = zim::DirentLookup<DirentLookupConfig>;
+      using FastDirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
       mutable std::unique_ptr<DirentLookup> m_direntLookup;
       mutable std::mutex m_direntLookupCreationMutex;
+      mutable std::atomic_bool m_direntLookupCreated;
+      size_t m_direntLookupSize;
 
 
       struct ByTitleDirentLookupConfig
@@ -148,11 +152,20 @@ namespace zim
       bool is_multiPart() const;
 
       bool checkIntegrity(IntegrityCheck checkType);
+
+      size_t get_cluster_cache_max_size() const;
+      size_t get_cluster_cache_current_size() const;
+      void set_cluster_cache_max_size(size_t nb_clusters);
+      size_t get_dirent_cache_max_size() const;
+      size_t get_dirent_cache_current_size() const;
+      void set_dirent_cache_max_size(size_t nb_dirents);
+      size_t get_dirent_lookup_cache_max_size() const;
+      void set_dirent_lookup_cache_max_size(size_t nb_ranges) { m_direntLookupSize = nb_ranges; };
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
 
-      std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const std::string& path);
+      std::unique_ptr<IndirectDirentAccessor> getTitleAccessorV1(const entry_index_t idx);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);
 
       void prepareArticleListByCluster() const;
