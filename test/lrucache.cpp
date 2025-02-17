@@ -78,6 +78,19 @@ TEST(CacheTest, DropValue) {
     EXPECT_FALSE(cache_lru.drop(7));
 }
 
+#define EXPECT_RANGE_MISSING_FROM_CACHE(CACHE, START, END) \
+for (unsigned i = START; i  < END; ++i)  {                 \
+  EXPECT_FALSE(CACHE.exists(i));                           \
+}
+
+#define EXPECT_RANGE_FULLY_IN_CACHE(CACHE, START, END, VALUE_KEY_RATIO) \
+for (unsigned i = START; i  < END; ++i)  {                              \
+  EXPECT_TRUE(CACHE.exists(i));                                         \
+  EXPECT_EQ(i*VALUE_KEY_RATIO, cache_lru.get(i));                       \
+}
+
+
+
 TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
     zim::lru_cache<int, int> cache_lru(TEST2_CACHE_CAPACITY);
 
@@ -85,14 +98,9 @@ TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
         cache_lru.put(i, i);
     }
 
-    for (unsigned i = 0; i < NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY; ++i) {
-        EXPECT_FALSE(cache_lru.exists(i));
-    }
+    EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY))
 
-    for (int i = NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY; i < NUM_OF_TEST2_RECORDS; ++i) {
-        EXPECT_TRUE(cache_lru.exists(i));
-        EXPECT_EQ(i, cache_lru.get(i));
-    }
+    EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1)
 
     size_t size = cache_lru.size();
     EXPECT_EQ(TEST2_CACHE_CAPACITY, size);
