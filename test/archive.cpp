@@ -286,33 +286,49 @@ struct TestCacheConfig {
   size_t direntLookupCacheSize;
 };
 
-
-#define ASSERT_ARCHIVE_EQUIVALENT(REF_ARCHIVE, TEST_ARCHIVE)  \
-  ASSERT_ARCHIVE_EQUIVALENT_LIMIT(REF_ARCHIVE, TEST_ARCHIVE, REF_ARCHIVE.getEntryCount())
-
-#define ASSERT_ARCHIVE_EQUIVALENT_LIMIT(REF_ARCHIVE, TEST_ARCHIVE, LIMIT)             \
-  {                                                                                   \
-    auto range = REF_ARCHIVE.iterEfficient();                                         \
-    auto ref_it = range.begin();                                                      \
-    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), TEST_ARCHIVE, LIMIT)      \
+struct RefEntry {
+  void test_is_equal(const zim::Entry& entry) {
+    ASSERT_EQ(path, entry.getPath());
+    ASSERT_EQ(title, entry.getTitle());
+    ASSERT_EQ(isRedirect, entry.isRedirect());
+    if (isRedirect) {
+      zim::entry_index_type redirectId = redirect_or_hash;
+      ASSERT_EQ(redirectId, entry.getRedirectEntryIndex());
+    } else {
+      auto hash = std::hash<std::string>{}(std::string(entry.getItem().getData()));
+      ASSERT_EQ(redirect_or_hash, hash);
+    }
   }
 
+  std::string path;
+  std::string title;
+  bool        isRedirect;
+  // size_t is either 32 or 64 bits and entry_index_type (redirect id) is always 32 bits.
+  size_t      redirect_or_hash;
+};
 
-#define ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(REF_IT, REF_END, TEST_ARCHIVE, LIMIT)      \
-  for (auto i = 0U; i<LIMIT && REF_IT != REF_END; i++, REF_IT++) {                    \
-    auto test_entry = TEST_ARCHIVE.getEntryByPath(REF_IT->getPath());                 \
-    ASSERT_EQ(REF_IT->getPath(), test_entry.getPath());                               \
-    ASSERT_EQ(REF_IT->getTitle(), test_entry.getTitle());                             \
-    ASSERT_EQ(REF_IT->isRedirect(), test_entry.isRedirect());                         \
-    if (REF_IT->isRedirect()) {                                                       \
-      ASSERT_EQ(REF_IT->getRedirectEntryIndex(), test_entry.getRedirectEntryIndex()); \
-    }                                                                                 \
-    auto ref_item = REF_IT->getItem(true);                                            \
-    auto test_item = test_entry.getItem(true);                                        \
-    ASSERT_EQ(ref_item.getClusterIndex(), test_item.getClusterIndex());               \
-    ASSERT_EQ(ref_item.getBlobIndex(), test_item.getBlobIndex());                     \
-    ASSERT_EQ(ref_item.getData(), test_item.getData());                               \
+struct RefArchiveContent {
+  RefArchiveContent(const zim::Archive& archive) {
+    for (auto entry:archive.iterEfficient()) {
+      RefEntry ref_entry = {
+          entry.getPath(),
+          entry.getTitle(),
+          entry.isRedirect(),
+          entry.isRedirect() ? entry.getRedirectEntryIndex() : std::hash<std::string>{}(std::string(entry.getItem().getData())),
+      };
+      ref_entries.push_back(ref_entry);
+    }
   }
+
+  void test_is_equal(const zim::Archive& archive) {
+    for (auto ref_entry:ref_entries) {
+      auto entry = archive.getEntryByPath(ref_entry.path);
+      ref_entry.test_is_equal(entry);
+    }
+  }
+  std::vector<RefEntry> ref_entries;
+};
+
 
 TEST(ZimArchive, cacheDontImpactReading)
 {
@@ -331,7 +347,7 @@ TEST(ZimArchive, cacheDontImpactReading)
   };
 
   for (auto& testfile: getDataFilePath("small.zim")) {
-    auto ref_archive = zim::Archive(testfile.path);
+    RefArchiveContent ref_archive(zim::Archive(testfile.path));
 
     for (auto cacheConfig: cacheConfigs) {
       auto test_archive = zim::Archive(testfile.path, zim::OpenConfig().preloadDirentRanges(cacheConfig.direntLookupCacheSize));
@@ -341,7 +357,7 @@ TEST(ZimArchive, cacheDontImpactReading)
       EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
       EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
 
-      ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
+      ref_archive.test_is_equal(test_archive);
     }
   }
 }
@@ -366,15 +382,17 @@ TEST(ZimArchive, cacheChange)
     const size_t L1_SIZE = 850 << 10;
     const size_t L2_SIZE = 2 << 20;
 
-    auto ref_archive = zim::Archive(testfile.path);
+    RefArchiveContent ref_archive(zim::Archive(testfile.path));
     auto archive = zim::Archive(testfile.path);
 
     archive.setDirentCacheMaxSize(30);
     archive.setClusterCacheMaxSize(L2_SIZE);
 
-    auto range = ref_archive.iterEfficient();
-    auto ref_it = range.begin();
-    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
+    auto ref_it = ref_archive.ref_entries.begin();
+    for (auto i = 0; i<50 && ref_it != ref_archive.ref_entries.end(); i++, ref_it++) {
+      auto entry = archive.getEntryByPath(ref_it->path);
+      ref_it->test_is_equal(entry);
+    }
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 30);
     EXPECT_LE(archive.getClusterCacheCurrentSize(), L2_SIZE); // Only 2 clusters in the file
 
@@ -387,7 +405,10 @@ TEST(ZimArchive, cacheChange)
 
     // We want to test change of cache while we are iterating on the archive.
     // So we don't reset the ref_it to `range.begin()`.
-    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
+    for (auto i = 0; i<50 && ref_it != ref_archive.ref_entries.end(); i++, ref_it++) {
+      auto entry = archive.getEntryByPath(ref_it->path);
+      ref_it->test_is_equal(entry);
+    }
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
     EXPECT_LE(archive.getClusterCacheCurrentSize(), L1_SIZE);
@@ -406,7 +427,7 @@ TEST(ZimArchive, cacheChange)
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
     EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
 
-    ASSERT_ARCHIVE_EQUIVALENT(ref_archive, archive)
+    ref_archive.test_is_equal(archive);
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 20);
     EXPECT_LE(archive.getClusterCacheCurrentSize(), L1_SIZE);
   }
