@@ -86,7 +86,8 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
   Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, Compression comp, bool isExtended)
     : compression(comp),
       isExtended(isExtended),
-      m_reader(std::move(reader_))
+      m_reader(std::move(reader_)),
+      m_memorySize(0)
   {
     if (isExtended) {
       read_header<uint64_t>();
@@ -179,4 +180,34 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     }
   }
 
+}
+
+// This function must return a constant size for a given cluster.
+// This is important as we want to remove the same size that what we add when we remove
+// the cluster from the cache.
+// However, because of partial decompression, this size can change:
+// - As we advance in the compression, we can create new blob readers in `m_blobReaders`
+// - The stream itself may allocate memory.
+// To solve this, we take the average and say a cluster's blob readers will half be created and
+// so we assume a readers size of half the full uncompressed cluster data size.
+// It also appears that when we get the size of the stream, we reach a state where no
+// futher allocation will be done by it. Probably because:
+// - We already started to decompresse the stream to read the offsets
+// - Cluster data size is smaller than window size associated to compression level (?)
+// We anyway check that and print a warning if this is not the case, hopping that user will create
+// an issue allowing us for further analysis.
+size_t zim::ClusterMemorySize::get_cluster_size(const Cluster& cluster) {
+  if (!cluster.m_memorySize) {
+    auto base_struct = sizeof(Cluster);
+    auto offsets_size = sizeof(offset_t) * cluster.m_blobOffsets.size();
+    auto readers_size = cluster.m_blobOffsets.back().v / 2;
+    cluster.m_streamSize = cluster.m_reader->getSize();
+    cluster.m_memorySize = base_struct + offsets_size + readers_size + cluster.m_streamSize;
+  }
+  auto streamSize = cluster.m_reader->getSize();
+  if (streamSize != cluster.m_streamSize) {
+    std::cerr << "WARNING: stream size have changed from " << cluster.m_streamSize << " to " << streamSize << std::endl; 
+    std::cerr << "Please open an issue on https://github.com/openzim/libzim/issues with this message and the zim file you use" << std::endl; 
+  }
+  return cluster.m_memorySize;
 }

@@ -504,19 +504,19 @@ namespace zim
     return m_impl->hasNewNamespaceScheme();
   }
 
-  size_t Archive::get_cluster_cache_max_size() const
+  size_t get_cluster_cache_max_size()
   {
-    return m_impl->get_cluster_cache_max_size();
+    return getClusterCache().get_max_size();
   }
 
-  size_t Archive::get_cluster_cache_current_size() const
+  size_t get_cluster_cache_current_size()
   {
-    return m_impl->get_cluster_cache_current_size();
+    return getClusterCache().get_current_size();
   }
 
-  void Archive::set_cluster_cache_max_size(size_t nb_clusters)
+  void set_cluster_cache_max_size(size_t size_in_b)
   {
-    m_impl->set_cluster_cache_max_size(nb_clusters);
+    getClusterCache().set_max_size(size_in_b);
   }
 
   size_t Archive::get_dirent_cache_max_size() const
@@ -533,7 +533,6 @@ namespace zim
   {
     m_impl->set_dirent_cache_max_size(nb_dirents);
   }
-
 
   size_t Archive::get_dirent_lookup_cache_max_size() const
   {

@@ -24,6 +24,7 @@
 
 #include <atomic>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <memory>
 #include <zim/zim.h>
@@ -42,6 +43,11 @@
 
 namespace zim
 {
+  class FileImpl;
+  typedef std::shared_ptr<const Cluster> ClusterHandle;
+  typedef ConcurrentCache<std::tuple<FileImpl*, cluster_index_type>, ClusterHandle, ClusterMemorySize> ClusterCache;
+  ClusterCache& getClusterCache();
+
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
@@ -53,9 +59,6 @@ namespace zim
 
       std::shared_ptr<const DirectDirentAccessor> mp_pathDirentAccessor;
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
-
-      typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;
@@ -106,6 +109,7 @@ namespace zim
       explicit FileImpl(FdInput fd);
       explicit FileImpl(const std::vector<FdInput>& fds);
 #endif
+      ~FileImpl();
 
       time_t getMTime() const;
 
@@ -153,9 +157,6 @@ namespace zim
 
       bool checkIntegrity(IntegrityCheck checkType);
 
-      size_t get_cluster_cache_max_size() const;
-      size_t get_cluster_cache_current_size() const;
-      void set_cluster_cache_max_size(size_t nb_clusters);
       size_t get_dirent_cache_max_size() const;
       size_t get_dirent_cache_current_size() const;
       void set_dirent_cache_max_size(size_t nb_dirents);
