@@ -97,6 +97,8 @@ namespace zim
       using ByTitleDirentLookup = zim::DirentLookup<ByTitleDirentLookupConfig>;
       std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
+      std::shared_ptr<XapianDb> mp_xapianDb;
+
     public:
       using FindxResult = std::pair<bool, entry_index_t>;
       using FindxTitleResult = std::pair<bool, title_index_t>;
@@ -167,6 +169,7 @@ namespace zim
       size_t getDirentLookupCacheMaxSize() const;
       void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
 
+      std::shared_ptr<XapianDb> loadXapianDb(DirentLookup& direntLookup);
       std::shared_ptr<XapianDb> getXapianDb();
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);

@@ -263,6 +263,8 @@ private: // data
     }
     m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
+    mp_xapianDb = loadXapianDb(tmpDirentLookup);
+
     readMimeTypes();
   }
 
@@ -857,11 +859,11 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return cluster->getBlob(dirent.getBlobNumber(), offset, size);
   }
 
-  std::shared_ptr<XapianDb> FileImpl::getXapianDb() {
+  std::shared_ptr<XapianDb> FileImpl::loadXapianDb(DirentLookup& direntLookup) {
     FileImpl::FindxResult r;
-    r = direntLookup().find('X', "fulltext/xapian");
+    r = direntLookup.find('X', "fulltext/xapian");
     if (!r.first) {
-      r = direntLookup().find('Z', "/fulltextIndex/xapian");
+      r = direntLookup.find('Z', "/fulltextIndex/xapian");
     }
     if (!r.first) {
       return nullptr;
@@ -888,7 +890,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       // So we need a language, let's use the one of the zim.
       // If zimfile has no language metadata, we can't do lot more here :/
       try {
-        r = direntLookup().find('M', "Language");
+        r = direntLookup.find('M', "Language");
         if (r.first) {
           auto langDirent = getDirent(r.second);
           while (langDirent->isRedirect()) {
@@ -903,5 +905,9 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       // Do nothing
     }
     return nullptr;
+  }
+
+  std::shared_ptr<XapianDb> FileImpl::getXapianDb() {
+    return mp_xapianDb;
   }
 }
