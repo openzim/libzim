@@ -865,7 +865,7 @@ TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
 
 
 #if WITH_TEST_DATA
-zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
+zim::Blob readItemData(const zim::DirectAccessInfo& dai, zim::size_type size)
 {
   zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
   std::shared_ptr<char> data(new char[size], std::default_delete<char[]>());

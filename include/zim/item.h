@@ -38,9 +38,6 @@ namespace zim
    */
   class LIBZIM_API Item : private Entry
   {
-    public: // types
-      typedef std::pair<std::string, offset_type> DirectAccessInfo;
-
     public: // functions
       std::string getTitle() const { return Entry::getTitle(); }
       std::string getPath() const  { return Entry::getPath(); }
@@ -84,7 +81,7 @@ namespace zim
        *         If it is not possible to have direct access for this item,
        *         return a pair of `{"", 0}`
        */
-      DirectAccessInfo getDirectAccessInformation() const;
+      zim::DirectAccessInfo getDirectAccessInformation() const;
 
       entry_index_type getIndex() const   { return Entry::getIndex(); }
 
