@@ -94,9 +94,6 @@ class InternalDataBase {
     // The (main) database we will search on (wrapping other xapian databases).
     Xapian::Database m_database;
 
-    // The real databases.
-    std::vector<XapianDb> m_xapianDatabases;
-
     // The archives we are searching on.
     std::vector<Archive> m_archives;
 
