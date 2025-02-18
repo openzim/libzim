@@ -26,6 +26,7 @@
 #include <xapian.h>
 
 #include <zim/archive.h>
+#include <zim/search.h>
 #include <zim/entry.h>
 #include <zim/error.h>
 

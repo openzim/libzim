@@ -36,6 +36,7 @@
 #include "file_reader.h"
 #include "file_compound.h"
 #include "fileheader.h"
+#include "search_internal.h"
 #include "zim_types.h"
 #include "direntreader.h"
 
@@ -165,6 +166,8 @@ namespace zim
       void setDirentCacheMaxSize(size_t nbDirents);
       size_t getDirentLookupCacheMaxSize() const;
       void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
+
+      std::shared_ptr<XapianDb> getXapianDb();
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
