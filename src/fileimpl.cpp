@@ -840,4 +840,18 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     const auto physical_local_offset = logical_local_offset + part->offset().v;
     return ItemDataDirectAccessInfo(part->filename(), physical_local_offset);
   }
+
+  Blob FileImpl::getBlob(const Dirent& dirent, offset_t offset) const
+  {
+    auto cluster = getCluster(dirent.getClusterNumber());
+    auto blobIdx = dirent.getBlobNumber();
+    auto size = zsize_t(cluster->getBlobSize(blobIdx).v - offset.v);
+    return cluster->getBlob(blobIdx, offset, size);
+  }
+
+  Blob FileImpl::getBlob(const Dirent& dirent, offset_t offset, zsize_t size) const
+  {
+    auto cluster = getCluster(dirent.getClusterNumber());
+    return cluster->getBlob(dirent.getBlobNumber(), offset, size);
+  }
 }

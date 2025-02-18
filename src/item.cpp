@@ -44,16 +44,12 @@ std::string Item::getMimetype() const
 
 Blob Item::getData(offset_type offset) const
 {
-  auto size = getSize()-offset;
-  return getData(offset, size);
+  return m_file->getBlob(*m_dirent, offset_t(offset));
 }
 
 Blob Item::getData(offset_type offset, size_type size) const
 {
-  auto cluster = m_file->getCluster(m_dirent->getClusterNumber());
-  return cluster->getBlob(m_dirent->getBlobNumber(),
-                          offset_t(offset),
-                          zsize_t(size));
+  return m_file->getBlob(*m_dirent, offset_t(offset), zsize_t(size));
 }
 
 size_type Item::getSize() const

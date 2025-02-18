@@ -126,6 +126,9 @@ namespace zim
       FindxResult findx(const std::string &path) const;
       FindxTitleResult findxByTitle(char ns, const std::string& title);
 
+      Blob getBlob(const Dirent& dirent, offset_t offset = offset_t(0)) const;
+      Blob getBlob(const Dirent& dirent, offset_t offset, zsize_t size) const;
+
       std::shared_ptr<const Cluster> getCluster(cluster_index_t idx) const;
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
       offset_t getClusterOffset(cluster_index_t idx) const;
