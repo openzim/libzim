@@ -89,6 +89,11 @@ Xapian::Stopper* XapianDbMetadata::new_stopper() {
     return nullptr;
 }
 
+XapianDb::XapianDb(const Xapian::Database& db, std::string defaultLanguage)
+  : m_metadata(db, defaultLanguage),
+    m_db(db)
+{}
+
 InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool verbose)
   : m_verbose(verbose)
 {
@@ -112,32 +117,34 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
             continue;
         }
 
-        Xapian::Database database;
-        if (!getDbFromAccessInfo(accessInfo, database)) {
+        Xapian::Database xapianDatabase;
+        if (!getDbFromAccessInfo(accessInfo, xapianDatabase)) {
           continue;
         }
 
         try {
-            if ( first ) {
-                std::string defaultLanguage;
-                // Database created before 2017/03 has no language metadata.
-                // However, term were stemmed anyway and we need to stem our
-                // search query the same the database was created.
-                // So we need a language, let's use the one of the zim.
-                // If zimfile has no language metadata, we can't do lot more here :/
-                try {
-                    defaultLanguage = archive.getMetadata("Language");
-                } catch(...) {}
+            std::string defaultLanguage;
+            // Database created before 2017/03 has no language metadata.
+            // However, term were stemmed anyway and we need to stem our
+            // search query the same the database was created.
+            // So we need a language, let's use the one of the zim.
+            // If zimfile has no language metadata, we can't do lot more here :/
+            try {
+                defaultLanguage = archive.getMetadata("Language");
+            } catch(...) {}
 
-                m_metadata = XapianDbMetadata(database, defaultLanguage);
+            auto database = XapianDb(xapianDatabase, defaultLanguage);
+
+            if ( first ) {
+                m_metadata = database.m_metadata;
                 m_queryParser.set_stemmer(m_metadata.m_stemmer);
                         m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
                 m_queryParser.set_stopper(m_metadata.new_stopper());
+                first = false;
             }
-            m_xapianDatabases.push_back(database);
-            m_database.add_database(database);
+            m_database.add_database(database.m_db);
+            m_xapianDatabases.push_back(std::move(database));
             m_archives.push_back(archive);
-            first = false;
         } catch( Xapian::DatabaseError& e ) {
             // [TODO] Ignore the database or raise a error ?
             // As we already ignore the database if `getDbFromAccessInfo` "detects" a DatabaseError,
