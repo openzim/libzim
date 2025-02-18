@@ -25,7 +25,6 @@
 #include <memory>
 #include <iterator>
 #include "entry.h"
-#include "archive.h"
 #include "uuid.h"
 
 namespace zim
@@ -34,6 +33,12 @@ class SearchResultSet;
 
 /**
  * A interator on search result (an Entry)
+ *
+ * SearchIterator are mostly thread safe:
+ * - Manipulating the iterator itself (increment it, ...) is not thread safe.
+ *   You should not share an iterator between different thread (and you probably don't have use case for that)
+ * - Reading from two iterators (getPath, ...) from two differents thread is ok.
+ *   (ie: You can pass iterator from one thread to the other one)
  *
  * Be aware that the referenced/pointed Entry is generated and stored
  * in the iterator itself.

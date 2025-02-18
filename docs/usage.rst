@@ -12,8 +12,8 @@ which is always derived from std::exception.
 
 All classes are defined in the namespace zim.
 Copying is allowed and tried to make as cheap as possible.
-The reading part of the libzim is most of the time thread safe.
-Searching and creating part are not. You have to serialize access to the class yourself.
+The reading part of the libzim (including search) is most of the time thread safe.
+Creating part is not. You have to serialize access to the Creator class yourself.
 
 The main class, which accesses a archive is |Archive|.
 It has actually a reference to an implementation, so that copies of the class just references the same file.
