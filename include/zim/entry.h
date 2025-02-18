@@ -39,7 +39,7 @@ namespace zim
   class LIBZIM_API Entry
   {
     public:
-      explicit Entry(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
+      explicit Entry(std::shared_ptr<const FileImpl> file_, entry_index_type idx_);
 
       bool isRedirect() const;
       std::string getTitle() const;
@@ -84,7 +84,7 @@ namespace zim
       entry_index_type getIndex() const   { return m_idx; }
 
     protected: // so that Item can be implemented as a wrapper over Entry
-      std::shared_ptr<FileImpl> m_file;
+      std::shared_ptr<const FileImpl> m_file;
       entry_index_type m_idx;
       std::shared_ptr<const Dirent> m_dirent;
   };

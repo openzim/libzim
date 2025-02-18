@@ -29,7 +29,7 @@ log_define("zim.entry")
 
 using namespace zim;
 
-Entry::Entry(std::shared_ptr<FileImpl> file, entry_index_type idx)
+Entry::Entry(std::shared_ptr<const FileImpl> file, entry_index_type idx)
   : m_file(file),
     m_idx(idx),
     m_dirent(file->getDirent(entry_index_t(idx)))

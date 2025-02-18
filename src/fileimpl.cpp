@@ -381,12 +381,12 @@ private: // data
     }
   }
 
-  FileImpl::FindxResult FileImpl::findx(char ns, const std::string& path)
+  FileImpl::FindxResult FileImpl::findx(char ns, const std::string& path) const
   {
     return direntLookup().find(ns, path);
   }
 
-  FileImpl::FindxResult FileImpl::findx(const std::string& longPath)
+  FileImpl::FindxResult FileImpl::findx(const std::string& longPath) const
   {
     char ns;
     std::string path;
@@ -403,17 +403,17 @@ private: // data
   }
 
   FileCompound::PartRange
-  FileImpl::getFileParts(offset_t offset, zsize_t size)
+  FileImpl::getFileParts(offset_t offset, zsize_t size) const
   {
     return zimFile->locate(offset, size);
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirent(entry_index_t idx) const
   {
     return mp_pathDirentAccessor->getDirent(idx);
   }
 
-  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx)
+  std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx) const
   {
     return mp_titleDirentAccessor->getDirent(idx);
   }
@@ -465,14 +465,14 @@ private: // data
     return entry_index_t(m_articleListByCluster[idx.v]);
   }
 
-  FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
+  FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx) const
   {
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     return Cluster::read(*zimReader, clusterOffset);
   }
 
-  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
+  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx) const
   {
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
@@ -504,7 +504,7 @@ private: // data
     return readOffset(*clusterOffsetReader, idx.v);
   }
 
-  offset_t FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx)
+  offset_t FileImpl::getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx) const
   {
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed())
@@ -566,11 +566,11 @@ private: // data
 
     struct zim_MD5_CTX md5ctx;
     zim_MD5Init(&md5ctx);
-    
+
     unsigned char ch[CHUNK_SIZE];
     offset_type checksumPos = header.getChecksumPos();
     offset_type toRead = checksumPos;
-    
+
     for(auto part = zimFile->begin();
         part != zimFile->end();
         part++) {
@@ -580,7 +580,7 @@ private: // data
         zim_MD5Update(&md5ctx, ch, CHUNK_SIZE);
         toRead-=CHUNK_SIZE;
       }
-      
+
       // Previous read was good, so we have exited the previous `while` because
       // `toRead<CHUNK_SIZE`. Let's try to read `toRead` chars and process them later.
       // Else, the previous `while` exited because we didn't succeed to read
@@ -589,12 +589,12 @@ private: // data
       if(stream.good()){
         stream.read(reinterpret_cast<char*>(ch),toRead);
       }
-      
+
       // It updates the checksum with the remaining amount of data when we
       // reach the end of the file or part
       zim_MD5Update(&md5ctx, ch, stream.gcount());
       toRead-=stream.gcount();
-    
+
       if (stream.bad()) {
         perror("error while reading file");
         return false;
