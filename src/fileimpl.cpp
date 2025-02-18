@@ -20,6 +20,8 @@
  */
 
 #include "dirent_lookup.h"
+#include "search_internal.h"
+#include "xapian.h"
 #include "zim_types.h"
 #include <memory>
 #define CHUNK_SIZE 1024
@@ -855,5 +857,53 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
   {
     auto cluster = getCluster(clusterIdx);
     return cluster->getBlob(blobIdx, offset, size);
+  }
+
+  std::shared_ptr<XapianDb> FileImpl::getXapianDb() {
+    FileImpl::FindxResult r;
+    r = direntLookup().find('X', "fulltext/xapian");
+    if (!r.first) {
+      r = direntLookup().find('Z', "/fulltextIndex/xapian");
+    }
+    if (!r.first) {
+      return nullptr;
+    }
+    auto xapianDirent = getDirent(r.second);
+    if (xapianDirent->isRedirect()) {
+      return nullptr;
+    }
+    auto accessInfo = getDirectAccessInformation(xapianDirent->getClusterNumber(), xapianDirent->getBlobNumber());
+    if (accessInfo.second == 0) {
+      return nullptr;
+    }
+
+    Xapian::Database xapianDatabase;
+    if (!getDbFromAccessInfo(accessInfo, xapianDatabase)) {
+      return nullptr;
+    }
+
+    try {
+      std::string defaultLanguage;
+      // Database created before 2017/03 has no language metadata.
+      // However, term were stemmed anyway and we need to stem our
+      // search query the same the database was created.
+      // So we need a language, let's use the one of the zim.
+      // If zimfile has no language metadata, we can't do lot more here :/
+      try {
+        r = direntLookup().find('M', "Language");
+        if (r.first) {
+          auto langDirent = getDirent(r.second);
+          while (langDirent->isRedirect()) {
+            langDirent = getDirent(langDirent->getRedirectIndex());
+          }
+          defaultLanguage = getBlob(langDirent->getClusterNumber(), langDirent->getBlobNumber());
+        }
+      } catch(...) {}
+
+      return std::make_shared<XapianDb>(xapianDatabase, defaultLanguage);
+    } catch (Xapian::DatabaseError& e) {
+      // Do nothing
+    }
+    return nullptr;
   }
 }
