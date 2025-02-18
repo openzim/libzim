@@ -143,7 +143,6 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
                 first = false;
             }
             m_database.add_database(database.m_db);
-            m_xapianDatabases.push_back(std::move(database));
             m_archives.push_back(archive);
         } catch( Xapian::DatabaseError& e ) {
             // [TODO] Ignore the database or raise a error ?
@@ -155,7 +154,7 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
 
 bool InternalDataBase::hasDatabase() const
 {
-  return !m_xapianDatabases.empty();
+  return !m_archives.empty();
 }
 
 bool InternalDataBase::hasValuesmap() const
