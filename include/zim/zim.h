@@ -23,6 +23,7 @@
 #define ZIM_ZIM_H
 
 #include <cstdint>
+#include <string>
 
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -135,6 +136,8 @@ namespace zim
      */
     COUNT
   };
+
+  typedef std::pair<std::string, offset_type> DirectAccessInfo;
 }
 
 #endif // ZIM_ZIM_H
