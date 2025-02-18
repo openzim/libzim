@@ -34,10 +34,7 @@ namespace zim {
 class XapianDbMetadata {
   public: // methods
     XapianDbMetadata() = default;
-    XapianDbMetadata(XapianDbMetadata&&) = default;
-
     XapianDbMetadata(const Xapian::Database& db, std::string defaultLanguage);
-    XapianDbMetadata& operator=(XapianDbMetadata&& other) = default;
 
     // Return a newly allocated stopper.
     // This stopper can (and should to be properly deleted) be directly passed to xapian
@@ -70,6 +67,16 @@ class XapianDbMetadata {
     std::string m_stopwords;
 };
 
+class XapianDb {
+  public: // method
+    XapianDb(const Xapian::Database& db, std::string defaultLanguage);
+
+  public: // data
+    XapianDbMetadata m_metadata;
+
+    Xapian::Database m_db;
+};
+
 /**
  * A class to encapsulate a xapian database and all the information we can gather from it.
  */
@@ -88,7 +95,7 @@ class InternalDataBase {
     Xapian::Database m_database;
 
     // The real databases.
-    std::vector<Xapian::Database> m_xapianDatabases;
+    std::vector<XapianDb> m_xapianDatabases;
 
     // The archives we are searching on.
     std::vector<Archive> m_archives;
