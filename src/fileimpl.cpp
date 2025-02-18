@@ -840,4 +840,20 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     const auto physical_local_offset = logical_local_offset + part->offset().v;
     return std::make_pair(part->filename(), physical_local_offset);
   }
+
+  Blob FileImpl::getBlob(cluster_index_t clusterIdx, blob_index_t blobIdx) const
+  {
+    return getBlob(clusterIdx, blobIdx, offset_t(0));
+  }
+  Blob FileImpl::getBlob(cluster_index_t clusterIdx, blob_index_t blobIdx, offset_t offset) const
+  {
+    auto cluster = getCluster(clusterIdx);
+    auto size = zsize_t(cluster->getBlobSize(blobIdx).v - offset.v);
+    return cluster->getBlob(blobIdx, offset, size);
+  }
+  Blob FileImpl::getBlob(cluster_index_t clusterIdx, blob_index_t blobIdx, offset_t offset, zsize_t size) const
+  {
+    auto cluster = getCluster(clusterIdx);
+    return cluster->getBlob(blobIdx, offset, size);
+  }
 }
