@@ -22,11 +22,13 @@
  *
  */
 
+#include <mutex>
 #include <zim/error.h>
 #include <zim/search.h>
 #include <zim/archive.h>
 #include <zim/item.h>
 #include "fileimpl.h"
+#include "lock.h"
 #include "search_internal.h"
 #include "tools.h"
 #include "zim/zim.h"
@@ -100,6 +102,7 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
     bool first = true;
     m_queryParser.set_database(m_database);
     m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
+    std::vector<std::recursive_mutex*> mutexes;
 
     for(auto& archive: archives) {
         auto database = archive.getImpl()->getXapianDb();
@@ -116,8 +119,11 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
             first = false;
         }
         m_database.add_database(database->m_db);
+        mutexes.push_back(&database->m_mutex);
         m_archives.push_back(archive);
     }
+
+    m_mutexes = MultiMutex(mutexes);
 }
 
 bool InternalDataBase::hasDatabase() const
@@ -138,6 +144,13 @@ bool InternalDataBase::hasValue(const std::string& valueName) const
 int InternalDataBase::valueSlot(const std::string& valueName) const
 {
   return m_metadata.valueSlot(valueName);
+}
+
+std::lock_guard<MultiMutex> InternalDataBase::lock() {
+  // Construct the guard with a list-initialization, so we don't have to move it
+  // (which we can't do as lock_guard is not movable).
+  // See https://stackoverflow.com/questions/22502606/why-is-stdlock-guard-not-movable
+  return { m_mutexes, std::adopt_lock };
 }
 
 Xapian::Query InternalDataBase::parseQuery(const Query& query)
@@ -265,6 +278,7 @@ Query& Query::setGeorange(float latitude, float longitude, float distance) {
 
 int Search::getEstimatedMatches() const
 {
+    LOCK_SEARCH(mp_internalDb);
     try {
       auto enquire = getEnquire();
       // Force xapian to check at least 10 documents even if we ask for an empty mset.
@@ -279,6 +293,7 @@ int Search::getEstimatedMatches() const
 }
 
 const SearchResultSet Search::getResults(int start, int maxResults) const {
+    LOCK_SEARCH(mp_internalDb);
     try {
       auto enquire = getEnquire();
       auto mset = enquire.get_mset(start, maxResults);
@@ -296,6 +311,7 @@ Xapian::Enquire& Search::getEnquire() const
         return *mp_enquire;
     }
 
+    LOCK_SEARCH(mp_internalDb);
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
     auto query = mp_internalDb->parseQuery(m_query);
@@ -324,6 +340,7 @@ int SearchResultSet::size() const
   if (! mp_mset) {
       return 0;
   }
+  LOCK_SEARCH(mp_internalDb);
   try {
       return mp_mset->size();
   } catch(Xapian::DatabaseError& e) {
@@ -336,6 +353,7 @@ SearchResultSet::iterator SearchResultSet::begin() const
     if ( ! mp_mset ) {
         return nullptr;
     }
+    LOCK_SEARCH(mp_internalDb);
     try {
         return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
     } catch(Xapian::DatabaseError& e) {
@@ -348,6 +366,7 @@ SearchResultSet::iterator SearchResultSet::end() const
     if ( ! mp_mset ) {
         return nullptr;
     }
+    LOCK_SEARCH(mp_internalDb);
     try {
         return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
     } catch(Xapian::DatabaseError& e) {

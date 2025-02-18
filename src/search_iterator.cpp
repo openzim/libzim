@@ -107,6 +107,7 @@ std::string SearchIterator::getPath() const {
         return "";
     }
 
+    LOCK_SEARCH(internal->mp_internalDb);
     try {
         std::string path = internal->get_document().get_data();
         bool hasNewNamespaceScheme = internal->mp_internalDb->m_archives.at(getFileIndex()).hasNewNamespaceScheme();
@@ -132,6 +133,7 @@ std::string SearchIterator::getDbData() const {
         return "";
     }
 
+    LOCK_SEARCH(internal->mp_internalDb);
     return internal->get_document().get_data();
 }
 
@@ -139,6 +141,7 @@ std::string SearchIterator::getTitle() const {
     if ( ! internal ) {
         return "";
     }
+    LOCK_SEARCH(internal->mp_internalDb);
     return internal->get_entry().getTitle();
 }
 
@@ -146,6 +149,7 @@ int SearchIterator::getScore() const {
     if ( ! internal ) {
         return 0;
     }
+    LOCK_SEARCH(internal->mp_internalDb);
     return internal->iterator().get_percent();
 }
 
@@ -154,6 +158,7 @@ std::string SearchIterator::getSnippet() const {
         return "";
     }
 
+    LOCK_SEARCH(internal->mp_internalDb);
     try {
         // Generate full text snippet
         if ( ! internal->mp_internalDb->hasValuesmap() )
@@ -200,6 +205,7 @@ int SearchIterator::getWordCount() const {
     if ( ! internal ) {
         return -1;
     }
+    LOCK_SEARCH(internal->mp_internalDb);
     try {
         if ( ! internal->mp_internalDb->hasValuesmap() )
         {
@@ -238,6 +244,7 @@ SearchIterator::reference SearchIterator::operator*() const {
     if (! internal ) {
         throw std::runtime_error("Cannot get a entry for a uninitialized iterator");
     }
+    LOCK_SEARCH(internal->mp_internalDb);
     return internal->get_entry();
 }
 

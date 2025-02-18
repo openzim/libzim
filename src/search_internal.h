@@ -23,6 +23,8 @@
 #define ZIM_SEARCH_INTERNAL_H
 
 #include "tools.h"
+#include "lock.h"
+#include <mutex>
 #include <xapian.h>
 
 #include <zim/archive.h>
@@ -76,6 +78,8 @@ class XapianDb {
     XapianDbMetadata m_metadata;
 
     Xapian::Database m_db;
+
+    std::recursive_mutex m_mutex;
 };
 
 /**
@@ -90,6 +94,8 @@ class InternalDataBase {
     int  valueSlot(const std::string&  valueName) const;
 
     Xapian::Query parseQuery(const zim::Query& query);
+
+    std::lock_guard<MultiMutex> lock();
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
@@ -107,6 +113,9 @@ class InternalDataBase {
 
     // The metadata of the db
     XapianDbMetadata m_metadata;
+
+    // The MultiMutex associated to the multi db
+    MultiMutex m_mutexes;
 
     // Verbosity of operations.
     bool m_verbose;
@@ -203,6 +212,7 @@ struct SearchIterator::InternalData {
 };
 
 
+#define LOCK_SEARCH(InternalDataBase) auto&& lock = (InternalDataBase)->lock(); (void) lock;
 
 }; //namespace zim
 
