@@ -64,25 +64,7 @@ size_type Item::getSize() const
 
 ItemDataDirectAccessInfo Item::getDirectAccessInformation() const
 {
-  auto cluster = m_file->getCluster(m_dirent->getClusterNumber());
-  if (cluster->isCompressed()) {
-    return ItemDataDirectAccessInfo();
-  }
-
-  auto full_offset = m_file->getBlobOffset(m_dirent->getClusterNumber(),
-                                         m_dirent->getBlobNumber());
-
-  auto part_its = m_file->getFileParts(full_offset, zsize_t(getSize()));
-  auto first_part = part_its.first;
-  if (++part_its.first != part_its.second) {
-   // The content is split on two parts. We cannot have direct access
-    return ItemDataDirectAccessInfo();
-  }
-  auto range = first_part->first;
-  auto part = first_part->second;
-  const offset_type logical_local_offset(full_offset - range.min);
-  const auto physical_local_offset = logical_local_offset + part->offset().v;
-  return ItemDataDirectAccessInfo(part->filename(), physical_local_offset);
+  return m_file->getDirectAccessInformation(m_dirent->getClusterNumber(), m_dirent->getBlobNumber());
 }
 
 cluster_index_type Item::getClusterIndex() const

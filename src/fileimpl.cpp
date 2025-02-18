@@ -20,6 +20,7 @@
  */
 
 #include "dirent_lookup.h"
+#include "zim/zim.h"
 #include "zim_types.h"
 #include <memory>
 #define CHUNK_SIZE 1024
@@ -816,5 +817,27 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     } else {
       return m_direntLookup->getSize();
     }
+  }
+
+  ItemDataDirectAccessInfo FileImpl::getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const
+  {
+    auto cluster = getCluster(clusterIdx);
+    if (cluster->isCompressed()) {
+      return ItemDataDirectAccessInfo();
+    }
+
+    auto full_offset = getBlobOffset(clusterIdx, blobIdx);
+
+    auto part_its = getFileParts(full_offset, zsize_t(cluster->getBlobSize(blobIdx)));
+    auto first_part = part_its.first;
+    if (++part_its.first != part_its.second) {
+     // The content is split on two parts. We cannot have direct access
+      return ItemDataDirectAccessInfo();
+    }
+    auto range = first_part->first;
+    auto part = first_part->second;
+    const offset_type logical_local_offset(full_offset - range.min);
+    const auto physical_local_offset = logical_local_offset + part->offset().v;
+    return ItemDataDirectAccessInfo(part->filename(), physical_local_offset);
   }
 }

@@ -130,6 +130,7 @@ namespace zim
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
       offset_t getClusterOffset(cluster_index_t idx) const;
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
+      ItemDataDirectAccessInfo getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
 
       entry_index_t getNamespaceBeginOffset(char ch) const;
       entry_index_t getNamespaceEndOffset(char ch) const;
