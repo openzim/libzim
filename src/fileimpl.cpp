@@ -194,7 +194,8 @@ private: // data
       m_startUserEntry(0),
       m_endUserEntry(0),
       m_direntLookupCreated(false),
-      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE)
+      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE),
+      m_xapianDbCreated(false)
   {
     log_trace("read file \"" << zimFile->filename() << '"');
 
@@ -261,8 +262,6 @@ private: // data
       const_cast<bool&>(m_hasFrontArticlesIndex) = false;
     }
     m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
-
-    loadXapianDb(tmpDirentLookup);
 
     readMimeTypes();
   }
@@ -861,11 +860,11 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return cluster->getBlob(blobIdx, offset, size);
   }
 
-  void FileImpl::loadXapianDb(DirentLookup& direntLookup) {
+  void FileImpl::loadXapianDb() {
     FileImpl::FindxResult r;
-    r = direntLookup.find('X', "fulltext/xapian");
+    r = direntLookup().find('X', "fulltext/xapian");
     if (!r.first) {
-      r = direntLookup.find('Z', "/fulltextIndex/xapian");
+      r = direntLookup().find('Z', "/fulltextIndex/xapian");
     }
     if (!r.first) {
       return;
@@ -892,7 +891,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       // So we need a language, let's use the one of the zim.
       // If zimfile has no language metadata, we can't do lot more here :/
       try {
-        r = direntLookup.find('M', "Language");
+        r = direntLookup().find('M', "Language");
         if (r.first) {
           auto langDirent = getDirent(r.second);
           while (langDirent->isRedirect()) {
@@ -909,6 +908,13 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
   }
 
   std::shared_ptr<XapianDb> FileImpl::getXapianDb() {
+    if (!m_xapianDbCreated.load(std::memory_order_acquire)) {
+      std::lock_guard<std::mutex> lock(m_xapianDbCreationMutex);
+      if (!m_xapianDbCreated.load(std::memory_order_acquire)) {
+        loadXapianDb();
+        m_xapianDbCreated.store(true, std::memory_order_release);
+      }
+    }
     return mp_xapianDb;
   }
 }

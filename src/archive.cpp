@@ -545,6 +545,10 @@ namespace zim
     m_impl->setDirentLookupCacheMaxSize(nbRanges);
   }
 
+  void Archive::preloadXapianDb() const {
+    m_impl->getXapianDb();
+  }
+
   cluster_index_type Archive::getClusterCount() const
   {
     return cluster_index_type(m_impl->getCountClusters());

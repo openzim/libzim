@@ -598,6 +598,16 @@ namespace zim
        */
       void setDirentLookupCacheMaxSize(size_t nbRanges);
 
+      /** Preload xapian database.
+       *
+       * Loading the xapian database can take some time, especially if the xapian content
+       * (stored in zim file) is not preloading by the kernel.
+       *
+       * By preloading the xapian database, we ensure that kernel load relevant data in its
+       * page cache (until it needs to drop thoses pages for other stuff)
+       */
+       void preloadXapianDb() const;
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;
