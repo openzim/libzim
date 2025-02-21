@@ -168,34 +168,32 @@ private: // data
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
-  FileImpl::FileImpl(const std::string& fname)
-    : FileImpl(FileCompound::openSinglePieceOrSplitZimFile(fname))
+  FileImpl::FileImpl(const std::string& fname, OpenConfig openConfig)
+    : FileImpl(FileCompound::openSinglePieceOrSplitZimFile(fname), openConfig)
   {}
 
 #ifndef _WIN32
-  FileImpl::FileImpl(int fd)
-    : FileImpl(std::make_shared<FileCompound>(fd))
+  FileImpl::FileImpl(int fd, OpenConfig openConfig)
+    : FileImpl(std::make_shared<FileCompound>(fd), openConfig)
   {}
 
-  FileImpl::FileImpl(FdInput fd)
-    : FileImpl(std::make_shared<FileCompound>(fd))
+  FileImpl::FileImpl(FdInput fd, OpenConfig openConfig)
+    : FileImpl(std::make_shared<FileCompound>(fd), openConfig)
   {}
 
-  FileImpl::FileImpl(const std::vector<FdInput>& fds)
-    : FileImpl(std::make_shared<FileCompound>(fds))
+  FileImpl::FileImpl(const std::vector<FdInput>& fds, OpenConfig openConfig)
+    : FileImpl(std::make_shared<FileCompound>(fds), openConfig)
   {}
 #endif
 
-  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile)
+  FileImpl::FileImpl(std::shared_ptr<FileCompound> _zimFile, OpenConfig openConfig)
     : zimFile(_zimFile),
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
       clusterCache(CLUSTER_CACHE_SIZE),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
-      m_endUserEntry(0),
-      m_direntLookupCreated(false),
-      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE)
+      m_endUserEntry(0)
   {
     log_trace("read file \"" << zimFile->filename() << '"');
 
@@ -238,16 +236,20 @@ private: // data
 
     quickCheckForCorruptFile();
 
-    DirentLookup tmpDirentLookup(mp_pathDirentAccessor.get());
+    if (openConfig.m_preloadDirentRanges == 0) {
+      m_direntLookup = std::make_unique<DirentLookup>(mp_pathDirentAccessor.get());
+    } else {
+      m_direntLookup = std::make_unique<FastDirentLookup>(mp_pathDirentAccessor.get(), openConfig.m_preloadDirentRanges);
+    }
 
     if (header.useNewNamespaceScheme()) {
-      const_cast<entry_index_t&>(m_startUserEntry) = tmpDirentLookup.getNamespaceRangeBegin('C');
-      const_cast<entry_index_t&>(m_endUserEntry) = tmpDirentLookup.getNamespaceRangeEnd('C');
+      const_cast<entry_index_t&>(m_startUserEntry) = m_direntLookup->getNamespaceRangeBegin('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = m_direntLookup->getNamespaceRangeEnd('C');
     } else {
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
 
-    auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
+    auto result = m_direntLookup->find('X', "listing/titleOrdered/v1");
     if (result.first) {
       mp_titleDirentAccessor = getTitleAccessorV1(result.second);
     }
@@ -263,7 +265,10 @@ private: // data
     }
     m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
-    mp_xapianDb = loadXapianDb(tmpDirentLookup);
+    if (openConfig.m_preloadXapianDb) {
+      mp_xapianDb = loadXapianDb();
+      m_xapianDbCreated.store(true, std::memory_order_release);
+    }
 
     readMimeTypes();
   }
@@ -291,28 +296,6 @@ private: // data
 
       return std::unique_ptr<IndirectDirentAccessor>(
         new IndirectDirentAccessor(mp_pathDirentAccessor, std::move(titleIndexReader), title_index_t(size.v/sizeof(entry_index_type))));
-  }
-
-  FileImpl::DirentLookup& FileImpl::direntLookup() const
-  {
-    // Not using std::call_once because it is buggy.
-    // 1. It doesn't play well with musl libc - an exception thrown by the
-    //    callable results in SIGABRT even if there is a handler for it higher
-    //    in the call stack.
-    // 2. With `glibc` an exceptional execution of `std::call_once` doesn't
-    //    unlock the mutex associated with the `std::once_flag` object.
-    if (!m_direntLookupCreated.load(std::memory_order_acquire)) {
-      std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
-      if ( !m_direntLookup ) {
-        if (m_direntLookupSize == 0) {
-          m_direntLookup = std::make_unique<DirentLookup>(mp_pathDirentAccessor.get());
-        } else {
-          m_direntLookup = std::make_unique<FastDirentLookup>(mp_pathDirentAccessor.get(), m_direntLookupSize);
-        }
-        m_direntLookupCreated.store(true, std::memory_order_release);
-      }
-    }
-    return *m_direntLookup;
   }
 
   void FileImpl::quickCheckForCorruptFile()
@@ -387,7 +370,7 @@ private: // data
 
   FileImpl::FindxResult FileImpl::findx(char ns, const std::string& path) const
   {
-    return direntLookup().find(ns, path);
+    return m_direntLookup->find(ns, path);
   }
 
   FileImpl::FindxResult FileImpl::findx(const std::string& longPath) const
@@ -519,13 +502,13 @@ private: // data
   entry_index_t FileImpl::getNamespaceBeginOffset(char ch) const
   {
     log_trace("getNamespaceBeginOffset(" << ch << ')');
-    return direntLookup().getNamespaceRangeBegin(ch);
+    return m_direntLookup->getNamespaceRangeBegin(ch);
   }
 
   entry_index_t FileImpl::getNamespaceEndOffset(char ch) const
   {
     log_trace("getNamespaceEndOffset(" << ch << ')');
-    return direntLookup().getNamespaceRangeEnd(ch);
+    return m_direntLookup->getNamespaceRangeEnd(ch);
   }
 
   const std::string& FileImpl::getMimeType(uint16_t idx) const
@@ -769,7 +752,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     }
 
     auto titleDirentAccessor = std::unique_ptr<IndirectDirentAccessor>();
-    auto result = direntLookup().find('X', "listing/titleOrdered/v1");
+    auto result = m_direntLookup->find('X', "listing/titleOrdered/v1");
     if (result.first) {
       titleDirentAccessor = getTitleAccessorV1(result.second);
     }
@@ -815,14 +798,6 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     mp_pathDirentAccessor->setMaxCacheSize(nbDirents);
   }
 
-  size_t FileImpl::getDirentLookupCacheMaxSize() const {
-    if (!m_direntLookupCreated.load(std::memory_order_acquire)) {
-      return m_direntLookupSize;
-    } else {
-      return m_direntLookup->getSize();
-    }
-  }
-
   ItemDataDirectAccessInfo FileImpl::getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const
   {
     auto cluster = getCluster(clusterIdx);
@@ -859,11 +834,11 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return cluster->getBlob(dirent.getBlobNumber(), offset, size);
   }
 
-  std::shared_ptr<XapianDb> FileImpl::loadXapianDb(DirentLookup& direntLookup) {
+  std::shared_ptr<XapianDb> FileImpl::loadXapianDb() {
     FileImpl::FindxResult r;
-    r = direntLookup.find('X', "fulltext/xapian");
+    r = m_direntLookup->find('X', "fulltext/xapian");
     if (!r.first) {
-      r = direntLookup.find('Z', "/fulltextIndex/xapian");
+      r = m_direntLookup->find('Z', "/fulltextIndex/xapian");
     }
     if (!r.first) {
       return nullptr;
@@ -890,7 +865,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       // So we need a language, let's use the one of the zim.
       // If zimfile has no language metadata, we can't do lot more here :/
       try {
-        r = direntLookup.find('M', "Language");
+        r = m_direntLookup->find('M', "Language");
         if (r.first) {
           auto langDirent = getDirent(r.second);
           while (langDirent->isRedirect()) {
@@ -908,6 +883,13 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
   }
 
   std::shared_ptr<XapianDb> FileImpl::getXapianDb() {
+    if (!m_xapianDbCreated.load(std::memory_order_acquire)) {
+      std::lock_guard<std::mutex> lock(m_xapianDbCreationMutex);
+      if (!m_xapianDbCreated.load(std::memory_order_acquire)) {
+        loadXapianDb();
+        m_xapianDbCreated.store(true, std::memory_order_release);
+      }
+    }
     return mp_xapianDb;
   }
 }

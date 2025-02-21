@@ -43,6 +43,75 @@ namespace zim
   };
 
   /**
+   * Configuration to pass to archive constructors.
+   *
+   * Some configuration option specifying how to open a zim archive.
+   * For now, it is only related to preload data but it may change in the future.
+   *
+   * Archive may preload few data to speedup future accessing.
+   * However, this preload itself can take times.
+   *
+   * OpenConfig allow user to define how Archive should preload data.
+   */
+  struct LIBZIM_API OpenConfig {
+     /**
+      * Default configuration.
+      *
+      * - Dirent ranges is activated.
+      * - Xapian preloading is activated.
+      */
+     OpenConfig();
+
+     /**
+      * Configure xapian preloading.
+      *
+      * This method modify the configuration and return itelf.
+      */
+     OpenConfig& preloadXapianDb(bool load) { m_preloadXapianDb = load; return *this; }
+
+     /**
+      * Configure xapian preloading.
+      *
+      * This method create a new configuration with the new value.
+      */
+     OpenConfig preloadXapianDb(bool load) const {
+      auto other = *this;
+      other.m_preloadXapianDb = load;
+      return other;
+     }
+
+     /**
+      * Configure direntRanges preloading.
+      *
+      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent ranges.
+      * This will be used to speedup dirent lookup. This is an extra layer on top of
+      * classic dirent cache.
+      *
+      * This method modify the configuration and return itelf.
+      */
+     OpenConfig& preloadDirentRanges(int nbRanges) { m_preloadDirentRanges = nbRanges; return *this; }
+
+     /**
+      * Configure direntRanges preloading.
+      *
+      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent ranges.
+      * This will be used to speedup dirent lookup. This is an extra layer on top of
+      * classic dirent cache.
+      *
+      * This method create a new configuration with the new value.
+      */
+     OpenConfig preloadDirentRanges(int nbRanges) const {
+      auto other = *this;
+      other.m_preloadDirentRanges = nbRanges;
+      return other;
+     }
+
+     bool m_preloadXapianDb;
+     int  m_preloadDirentRanges;
+  };
+
+
+  /**
    * The Archive class to access content in a zim file.
    *
    * The `Archive` is the main class to access content in a zim file.
@@ -79,6 +148,7 @@ namespace zim
     public:
       template<EntryOrder order> class EntryRange;
       template<EntryOrder order> class iterator;
+      static const OpenConfig DEFAULT_OPEN_CONFIG;
 
       /** Archive constructor.
        *
@@ -90,8 +160,9 @@ namespace zim
        *  you must pass the `foo.zim` path.
        *
        *  @param fname The filename to the file to open (utf8 encoded)
+       *  @param openConfig The open configuration to use.
        */
-      explicit Archive(const std::string& fname);
+      Archive(const std::string& fname, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
 
 #ifndef _WIN32
       /** Archive constructor.
@@ -103,8 +174,9 @@ namespace zim
        *  Note: This function is not available under Windows.
        *
        *  @param fd The descriptor of a seekable file representing a ZIM archive
+       *  @param openConfig The open configuration to use.
        */
-      explicit Archive(int fd);
+      Archive(int fd, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
 
       /** Archive constructor.
        *
@@ -120,8 +192,9 @@ namespace zim
        *  @param offset The offset of the ZIM archive relative to the beginning
        *  of the file (rather than the current position associated with fd).
        *  @param size The size of the ZIM archive.
+       *  @param openConfig The open configuration to use.
        */
-       Archive(int fd, offset_type offset, size_type size);
+       Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
 
       /** Archive constructor.
        *
@@ -134,8 +207,9 @@ namespace zim
        *
        *  @param fd A FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
        *            referencing a continuous segment representing a complete ZIM archive.
+       *  @param openConfig The open configuration to use.
        */
-      explicit Archive(FdInput fd);
+      Archive(FdInput fd, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
 
       /** Archive constructor.
        *
@@ -149,8 +223,9 @@ namespace zim
        *
        *  @param fds A vector of FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
        *             referencing a series of segments representing a complete ZIM archive.
+       *  @param openConfig The open configuration to use.
        */
-      explicit Archive(const std::vector<FdInput>& fds);
+      Archive(const std::vector<FdInput>& fds, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
 #endif
 
       /** Return the filename of the zim file.
@@ -575,28 +650,6 @@ namespace zim
        * @param nbDirents The maximum number of dirents stored in the cache.
        */
       void setDirentCacheMaxSize(size_t nbDirents);
-
-      /** Get the size of the dirent lookup cache.
-       *
-       * The returned size returns the default size or the last set size.
-       * This may not correspond to the actual size of the dirent lookup cache.
-       * See `set_dirent_lookup_cache_max_size` for more information.
-       *
-       * @return The maximum number of sub ranges created in the lookup cache.
-       */
-      size_t getDirentLookupCacheMaxSize() const;
-
-      /** Set the size of the dirent lookup cache.
-       *
-       * Contrary to other `set_<foo>_cache_max_size`, this method is useless once
-       * the lookup cache is created.
-       * The lookup cache is created at first access to a entry in the archive.
-       * So this method must be called before any access to content (including metadata).
-       * It is best to call this method first, just after the archive creation.
-       *
-       * @param nbRanges The maximum number of sub ranges created in the lookup cache.
-       */
-      void setDirentLookupCacheMaxSize(size_t nbRanges);
 
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;

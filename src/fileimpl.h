@@ -37,6 +37,7 @@
 #include "file_compound.h"
 #include "fileheader.h"
 #include "search_internal.h"
+#include "zim/archive.h"
 #include "zim_types.h"
 #include "direntreader.h"
 
@@ -79,10 +80,7 @@ namespace zim
 
       using DirentLookup = zim::DirentLookup<DirentLookupConfig>;
       using FastDirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
-      mutable std::unique_ptr<DirentLookup> m_direntLookup;
-      mutable std::mutex m_direntLookupCreationMutex;
-      mutable std::atomic_bool m_direntLookupCreated;
-      size_t m_direntLookupSize;
+      std::unique_ptr<DirentLookup> m_direntLookup;
 
 
       struct ByTitleDirentLookupConfig
@@ -98,16 +96,19 @@ namespace zim
       std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
       std::shared_ptr<XapianDb> mp_xapianDb;
+      mutable std::mutex m_xapianDbCreationMutex;
+      mutable std::atomic_bool m_xapianDbCreated;
+
 
     public:
       using FindxResult = std::pair<bool, entry_index_t>;
       using FindxTitleResult = std::pair<bool, title_index_t>;
 
-      explicit FileImpl(const std::string& fname);
+      FileImpl(const std::string& fname, OpenConfig openConfig);
 #ifndef _WIN32
-      explicit FileImpl(int fd);
-      explicit FileImpl(FdInput fd);
-      explicit FileImpl(const std::vector<FdInput>& fds);
+      FileImpl(int fd, OpenConfig openConfig);
+      FileImpl(FdInput fd, OpenConfig openConfig);
+      FileImpl(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
 
       time_t getMTime() const;
@@ -166,14 +167,12 @@ namespace zim
       size_t getDirentCacheMaxSize() const;
       size_t getDirentCacheCurrentSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
-      size_t getDirentLookupCacheMaxSize() const;
-      void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
 
-      std::shared_ptr<XapianDb> loadXapianDb(DirentLookup& direntLookup);
+      std::shared_ptr<XapianDb> loadXapianDb();
       std::shared_ptr<XapianDb> getXapianDb();
   private:
-      explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
-      FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
+      FileImpl(std::shared_ptr<FileCompound> zimFile, OpenConfig openConfig);
+      FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size, OpenConfig openConfig);
 
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessorV1(const entry_index_t idx);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);

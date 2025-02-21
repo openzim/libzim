@@ -33,25 +33,32 @@ log_define("zim.archive")
 
 namespace zim
 {
-  Archive::Archive(const std::string& fname)
-    : m_impl(new FileImpl(fname))
+  const OpenConfig Archive::DEFAULT_OPEN_CONFIG;
+
+  OpenConfig::OpenConfig()
+      : m_preloadXapianDb(true),
+        m_preloadDirentRanges(DIRENT_LOOKUP_CACHE_SIZE)
+    { }
+
+  Archive::Archive(const std::string& fname, OpenConfig openConfig)
+    : m_impl(new FileImpl(fname, openConfig))
     { }
 
 #ifndef _WIN32
-  Archive::Archive(int fd)
-    : m_impl(new FileImpl(fd))
+  Archive::Archive(int fd, OpenConfig openConfig)
+    : m_impl(new FileImpl(fd, openConfig))
     { }
 
-  Archive::Archive(FdInput fd)
-    : m_impl(new FileImpl(fd))
-    { }
-
-  Archive::Archive(int fd, offset_type offset, size_type size)
-    : Archive(FdInput(fd, offset, size))
+  Archive::Archive(FdInput fd, OpenConfig openConfig)
+    : m_impl(new FileImpl(fd, openConfig))
   {}
 
-  Archive::Archive(const std::vector<FdInput>& fds)
-    : m_impl(new FileImpl(fds))
+  Archive::Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig)
+    : Archive(FdInput(fd, offset, size), openConfig)
+    { }
+
+  Archive::Archive(const std::vector<FdInput>& fds, OpenConfig openConfig)
+    : m_impl(new FileImpl(fds, openConfig))
     { }
 #endif
 
@@ -532,17 +539,6 @@ namespace zim
   void Archive::setDirentCacheMaxSize(size_t nbDirents)
   {
     m_impl->setDirentCacheMaxSize(nbDirents);
-  }
-
-
-  size_t Archive::getDirentLookupCacheMaxSize() const
-  {
-    return m_impl->getDirentLookupCacheMaxSize();
-  }
-
-  void Archive::setDirentLookupCacheMaxSize(size_t nbRanges)
-  {
-    m_impl->setDirentLookupCacheMaxSize(nbRanges);
   }
 
   cluster_index_type Archive::getClusterCount() const

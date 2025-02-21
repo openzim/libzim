@@ -334,13 +334,11 @@ TEST(ZimArchive, cacheDontImpactReading)
     auto ref_archive = zim::Archive(testfile.path);
 
     for (auto cacheConfig: cacheConfigs) {
-      auto test_archive = zim::Archive(testfile.path);
+      auto test_archive = zim::Archive(testfile.path, zim::OpenConfig().preloadDirentRanges(cacheConfig.direntLookupCacheSize));
       test_archive.setDirentCacheMaxSize(cacheConfig.direntCacheSize);
-      test_archive.setDirentLookupCacheMaxSize(cacheConfig.direntLookupCacheSize);
       test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
 
       EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
-      EXPECT_EQ(test_archive.getDirentLookupCacheMaxSize(), cacheConfig.direntLookupCacheSize);
       EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
 
       ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
