@@ -19,6 +19,9 @@
  *
  */
 
+#include "dirent_lookup.h"
+#include "zim_types.h"
+#include <memory>
 #define CHUNK_SIZE 1024
 #include "fileimpl.h"
 #include <zim/error.h>
@@ -34,7 +37,6 @@
 #include <numeric>
 #include "config.h"
 #include "log.h"
-#include "envvalue.h"
 #include "md5.h"
 #include "tools.h"
 #include "fileheader.h"
@@ -185,10 +187,12 @@ private: // data
     : zimFile(_zimFile),
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
-      clusterCache(envValue("ZIM_CLUSTERCACHE", CLUSTER_CACHE_SIZE)),
+      clusterCache(CLUSTER_CACHE_SIZE),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
-      m_endUserEntry(0)
+      m_endUserEntry(0),
+      m_direntLookupCreated(false),
+      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE)
   {
     log_trace("read file \"" << zimFile->filename() << '"');
 
@@ -231,7 +235,19 @@ private: // data
 
     quickCheckForCorruptFile();
 
-    mp_titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    DirentLookup tmpDirentLookup(mp_pathDirentAccessor.get());
+
+    if (header.useNewNamespaceScheme()) {
+      const_cast<entry_index_t&>(m_startUserEntry) = tmpDirentLookup.getNamespaceRangeBegin('C');
+      const_cast<entry_index_t&>(m_endUserEntry) = tmpDirentLookup.getNamespaceRangeEnd('C');
+    } else {
+      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
+    }
+
+    auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
+    if (result.first) {
+      mp_titleDirentAccessor = getTitleAccessorV1(result.second);
+    }
 
     if (!mp_titleDirentAccessor) {
       if (!header.hasTitleListingV0()) {
@@ -247,14 +263,9 @@ private: // data
     readMimeTypes();
   }
 
-  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const std::string& path)
+  std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
   {
-    auto result = direntLookup().find('X', path);
-    if (!result.first) {
-      return nullptr;
-    }
-
-    auto dirent = mp_pathDirentAccessor->getDirent(result.second);
+    auto dirent = mp_pathDirentAccessor->getDirent(idx);
     auto cluster = getCluster(dirent->getClusterNumber());
     if (cluster->isCompressed()) {
       // This is a ZimFileFormatError.
@@ -263,7 +274,7 @@ private: // data
     }
     auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + cluster->getBlobOffset(dirent->getBlobNumber());
     auto titleSize = cluster->getBlobSize(dirent->getBlobNumber());
-    return getTitleAccessor(titleOffset, titleSize, "Title index table" + path);
+    return getTitleAccessor(titleOffset, titleSize, "Title index v1");
   }
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name)
@@ -285,11 +296,15 @@ private: // data
     //    in the call stack.
     // 2. With `glibc` an exceptional execution of `std::call_once` doesn't
     //    unlock the mutex associated with the `std::once_flag` object.
-    if ( !m_direntLookup ) {
+    if (!m_direntLookupCreated.load(std::memory_order_acquire)) {
       std::lock_guard<std::mutex> lock(m_direntLookupCreationMutex);
       if ( !m_direntLookup ) {
-        const auto cacheSize = envValue("ZIM_DIRENTLOOKUPCACHE", DIRENT_LOOKUP_CACHE_SIZE);
-        m_direntLookup.reset(new DirentLookup(mp_pathDirentAccessor.get(), cacheSize));
+        if (m_direntLookupSize == 0) {
+          m_direntLookup = std::make_unique<DirentLookup>(mp_pathDirentAccessor.get());
+        } else {
+          m_direntLookup = std::make_unique<FastDirentLookup>(mp_pathDirentAccessor.get(), m_direntLookupSize);
+        }
+        m_direntLookupCreated.store(true, std::memory_order_release);
       }
     }
     return *m_direntLookup;
@@ -363,13 +378,6 @@ private: // data
       mimeTypes.push_back(mimeType);
 
       p = zp+1;
-    }
-
-    if (header.useNewNamespaceScheme()) {
-      const_cast<entry_index_t&>(m_startUserEntry) = getNamespaceBeginOffset('C');
-      const_cast<entry_index_t&>(m_endUserEntry) = getNamespaceEndOffset('C');
-    } else {
-      const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
   }
 
@@ -756,7 +764,11 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       ret = checkTitleListing(*titleDirentAccessor, articleCount);
     }
 
-    auto titleDirentAccessor = getTitleAccessor("listing/titleOrdered/v1");
+    auto titleDirentAccessor = std::unique_ptr<IndirectDirentAccessor>();
+    auto result = direntLookup().find('X', "listing/titleOrdered/v1");
+    if (result.first) {
+      titleDirentAccessor = getTitleAccessorV1(result.second);
+    }
     if (titleDirentAccessor) {
       ret &= checkTitleListing(*titleDirentAccessor, articleCount);
     }
@@ -778,4 +790,32 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return true;
   }
 
+
+  size_t FileImpl::getClusterCacheMaxSize() const {
+    return clusterCache.getMaxSize();
+  }
+  size_t FileImpl::getClusterCacheCurrentSize() const {
+    return clusterCache.getCurrentSize();
+  }
+  void FileImpl::setClusterCacheMaxSize(size_t nbClusters) {
+    clusterCache.setMaxSize(nbClusters);
+  }
+
+  size_t FileImpl::getDirentCacheMaxSize() const {
+    return mp_pathDirentAccessor->getMaxCacheSize();
+  }
+  size_t FileImpl::getDirentCacheCurrentSize() const {
+    return mp_pathDirentAccessor->getCurrentCacheSize();
+  }
+  void FileImpl::setDirentCacheMaxSize(size_t nbDirents) {
+    mp_pathDirentAccessor->setMaxCacheSize(nbDirents);
+  }
+
+  size_t FileImpl::getDirentLookupCacheMaxSize() const {
+    if (!m_direntLookupCreated.load(std::memory_order_acquire)) {
+      return m_direntLookupSize;
+    } else {
+      return m_direntLookup->getSize();
+    }
+  }
 }

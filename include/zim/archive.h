@@ -534,6 +534,70 @@ namespace zim
        */
       std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
 
+      /** Get the maximum size of the cluster cache.
+       *
+       * @return The maximum number of clusters stored in  the cache.
+       */
+      size_t getClusterCacheMaxSize() const;
+
+      /** Get the current size of the cluster cache.
+       *
+       * @return The number of clusters currently stored in  the cache.
+       */
+      size_t getClusterCacheCurrentSize() const;
+
+      /** Set the size of the cluster cache.
+       *
+       * If the new size is lower than the number of currently stored clusters
+       * some clusters will be dropped from cache to respect the new size.
+       *
+       * @param nbClusters The maximum number of clusters stored in the cache.
+       */
+      void setClusterCacheMaxSize(size_t nbClusters);
+
+      /** Get the size of the dirent cache.
+       *
+       * @return The maximum number of dirents stored in  the cache.
+       */
+      size_t getDirentCacheMaxSize() const;
+
+      /** Get the current size of the dirent cache.
+       *
+       * @return The number of dirents currently stored in  the cache.
+       */
+      size_t getDirentCacheCurrentSize() const;
+
+      /** Set the size of the dirent cache.
+       *
+       * If the new size is lower than the number of currently stored dirents
+       * some dirents will be dropped from cache to respect the new size.
+       *
+       * @param nbDirents The maximum number of dirents stored in the cache.
+       */
+      void setDirentCacheMaxSize(size_t nbDirents);
+
+      /** Get the size of the dirent lookup cache.
+       *
+       * The returned size returns the default size or the last set size.
+       * This may not correspond to the actual size of the dirent lookup cache.
+       * See `set_dirent_lookup_cache_max_size` for more information.
+       *
+       * @return The maximum number of sub ranges created in the lookup cache.
+       */
+      size_t getDirentLookupCacheMaxSize() const;
+
+      /** Set the size of the dirent lookup cache.
+       *
+       * Contrary to other `set_<foo>_cache_max_size`, this method is useless once
+       * the lookup cache is created.
+       * The lookup cache is created at first access to a entry in the archive.
+       * So this method must be called before any access to content (including metadata).
+       * It is best to call this method first, just after the archive creation.
+       *
+       * @param nbRanges The maximum number of sub ranges created in the lookup cache.
+       */
+      void setDirentLookupCacheMaxSize(size_t nbRanges);
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;

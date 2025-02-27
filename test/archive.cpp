@@ -280,6 +280,124 @@ TEST(ZimArchive, openSplitZimArchive)
   }
 }
 
+struct TestCacheConfig {
+  size_t direntCacheSize;
+  size_t clusterCacheSize;
+  size_t direntLookupCacheSize;
+};
+
+
+#define ASSERT_ARCHIVE_EQUIVALENT(REF_ARCHIVE, TEST_ARCHIVE)  \
+  ASSERT_ARCHIVE_EQUIVALENT_LIMIT(REF_ARCHIVE, TEST_ARCHIVE, REF_ARCHIVE.getEntryCount())
+
+#define ASSERT_ARCHIVE_EQUIVALENT_LIMIT(REF_ARCHIVE, TEST_ARCHIVE, LIMIT)             \
+  {                                                                                   \
+    auto range = REF_ARCHIVE.iterEfficient();                                         \
+    auto ref_it = range.begin();                                                      \
+    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), TEST_ARCHIVE, LIMIT)      \
+  }
+
+
+#define ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(REF_IT, REF_END, TEST_ARCHIVE, LIMIT)      \
+  for (auto i = 0U; i<LIMIT && REF_IT != REF_END; i++, REF_IT++) {                    \
+    auto test_entry = TEST_ARCHIVE.getEntryByPath(REF_IT->getPath());                 \
+    ASSERT_EQ(REF_IT->getPath(), test_entry.getPath());                               \
+    ASSERT_EQ(REF_IT->getTitle(), test_entry.getTitle());                             \
+    ASSERT_EQ(REF_IT->isRedirect(), test_entry.isRedirect());                         \
+    if (REF_IT->isRedirect()) {                                                       \
+      ASSERT_EQ(REF_IT->getRedirectEntryIndex(), test_entry.getRedirectEntryIndex()); \
+    }                                                                                 \
+    auto ref_item = REF_IT->getItem(true);                                            \
+    auto test_item = test_entry.getItem(true);                                        \
+    ASSERT_EQ(ref_item.getClusterIndex(), test_item.getClusterIndex());               \
+    ASSERT_EQ(ref_item.getBlobIndex(), test_item.getBlobIndex());                     \
+    ASSERT_EQ(ref_item.getData(), test_item.getData());                               \
+  }
+
+TEST(ZimArchive, cacheDontImpactReading)
+{
+  const TestCacheConfig cacheConfigs[] = {
+    {0, 0, 0},
+    {1, 1, 1},
+    {2, 2, 2},
+    {10, 10, 10},
+    {1000, 2000, 1000},
+    {0, 2000, 1000},
+    {1000, 0, 1000},
+    {1000, 2000, 0},
+    {1, 2000, 1000},
+    {1000, 1, 1000},
+    {1000, 2000, 1},
+  };
+
+  for (auto& testfile: getDataFilePath("small.zim")) {
+    auto ref_archive = zim::Archive(testfile.path);
+
+    for (auto cacheConfig: cacheConfigs) {
+      auto test_archive = zim::Archive(testfile.path);
+      test_archive.setDirentCacheMaxSize(cacheConfig.direntCacheSize);
+      test_archive.setDirentLookupCacheMaxSize(cacheConfig.direntLookupCacheSize);
+      test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
+
+      EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
+      EXPECT_EQ(test_archive.getDirentLookupCacheMaxSize(), cacheConfig.direntLookupCacheSize);
+      EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
+
+      ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
+    }
+  }
+}
+
+
+TEST(ZimArchive, cacheChange)
+{
+  for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
+    auto ref_archive = zim::Archive(testfile.path);
+    auto archive = zim::Archive(testfile.path);
+
+    archive.setDirentCacheMaxSize(30);
+    archive.setClusterCacheMaxSize(5);
+
+    auto range = ref_archive.iterEfficient();
+    auto ref_it = range.begin();
+    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
+    EXPECT_EQ(archive.getDirentCacheCurrentSize(), 30);
+    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 2); // Only 2 clusters in the file
+
+    // Reduce cache size
+    archive.setDirentCacheMaxSize(10);
+    archive.setClusterCacheMaxSize(1);
+
+    EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
+    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 1);
+
+    // We want to test change of cache while we are iterating on the archive.
+    // So we don't reset the ref_it to `range.begin()`.
+    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
+
+    EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
+    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 1);
+
+    // Clean cache
+    // (More than testing the value, this is needed as we want to be sure the cache is actually populated later)
+    archive.setDirentCacheMaxSize(0);
+    archive.setClusterCacheMaxSize(0);
+
+    EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
+    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
+
+    // Increase the cache
+    archive.setDirentCacheMaxSize(20);
+    archive.setClusterCacheMaxSize(1);
+    EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
+    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
+
+    ASSERT_ARCHIVE_EQUIVALENT(ref_archive, archive)
+    EXPECT_EQ(archive.getDirentCacheCurrentSize(), 20);
+    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 1);
+  }
+}
+
 TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02.zim";

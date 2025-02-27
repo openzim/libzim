@@ -13,7 +13,6 @@ common_sources = [
     'dirent.cpp',
     'dirent_accessor.cpp',
     'entry.cpp',
-    'envvalue.cpp',
     'fileheader.cpp',
     'fileimpl.cpp',
     'file_compound.cpp',

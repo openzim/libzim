@@ -21,8 +21,6 @@
 
 #include "compression.h"
 
-#include "envvalue.h"
-
 #include <zim/tools.h>
 #include <stdexcept>
 
@@ -30,8 +28,7 @@ const std::string LZMA_INFO::name = "lzma";
 void LZMA_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
 {
   *stream = LZMA_STREAM_INIT;
-  unsigned memsize = zim::envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
-  auto errcode = lzma_stream_decoder(stream, memsize, 0);
+  auto errcode = lzma_stream_decoder(stream, LZMA_MEMORY_SIZE * 1024 * 1024, 0);
   if (errcode != LZMA_OK) {
     throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
   }

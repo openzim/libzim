@@ -21,7 +21,6 @@
 
 #include "direntreader.h"
 #include "_dirent.h"
-#include "envvalue.h"
 
 #include <mutex>
 
@@ -36,7 +35,7 @@ DirectDirentAccessor::DirectDirentAccessor(
   : mp_direntReader(direntReader),
     mp_pathPtrReader(std::move(pathPtrReader)),
     m_direntCount(direntCount),
-    m_direntCache(envValue("ZIM_DIRENTCACHE", DIRENT_CACHE_SIZE)),
+    m_direntCache(DIRENT_CACHE_SIZE),
     m_bufferDirentZone(256)
 {}
 
