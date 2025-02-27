@@ -67,7 +67,7 @@ private: // data
   std::unique_ptr<const Reader>  mp_pathPtrReader;
   entry_index_t                  m_direntCount;
 
-  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>> m_direntCache;
+  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>, UnitCostEstimation> m_direntCache;
   mutable std::mutex m_direntCacheLock;
 
   mutable std::vector<char>  m_bufferDirentZone;

@@ -20,6 +20,7 @@
  */
 
 #include "dirent_lookup.h"
+#include "zim/zim.h"
 #include "zim_types.h"
 #include <memory>
 #define CHUNK_SIZE 1024
@@ -31,7 +32,6 @@
 #include "buffer_reader.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sstream>
 #include <cstring>
 #include <fstream>
 #include <numeric>
@@ -162,6 +162,11 @@ private: // data
 
 } //unnamed namespace
 
+  ClusterCache& getClusterCache() {
+    static ClusterCache clusterCache(CLUSTER_CACHE_SIZE);
+    return clusterCache;
+  }
+
   //////////////////////////////////////////////////////////////////////
   // FileImpl
   //
@@ -187,7 +192,6 @@ private: // data
     : zimFile(_zimFile),
       zimReader(makeFileReader(zimFile)),
       direntReader(new DirentReader(zimReader)),
-      clusterCache(CLUSTER_CACHE_SIZE),
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0),
@@ -244,24 +248,40 @@ private: // data
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
 
-    auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
-    if (result.first) {
-      mp_titleDirentAccessor = getTitleAccessorV1(result.second);
-    }
-
-    if (!mp_titleDirentAccessor) {
-      if (!header.hasTitleListingV0()) {
-        throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+    // Following code will may create cluster and we want to remove them from cache
+    // if something goes wrong.
+    try {
+      auto result = tmpDirentLookup.find('X', "listing/titleOrdered/v1");
+      if (result.first) {
+        mp_titleDirentAccessor = getTitleAccessorV1(result.second);
       }
-      offset_t titleOffset(header.getTitleIdxPos());
-      zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
-      mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
-      const_cast<bool&>(m_hasFrontArticlesIndex) = false;
-    }
-    m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
-    readMimeTypes();
+      if (!mp_titleDirentAccessor) {
+        if (!header.hasTitleListingV0()) {
+          throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+        }
+        offset_t titleOffset(header.getTitleIdxPos());
+        zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
+        mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
+        const_cast<bool&>(m_hasFrontArticlesIndex) = false;
+      }
+      m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
+
+      readMimeTypes();
+    } catch (...) {
+      dropCachedClusters();
+      throw;
+    }
   }
+
+  FileImpl::~FileImpl() {
+    dropCachedClusters();
+  }
+
+  void FileImpl::dropCachedClusters() const {
+    getClusterCache().dropAll([=](const std::tuple<FileImpl*, cluster_index_type>& key) {return std::get<0>(key) == this;});
+  }
+
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
   {
@@ -465,19 +485,21 @@ private: // data
     return entry_index_t(m_articleListByCluster[idx.v]);
   }
 
-  FileImpl::ClusterHandle FileImpl::readCluster(cluster_index_t idx)
+  ClusterHandle FileImpl::readCluster(cluster_index_t idx)
   {
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     return Cluster::read(*zimReader, clusterOffset);
   }
 
-  std::shared_ptr<const Cluster> FileImpl::getCluster(cluster_index_t idx)
+  ClusterHandle FileImpl::getCluster(cluster_index_t idx)
   {
     if (idx >= getCountClusters())
       throw ZimFileFormatError("cluster index out of range");
 
-    auto cluster = clusterCache.getOrPut(idx.v, [=](){ return readCluster(idx); });
+    auto cluster_index_type = idx.v;
+    auto key = std::make_tuple(this, cluster_index_type);
+    auto cluster = getClusterCache().getOrPut(key, [=](){ return readCluster(idx); });
 #if ENV32BIT
     // There was a bug in the way we create the zim files using ZSTD compression.
     // We were using a too hight compression level and so a window of 128Mb.
@@ -492,7 +514,7 @@ private: // data
       // 5.0 is not a perfect way to detect faulty zim file (it will generate false
       // positives) but it should be enough.
       if (header.getMajorVersion() == 5 && header.getMinorVersion() == 0) {
-        clusterCache.drop(idx.v);
+        getClusterCache().drop(key);
       }
     }
 #endif
@@ -566,11 +588,11 @@ private: // data
 
     struct zim_MD5_CTX md5ctx;
     zim_MD5Init(&md5ctx);
-    
+
     unsigned char ch[CHUNK_SIZE];
     offset_type checksumPos = header.getChecksumPos();
     offset_type toRead = checksumPos;
-    
+
     for(auto part = zimFile->begin();
         part != zimFile->end();
         part++) {
@@ -580,7 +602,7 @@ private: // data
         zim_MD5Update(&md5ctx, ch, CHUNK_SIZE);
         toRead-=CHUNK_SIZE;
       }
-      
+
       // Previous read was good, so we have exited the previous `while` because
       // `toRead<CHUNK_SIZE`. Let's try to read `toRead` chars and process them later.
       // Else, the previous `while` exited because we didn't succeed to read
@@ -589,12 +611,12 @@ private: // data
       if(stream.good()){
         stream.read(reinterpret_cast<char*>(ch),toRead);
       }
-      
+
       // It updates the checksum with the remaining amount of data when we
       // reach the end of the file or part
       zim_MD5Update(&md5ctx, ch, stream.gcount());
       toRead-=stream.gcount();
-    
+
       if (stream.bad()) {
         perror("error while reading file");
         return false;
@@ -788,17 +810,6 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       }
     }
     return true;
-  }
-
-
-  size_t FileImpl::getClusterCacheMaxSize() const {
-    return clusterCache.getMaxSize();
-  }
-  size_t FileImpl::getClusterCacheCurrentSize() const {
-    return clusterCache.getCurrentSize();
-  }
-  void FileImpl::setClusterCacheMaxSize(size_t nbClusters) {
-    clusterCache.setMaxSize(nbClusters);
   }
 
   size_t FileImpl::getDirentCacheMaxSize() const {

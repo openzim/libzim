@@ -24,6 +24,7 @@
 
 #include <atomic>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <memory>
 #include <zim/zim.h>
@@ -42,6 +43,11 @@
 
 namespace zim
 {
+  class FileImpl;
+  typedef std::shared_ptr<const Cluster> ClusterHandle;
+  typedef ConcurrentCache<std::tuple<FileImpl*, cluster_index_type>, ClusterHandle, ClusterMemorySize> ClusterCache;
+  ClusterCache& getClusterCache();
+
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
@@ -53,9 +59,6 @@ namespace zim
 
       std::shared_ptr<const DirectDirentAccessor> mp_pathDirentAccessor;
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
-
-      typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;
@@ -106,6 +109,7 @@ namespace zim
       explicit FileImpl(FdInput fd);
       explicit FileImpl(const std::vector<FdInput>& fds);
 #endif
+      ~FileImpl();
 
       time_t getMTime() const;
 
@@ -153,9 +157,6 @@ namespace zim
 
       bool checkIntegrity(IntegrityCheck checkType);
 
-      size_t getClusterCacheMaxSize() const;
-      size_t getClusterCacheCurrentSize() const;
-      void setClusterCacheMaxSize(size_t nbClusters);
       size_t getDirentCacheMaxSize() const;
       size_t getDirentCacheCurrentSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
@@ -164,6 +165,8 @@ namespace zim
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
+
+      void dropCachedClusters() const;
 
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessorV1(const entry_index_t idx);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);

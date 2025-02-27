@@ -31,6 +31,7 @@ class LIBZIM_PRIVATE_API BufferReader : public Reader {
     virtual ~BufferReader() {};
 
     zsize_t size() const override;
+    size_t getMemorySize() const override;
     offset_t offset() const override;
 
     const Buffer get_buffer(offset_t offset, zsize_t size) const override;
