@@ -194,8 +194,10 @@ private: // data
       m_startUserEntry(0),
       m_endUserEntry(0),
       m_direntLookupCreated(false),
-      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE),
-      m_xapianDbCreated(false)
+      m_direntLookupSize(DIRENT_LOOKUP_CACHE_SIZE)
+#if defined (ENABLE_XAPIAN)
+      ,m_xapianDbCreated(false)
+#endif
   {
     log_trace("read file \"" << zimFile->filename() << '"');
 
@@ -860,6 +862,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return cluster->getBlob(blobIdx, offset, size);
   }
 
+#if defined (ENABLE_XAPIAN)
   void FileImpl::loadXapianDb() {
     FileImpl::FindxResult r;
     r = direntLookup().find('X', "fulltext/xapian");
@@ -917,4 +920,5 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     }
     return mp_xapianDb;
   }
+#endif // defined (ENABLE_XAPIAN)
 }

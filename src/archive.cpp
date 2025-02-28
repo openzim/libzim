@@ -324,6 +324,7 @@ namespace zim
   }
 
   bool Archive::hasFulltextIndex() const {
+#ifdef LIBZIM_WITH_XAPIAN
     auto r = m_impl->findx('X', "fulltext/xapian");
     if (!r.first) {
       r = m_impl->findx('Z', "/fulltextIndex/xapian");
@@ -335,9 +336,13 @@ namespace zim
     auto item = entry.getItem(true);
     auto accessInfo = item.getDirectAccessInformation();
     return accessInfo.second;
+#else
+    return false;
+#endif
   }
 
   bool Archive::hasTitleIndex() const {
+#ifdef LIBZIM_WITH_XAPIAN
     auto r = m_impl->findx('X', "title/xapian");
     if (!r.first) {
       return false;
@@ -346,6 +351,9 @@ namespace zim
     auto item = entry.getItem(true);
     auto accessInfo = item.getDirectAccessInformation();
     return accessInfo.second;
+#else
+    return false;
+#endif
   }
 
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
@@ -545,9 +553,11 @@ namespace zim
     m_impl->setDirentLookupCacheMaxSize(nbRanges);
   }
 
+#ifdef LIBZIM_WITH_XAPIAN
   void Archive::preloadXapianDb() const {
     m_impl->getXapianDb();
   }
+#endif
 
   cluster_index_type Archive::getClusterCount() const
   {

@@ -598,6 +598,7 @@ namespace zim
        */
       void setDirentLookupCacheMaxSize(size_t nbRanges);
 
+#ifdef LIBZIM_WITH_XAPIAN
       /** Preload xapian database.
        *
        * Loading the xapian database can take some time, especially if the xapian content
@@ -607,6 +608,7 @@ namespace zim
        * page cache (until it needs to drop thoses pages for other stuff)
        */
        void preloadXapianDb() const;
+#endif
 
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;

@@ -145,7 +145,11 @@ TEST(IteartorTests, iteratorFunctions)
 {
     for(auto& testfile:getDataFilePath("wikipedia_en_climate_change_mini_2024-06.zim")) {
         const zim::Archive archive(testfile.path);
+#ifdef LIBZIM_WITH_XAPIAN
         ASSERT_TRUE(archive.hasTitleIndex());
+#else
+        ASSERT_FALSE(archive.hasTitleIndex());
+#endif
         const auto mainItem = archive.getMainEntry().getItem(true);
         auto range = archive.findByTitle(mainItem.getTitle());
         ASSERT_EQ(range.size(), 1);
