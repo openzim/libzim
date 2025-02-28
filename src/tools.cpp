@@ -275,7 +275,7 @@ std::string zim::removeAccents(const std::string& text)
   return unaccentedText;
 }
 
-bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Database& database) {
+bool zim::getDbFromAccessInfo(zim::DirectAccessInfo accessInfo, Xapian::Database& database) {
   zim::DEFAULTFS::FD databasefd;
   try {
       databasefd = zim::DEFAULTFS::openFile(accessInfo.first);

@@ -36,6 +36,7 @@
 #include "file_reader.h"
 #include "file_compound.h"
 #include "fileheader.h"
+#include "search_internal.h"
 #include "zim_types.h"
 #include "direntreader.h"
 
@@ -55,7 +56,7 @@ namespace zim
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
+      mutable ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
 
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;
@@ -96,6 +97,13 @@ namespace zim
       using ByTitleDirentLookup = zim::DirentLookup<ByTitleDirentLookupConfig>;
       std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
+#if defined(ENABLE_XAPIAN)
+      std::shared_ptr<XapianDb> mp_xapianDb;
+      mutable std::mutex m_xapianDbCreationMutex;
+      mutable std::atomic_bool m_xapianDbCreated;
+#endif
+
+
     public:
       using FindxResult = std::pair<bool, entry_index_t>;
       using FindxTitleResult = std::pair<bool, title_index_t>;
@@ -115,21 +123,26 @@ namespace zim
       bool hasNewNamespaceScheme() const { return header.useNewNamespaceScheme(); }
       bool hasFrontArticlesIndex() const { return m_hasFrontArticlesIndex; }
 
-      FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
-      std::shared_ptr<const Dirent> getDirent(entry_index_t idx);
-      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx);
+      FileCompound::PartRange getFileParts(offset_t offset, zsize_t size) const;
+      std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
+      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx) const;
       entry_index_t getIndexByTitle(title_index_t idx) const;
       entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
       entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
-      FindxResult findx(char ns, const std::string &path);
-      FindxResult findx(const std::string &path);
+      FindxResult findx(char ns, const std::string &path) const;
+      FindxResult findx(const std::string &path) const;
       FindxTitleResult findxByTitle(char ns, const std::string& title);
 
-      std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
+      Blob getBlob(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
+      Blob getBlob(cluster_index_t clusterIdx, blob_index_t blobIdx, offset_t offset) const;
+      Blob getBlob(cluster_index_t clusterIdx, blob_index_t blobIdx, offset_t offset, zsize_t size) const;
+
+      std::shared_ptr<const Cluster> getCluster(cluster_index_t idx) const;
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
       offset_t getClusterOffset(cluster_index_t idx) const;
-      offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
+      offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
+      DirectAccessInfo getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
 
       entry_index_t getNamespaceBeginOffset(char ch) const;
       entry_index_t getNamespaceEndOffset(char ch) const;
@@ -161,6 +174,12 @@ namespace zim
       void setDirentCacheMaxSize(size_t nbDirents);
       size_t getDirentLookupCacheMaxSize() const;
       void setDirentLookupCacheMaxSize(size_t nbRanges) { m_direntLookupSize = nbRanges; };
+
+#if defined(ENABLE_XAPIAN)
+      void loadXapianDb();
+      std::shared_ptr<XapianDb> getXapianDb();
+#endif
+
   private:
       explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
@@ -170,7 +189,7 @@ namespace zim
 
       void prepareArticleListByCluster() const;
       DirentLookup& direntLookup() const;
-      ClusterHandle readCluster(cluster_index_t idx);
+      ClusterHandle readCluster(cluster_index_t idx) const;
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
       void quickCheckForCorruptFile();
