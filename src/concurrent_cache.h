@@ -40,7 +40,7 @@ namespace zim
    available.
  */
 template <typename Key, typename Value>
-class ConcurrentCache
+class ConcurrentCache: private lru_cache<Key, std::shared_future<Value>>
 {
 private: // types
   typedef std::shared_future<Value> ValuePlaceholder;
@@ -48,7 +48,7 @@ private: // types
 
 public: // types
   explicit ConcurrentCache(size_t maxEntries)
-    : impl_(maxEntries)
+    : Impl(maxEntries)
   {}
 
   // Gets the entry corresponding to the given key. If the entry is not in the
@@ -65,7 +65,7 @@ public: // types
   {
     std::promise<Value> valuePromise;
     std::unique_lock<std::mutex> l(lock_);
-    const auto x = impl_.getOrPut(key, valuePromise.get_future().share());
+    const auto x = Impl::getOrPut(key, valuePromise.get_future().share());
     l.unlock();
     if ( x.miss() ) {
       try {
@@ -82,26 +82,25 @@ public: // types
   bool drop(const Key& key)
   {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.drop(key);
+    return Impl::drop(key);
   }
 
   size_t getMaxSize() const {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.getMaxSize();
+    return Impl::getMaxSize();
   }
 
   size_t getCurrentSize() const {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.size();
+    return Impl::size();
   }
 
   void setMaxSize(size_t newSize) {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.setMaxSize(newSize);
+    return Impl::setMaxSize(newSize);
   }
 
 private: // data
-  Impl impl_;
   mutable std::mutex lock_;
 };
 
