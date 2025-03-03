@@ -43,10 +43,38 @@
 #include <cstddef>
 #include <stdexcept>
 #include <cassert>
+#include <iostream>
 
 namespace zim {
 
-template<typename key_t, typename value_t>
+struct UnitCostEstimation {
+  template<typename value_t>
+  static size_t cost(const value_t& value) {
+    return 1;
+  }
+};
+
+/**
+ * A lru cache where the cost of each item can be different from 1.
+ *
+ * Most lru caches are limited by the number of items stored.
+ * This implementation may have a different "size" per item, so the current
+ * size of this cache is not the number of items but the sum of all items' size.
+ *
+ * The implementation used is pretty simple (dumb) and has a few limitations:
+ * - We assume that the size of an item does not change over time. Importantly,
+ *   the size of a item when we add it to the cache MUST be equal to the size
+ *   of the same item when we drop it from the cache.
+ * - Cache eviction still relies on the Least Recently Used (LRU) heuristics,
+ *   so we drop the least used item(s) util we have enough space. No other
+ *   consideration is used to select which item to drop.
+ *
+ * This lru cache is parametrized by a CostEstimation type. The type must have a
+ * static method `cost` taking a reference to a `value_t` and returing its
+ * "cost". As already said, this method must always return the same cost for
+ * the same value.
+ */
+template<typename key_t, typename value_t, typename CostEstimation>
 class lru_cache {
 public: // types
   typedef typename std::pair<key_t, value_t> key_value_pair_t;
@@ -81,9 +109,10 @@ public: // types
   };
 
 public: // functions
-  explicit lru_cache(size_t max_size) :
-    _max_size(max_size) {
-  }
+  explicit lru_cache(size_t max_cost) :
+    _max_cost(max_cost),
+    _current_cost(0)
+  {}
 
   // If 'key' is present in the cache, returns the associated value,
   // otherwise puts the given value into the cache (and returns it with
@@ -103,6 +132,8 @@ public: // functions
     auto it = _cache_items_map.find(key);
     if (it != _cache_items_map.end()) {
       _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
+      decreaseCost(CostEstimation::cost(it->second->second));
+      increaseCost(CostEstimation::cost(value));
       it->second->second = value;
     } else {
       putMissing(key, value);
@@ -120,37 +151,52 @@ public: // functions
   }
 
   bool drop(const key_t& key) {
+    list_iterator_t list_it;
     try {
-      auto list_it = _cache_items_map.at(key);
-      _cache_items_list.erase(list_it);
-      _cache_items_map.erase(key);
-      return true;
+      list_it = _cache_items_map.at(key);
     } catch (std::out_of_range& e) {
       return false;
     }
+    decreaseCost(CostEstimation::cost(list_it->second));
+    _cache_items_list.erase(list_it);
+    _cache_items_map.erase(key);
+    return true;
   }
 
   bool exists(const key_t& key) const {
     return _cache_items_map.find(key) != _cache_items_map.end();
   }
 
-  size_t size() const {
-    return _cache_items_map.size();
+  size_t cost() const {
+    return _current_cost;
   }
 
-  size_t getMaxSize() const {
-    return _max_size;
+  size_t getMaxCost() const {
+    return _max_cost;
   }
 
-  void setMaxSize(size_t newSize) {
-    while (newSize < this->size()) {
-      dropLast();
-    }
-    _max_size = newSize;
+  void setMaxCost(size_t newMaxCost) {
+    _max_cost = newMaxCost;
+    increaseCost(0);
   }
 
 private: // functions
+  void increaseCost(size_t extra_cost) {
+    _current_cost += extra_cost;
+    const auto costLimit = std::max(_max_cost, extra_cost);
+    while (_current_cost > costLimit) {
+      dropLast();
+    }
+  }
+
+  void decreaseCost(size_t costToRemove) {
+    assert(costToRemove <= _current_cost);
+    _current_cost -= costToRemove;
+  }
+
   void dropLast() {
+    auto list_it = _cache_items_list.back();
+    decreaseCost(CostEstimation::cost(list_it.second));
     _cache_items_map.erase(_cache_items_list.back().first);
     _cache_items_list.pop_back();
   }
@@ -159,15 +205,19 @@ private: // functions
     assert(_cache_items_map.find(key) == _cache_items_map.end());
     _cache_items_list.push_front(key_value_pair_t(key, value));
     _cache_items_map[key] = _cache_items_list.begin();
-    if (_cache_items_map.size() > _max_size) {
-      dropLast();
-    }
+    increaseCost(CostEstimation::cost(value));
   }
+
+  size_t size() const {
+    return _cache_items_map.size();
+  }
+
 
 private: // data
   std::list<key_value_pair_t> _cache_items_list;
   std::map<key_t, list_iterator_t> _cache_items_map;
-  size_t _max_size;
+  size_t _max_cost;
+  size_t _current_cost;
 };
 
 } // namespace zim

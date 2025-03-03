@@ -44,7 +44,7 @@ class ConcurrentCache
 {
 private: // types
   typedef std::shared_future<Value> ValuePlaceholder;
-  typedef lru_cache<Key, ValuePlaceholder> Impl;
+  typedef lru_cache<Key, ValuePlaceholder, UnitCostEstimation> Impl;
 
 public: // types
   explicit ConcurrentCache(size_t maxEntries)
@@ -56,7 +56,7 @@ public: // types
   // result is put into the cache.
   //
   // The cache as a whole is locked only for the duration of accessing
-  // the respective slot. If, in the case of the a cache miss, the generation
+  // the respective slot. If, in the case of a cache miss, the generation
   // of the missing element takes a long time, only attempts to access that
   // element will block - the rest of the cache remains open to concurrent
   // access.
@@ -87,17 +87,17 @@ public: // types
 
   size_t getMaxSize() const {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.getMaxSize();
+    return impl_.getMaxCost();
   }
 
   size_t getCurrentSize() const {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.size();
+    return impl_.cost();
   }
 
   void setMaxSize(size_t newSize) {
     std::unique_lock<std::mutex> l(lock_);
-    return impl_.setMaxSize(newSize);
+    return impl_.setMaxCost(newSize);
   }
 
 private: // data
