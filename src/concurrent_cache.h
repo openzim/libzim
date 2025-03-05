@@ -90,7 +90,8 @@ public: // types
   {
     std::promise<Value> valuePromise;
     std::unique_lock<std::mutex> l(lock_);
-    const auto x = Impl::getOrPut(key, valuePromise.get_future().share());
+    auto shared_future = valuePromise.get_future().share();
+    const auto x = Impl::getOrPut(key, shared_future);
     l.unlock();
     if ( x.miss() ) {
       try {
@@ -98,7 +99,7 @@ public: // types
         auto cost = CostEstimation::cost(x.value().get());
         // There is a small window when the valuePromise may be drop from lru cache after
         // we set the value but before we increase the size of the cache.
-        // In this case decrease the size of `cost` before increasing it.
+        // In this case we decrease the size of `cost` before increasing it.
         // First of all it should be pretty rare as we have just put the future in the cache so it
         // should not be the least used item.
         // If it happens, this should not be a problem if current_size is bigger than `cost` (most of the time)
@@ -106,7 +107,15 @@ public: // types
         // `decreaseCost` will clamp the new size to 0.
         {
           std::unique_lock<std::mutex> l(lock_);
-          Impl::increaseCost(cost);
+          // There is a window when the shared_future is drop from the cache while we are computing the value.
+          // If this is the case, we readd the shared_future in the cache.
+          if (!Impl::exists(key)) {
+            // We don't have have to increase the cache as the future is already set, so the cost will be valid.
+            Impl::put(key, shared_future);
+          } else {
+            // We just have to increase the cost as we used 0 for unset future.
+            Impl::increaseCost(cost);
+          }
         }
       } catch (std::exception& e) {
         drop(key);
