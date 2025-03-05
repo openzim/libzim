@@ -36,11 +36,13 @@
 #include "file_reader.h"
 #include "file_compound.h"
 #include "fileheader.h"
-#include "search_internal.h"
 #include "zim/archive.h"
 #include "zim_types.h"
 #include "direntreader.h"
 
+#ifdef ENABLE_XAPIAN
+#include "search_internal.h"
+#endif
 
 namespace zim
 {
@@ -95,10 +97,11 @@ namespace zim
       using ByTitleDirentLookup = zim::DirentLookup<ByTitleDirentLookupConfig>;
       std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
+#ifdef ENABLE_XAPIAN
       std::shared_ptr<XapianDb> mp_xapianDb;
       mutable std::mutex m_xapianDbCreationMutex;
       mutable std::atomic_bool m_xapianDbCreated;
-
+#endif
 
     public:
       using FindxResult = std::pair<bool, entry_index_t>;
@@ -168,8 +171,10 @@ namespace zim
       size_t getDirentCacheCurrentSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
 
+#ifdef ENABLE_XAPIAN
       std::shared_ptr<XapianDb> loadXapianDb();
       std::shared_ptr<XapianDb> getXapianDb();
+#endif
   private:
       FileImpl(std::shared_ptr<FileCompound> zimFile, OpenConfig openConfig);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size, OpenConfig openConfig);

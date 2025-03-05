@@ -19,14 +19,17 @@
  *
  */
 
+#include "fileimpl.h"
 #include "dirent_lookup.h"
 #include "zim/zim.h"
+
+#ifdef ENABLE_XAPIAN
 #include "search_internal.h"
 #include "xapian.h"
+#endif
 #include "zim_types.h"
 #include <memory>
 #define CHUNK_SIZE 1024
-#include "fileimpl.h"
 #include <zim/error.h>
 #include <zim/tools.h>
 #include "_dirent.h"
@@ -194,6 +197,9 @@ private: // data
       m_hasFrontArticlesIndex(true),
       m_startUserEntry(0),
       m_endUserEntry(0)
+#ifdef ENABLE_XAPIAN
+      ,m_xapianDbCreated(false)
+#endif
   {
     log_trace("read file \"" << zimFile->filename() << '"');
 
@@ -265,10 +271,12 @@ private: // data
     }
     m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
+#ifdef ENABLE_XAPIAN
     if (openConfig.m_preloadXapianDb) {
       mp_xapianDb = loadXapianDb();
       m_xapianDbCreated.store(true, std::memory_order_release);
     }
+#endif
 
     readMimeTypes();
   }
@@ -834,6 +842,7 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     return cluster->getBlob(dirent.getBlobNumber(), offset, size);
   }
 
+#ifdef ENABLE_XAPIAN
   std::shared_ptr<XapianDb> FileImpl::loadXapianDb() {
     FileImpl::FindxResult r;
     r = m_direntLookup->find('X', "fulltext/xapian");
@@ -892,4 +901,5 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     }
     return mp_xapianDb;
   }
+#endif
 }

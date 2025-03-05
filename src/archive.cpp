@@ -36,7 +36,8 @@ namespace zim
   const OpenConfig Archive::DEFAULT_OPEN_CONFIG;
 
   OpenConfig::OpenConfig()
-      : m_preloadXapianDb(true),
+    :
+        m_preloadXapianDb(true),
         m_preloadDirentRanges(DIRENT_LOOKUP_CACHE_SIZE)
     { }
 
