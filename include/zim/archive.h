@@ -148,7 +148,19 @@ namespace zim
     public:
       template<EntryOrder order> class EntryRange;
       template<EntryOrder order> class iterator;
-      static const OpenConfig DEFAULT_OPEN_CONFIG;
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a filename.
+       *  The file is open readonly.
+       *
+       *  The filename is the "logical" path.
+       *  So if you want to open a split zim file (foo.zimaa, foo.zimab, ...)
+       *  you must pass the `foo.zim` path.
+       *
+       *  @param fname The filename to the file to open (utf8 encoded)
+       */
+      explicit Archive(const std::string& fname);
 
       /** Archive constructor.
        *
@@ -162,7 +174,7 @@ namespace zim
        *  @param fname The filename to the file to open (utf8 encoded)
        *  @param openConfig The open configuration to use.
        */
-      Archive(const std::string& fname, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
+      Archive(const std::string& fname, OpenConfig openConfig);
 
 #ifndef _WIN32
       /** Archive constructor.
@@ -174,9 +186,38 @@ namespace zim
        *  Note: This function is not available under Windows.
        *
        *  @param fd The descriptor of a seekable file representing a ZIM archive
+       */
+      explicit Archive(int fd);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a file descriptor.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd The descriptor of a seekable file representing a ZIM archive
        *  @param openConfig The open configuration to use.
        */
-      Archive(int fd, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
+      Archive(int fd, OpenConfig openConfig);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd The descriptor of a seekable file with a continuous segment
+       *  representing a complete ZIM archive.
+       *  @param offset The offset of the ZIM archive relative to the beginning
+       *  of the file (rather than the current position associated with fd).
+       *  @param size The size of the ZIM archive.
+       */
+       Archive(int fd, offset_type offset, size_type size);
 
       /** Archive constructor.
        *
@@ -194,7 +235,21 @@ namespace zim
        *  @param size The size of the ZIM archive.
        *  @param openConfig The open configuration to use.
        */
-       Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
+       Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd A FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *            referencing a continuous segment representing a complete ZIM archive.
+       */
+      explicit Archive(FdInput fd);
 
       /** Archive constructor.
        *
@@ -209,7 +264,22 @@ namespace zim
        *            referencing a continuous segment representing a complete ZIM archive.
        *  @param openConfig The open configuration to use.
        */
-      Archive(FdInput fd, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
+      Archive(FdInput fd, OpenConfig openConfig);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from several file descriptors.
+       *  Each part may be embedded in a file.
+       *  Fds are used only at Archive creation.
+       *  Ownership of the fds is not taken and they must be closed by caller.
+       *  Fds (int) can be the same between FdInput if the parts belong to the same file.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fds A vector of FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *             referencing a series of segments representing a complete ZIM archive.
+       */
+      explicit Archive(const std::vector<FdInput>& fds);
 
       /** Archive constructor.
        *
@@ -225,7 +295,7 @@ namespace zim
        *             referencing a series of segments representing a complete ZIM archive.
        *  @param openConfig The open configuration to use.
        */
-      Archive(const std::vector<FdInput>& fds, OpenConfig openConfig=DEFAULT_OPEN_CONFIG);
+      Archive(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
 
       /** Return the filename of the zim file.

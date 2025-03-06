@@ -33,12 +33,14 @@ log_define("zim.archive")
 
 namespace zim
 {
-  const OpenConfig Archive::DEFAULT_OPEN_CONFIG;
-
   OpenConfig::OpenConfig()
-    :
+    : 
         m_preloadXapianDb(true),
         m_preloadDirentRanges(DIRENT_LOOKUP_CACHE_SIZE)
+    { }
+
+  Archive::Archive(const std::string& fname)
+    : Archive(fname, OpenConfig())
     { }
 
   Archive::Archive(const std::string& fname, OpenConfig openConfig)
@@ -46,16 +48,32 @@ namespace zim
     { }
 
 #ifndef _WIN32
+  Archive::Archive(int fd)
+    : Archive(fd, OpenConfig())
+    { }
+
   Archive::Archive(int fd, OpenConfig openConfig)
     : m_impl(new FileImpl(fd, openConfig))
     { }
 
+  Archive::Archive(FdInput fd)
+    : Archive(fd, OpenConfig())
+    { }
+
   Archive::Archive(FdInput fd, OpenConfig openConfig)
     : m_impl(new FileImpl(fd, openConfig))
-  {}
+    { }
+
+  Archive::Archive(int fd, offset_type offset, size_type size)
+    : Archive(FdInput(fd, offset, size), OpenConfig())
+    { }
 
   Archive::Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig)
     : Archive(FdInput(fd, offset, size), openConfig)
+    { }
+
+  Archive::Archive(const std::vector<FdInput>& fds)
+    : Archive(fds, OpenConfig())
     { }
 
   Archive::Archive(const std::vector<FdInput>& fds, OpenConfig openConfig)
