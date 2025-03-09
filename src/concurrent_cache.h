@@ -22,6 +22,7 @@
 #define ZIM_CONCURRENT_CACHE_H
 
 #include "lrucache.h"
+#include "log.h"
 
 #include <chrono>
 #include <cstddef>
@@ -76,31 +77,40 @@ public: // types
   template<class F>
   Value getOrPut(const Key& key, F f)
   {
+    log_debug_func_call("ConcurrentCache::getOrPut", key);
+
     std::promise<Value> valuePromise;
     std::unique_lock<std::mutex> l(lock_);
     auto shared_future = valuePromise.get_future().share();
     const auto x = impl_.getOrPut(key, CacheEntry{0, shared_future});
     l.unlock();
+    log_debug("Obtained the cache slot");
     if ( x.miss() ) {
+      log_debug("It was a cache miss. Going to obtain the value...");
       try {
         const auto materializedValue = f();
         valuePromise.set_value(materializedValue);
+        log_debug("Value was successfully obtained. Computing its cost...");
         auto cost = CostEstimation::cost(materializedValue);
+        log_debug("cost=" << cost << ". Committing to cache...");
         {
           std::unique_lock<std::mutex> l(lock_);
           impl_.put(key, CacheEntry{cost, shared_future});
         }
+        log_debug("Done. Cache cost is at " << getCurrentCost() );
       } catch (std::exception& e) {
+        log_debug("Evaluation failed. Releasing the cache slot...");
         drop(key);
         throw;
       }
     }
 
-    return x.value().value.get();
+    return log_debug_return_value(x.value().value.get());
   }
 
   bool drop(const Key& key)
   {
+    log_debug_func_call("ConcurrentCache::drop", key);
     std::unique_lock<std::mutex> l(lock_);
     return impl_.drop(key);
   }
