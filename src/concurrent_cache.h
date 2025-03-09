@@ -22,6 +22,7 @@
 #define ZIM_CONCURRENT_CACHE_H
 
 #include "lrucache.h"
+#include "log.h"
 
 #include <chrono>
 #include <cstddef>
@@ -88,15 +89,21 @@ public: // types
   template<class F>
   Value getOrPut(const Key& key, F f)
   {
+    log_debug_func_call("ConcurrentCache::getOrPut", key);
+
     std::promise<Value> valuePromise;
     std::unique_lock<std::mutex> l(lock_);
     auto shared_future = valuePromise.get_future().share();
     const auto x = Impl::getOrPut(key, shared_future);
     l.unlock();
+    log_debug("Obtained the cache slot");
     if ( x.miss() ) {
+      log_debug("It was a cache miss. Going to obtain the value...");
       try {
         valuePromise.set_value(f());
+        log_debug("Value was successfully obtained. Computing its cost...");
         auto cost = CostEstimation::cost(x.value().get());
+        log_debug("cost=" << cost << ". Committing to cache...");
         // There is a small window when the valuePromise may be drop from lru cache after
         // we set the value but before we increase the size of the cache.
         // In this case we decrease the size of `cost` before increasing it.
@@ -117,17 +124,20 @@ public: // types
             Impl::increaseCost(cost);
           }
         }
+        log_debug("Done. Cache cost is at " << getCurrentCost() );
       } catch (std::exception& e) {
+        log_debug("Evaluation failed. Releasing the cache slot...");
         drop(key);
         throw;
       }
     }
 
-    return x.value().get();
+    return log_debug_return_value(x.value().get());
   }
 
   bool drop(const Key& key)
   {
+    log_debug_func_call("ConcurrentCache::drop", key);
     std::unique_lock<std::mutex> l(lock_);
     return Impl::drop(key);
   }

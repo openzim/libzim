@@ -17,6 +17,8 @@
  *
  */
 
+#define LIBZIM_ENABLE_LOGGING
+
 #include "concurrent_cache.h"
 #include "gtest/gtest.h"
 
@@ -37,4 +39,32 @@ TEST(ConcurrentCacheTest, handleException) {
     EXPECT_EQ(cache.getOrPut(7, LazyValue(777)), 777);
     EXPECT_THROW(cache.getOrPut(8, ExceptionSource()), std::runtime_error);
     EXPECT_EQ(cache.getOrPut(8, LazyValue(888)), 888);
+}
+
+TEST(ConcurrentCacheXRayTest, simpleFlow) {
+    zim::Logging::logIntoMemory();
+    zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(10);
+    EXPECT_EQ(cache.getOrPut(3, LazyValue(2025)), 2025);
+    EXPECT_EQ(cache.getOrPut(3, LazyValue(123)),  2025);
+    EXPECT_THROW(cache.getOrPut(2, ExceptionSource()), std::runtime_error);
+
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::getOrPut(3) {
+thread#0:  Obtained the cache slot
+thread#0:  It was a cache miss. Going to obtain the value...
+thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  cost=1. Committing to cache...
+thread#0:  Done. Cache cost is at 1
+thread#0: } (return value: 2025)
+thread#0: ConcurrentCache::getOrPut(3) {
+thread#0:  Obtained the cache slot
+thread#0: } (return value: 2025)
+thread#0: ConcurrentCache::getOrPut(2) {
+thread#0:  Obtained the cache slot
+thread#0:  It was a cache miss. Going to obtain the value...
+thread#0:  Evaluation failed. Releasing the cache slot...
+thread#0:  ConcurrentCache::drop(2) {
+thread#0:  }
+thread#0: }
+)");
 }
