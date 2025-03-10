@@ -222,9 +222,11 @@ public: // functions
       return;
     }
     _current_cost += extra_cost;
+    log_debug("_current_cost after increase: " << _current_cost);
     while (_current_cost > _max_cost && size() > 1) {
       dropLast();
     }
+    log_debug("settled _current_cost: " << _current_cost);
   }
 
   void decreaseCost(size_t costToRemove) {
@@ -236,6 +238,7 @@ public: // functions
     } else {
       _current_cost -= costToRemove;
     }
+    log_debug("_current_cost after decrease: " << _current_cost);
   }
 
 private: // functions
