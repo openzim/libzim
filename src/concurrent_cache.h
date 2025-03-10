@@ -32,30 +32,6 @@
 namespace zim
 {
 
-template<typename CostEstimation>
-struct FutureToValueCostEstimation {
-  template<typename T>
-  static size_t cost(const std::shared_future<T>& future) {
-    // The future is the value in the cache.
-    // When calling getOrPut, if the key is not in the cache,
-    // we add a future and then we compute the value and set the future.
-    // But lrucache call us when we add the future, meaning before we have
-    // computed the value. If we wait here (or use future.get), we will dead lock
-    // as we need to exit before setting the value.
-    // So in this case, we return 0. `ConcurrentCache::getOrPut` will correctly increase
-    // the current cache size when it have an actual value.
-    // We still need to compute the size of the value if the future has a value as it
-    // is also use to decrease the cache size when the value is drop.
-    std::future_status status = future.wait_for(std::chrono::nanoseconds::zero());
-    if (status == std::future_status::ready) {
-      return CostEstimation::cost(future.get());
-    } else {
-      return 0;
-    }
-  }
-
-};
-
 /**
    ConcurrentCache implements a concurrent thread-safe cache
 
@@ -66,15 +42,27 @@ struct FutureToValueCostEstimation {
    available.
  */
 template <typename Key, typename Value, typename CostEstimation>
-class ConcurrentCache: private lru_cache<Key, std::shared_future<Value>, FutureToValueCostEstimation<CostEstimation>>
+class ConcurrentCache
 {
 private: // types
   typedef std::shared_future<Value> ValuePlaceholder;
-  typedef lru_cache<Key, ValuePlaceholder, FutureToValueCostEstimation<CostEstimation>> Impl;
+
+  struct CacheEntry
+  {
+    size_t            cost = 0;
+    ValuePlaceholder  value;
+  };
+
+  struct GetCacheEntryCost
+  {
+    static size_t cost(const CacheEntry& x) { return x.cost; }
+  };
+
+  typedef lru_cache<Key, CacheEntry, GetCacheEntryCost> Impl;
 
 public: // types
   explicit ConcurrentCache(size_t maxCost)
-    : Impl(maxCost)
+    : impl_(maxCost)
   {}
 
   // Gets the entry corresponding to the given key. If the entry is not in the
@@ -94,35 +82,20 @@ public: // types
     std::promise<Value> valuePromise;
     std::unique_lock<std::mutex> l(lock_);
     auto shared_future = valuePromise.get_future().share();
-    const auto x = Impl::getOrPut(key, shared_future);
+    const auto x = impl_.getOrPut(key, CacheEntry{0, shared_future});
     l.unlock();
     log_debug("Obtained the cache slot");
     if ( x.miss() ) {
       log_debug("It was a cache miss. Going to obtain the value...");
       try {
-        valuePromise.set_value(f());
+        const auto materializedValue = f();
+        valuePromise.set_value(materializedValue);
         log_debug("Value was successfully obtained. Computing its cost...");
-        auto cost = CostEstimation::cost(x.value().get());
+        auto cost = CostEstimation::cost(materializedValue);
         log_debug("cost=" << cost << ". Committing to cache...");
-        // There is a small window when the valuePromise may be drop from lru cache after
-        // we set the value but before we increase the size of the cache.
-        // In this case we decrease the size of `cost` before increasing it.
-        // First of all it should be pretty rare as we have just put the future in the cache so it
-        // should not be the least used item.
-        // If it happens, this should not be a problem if current_size is bigger than `cost` (most of the time)
-        // For the really rare specific case of current cach size being lower than `cost` (if possible),
-        // `decreaseCost` will clamp the new size to 0.
         {
           std::unique_lock<std::mutex> l(lock_);
-          // There is a window when the shared_future is drop from the cache while we are computing the value.
-          // If this is the case, we readd the shared_future in the cache.
-          if (!Impl::exists(key)) {
-            // We don't have have to increase the cache as the future is already set, so the cost will be valid.
-            Impl::put(key, shared_future);
-          } else {
-            // We just have to increase the cost as we used 0 for unset future.
-            Impl::increaseCost(cost);
-          }
+          impl_.put(key, CacheEntry{cost, shared_future});
         }
         log_debug("Done. Cache cost is at " << getCurrentCost() );
       } catch (std::exception& e) {
@@ -132,38 +105,39 @@ public: // types
       }
     }
 
-    return log_debug_return_value(x.value().get());
+    return log_debug_return_value(x.value().value.get());
   }
 
   bool drop(const Key& key)
   {
     log_debug_func_call("ConcurrentCache::drop", key);
     std::unique_lock<std::mutex> l(lock_);
-    return Impl::drop(key);
+    return impl_.drop(key);
   }
 
   template<class F>
   void dropAll(F f) {
     std::unique_lock<std::mutex> l(lock_);
-    Impl::dropAll(f);
+    impl_.dropAll(f);
   }
 
   size_t getMaxCost() const {
     std::unique_lock<std::mutex> l(lock_);
-    return Impl::getMaxCost();
+    return impl_.getMaxCost();
   }
 
   size_t getCurrentCost() const {
     std::unique_lock<std::mutex> l(lock_);
-    return Impl::cost();
+    return impl_.cost();
   }
 
   void setMaxCost(size_t newSize) {
     std::unique_lock<std::mutex> l(lock_);
-    return Impl::setMaxCost(newSize);
+    return impl_.setMaxCost(newSize);
   }
 
 private: // data
+  Impl impl_;
   mutable std::mutex lock_;
 };
 

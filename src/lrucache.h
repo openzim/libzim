@@ -205,7 +205,7 @@ public: // functions
     _max_cost = newMaxCost;
   }
 
- protected:
+ private:
 
   void increaseCost(size_t extra_cost) {
     log_debug_func_call("lru_cache::increaseCost", extra_cost);

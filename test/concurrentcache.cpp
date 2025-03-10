@@ -57,6 +57,9 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1. Committing to cache...
+thread#0:  lru_cache::decreaseCost(0) {
+thread#0:   _current_cost after decrease: 0
+thread#0:  }
 thread#0:  lru_cache::increaseCost(1) {
 thread#0:   _current_cost after increase: 1
 thread#0:   settled _current_cost: 1
@@ -126,6 +129,9 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1. Committing to cache...
+thread#0:  lru_cache::decreaseCost(0) {
+thread#0:   _current_cost after decrease: 1
+thread#0:  }
 thread#0:  lru_cache::increaseCost(1) {
 thread#0:   _current_cost after increase: 2
 thread#0:   lru_cache::dropLast() {
@@ -162,6 +168,9 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=6075. Committing to cache...
+thread#0:  lru_cache::decreaseCost(0) {
+thread#0:   _current_cost after decrease: 0
+thread#0:  }
 thread#0:  lru_cache::increaseCost(6075) {
 thread#0:   _current_cost after increase: 6075
 thread#0:   settled _current_cost: 6075
@@ -188,6 +197,9 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=300. Committing to cache...
+thread#0:  lru_cache::decreaseCost(0) {
+thread#0:   _current_cost after decrease: 0
+thread#0:  }
 thread#0:  lru_cache::increaseCost(300) {
 thread#0:   _current_cost after increase: 300
 thread#0:   settled _current_cost: 300
@@ -204,6 +216,9 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=600. Committing to cache...
+thread#0:  lru_cache::decreaseCost(0) {
+thread#0:   _current_cost after decrease: 300
+thread#0:  }
 thread#0:  lru_cache::increaseCost(600) {
 thread#0:   _current_cost after increase: 900
 thread#0:   settled _current_cost: 900
