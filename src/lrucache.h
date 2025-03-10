@@ -209,18 +209,6 @@ public: // functions
 
   void increaseCost(size_t extra_cost) {
     log_debug_func_call("lru_cache::increaseCost", extra_cost);
-    // increaseSize is called after we have added a value to the cache to update
-    // the size of the current cache.
-    // We must ensure that we don't drop the value we just added.
-    // While it is technically ok to keep no value if max cache size is 0 (or memory size < of the size of one cluster)
-    // it will make recreate the value all the time.
-    // Let's be nice with our user and be tolerent to misconfiguration.
-    if (!extra_cost) {
-      // Don't try to remove an item if we have new size == 0.
-      // This is the case when concurent cache add a future without value.
-      // We will handle the real increase size when concurent cache will directly call us.
-      return;
-    }
     _current_cost += extra_cost;
     log_debug("_current_cost after increase: " << _current_cost);
     while (_current_cost > _max_cost && size() > 1) {

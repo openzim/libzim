@@ -51,6 +51,8 @@ R"(thread#0: ConcurrentCache::getOrPut(3) {
 thread#0:  lru_cache::getOrPut(3) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
+thread#0:    _current_cost after increase: 0
+thread#0:    settled _current_cost: 0
 thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
@@ -96,6 +98,8 @@ R"(thread#0: ConcurrentCache::getOrPut(2) {
 thread#0:  lru_cache::getOrPut(2) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
+thread#0:    _current_cost after increase: 1
+thread#0:    settled _current_cost: 1
 thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
@@ -123,6 +127,8 @@ R"(thread#0: ConcurrentCache::getOrPut(2) {
 thread#0:  lru_cache::getOrPut(2) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
+thread#0:    _current_cost after increase: 1
+thread#0:    settled _current_cost: 1
 thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
@@ -162,6 +168,8 @@ R"(thread#0: ConcurrentCache::getOrPut(151) {
 thread#0:  lru_cache::getOrPut(151) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
+thread#0:    _current_cost after increase: 0
+thread#0:    settled _current_cost: 0
 thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
@@ -191,6 +199,8 @@ R"(thread#0: ConcurrentCache::getOrPut(22) {
 thread#0:  lru_cache::getOrPut(22) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
+thread#0:    _current_cost after increase: 0
+thread#0:    settled _current_cost: 0
 thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
@@ -210,6 +220,8 @@ thread#0: ConcurrentCache::getOrPut(11) {
 thread#0:  lru_cache::getOrPut(11) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
+thread#0:    _current_cost after increase: 300
+thread#0:    settled _current_cost: 300
 thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
