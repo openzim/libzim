@@ -41,14 +41,11 @@ TEST(ConcurrentCacheTest, handleException) {
     EXPECT_EQ(cache.getOrPut(8, LazyValue(888)), 888);
 }
 
-TEST(ConcurrentCacheXRayTest, simpleFlow) {
-    zim::Logging::logIntoMemory();
+TEST(ConcurrentCacheTest, addAnItemToAnEmptyCache) {
     zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(1);
-    EXPECT_EQ(cache.getOrPut(3, LazyValue(2025)), 2025);
-    EXPECT_EQ(cache.getOrPut(3, LazyValue(123)),  2025);
-    EXPECT_THROW(cache.getOrPut(2, ExceptionSource()), std::runtime_error);
-    EXPECT_EQ(cache.getOrPut(2, LazyValue(123)),  123);
 
+    zim::Logging::logIntoMemory();
+    EXPECT_EQ(cache.getOrPut(3, LazyValue(2025)), 2025);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(3) {
 thread#0:  lru_cache::getOrPut(3) {
@@ -66,13 +63,33 @@ thread#0:   settled _current_cost: 1
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
 thread#0: } (return value: 2025)
-thread#0: ConcurrentCache::getOrPut(3) {
+)");
+}
+
+TEST(ConcurrentCacheTest, cacheHit) {
+    zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(1);
+    cache.getOrPut(3, LazyValue(2025));
+
+    zim::Logging::logIntoMemory();
+    EXPECT_EQ(cache.getOrPut(3, LazyValue(123)),  2025);
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::getOrPut(3) {
 thread#0:  lru_cache::getOrPut(3) {
 thread#0:   already in cache, moved to the beginning of the LRU list.
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0: } (return value: 2025)
-thread#0: ConcurrentCache::getOrPut(2) {
+)");
+}
+
+TEST(ConcurrentCacheTest, attemptToAddNonMaterializableItemToFullCache) {
+    zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(1);
+    cache.getOrPut(3, LazyValue(2025));
+
+    zim::Logging::logIntoMemory();
+    EXPECT_THROW(cache.getOrPut(2, ExceptionSource()), std::runtime_error);
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::getOrPut(2) {
 thread#0:  lru_cache::getOrPut(2) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
@@ -89,7 +106,17 @@ thread#0:    }
 thread#0:   }
 thread#0:  }
 thread#0: }
-thread#0: ConcurrentCache::getOrPut(2) {
+)");
+}
+
+TEST(ConcurrentCacheTest, addItemToFullCache) {
+    zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(1);
+    cache.getOrPut(3, LazyValue(2025));
+
+    zim::Logging::logIntoMemory();
+    EXPECT_EQ(cache.getOrPut(2, LazyValue(123)),  123);
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::getOrPut(2) {
 thread#0:  lru_cache::getOrPut(2) {
 thread#0:   not in cache, adding...
 thread#0:   lru_cache::increaseCost(0) {
