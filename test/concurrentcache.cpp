@@ -140,3 +140,33 @@ thread#0:  Done. Cache cost is at 1
 thread#0: } (return value: 123)
 )");
 }
+
+struct CostAs3xValue
+{
+  static size_t cost(size_t v) { return 3 * v; }
+};
+
+TEST(ConcurrentCacheTest, addOversizedItemToEmptyCache) {
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    zim::Logging::logIntoMemory();
+    cache.getOrPut(151, LazyValue(2025));
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::getOrPut(151) {
+thread#0:  lru_cache::getOrPut(151) {
+thread#0:   not in cache, adding...
+thread#0:   lru_cache::increaseCost(0) {
+thread#0:   }
+thread#0:  }
+thread#0:  Obtained the cache slot
+thread#0:  It was a cache miss. Going to obtain the value...
+thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  cost=6075. Committing to cache...
+thread#0:  lru_cache::increaseCost(6075) {
+thread#0:   _current_cost after increase: 6075
+thread#0:   settled _current_cost: 6075
+thread#0:  }
+thread#0:  Done. Cache cost is at 6075
+thread#0: } (return value: 2025)
+)");
+}
