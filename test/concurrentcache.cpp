@@ -170,3 +170,45 @@ thread#0:  Done. Cache cost is at 6075
 thread#0: } (return value: 2025)
 )");
 }
+
+TEST(ConcurrentCacheTest, addItemsToEmptyCacheWithoutOverflowingIt) {
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    zim::Logging::logIntoMemory();
+    cache.getOrPut(22, LazyValue(100));
+    cache.getOrPut(11, LazyValue(200));
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::getOrPut(22) {
+thread#0:  lru_cache::getOrPut(22) {
+thread#0:   not in cache, adding...
+thread#0:   lru_cache::increaseCost(0) {
+thread#0:   }
+thread#0:  }
+thread#0:  Obtained the cache slot
+thread#0:  It was a cache miss. Going to obtain the value...
+thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  cost=300. Committing to cache...
+thread#0:  lru_cache::increaseCost(300) {
+thread#0:   _current_cost after increase: 300
+thread#0:   settled _current_cost: 300
+thread#0:  }
+thread#0:  Done. Cache cost is at 300
+thread#0: } (return value: 100)
+thread#0: ConcurrentCache::getOrPut(11) {
+thread#0:  lru_cache::getOrPut(11) {
+thread#0:   not in cache, adding...
+thread#0:   lru_cache::increaseCost(0) {
+thread#0:   }
+thread#0:  }
+thread#0:  Obtained the cache slot
+thread#0:  It was a cache miss. Going to obtain the value...
+thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  cost=600. Committing to cache...
+thread#0:  lru_cache::increaseCost(600) {
+thread#0:   _current_cost after increase: 900
+thread#0:   settled _current_cost: 900
+thread#0:  }
+thread#0:  Done. Cache cost is at 900
+thread#0: } (return value: 200)
+)");
+}
