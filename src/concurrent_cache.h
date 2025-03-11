@@ -102,7 +102,7 @@ public: // functions
   bool drop(const Key& key)
   {
     log_debug_func_call("ConcurrentCache::drop", key);
-    std::unique_lock<std::mutex> l(lock_);
+    log_debug_raii_sync_statement(std::unique_lock<std::mutex> l(lock_));
     return impl_.drop(key);
   }
 
@@ -118,7 +118,7 @@ public: // functions
 
   void setMaxCost(size_t newSize) {
     log_debug_func_call("ConcurrentCache::setMaxCost", newSize);
-    std::unique_lock<std::mutex> l(lock_);
+    log_debug_raii_sync_statement(std::unique_lock<std::mutex> l(lock_));
     return impl_.setMaxCost(newSize);
   }
 
@@ -126,7 +126,7 @@ private: // functions
   typename Impl::AccessResult getCacheSlot(const Key& key, const ValuePlaceholder& v)
   {
     log_debug_func_call("ConcurrentCache::getCacheSlot", key);
-    std::unique_lock<std::mutex> l(lock_);
+    log_debug_raii_sync_statement(std::unique_lock<std::mutex> l(lock_));
     return impl_.getOrPut(key, CacheEntry{0, v});
   }
 
@@ -144,7 +144,7 @@ private: // functions
   void finalizeCacheMiss(const Key& key, const CacheEntry& cacheEntry)
   {
     log_debug_func_call("ConcurrentCache::finalizeCacheMiss", key);
-    std::unique_lock<std::mutex> l(lock_);
+    log_debug_raii_sync_statement(std::unique_lock<std::mutex> l(lock_));
     impl_.put(key, cacheEntry);
   }
 
