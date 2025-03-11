@@ -49,6 +49,7 @@ TEST(ConcurrentCacheTest, addAnItemToAnEmptyCache) {
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(3) {
 thread#0:  ConcurrentCache::getCacheSlot(3) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(3) {
 thread#0:    not in cache, adding...
 thread#0:    lru_cache::increaseCost(0) {
@@ -56,12 +57,14 @@ thread#0:     _current_cost after increase: 0
 thread#0:     settled _current_cost: 0
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1
 thread#0:  ConcurrentCache::finalizeCacheMiss(3) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::decreaseCost(0) {
 thread#0:    _current_cost after decrease: 0
 thread#0:   }
@@ -69,6 +72,7 @@ thread#0:   lru_cache::increaseCost(1) {
 thread#0:    _current_cost after increase: 1
 thread#0:    settled _current_cost: 1
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
 thread#0: } (return value: 2025)
@@ -84,9 +88,11 @@ TEST(ConcurrentCacheTest, cacheHit) {
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(3) {
 thread#0:  ConcurrentCache::getCacheSlot(3) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(3) {
 thread#0:    already in cache, moved to the beginning of the LRU list.
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0: } (return value: 2025)
@@ -102,6 +108,7 @@ TEST(ConcurrentCacheTest, attemptToAddNonMaterializableItemToFullCache) {
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(2) {
 thread#0:  ConcurrentCache::getCacheSlot(2) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(2) {
 thread#0:    not in cache, adding...
 thread#0:    lru_cache::increaseCost(0) {
@@ -109,16 +116,19 @@ thread#0:     _current_cost after increase: 1
 thread#0:     settled _current_cost: 1
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Evaluation failed. Releasing the cache slot...
 thread#0:  ConcurrentCache::drop(2) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::drop(2) {
 thread#0:    lru_cache::decreaseCost(0) {
 thread#0:     _current_cost after decrease: 1
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0: }
 )");
@@ -133,6 +143,7 @@ TEST(ConcurrentCacheTest, addItemToFullCache) {
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(2) {
 thread#0:  ConcurrentCache::getCacheSlot(2) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(2) {
 thread#0:    not in cache, adding...
 thread#0:    lru_cache::increaseCost(0) {
@@ -140,12 +151,14 @@ thread#0:     _current_cost after increase: 1
 thread#0:     settled _current_cost: 1
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1
 thread#0:  ConcurrentCache::finalizeCacheMiss(2) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::decreaseCost(0) {
 thread#0:    _current_cost after decrease: 1
 thread#0:   }
@@ -159,6 +172,7 @@ thread#0:     }
 thread#0:    }
 thread#0:    settled _current_cost: 1
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
 thread#0: } (return value: 123)
@@ -178,6 +192,7 @@ TEST(ConcurrentCacheTest, addOversizedItemToEmptyCache) {
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(151) {
 thread#0:  ConcurrentCache::getCacheSlot(151) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(151) {
 thread#0:    not in cache, adding...
 thread#0:    lru_cache::increaseCost(0) {
@@ -185,12 +200,14 @@ thread#0:     _current_cost after increase: 0
 thread#0:     settled _current_cost: 0
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=6075
 thread#0:  ConcurrentCache::finalizeCacheMiss(151) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::decreaseCost(0) {
 thread#0:    _current_cost after decrease: 0
 thread#0:   }
@@ -198,6 +215,7 @@ thread#0:   lru_cache::increaseCost(6075) {
 thread#0:    _current_cost after increase: 6075
 thread#0:    settled _current_cost: 6075
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 6075
 thread#0: } (return value: 2025)
@@ -219,6 +237,7 @@ TEST(ConcurrentCacheTest, addItemsToEmptyCacheWithoutOverflowingIt) {
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(22) {
 thread#0:  ConcurrentCache::getCacheSlot(22) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(22) {
 thread#0:    not in cache, adding...
 thread#0:    lru_cache::increaseCost(0) {
@@ -226,12 +245,14 @@ thread#0:     _current_cost after increase: 0
 thread#0:     settled _current_cost: 0
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=300
 thread#0:  ConcurrentCache::finalizeCacheMiss(22) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::decreaseCost(0) {
 thread#0:    _current_cost after decrease: 0
 thread#0:   }
@@ -239,11 +260,13 @@ thread#0:   lru_cache::increaseCost(300) {
 thread#0:    _current_cost after increase: 300
 thread#0:    settled _current_cost: 300
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 300
 thread#0: } (return value: 100)
 thread#0: ConcurrentCache::getOrPut(11) {
 thread#0:  ConcurrentCache::getCacheSlot(11) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::getOrPut(11) {
 thread#0:    not in cache, adding...
 thread#0:    lru_cache::increaseCost(0) {
@@ -251,12 +274,14 @@ thread#0:     _current_cost after increase: 300
 thread#0:     settled _current_cost: 300
 thread#0:    }
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=600
 thread#0:  ConcurrentCache::finalizeCacheMiss(11) {
+thread#0:   entered synchronized section
 thread#0:   lru_cache::decreaseCost(0) {
 thread#0:    _current_cost after decrease: 300
 thread#0:   }
@@ -264,6 +289,7 @@ thread#0:   lru_cache::increaseCost(600) {
 thread#0:    _current_cost after increase: 900
 thread#0:    settled _current_cost: 900
 thread#0:   }
+thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 900
 thread#0: } (return value: 200)
@@ -280,6 +306,7 @@ TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCurrentCostValue) {
     ASSERT_EQ(cache.getCurrentCost(), 450);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::setMaxCost(500) {
+thread#0:  entered synchronized section
 thread#0:  lru_cache::increaseCost(0) {
 thread#0:   _current_cost after increase: 900
 thread#0:   lru_cache::dropLast() {
@@ -296,6 +323,7 @@ thread#0:    }
 thread#0:   }
 thread#0:   settled _current_cost: 450
 thread#0:  }
+thread#0:  exiting synchronized section
 thread#0: }
 )");
 }
@@ -310,6 +338,7 @@ TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCostOfMRUItem) {
     ASSERT_EQ(cache.getCurrentCost(), 0);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::setMaxCost(400) {
+thread#0:  entered synchronized section
 thread#0:  lru_cache::increaseCost(0) {
 thread#0:   _current_cost after increase: 900
 thread#0:   lru_cache::dropLast() {
@@ -332,6 +361,7 @@ thread#0:    }
 thread#0:   }
 thread#0:   settled _current_cost: 0
 thread#0:  }
+thread#0:  exiting synchronized section
 thread#0: }
 )");
 }
@@ -345,6 +375,7 @@ TEST(ConcurrentCacheTest, dropAll) {
     cache.dropAll([](int key) { return key % 2 != 0; });
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::dropAll() {
+thread#0:  entered synchronized section
 thread#0:  lru_cache::drop(5) {
 thread#0:   lru_cache::decreaseCost(150) {
 thread#0:    _current_cost after decrease: 750
@@ -355,6 +386,7 @@ thread#0:   lru_cache::decreaseCost(450) {
 thread#0:    _current_cost after decrease: 300
 thread#0:   }
 thread#0:  }
+thread#0:  exiting synchronized section
 thread#0: }
 )");
 }
