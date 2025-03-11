@@ -188,12 +188,18 @@ thread#0: } (return value: 2025)
 )");
 }
 
+template<class CacheType>
+void populateCache(CacheType& c, const std::vector<std::pair<int, int>>& kvs) {
+  for ( const auto& kv : kvs ) {
+    c.getOrPut(kv.first, LazyValue(kv.second));
+  }
+}
+
 TEST(ConcurrentCacheTest, addItemsToEmptyCacheWithoutOverflowingIt) {
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
 
     zim::Logging::logIntoMemory();
-    cache.getOrPut(22, LazyValue(100));
-    cache.getOrPut(11, LazyValue(200));
+    populateCache(cache, { {22, 100}, {11, 200} } );
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(22) {
 thread#0:  lru_cache::getOrPut(22) {
@@ -243,9 +249,7 @@ thread#0: } (return value: 200)
 TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCurrentCostValue) {
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
 
-    cache.getOrPut(5, LazyValue(50));
-    cache.getOrPut(10, LazyValue(100));
-    cache.getOrPut(15, LazyValue(150));
+    populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
 
     zim::Logging::logIntoMemory();
     cache.setMaxCost(500);
@@ -273,9 +277,7 @@ thread#0: }
 TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCostOfMRUItem) {
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
 
-    cache.getOrPut(5, LazyValue(50));
-    cache.getOrPut(10, LazyValue(100));
-    cache.getOrPut(15, LazyValue(150));
+    populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
 
     zim::Logging::logIntoMemory();
     cache.setMaxCost(400);
@@ -309,9 +311,7 @@ thread#0: }
 TEST(ConcurrentCacheTest, dropAll) {
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
 
-    cache.getOrPut(5, LazyValue(50));
-    cache.getOrPut(10, LazyValue(100));
-    cache.getOrPut(15, LazyValue(150));
+    populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
 
     zim::Logging::logIntoMemory();
     cache.dropAll([](int key) { return key % 2 != 0; });
