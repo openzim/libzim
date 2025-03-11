@@ -199,10 +199,8 @@ public: // functions
   }
 
   void setMaxCost(size_t newMaxCost) {
-    while (newMaxCost < this->cost()) {
-      dropLast();
-    }
     _max_cost = newMaxCost;
+    increaseCost(0);
   }
 
  private:
@@ -211,7 +209,8 @@ public: // functions
     log_debug_func_call("lru_cache::increaseCost", extra_cost);
     _current_cost += extra_cost;
     log_debug("_current_cost after increase: " << _current_cost);
-    while (_current_cost > _max_cost && size() > 1) {
+    const auto costLimit = std::max(_max_cost, extra_cost);
+    while (_current_cost > costLimit) {
       dropLast();
     }
     log_debug("settled _current_cost: " << _current_cost);

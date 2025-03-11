@@ -239,3 +239,69 @@ thread#0:  Done. Cache cost is at 900
 thread#0: } (return value: 200)
 )");
 }
+
+TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCurrentCostValue) {
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    cache.getOrPut(5, LazyValue(50));
+    cache.getOrPut(10, LazyValue(100));
+    cache.getOrPut(15, LazyValue(150));
+
+    zim::Logging::logIntoMemory();
+    cache.setMaxCost(500);
+    ASSERT_EQ(cache.getCurrentCost(), 450);
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: lru_cache::increaseCost(0) {
+thread#0:  _current_cost after increase: 900
+thread#0:  lru_cache::dropLast() {
+thread#0:   evicting entry with key: 5
+thread#0:   lru_cache::decreaseCost(150) {
+thread#0:    _current_cost after decrease: 750
+thread#0:   }
+thread#0:  }
+thread#0:  lru_cache::dropLast() {
+thread#0:   evicting entry with key: 10
+thread#0:   lru_cache::decreaseCost(300) {
+thread#0:    _current_cost after decrease: 450
+thread#0:   }
+thread#0:  }
+thread#0:  settled _current_cost: 450
+thread#0: }
+)");
+}
+
+TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCostOfMRUItem) {
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    cache.getOrPut(5, LazyValue(50));
+    cache.getOrPut(10, LazyValue(100));
+    cache.getOrPut(15, LazyValue(150));
+
+    zim::Logging::logIntoMemory();
+    cache.setMaxCost(400);
+    ASSERT_EQ(cache.getCurrentCost(), 0);
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: lru_cache::increaseCost(0) {
+thread#0:  _current_cost after increase: 900
+thread#0:  lru_cache::dropLast() {
+thread#0:   evicting entry with key: 5
+thread#0:   lru_cache::decreaseCost(150) {
+thread#0:    _current_cost after decrease: 750
+thread#0:   }
+thread#0:  }
+thread#0:  lru_cache::dropLast() {
+thread#0:   evicting entry with key: 10
+thread#0:   lru_cache::decreaseCost(300) {
+thread#0:    _current_cost after decrease: 450
+thread#0:   }
+thread#0:  }
+thread#0:  lru_cache::dropLast() {
+thread#0:   evicting entry with key: 15
+thread#0:   lru_cache::decreaseCost(450) {
+thread#0:    _current_cost after decrease: 0
+thread#0:   }
+thread#0:  }
+thread#0:  settled _current_cost: 0
+thread#0: }
+)");
+}
