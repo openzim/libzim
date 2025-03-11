@@ -22,6 +22,8 @@
 #include "concurrent_cache.h"
 #include "gtest/gtest.h"
 
+#include "namedthread.h"
+
 struct LazyValue
 {
     const int value;
@@ -386,4 +388,46 @@ thread#0:  }
 thread#0:  exiting synchronized section
 thread#0: }
 )");
+}
+
+TEST(ConcurrentCacheMultithreadedTest, accessSameExistingItem) {
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
+
+    const std::string targetOutput =
+R"(thread#0: Output of interest starts from the next line
+a  : ConcurrentCache::getOrPut(5) {
+  b: ConcurrentCache::getOrPut(5) {
+a  :  ConcurrentCache::getCacheSlot(5) {
+a  :   entered synchronized section
+  b:  ConcurrentCache::getCacheSlot(5) {
+a  :   lru_cache::getOrPut(5) {
+a  :    already in cache, moved to the beginning of the LRU list.
+a  :   }
+a  :   exiting synchronized section
+a  :  }
+  b:   entered synchronized section
+a  :  Obtained the cache slot
+  b:   lru_cache::getOrPut(5) {
+a  : } (return value: 50)
+  b:    already in cache, moved to the beginning of the LRU list.
+  b:   }
+  b:   exiting synchronized section
+  b:  }
+  b:  Obtained the cache slot
+  b: } (return value: 50)
+)";
+
+    zim::Logging::logIntoMemory();
+    zim::Logging::orchestrateConcurrentExecutionVia(targetOutput);
+
+    const auto accessKey5 = [&cache]() { cache.getOrPut(5, LazyValue(0)); };
+    log_debug("Output of interest starts from the next line");
+    zim::NamedThread thread1("a  ", accessKey5 );
+    zim::NamedThread thread2("  b", accessKey5 );
+    thread1.join();
+    thread2.join();
+
+    ASSERT_EQ(zim::Logging::getInMemLogContent(), targetOutput);
 }
