@@ -203,8 +203,7 @@ public: // functions
     increaseCost(0);
   }
 
- private:
-
+private: // functions
   void increaseCost(size_t extra_cost) {
     log_debug_func_call("lru_cache::increaseCost", extra_cost);
     _current_cost += extra_cost;
@@ -223,7 +222,6 @@ public: // functions
     log_debug("_current_cost after decrease: " << _current_cost);
   }
 
-private: // functions
   void dropLast() {
     log_debug_func_call("lru_cache::dropLast");
     auto list_it = _cache_items_list.back();
