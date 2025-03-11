@@ -218,13 +218,8 @@ public: // functions
 
   void decreaseCost(size_t costToRemove) {
     log_debug_func_call("lru_cache::decreaseCost", costToRemove);
-    if (costToRemove > _current_cost) {
-      std::cerr << "WARNING: We have detected inconsistant cache management, trying to remove " << costToRemove << " from a cache with size " << _current_cost << std::endl;
-      std::cerr << "Please open an issue on https://github.com/openzim/libzim/issues with this message and the zim file you use" << std::endl;
-      _current_cost = 0;
-    } else {
-      _current_cost -= costToRemove;
-    }
+    assert(costToRemove <= _current_cost);
+    _current_cost -= costToRemove;
     log_debug("_current_cost after decrease: " << _current_cost);
   }
 
