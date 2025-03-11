@@ -60,7 +60,7 @@ private: // types
 
   typedef lru_cache<Key, CacheEntry, GetCacheEntryCost> Impl;
 
-public: // types
+public: // functions
   explicit ConcurrentCache(size_t maxCost)
     : impl_(maxCost)
   {}
@@ -80,23 +80,14 @@ public: // types
     log_debug_func_call("ConcurrentCache::getOrPut", key);
 
     std::promise<Value> valuePromise;
-    std::unique_lock<std::mutex> l(lock_);
-    auto shared_future = valuePromise.get_future().share();
-    const auto x = impl_.getOrPut(key, CacheEntry{0, shared_future});
-    l.unlock();
+    const auto x = getCacheSlot(key, valuePromise.get_future().share());
+    CacheEntry cacheEntry(x.value());
     log_debug("Obtained the cache slot");
     if ( x.miss() ) {
       log_debug("It was a cache miss. Going to obtain the value...");
       try {
-        const auto materializedValue = f();
-        valuePromise.set_value(materializedValue);
-        log_debug("Value was successfully obtained. Computing its cost...");
-        auto cost = CostEstimation::cost(materializedValue);
-        log_debug("cost=" << cost << ". Committing to cache...");
-        {
-          std::unique_lock<std::mutex> l(lock_);
-          impl_.put(key, CacheEntry{cost, shared_future});
-        }
+        cacheEntry.cost = materializeValue(valuePromise, f);
+        finalizeCacheMiss(key, cacheEntry);
         log_debug("Done. Cache cost is at " << getCurrentCost() );
       } catch (std::exception& e) {
         log_debug("Evaluation failed. Releasing the cache slot...");
@@ -105,7 +96,7 @@ public: // types
       }
     }
 
-    return log_debug_return_value(x.value().value.get());
+    return log_debug_return_value(cacheEntry.value.get());
   }
 
   bool drop(const Key& key)
@@ -128,6 +119,32 @@ public: // types
   void setMaxCost(size_t newSize) {
     std::unique_lock<std::mutex> l(lock_);
     return impl_.setMaxCost(newSize);
+  }
+
+private: // functions
+  typename Impl::AccessResult getCacheSlot(const Key& key, const ValuePlaceholder& v)
+  {
+    std::unique_lock<std::mutex> l(lock_);
+    const auto x = impl_.getOrPut(key, CacheEntry{0, v});
+    return x;
+  }
+
+  template<class F>
+  static size_t materializeValue(std::promise<Value>& valuePromise, F f)
+  {
+    const auto materializedValue = f();
+    valuePromise.set_value(materializedValue);
+    log_debug("Value was successfully obtained. Computing its cost...");
+    auto cost = CostEstimation::cost(materializedValue);
+    log_debug("cost=" << cost);
+    return cost;
+  }
+
+  void finalizeCacheMiss(const Key& key, const CacheEntry& cacheEntry)
+  {
+    log_debug("Committing to cache...");
+    std::unique_lock<std::mutex> l(lock_);
+    impl_.put(key, cacheEntry);
   }
 
 private: // data
