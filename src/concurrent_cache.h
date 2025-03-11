@@ -70,7 +70,7 @@ public: // functions
   // result is put into the cache.
   //
   // The cache as a whole is locked only for the duration of accessing
-  // the respective slot. If, in the case of the a cache miss, the generation
+  // the respective slot. If, in the case of a cache miss, the generation
   // of the missing element takes a long time, only attempts to access that
   // element will block - the rest of the cache remains open to concurrent
   // access.

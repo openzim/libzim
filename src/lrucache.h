@@ -58,24 +58,24 @@ struct UnitCostEstimation {
 };
 
 /**
- * A lru cache where the cost of each item can be different than 1.
+ * A lru cache where the cost of each item can be different from 1.
  *
- * Most lru cache is limited by the number of items stored.
- * This implementation may have a different "size" per item, so the current size of
- * this lru is not the number of item but the sum of all items' size.
+ * Most lru caches are limited by the number of items stored.
+ * This implementation may have a different "size" per item, so the current
+ * size of this cache is not the number of items but the sum of all items' size.
  *
- * This implementation used is pretty simple (dumb) and have few limitations:
- * - We consider than size of a item do not change over time. Especially the size of a
- *   item when we put it MUST be equal to the size of the same item when we drop it.
- * - Cache eviction is still a Least Recently Used (LRU), so we drop the least used item(s) util
- *   we have enough space. No other consideration is used to select which item to drop.
+ * The implementation used is pretty simple (dumb) and has a few limitations:
+ * - We assume that the size of an item does not change over time. Importantly,
+ *   the size of a item when we add it to the cache MUST be equal to the size
+ *   of the same item when we drop it from the cache.
+ * - Cache eviction still relies on the Least Recently Used (LRU) heuristics,
+ *   so we drop the least used item(s) util we have enough space. No other
+ *   consideration is used to select which item to drop.
  *
- * This lru is parametrized by a CostEstimation type. The type must have a static method `cost`
- * taking a reference to a `value_t` and returing its "cost". As already said, this method must
- * always return the same cost for the same value.
- *
- * While cost could be any kind of value, this implemention is intended to be used only with
- * `UnitCostEstimation` (classic lru) and `FutureToValueCostEstimation<ClusterMemorySize>`.
+ * This lru cache is parametrized by a CostEstimation type. The type must have a
+ * static method `cost` taking a reference to a `value_t` and returing its
+ * "cost". As already said, this method must always return the same cost for
+ * the same value.
  */
 template<typename key_t, typename value_t, typename CostEstimation>
 class lru_cache {
