@@ -51,6 +51,11 @@ private: // types
   {
     size_t            cost = 0;
     ValuePlaceholder  value;
+
+    bool ready() const {
+      const auto zeroNs = std::chrono::nanoseconds::zero();
+      return value.wait_for(zeroNs) == std::future_status::ready;
+    }
   };
 
   struct GetCacheEntryCost
@@ -96,6 +101,7 @@ public: // functions
       }
     }
 
+    log_debug((!cacheEntry.ready() ? "Waiting for result..." : "Returning immediately..."));
     return log_debug_return_value(cacheEntry.value.get());
   }
 
@@ -134,8 +140,10 @@ private: // functions
   static size_t materializeValue(std::promise<Value>& valuePromise, F f)
   {
     const auto materializedValue = f();
+    log_debug("Value was successfully obtained.");
     valuePromise.set_value(materializedValue);
-    log_debug("Value was successfully obtained. Computing its cost...");
+    log_debug("Made the value available for concurrent access.");
+    log_debug("Computing the cost of the new entry...");
     auto cost = CostEstimation::cost(materializedValue);
     log_debug("cost=" << cost);
     return cost;

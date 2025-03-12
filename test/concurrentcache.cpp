@@ -65,7 +65,9 @@ thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
-thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  Value was successfully obtained.
+thread#0:  Made the value available for concurrent access.
+thread#0:  Computing the cost of the new entry...
 thread#0:  cost=1
 thread#0:  ConcurrentCache::finalizeCacheMiss(3) {
 thread#0:   entered synchronized section
@@ -81,6 +83,7 @@ thread#0:   }
 thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
+thread#0:  Returning immediately...
 thread#0: } (return value: 2025)
 )");
 }
@@ -101,6 +104,7 @@ thread#0:   }
 thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
+thread#0:  Returning immediately...
 thread#0: } (return value: 2025)
 )");
 }
@@ -165,7 +169,9 @@ thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
-thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  Value was successfully obtained.
+thread#0:  Made the value available for concurrent access.
+thread#0:  Computing the cost of the new entry...
 thread#0:  cost=1
 thread#0:  ConcurrentCache::finalizeCacheMiss(2) {
 thread#0:   entered synchronized section
@@ -187,6 +193,7 @@ thread#0:   }
 thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
+thread#0:  Returning immediately...
 thread#0: } (return value: 123)
 )");
 }
@@ -218,7 +225,9 @@ thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
-thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  Value was successfully obtained.
+thread#0:  Made the value available for concurrent access.
+thread#0:  Computing the cost of the new entry...
 thread#0:  cost=6075
 thread#0:  ConcurrentCache::finalizeCacheMiss(151) {
 thread#0:   entered synchronized section
@@ -234,6 +243,7 @@ thread#0:   }
 thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 6075
+thread#0:  Returning immediately...
 thread#0: } (return value: 2025)
 )");
 }
@@ -267,7 +277,9 @@ thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
-thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  Value was successfully obtained.
+thread#0:  Made the value available for concurrent access.
+thread#0:  Computing the cost of the new entry...
 thread#0:  cost=300
 thread#0:  ConcurrentCache::finalizeCacheMiss(22) {
 thread#0:   entered synchronized section
@@ -283,6 +295,7 @@ thread#0:   }
 thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 300
+thread#0:  Returning immediately...
 thread#0: } (return value: 100)
 thread#0: ConcurrentCache::getOrPut(11) {
 thread#0:  ConcurrentCache::getCacheSlot(11) {
@@ -300,7 +313,9 @@ thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
-thread#0:  Value was successfully obtained. Computing its cost...
+thread#0:  Value was successfully obtained.
+thread#0:  Made the value available for concurrent access.
+thread#0:  Computing the cost of the new entry...
 thread#0:  cost=600
 thread#0:  ConcurrentCache::finalizeCacheMiss(11) {
 thread#0:   entered synchronized section
@@ -316,6 +331,7 @@ thread#0:   }
 thread#0:   exiting synchronized section
 thread#0:  }
 thread#0:  Done. Cache cost is at 900
+thread#0:  Returning immediately...
 thread#0: } (return value: 200)
 )");
 }
@@ -390,7 +406,7 @@ thread#0: }
 )");
 }
 
-TEST(ConcurrentCacheMultithreadedTest, accessSameExistingItem) {
+TEST(ConcurrentCacheMultithreadedTest, concurrentCacheHit) {
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
 
     populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
@@ -410,12 +426,14 @@ a  :  }
   b:   entered synchronized section
 a  :  Obtained the cache slot
   b:   lru_cache::getOrPut(5) {
+a  :  Returning immediately...
 a  : } (return value: 50)
   b:    already in cache, moved to the beginning of the LRU list.
   b:   }
   b:   exiting synchronized section
   b:  }
   b:  Obtained the cache slot
+  b:  Returning immediately...
   b: } (return value: 50)
 )";
 
@@ -426,6 +444,81 @@ a  : } (return value: 50)
     log_debug("Output of interest starts from the next line");
     zim::NamedThread thread1("a  ", accessKey5 );
     zim::NamedThread thread2("  b", accessKey5 );
+    thread1.join();
+    thread2.join();
+
+    ASSERT_EQ(zim::Logging::getInMemLogContent(), targetOutput);
+}
+
+TEST(ConcurrentCacheMultithreadedTest, concurrentCacheMissWithoutEviction) {
+    // This test checks that during a concurrent cache miss access
+    // 1. only one of the threads handles the cache miss while the other
+    //    waits for the result to become available
+    // 2. the waiting thread returns the result as soon as it is published
+    //    by the other thread (before its cost is computed and cache cost
+    //    update procedures are executed).
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
+
+    const std::string targetOutput =
+R"(thread#0: Output of interest starts from the next line
+a  : ConcurrentCache::getOrPut(1) {
+  b: ConcurrentCache::getOrPut(1) {
+a  :  ConcurrentCache::getCacheSlot(1) {
+a  :   entered synchronized section
+  b:  ConcurrentCache::getCacheSlot(1) {
+a  :   lru_cache::getOrPut(1) {
+a  :    not in cache, adding...
+a  :    lru_cache::putMissing(1) {
+a  :     lru_cache::increaseCost(0) {
+a  :      _current_cost after increase: 900
+a  :      settled _current_cost: 900
+a  :     }
+a  :    }
+a  :   }
+a  :   exiting synchronized section
+a  :  }
+a  :  Obtained the cache slot
+  b:   entered synchronized section
+a  :  It was a cache miss. Going to obtain the value...
+  b:   lru_cache::getOrPut(1) {
+  b:    already in cache, moved to the beginning of the LRU list.
+  b:   }
+  b:   exiting synchronized section
+  b:  }
+  b:  Obtained the cache slot
+  b:  Waiting for result...
+a  :  Value was successfully obtained.
+a  :  Made the value available for concurrent access.
+  b: } (return value: 10)
+a  :  Computing the cost of the new entry...
+a  :  cost=30
+a  :  ConcurrentCache::finalizeCacheMiss(1) {
+a  :   entered synchronized section
+a  :   lru_cache::put(1) {
+a  :    lru_cache::decreaseCost(0) {
+a  :     _current_cost after decrease: 900
+a  :    }
+a  :    lru_cache::increaseCost(30) {
+a  :     _current_cost after increase: 930
+a  :     settled _current_cost: 930
+a  :    }
+a  :   }
+a  :   exiting synchronized section
+a  :  }
+a  :  Done. Cache cost is at 930
+a  :  Returning immediately...
+a  : } (return value: 10)
+)";
+
+    zim::Logging::logIntoMemory();
+    zim::Logging::orchestrateConcurrentExecutionVia(targetOutput);
+
+    const auto accessKey1 = [&cache]() { cache.getOrPut(1, LazyValue(10)); };
+    log_debug("Output of interest starts from the next line");
+    zim::NamedThread thread1("a  ", accessKey1 );
+    zim::NamedThread thread2("  b", accessKey1 );
     thread1.join();
     thread2.join();
 
