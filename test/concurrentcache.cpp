@@ -620,6 +620,22 @@ s  :  It was a cache miss. Going to obtain the value...
   f:  Done. Cache cost is at 60
   f:  Returning immediately...
   f: } (return value: 20)
+ x : ConcurrentCache::getOrPut(6) {
+ x :  ConcurrentCache::getCacheSlot(6) {
+ x :   entered synchronized section
+ x :   lru_cache::getOrPut(6) {
+ x :    not in cache, adding...
+ x :    lru_cache::putMissing(6) {
+ x :     lru_cache::increaseCost(0) {
+ x :      _current_cost after increase: 60
+ x :      settled _current_cost: 60
+ x :     }
+ x :    }
+ x :   }
+ x :   exiting synchronized section
+ x :  }
+ x :  Obtained the cache slot
+ x :  It was a cache miss. Going to obtain the value...
 s  :  Value was successfully obtained.
 s  :  Made the value available for concurrent access.
 s  :  Computing the cost of the new entry...
@@ -627,17 +643,18 @@ s  :  cost=180
 s  :  ConcurrentCache::finalizeCacheMiss(6) {
 s  :   entered synchronized section
 s  :   lru_cache::put(6) {
-s  :    lru_cache::putMissing(6) {
-s  :     lru_cache::increaseCost(180) {
-s  :      _current_cost after increase: 240
-s  :      lru_cache::dropLast() {
-s  :       evicting entry with key: 2
-s  :       lru_cache::decreaseCost(60) {
-s  :        _current_cost after decrease: 180
-s  :       }
+s  :    lru_cache::decreaseCost(0) {
+s  :     _current_cost after decrease: 60
+s  :    }
+s  :    lru_cache::increaseCost(180) {
+s  :     _current_cost after increase: 240
+s  :     lru_cache::dropLast() {
+s  :      evicting entry with key: 2
+s  :      lru_cache::decreaseCost(60) {
+s  :       _current_cost after decrease: 180
 s  :      }
-s  :      settled _current_cost: 180
 s  :     }
+s  :     settled _current_cost: 180
 s  :    }
 s  :   }
 s  :   exiting synchronized section
@@ -645,6 +662,26 @@ s  :  }
 s  :  Done. Cache cost is at 180
 s  :  Returning immediately...
 s  : } (return value: 60)
+ x :  Value was successfully obtained.
+ x :  Made the value available for concurrent access.
+ x :  Computing the cost of the new entry...
+ x :  cost=180
+ x :  ConcurrentCache::finalizeCacheMiss(6) {
+ x :   entered synchronized section
+ x :   lru_cache::put(6) {
+ x :    lru_cache::decreaseCost(180) {
+ x :     _current_cost after decrease: 0
+ x :    }
+ x :    lru_cache::increaseCost(180) {
+ x :     _current_cost after increase: 180
+ x :     settled _current_cost: 180
+ x :    }
+ x :   }
+ x :   exiting synchronized section
+ x :  }
+ x :  Done. Cache cost is at 180
+ x :  Returning immediately...
+ x : } (return value: 60)
 )";
 
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(200);
@@ -664,8 +701,10 @@ s  : } (return value: 60)
     log_debug("Output of interest starts from the next line");
     zim::NamedThread thread1("s  ", slowCacheMiss );
     zim::NamedThread thread2("  f", aBurstOfFastCacheAccesses );
+    zim::NamedThread thread3(" x ", slowCacheMiss );
     thread1.join();
     thread2.join();
+    thread3.join();
 
     ASSERT_EQ(zim::Logging::getInMemLogContent(), targetOutput);
 }
