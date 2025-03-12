@@ -135,6 +135,7 @@ public: // functions
   }
 
   void put(const key_t& key, const value_t& value) {
+    log_debug_func_call("lru_cache::put", key);
     auto it = _cache_items_map.find(key);
     if (it != _cache_items_map.end()) {
       _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
@@ -233,6 +234,7 @@ private: // functions
   }
 
   void putMissing(const key_t& key, const value_t& value) {
+    log_debug_func_call("lru_cache::putMissing", key);
     assert(_cache_items_map.find(key) == _cache_items_map.end());
     _cache_items_list.push_front(key_value_pair_t(key, value));
     _cache_items_map[key] = _cache_items_list.begin();
