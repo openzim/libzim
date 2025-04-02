@@ -865,11 +865,11 @@ TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
 
 
 #if WITH_TEST_DATA
-zim::Blob readItemData(const zim::DirectAccessInfo& dai, zim::size_type size)
+zim::Blob readItemData(const zim::ItemDataDirectAccessInfo& dai, zim::size_type size)
 {
-  zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
+  zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.filename));
   std::shared_ptr<char> data(new char[size], std::default_delete<char[]>());
-  fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.second));
+  fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.offset));
   return zim::Blob(data, size);
 }
 
@@ -883,7 +883,7 @@ TEST(ZimArchive, getDirectAccessInformation)
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
         const auto dai = item.getDirectAccessInformation();
-        if ( dai.first != "" ) {
+        if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
         }
@@ -905,7 +905,7 @@ TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
         const auto dai = item.getDirectAccessInformation();
-        if ( dai.first != "" ) {
+        if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
         }
@@ -931,7 +931,7 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
         const auto dai = item.getDirectAccessInformation();
-        if ( dai.first != "" ) {
+        if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
         }

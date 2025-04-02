@@ -334,7 +334,7 @@ namespace zim
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
     auto accessInfo = item.getDirectAccessInformation();
-    return accessInfo.second;
+    return accessInfo.isValid();
   }
 
   bool Archive::hasTitleIndex() const {
@@ -345,7 +345,7 @@ namespace zim
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
     auto accessInfo = item.getDirectAccessInformation();
-    return accessInfo.second;
+    return accessInfo.isValid();
   }
 
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const

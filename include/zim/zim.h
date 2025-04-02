@@ -137,7 +137,42 @@ namespace zim
     COUNT
   };
 
-  typedef std::pair<std::string, offset_type> DirectAccessInfo;
+  /**
+   * Information needed to directly access to an item data, bypassing libzim library.
+   *
+   * Some items may have their data store uncompressed in the zim archive.
+   * In such case, an user can read the item data directly by (re)opening the file and
+   * seek at the right offset.
+   */
+  struct ItemDataDirectAccessInfo {
+
+     /**
+      * The filename to open.
+      */
+     std::string filename;
+
+     /**
+      * The offset to seek to before reading.
+      */
+     offset_type offset;
+
+     explicit ItemDataDirectAccessInfo()
+       : filename(),
+         offset()
+     {}
+
+     ItemDataDirectAccessInfo(const std::string& filename, offset_type offset)
+       : filename(filename),
+         offset(offset)
+     {}
+
+     /**
+      * Return if the ItemDataDirectAccessInfo is valid
+      */
+     bool isValid() const {
+      return !filename.empty();
+     }
+  };
 }
 
 #endif // ZIM_ZIM_H

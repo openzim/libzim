@@ -63,7 +63,7 @@ void SuggestionDataBase::initXapianDb() {
 
   auto xapianEntry = Entry(impl, entry_index_type(r.second));
   auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
-  if (accessInfo.second == 0) {
+  if (!accessInfo.isValid()) {
       return;
   }
 

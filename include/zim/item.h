@@ -81,7 +81,7 @@ namespace zim
        *         If it is not possible to have direct access for this item,
        *         return a pair of `{"", 0}`
        */
-      zim::DirectAccessInfo getDirectAccessInformation() const;
+      zim::ItemDataDirectAccessInfo getDirectAccessInformation() const;
 
       entry_index_type getIndex() const   { return Entry::getIndex(); }
 

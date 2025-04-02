@@ -275,19 +275,19 @@ std::string zim::removeAccents(const std::string& text)
   return unaccentedText;
 }
 
-bool zim::getDbFromAccessInfo(zim::DirectAccessInfo accessInfo, Xapian::Database& database) {
+bool zim::getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, Xapian::Database& database) {
   zim::DEFAULTFS::FD databasefd;
   try {
-      databasefd = zim::DEFAULTFS::openFile(accessInfo.first);
+      databasefd = zim::DEFAULTFS::openFile(accessInfo.filename);
   } catch (...) {
-      std::cerr << "Impossible to open " << accessInfo.first << std::endl;
+      std::cerr << "Impossible to open " << accessInfo.filename << std::endl;
       std::cerr << strerror(errno) << std::endl;
       return false;
   }
-  if (!databasefd.seek(zim::offset_t(accessInfo.second))) {
+  if (!databasefd.seek(zim::offset_t(accessInfo.offset))) {
       std::cerr << "Something went wrong seeking databasedb "
-                << accessInfo.first << std::endl;
-      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+                << accessInfo.filename << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.offset << std::endl;
       return false;
   }
 
@@ -295,8 +295,8 @@ bool zim::getDbFromAccessInfo(zim::DirectAccessInfo accessInfo, Xapian::Database
       database = Xapian::Database(databasefd.release());
   } catch( Xapian::DatabaseError& e) {
       std::cerr << "Something went wrong opening xapian database for zimfile "
-                << accessInfo.first << std::endl;
-      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+                << accessInfo.filename << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.offset << std::endl;
       std::cerr << "error = " << e.get_msg() << std::endl;
       return false;
   }
