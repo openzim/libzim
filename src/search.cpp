@@ -49,6 +49,23 @@
 
 namespace zim
 {
+Xapian::Stopper* new_stopper(const std::string& stopwords) {
+    // Xapian (for stopper) use a internal intrusive smart pointer with a optional ref count.
+    // By default (it is not ref counted) so it is to us to delete it.
+    // But if we call `release` on it, it is then ref counted and pass it to Xapian to
+    // let it handle the deletion. We may delete it ourselves
+    // (but as any other deleted value, we must ensure no use after delete)
+    if ( !stopwords.empty() ){
+        std::string stopWord;
+        std::istringstream file(stopwords);
+        Xapian::SimpleStopper*  stopper = new Xapian::SimpleStopper();
+        while (std::getline(file, stopWord, '\n')) {
+            stopper->add(stopWord);
+        }
+        return stopper->release();
+    }
+    return nullptr;
+}
 
 InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool verbose)
   : m_verbose(verbose)
@@ -104,16 +121,8 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
                     }
                 }
                 auto stopwords = database.get_metadata("stopwords");
-                if ( !stopwords.empty() ){
-                    std::string stopWord;
-                    std::istringstream file(stopwords);
-                    Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
-                    while (std::getline(file, stopWord, '\n')) {
-                        stopper->add(stopWord);
-                    }
-                    stopper->release();
-                    m_queryParser.set_stopper(stopper);
-                }
+                auto stopper = new_stopper(stopwords);
+                m_queryParser.set_stopper(stopper);
             } else {
                 std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
                 if (m_valuesmap != valuesmap ) {
