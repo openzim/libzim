@@ -34,13 +34,13 @@ namespace zim {
  */
 class InternalDataBase {
   public: // methods
-    InternalDataBase(const std::vector<Archive>& archives, bool verbose);
+    InternalDataBase(const std::vector<zim::Archive>& archives, bool verbose);
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::Query parseQuery(const Query& query);
+    Xapian::Query parseQuery(const zim::Query& query);
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
