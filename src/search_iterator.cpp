@@ -182,7 +182,7 @@ std::string SearchIterator::getSnippet() const {
             } catch (...) {}
             return internal->mp_mset->snippet(htmlParser.dump,
                                               /*length=*/500,
-                                              /*stemmer=*/internal->mp_internalDb->m_stemmer,
+                                              /*stemmer=*/internal->mp_internalDb->m_metadata.m_stemmer,
                                               /*flags=*/0);
         } catch (...) {
           return "";

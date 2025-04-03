@@ -29,6 +29,7 @@
 #include "fileimpl.h"
 #include "search_internal.h"
 #include "tools.h"
+#include "zim/zim.h"
 
 #include <sstream>
 
@@ -49,15 +50,36 @@
 
 namespace zim
 {
-Xapian::Stopper* new_stopper(const std::string& stopwords) {
+XapianDbMetadata::XapianDbMetadata(const Xapian::Database& db, std::string defaultLanguage)
+    : m_language(defaultLanguage)
+{
+    m_valuesmap = read_valuesmap(db.get_metadata("valuesmap"));
+    auto language = db.get_metadata("language");
+    if (! language.empty()) {
+        m_language = language;
+    }
+    if (!m_language.empty()) {
+        icu::Locale languageLocale(language.c_str());
+        /* Configuring language base steemming */
+        try {
+            m_stemmer = Xapian::Stem(languageLocale.getLanguage());
+        } catch (...) {
+            std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+        }
+    }
+    m_stopwords = db.get_metadata("stopwords");
+}
+
+
+Xapian::Stopper* XapianDbMetadata::new_stopper() {
     // Xapian (for stopper) use a internal intrusive smart pointer with a optional ref count.
     // By default (it is not ref counted) so it is to us to delete it.
     // But if we call `release` on it, it is then ref counted and pass it to Xapian to
     // let it handle the deletion. We may delete it ourselves
     // (but as any other deleted value, we must ensure no use after delete)
-    if ( !stopwords.empty() ){
+    if ( !m_stopwords.empty() ){
         std::string stopWord;
-        std::istringstream file(stopwords);
+        std::istringstream file(m_stopwords);
         Xapian::SimpleStopper*  stopper = new Xapian::SimpleStopper();
         while (std::getline(file, stopWord, '\n')) {
             stopper->add(stopWord);
@@ -97,37 +119,20 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
 
         try {
             if ( first ) {
-                m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-                auto language = database.get_metadata("language");
-                if (language.empty() ) {
-                    // Database created before 2017/03 has no language metadata.
-                    // However, term were stemmed anyway and we need to stem our
-                    // search query the same the database was created.
-                    // So we need a language, let's use the one of the zim.
-                    // If zimfile has no language metadata, we can't do lot more here :/
-                    try {
-                        language = archive.getMetadata("Language");
-                    } catch(...) {}
-                }
-                if (!language.empty()) {
-                    icu::Locale languageLocale(language.c_str());
-                    /* Configuring language base steemming */
-                    try {
-                        m_stemmer = Xapian::Stem(languageLocale.getLanguage());
-                        m_queryParser.set_stemmer(m_stemmer);
+                std::string defaultLanguage;
+                // Database created before 2017/03 has no language metadata.
+                // However, term were stemmed anyway and we need to stem our
+                // search query the same the database was created.
+                // So we need a language, let's use the one of the zim.
+                // If zimfile has no language metadata, we can't do lot more here :/
+                try {
+                    defaultLanguage = archive.getMetadata("Language");
+                } catch(...) {}
+
+                m_metadata = XapianDbMetadata(database, defaultLanguage);
+                m_queryParser.set_stemmer(m_metadata.m_stemmer);
                         m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
-                    } catch (...) {
-                        std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
-                    }
-                }
-                auto stopwords = database.get_metadata("stopwords");
-                auto stopper = new_stopper(stopwords);
-                m_queryParser.set_stopper(stopper);
-            } else {
-                std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-                if (m_valuesmap != valuesmap ) {
-                    // [TODO] Ignore the database, raise a error ?
-                }
+                m_queryParser.set_stopper(m_metadata.new_stopper());
             }
             m_xapianDatabases.push_back(database);
             m_database.add_database(database);
@@ -148,17 +153,17 @@ bool InternalDataBase::hasDatabase() const
 
 bool InternalDataBase::hasValuesmap() const
 {
-  return !m_valuesmap.empty();
+  return m_metadata.hasValuesmap();
 }
 
 bool InternalDataBase::hasValue(const std::string& valueName) const
 {
-  return (m_valuesmap.find(valueName) != m_valuesmap.end());
+  return m_metadata.hasValue(valueName);
 }
 
 int InternalDataBase::valueSlot(const std::string& valueName) const
 {
-  return m_valuesmap.at(valueName);
+  return m_metadata.valueSlot(valueName);
 }
 
 Xapian::Query InternalDataBase::parseQuery(const Query& query)

@@ -22,12 +22,53 @@
 #ifndef ZIM_SEARCH_INTERNAL_H
 #define ZIM_SEARCH_INTERNAL_H
 
+#include "tools.h"
 #include <xapian.h>
 
+#include <zim/archive.h>
 #include <zim/entry.h>
 #include <zim/error.h>
 
 namespace zim {
+
+class XapianDbMetadata {
+  public: // methods
+    XapianDbMetadata() = default;
+    XapianDbMetadata(XapianDbMetadata&&) = default;
+
+    XapianDbMetadata(const Xapian::Database& db, std::string defaultLanguage);
+    XapianDbMetadata& operator=(XapianDbMetadata&& other) = default;
+
+    // Return a newly allocated stopper.
+    // This stopper can (and should to be properly deleted) be directly passed to xapian
+    // (queryparser or TermGenerator)
+    Xapian::Stopper* new_stopper();
+
+    bool hasValuesmap() const {
+        return !m_valuesmap.empty();
+    }
+
+    bool hasValue(const std::string& valueName) const {
+        return (m_valuesmap.find(valueName) != m_valuesmap.end());
+    }
+
+    int valueSlot(const std::string& valueName) const {
+        return m_valuesmap.at(valueName);
+    }
+
+  public: // data
+    // The valuesmap associated with the database.
+    std::map<std::string, int> m_valuesmap;
+
+    // The language of the database
+    std::string m_language;
+
+    // The stemmer associated to the language
+    Xapian::Stem m_stemmer;
+
+    // The stop words stored in the database
+    std::string m_stopwords;
+};
 
 /**
  * A class to encapsulate a xapian database and all the information we can gather from it.
@@ -52,9 +93,6 @@ class InternalDataBase {
     // The archives we are searching on.
     std::vector<Archive> m_archives;
 
-    // The valuesmap associated with the database.
-    std::map<std::string, int> m_valuesmap;
-
     // If the database is open for suggestion.
     // True even if the dabase has no newSuggestionformat.
     bool m_suggestionMode;
@@ -62,8 +100,8 @@ class InternalDataBase {
     // The query parser corresponding to the database.
     Xapian::QueryParser m_queryParser;
 
-    // The stemmer used to parse queries
-    Xapian::Stem m_stemmer;
+    // The metadata of the db
+    XapianDbMetadata m_metadata;
 
     // Verbosity of operations.
     bool m_verbose;
