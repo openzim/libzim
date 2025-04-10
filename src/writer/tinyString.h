@@ -20,7 +20,6 @@
 #ifndef ZIM_WRITER_TINYSTRING_H
 #define ZIM_WRITER_TINYSTRING_H
 
-#include "../tools.h"
 #include "../zim_types.h"
 #include <cstring>
 
@@ -67,11 +66,11 @@ namespace zim
         size_t size() const { return m_size; }
         const char* const data() const { return m_data; }
         bool operator==(const TinyString& other) const {
-          return (m_size == other.m_size) && (safe_memcmp(m_data, other.m_data, m_size) == 0);
+          return (m_size == other.m_size) && (std::memcmp(m_data, other.m_data, m_size) == 0);
         }
         bool operator<(const TinyString& other) const {
-          const auto min_size = std::min(m_size, other.m_size);
-          const auto ret = safe_memcmp(m_data, other.m_data, min_size);
+          auto min_size = std::min(m_size, other.m_size);
+          auto ret = std::memcmp(m_data, other.m_data, min_size);
           if (ret == 0) {
             return m_size < other.m_size;
           } else {
