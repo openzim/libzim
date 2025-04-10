@@ -142,7 +142,7 @@ namespace zim
 
   Item Archive::getMetadataItem(const std::string& name) const
   {
-    auto r = m_impl->findx('M', name);
+    auto r = m_impl->findxMetadata(name);
     if (!r.first) {
       throw EntryNotFound("Cannot find metadata");
     }

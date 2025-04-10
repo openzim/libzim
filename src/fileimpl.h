@@ -131,6 +131,7 @@ namespace zim
 
       FindxResult findx(char ns, const std::string &path) const;
       FindxResult findx(const std::string &path) const;
+      FindxResult findxMetadata(const std::string &name) const;
       FindxTitleResult findxByTitle(char ns, const std::string& title);
 
       Blob getBlob(const Dirent& dirent, offset_t offset = offset_t(0)) const;

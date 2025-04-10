@@ -408,6 +408,24 @@ private: // data
     return mp_pathDirentAccessor->getDirent(idx);
   }
 
+  FileImpl::FindxResult FileImpl::findxMetadata(const std::string& name) const {
+    auto r = findx('M', name);
+    if (!r.first) {
+      return r;
+    }
+    auto dirent_idx = r.second;
+    auto dirent = getDirent(dirent_idx);
+    auto watchdog = 50U;
+    while (dirent->isRedirect() && --watchdog) {
+      dirent_idx = dirent->getRedirectIndex();
+      dirent = getDirent(dirent_idx);
+    }
+    if (watchdog) {
+      return {true, dirent_idx};
+    }
+    return {false, entry_index_t(0)};
+  }
+
   std::shared_ptr<const Dirent> FileImpl::getDirentByTitle(title_index_t idx) const
   {
     return mp_titleDirentAccessor->getDirent(idx);
@@ -874,12 +892,9 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
       // So we need a language, let's use the one of the zim.
       // If zimfile has no language metadata, we can't do lot more here :/
       try {
-        r = m_direntLookup->find('M', "Language");
+        auto r = findxMetadata("Language");
         if (r.first) {
           auto langDirent = getDirent(r.second);
-          while (langDirent->isRedirect()) {
-            langDirent = getDirent(langDirent->getRedirectIndex());
-          }
           defaultLanguage = getBlob(*langDirent);
         }
       } catch(...) {}
