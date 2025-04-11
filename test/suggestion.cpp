@@ -723,6 +723,7 @@ TEST(Suggestion, titleEdgeCases) {
   );
 
   EXPECT_SUGGESTION_RESULTS(archive, "witho",
+    "Without", // this is a path rather than a title
     "Without a trout",
   );
 
