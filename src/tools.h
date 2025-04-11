@@ -22,8 +22,6 @@
 #ifndef OPENZIM_LIBZIM_TOOLS_H
 #define OPENZIM_LIBZIM_TOOLS_H
 
-#include <cstddef> // size_t
-#include <cstring> // memcmp
 #include <string>
 #include <tuple>
 #include <map>
@@ -71,17 +69,6 @@ namespace zim {
       }
     }
     return count;
-  }
-
-  // Work around for errors reported by too picky UB sanitizer tools on std::memcmp()
-  // being called with a nullptr pointer argument even though count==0. Explicit
-  // nullptr checks to satisfy other picky compilers.
-  template <typename T>
-  int safe_memcmp(T const *const lhs, T const *const rhs, std::size_t count) noexcept {
-      if(count == 0UL || lhs == nullptr || rhs == nullptr) {
-          return 0;
-      }
-      return std::memcmp(lhs, rhs, count);
   }
 
   namespace writer {
