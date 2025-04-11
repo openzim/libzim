@@ -180,7 +180,6 @@ namespace zim
 
         NS getNamespace() const           { return static_cast<NS>(_ns); }
         std::string getTitle() const      { return pathTitle.getTitle(false); }
-        std::string getRealTitle() const      { return pathTitle.getTitle(true); }
         std::string getPath() const       { return pathTitle.getPath(); }
 
         uint32_t getVersion() const            { return version; }
