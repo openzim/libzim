@@ -694,4 +694,45 @@ TEST(Suggestion, CJK) {
   );
 }
 
+TEST(Suggestion, titleEdgeCases) {
+  TempZimArchive tza("testZim");
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+
+  // Title identical to path
+  creator.addItem(makeHtmlItem("About", "About"));
+
+  // Title differing from path in case only
+  creator.addItem(makeHtmlItem("Trout", "trout"));
+
+  // No title
+  creator.addItem(makeHtmlItem("Without", ""));
+
+  // Non edge cases
+  creator.addItem(makeHtmlItem("Stout", "About Rex Stout"));
+  creator.addItem(makeHtmlItem("Hangout", "Without a trout"));
+
+  creator.addMetadata("Title", "Test zim");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+  EXPECT_SUGGESTION_RESULTS(archive, "abo",
+    "About",
+    "About Rex Stout",
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "witho",
+    "Without a trout",
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "tro",
+    "trout",
+    "Without a trout",
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "hang"
+      /* nothing */
+  );
+}
 } // unnamed namespace
