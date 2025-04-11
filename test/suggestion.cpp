@@ -147,7 +147,7 @@ TEST(Suggestion, singleTermOrder) {
   );
 }
 
-TEST(Suggestion, caseDiacriticsAndHomogrpaphsHandling) {
+TEST(Suggestion, caseDiacriticsAndHomographsHandling) {
   std::vector<std::string> titles = {
                                       "nonberlin",
                                       "simply berlin",
