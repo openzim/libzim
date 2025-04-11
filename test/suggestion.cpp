@@ -667,16 +667,18 @@ TEST(Suggestion, reuseSearcher) {
   ASSERT_EQ(count, 3);
 }
 
+std::shared_ptr<TestItem> makeHtmlItem(std::string path, std::string title) {
+  return std::make_shared<TestItem>(path, "text/html", title);
+}
+
 TEST(Suggestion, CJK) {
   TempZimArchive tza("testZim");
   zim::writer::Creator creator;
   creator.configIndexing(true, "zh");
   creator.startZimCreation(tza.getPath());
 
-  auto item1 = std::make_shared<TestItem>("testPath1", "text/html", "平方");
-  auto item2 = std::make_shared<TestItem>("testPath2", "text/html", "平方根");
-  creator.addItem(item1);
-  creator.addItem(item2);
+  creator.addItem(makeHtmlItem("testPath1", "平方"));
+  creator.addItem(makeHtmlItem("testPath2", "平方根"));
 
   creator.addMetadata("Title", "Test zim");
   creator.finishZimCreation();
