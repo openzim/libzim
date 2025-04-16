@@ -124,6 +124,15 @@ namespace zim
     sanity_check();
   }
 
+  bool Fileheader::hasTitleListingV0() const {
+    // A non-released version of libzim existed which signaled the absence of
+    // the title index v0 by setting titleIdxPos to 0 (instead of 0xff..ff).
+    // Such ZIM files are buggy since they cannot be opened by earlier version
+    // of libzim, but we temporarily acknowledge their existence until they are
+    // removed from zim-testing-suite.
+    return titleIdxPos != 0 && titleIdxPos != offset_type(-1);
+  }
+
   void Fileheader::sanity_check() const {
     if (!!articleCount != !!clusterCount) {
       throw ZimFileFormatError("No article <=> No cluster");
@@ -136,9 +145,11 @@ namespace zim
     if (pathPtrPos < mimeListPos) {
       throw ZimFileFormatError("pathPtrPos must be > mimelistPos.");
     }
-    if (titleIdxPos != 0 && titleIdxPos < mimeListPos) {
+
+    if (hasTitleListingV0() && titleIdxPos < mimeListPos) {
       throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
     }
+
     if (clusterPtrPos < mimeListPos) {
       throw ZimFileFormatError("clusterPtrPos must be > mimelistPos.");
     }
