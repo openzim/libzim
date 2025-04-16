@@ -147,7 +147,7 @@ TEST(Suggestion, singleTermOrder) {
   );
 }
 
-TEST(Suggestion, caseDiacriticsAndHomogrpaphsHandling) {
+TEST(Suggestion, caseDiacriticsAndHomographsHandling) {
   std::vector<std::string> titles = {
                                       "nonberlin",
                                       "simply berlin",
@@ -667,16 +667,18 @@ TEST(Suggestion, reuseSearcher) {
   ASSERT_EQ(count, 3);
 }
 
+std::shared_ptr<TestItem> makeHtmlItem(std::string path, std::string title) {
+  return std::make_shared<TestItem>(path, "text/html", title);
+}
+
 TEST(Suggestion, CJK) {
   TempZimArchive tza("testZim");
   zim::writer::Creator creator;
   creator.configIndexing(true, "zh");
   creator.startZimCreation(tza.getPath());
 
-  auto item1 = std::make_shared<TestItem>("testPath1", "text/html", "平方");
-  auto item2 = std::make_shared<TestItem>("testPath2", "text/html", "平方根");
-  creator.addItem(item1);
-  creator.addItem(item2);
+  creator.addItem(makeHtmlItem("testPath1", "平方"));
+  creator.addItem(makeHtmlItem("testPath2", "平方根"));
 
   creator.addMetadata("Title", "Test zim");
   creator.finishZimCreation();
@@ -692,4 +694,46 @@ TEST(Suggestion, CJK) {
   );
 }
 
+TEST(Suggestion, titleEdgeCases) {
+  TempZimArchive tza("testZim");
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+
+  // Title identical to path
+  creator.addItem(makeHtmlItem("About", "About"));
+
+  // Title differing from path in case only
+  creator.addItem(makeHtmlItem("Trout", "trout"));
+
+  // No title
+  creator.addItem(makeHtmlItem("Without", ""));
+
+  // Non edge cases
+  creator.addItem(makeHtmlItem("Stout", "About Rex Stout"));
+  creator.addItem(makeHtmlItem("Hangout", "Without a trout"));
+
+  creator.addMetadata("Title", "Test zim");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+  EXPECT_SUGGESTION_RESULTS(archive, "abo",
+    "About",
+    "About Rex Stout",
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "witho",
+    "Without", // this is a path rather than a title
+    "Without a trout",
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "tro",
+    "trout",
+    "Without a trout",
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "hang"
+      /* nothing */
+  );
+}
 } // unnamed namespace

@@ -85,7 +85,7 @@ DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
 }
 
 void XapianHandler::indexTitle(Dirent* dirent) {
-  auto title = dirent->getRealTitle();
+  auto title = dirent->getTitle();
   if (title.empty()) {
     return;
   }
