@@ -317,7 +317,7 @@ namespace zim
 
       header->setMimeListPos( Fileheader::size );
 
-      header->setTitleIdxPos(0);
+      header->setTitleIdxPos(offset_type(-1));
       header->setClusterCount( data->clustersList.size() );
     }
 

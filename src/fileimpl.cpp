@@ -329,9 +329,8 @@ private: // data
   offset_type FileImpl::getMimeListEndUpperLimit() const
   {
     offset_type result(header.getPathPtrPos());
-    auto titleIdxPos = header.getTitleIdxPos();
-    if (titleIdxPos != 0) {
-      result = std::min(result, titleIdxPos);
+    if (header.hasTitleListingV0()) {
+      result = std::min(result, header.getTitleIdxPos());
     }
     result = std::min(result, header.getClusterPtrPos());
     if ( getCountArticles().v != 0 ) {
@@ -566,11 +565,11 @@ private: // data
 
     struct zim_MD5_CTX md5ctx;
     zim_MD5Init(&md5ctx);
-    
+
     unsigned char ch[CHUNK_SIZE];
     offset_type checksumPos = header.getChecksumPos();
     offset_type toRead = checksumPos;
-    
+
     for(auto part = zimFile->begin();
         part != zimFile->end();
         part++) {
@@ -580,7 +579,7 @@ private: // data
         zim_MD5Update(&md5ctx, ch, CHUNK_SIZE);
         toRead-=CHUNK_SIZE;
       }
-      
+
       // Previous read was good, so we have exited the previous `while` because
       // `toRead<CHUNK_SIZE`. Let's try to read `toRead` chars and process them later.
       // Else, the previous `while` exited because we didn't succeed to read
@@ -589,12 +588,12 @@ private: // data
       if(stream.good()){
         stream.read(reinterpret_cast<char*>(ch),toRead);
       }
-      
+
       // It updates the checksum with the remaining amount of data when we
       // reach the end of the file or part
       zim_MD5Update(&md5ctx, ch, stream.gcount());
       toRead-=stream.gcount();
-    
+
       if (stream.bad()) {
         perror("error while reading file");
         return false;

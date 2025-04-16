@@ -305,7 +305,7 @@ TEST(ZimCreator, createZim)
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
   ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-8)); // 7 entries are either compressed or redirections + 1 entry is a clone of content
 
-  ASSERT_EQ(header.getTitleIdxPos(), 0);
+  ASSERT_EQ(header.getTitleIdxPos(), 0xffffffffffffffffUL);
 
   blob = cluster->getBlob(v1BlobIndex);
   ASSERT_EQ(blob.size(), 3*sizeof(title_index_t));
