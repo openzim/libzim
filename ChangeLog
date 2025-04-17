@@ -1,6 +1,7 @@
 libzim 9.3.0
 ============
 
+ * Make the cache configurable by cpp API (@mgautierfr #950)
  * Remove old ZIM (v0) titleindex (title pointer list) (@mgautierfr #949, @veloman-yunkan #969)
  * Fixed ZIM title indexing of items with title identical to the item's path (@veloman-yunkan #968)
  * Fixed ZIM suggestions for a single-word-followed-by-space query (@veloman-yunkan #953)
