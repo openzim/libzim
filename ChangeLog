@@ -1,3 +1,13 @@
+libzim 9.3.0
+============
+
+ * Remove old ZIM (v0) titleindex (title pointer list) (@mgautierfr #949, @veloman-yunkan #969)
+ * Fixed ZIM title indexing of items with title identical to the item's path (@veloman-yunkan #968)
+ * Fixed ZIM suggestions for a single-word-followed-by-space query (@veloman-yunkan #953)
+ * Testing based on latest zim-testing-suite 0.8.0 (@veloman-yunkan #971)
+ * Fix compilation on NetBSD because MAP_POPULATE & pread64() undefined (@leleliu008 #928 #929)
+ * Upload GitHub workflows (@kelson42 #940 #942 #970)
+
 libzim 9.2.3
 ============
 
