@@ -35,6 +35,10 @@ public: // functions
       m_readerPos(0)
   {}
 
+  size_t getMemorySize() const override {
+    return m_reader->getMemorySize();
+  }
+
   void readImpl(char* buf, zsize_t nbytes) override
   {
     m_reader->read(buf, m_readerPos, zsize_t(nbytes));
