@@ -1,4 +1,5 @@
 tests = [
+    'log',
     'lrucache',
     'concurrentcache',
     'cluster',
