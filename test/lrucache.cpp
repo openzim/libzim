@@ -29,6 +29,8 @@
  *
  */
 
+#define LIBZIM_ENABLE_LOGGING
+
 #include "lrucache.h"
 #include "gtest/gtest.h"
 
@@ -85,6 +87,8 @@ struct IdCost {
 };
 
 TEST(CacheTest, VariableCost) {
+    zim::Logging::logIntoMemory();
+
     zim::lru_cache<size_t, size_t, IdCost> cache_lru(100);
 
     cache_lru.put(1, 11);
@@ -114,9 +118,86 @@ TEST(CacheTest, VariableCost) {
     EXPECT_FALSE(cache_lru.exists(3));
     EXPECT_FALSE(cache_lru.exists(4));
     EXPECT_TRUE(cache_lru.exists(5));
+
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: lru_cache::put(1) {
+thread#0:  lru_cache::putMissing(1) {
+thread#0:   lru_cache::increaseCost(11) {
+thread#0:    _current_cost after increase: 11
+thread#0:    settled _current_cost: 11
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(2) {
+thread#0:  lru_cache::putMissing(2) {
+thread#0:   lru_cache::increaseCost(22) {
+thread#0:    _current_cost after increase: 33
+thread#0:    settled _current_cost: 33
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(3) {
+thread#0:  lru_cache::putMissing(3) {
+thread#0:   lru_cache::increaseCost(33) {
+thread#0:    _current_cost after increase: 66
+thread#0:    settled _current_cost: 66
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(4) {
+thread#0:  lru_cache::putMissing(4) {
+thread#0:   lru_cache::increaseCost(44) {
+thread#0:    _current_cost after increase: 110
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 1
+thread#0:     lru_cache::decreaseCost(11) {
+thread#0:      _current_cost after decrease: 99
+thread#0:     }
+thread#0:    }
+thread#0:    settled _current_cost: 99
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(5) {
+thread#0:  lru_cache::putMissing(5) {
+thread#0:   lru_cache::increaseCost(55) {
+thread#0:    _current_cost after increase: 154
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 2
+thread#0:     lru_cache::decreaseCost(22) {
+thread#0:      _current_cost after decrease: 132
+thread#0:     }
+thread#0:    }
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 3
+thread#0:     lru_cache::decreaseCost(33) {
+thread#0:      _current_cost after decrease: 99
+thread#0:     }
+thread#0:    }
+thread#0:    settled _current_cost: 99
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(1) {
+thread#0:  lru_cache::putMissing(1) {
+thread#0:   lru_cache::increaseCost(11) {
+thread#0:    _current_cost after increase: 110
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 4
+thread#0:     lru_cache::decreaseCost(44) {
+thread#0:      _current_cost after decrease: 66
+thread#0:     }
+thread#0:    }
+thread#0:    settled _current_cost: 66
+thread#0:   }
+thread#0:  }
+thread#0: }
+)");
 }
 
 TEST(CacheTest, TooBigValue) {
+    zim::Logging::logIntoMemory();
+
     zim::lru_cache<size_t, size_t, IdCost> cache_lru(10);
 
     cache_lru.put(1, 11);
@@ -139,6 +220,59 @@ TEST(CacheTest, TooBigValue) {
     EXPECT_TRUE(cache_lru.exists(1));
     EXPECT_FALSE(cache_lru.exists(2));
     EXPECT_FALSE(cache_lru.exists(3));
+
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: lru_cache::put(1) {
+thread#0:  lru_cache::putMissing(1) {
+thread#0:   lru_cache::increaseCost(11) {
+thread#0:    _current_cost after increase: 11
+thread#0:    settled _current_cost: 11
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(2) {
+thread#0:  lru_cache::putMissing(2) {
+thread#0:   lru_cache::increaseCost(22) {
+thread#0:    _current_cost after increase: 33
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 1
+thread#0:     lru_cache::decreaseCost(11) {
+thread#0:      _current_cost after decrease: 22
+thread#0:     }
+thread#0:    }
+thread#0:    settled _current_cost: 22
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(3) {
+thread#0:  lru_cache::putMissing(3) {
+thread#0:   lru_cache::increaseCost(33) {
+thread#0:    _current_cost after increase: 55
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 2
+thread#0:     lru_cache::decreaseCost(22) {
+thread#0:      _current_cost after decrease: 33
+thread#0:     }
+thread#0:    }
+thread#0:    settled _current_cost: 33
+thread#0:   }
+thread#0:  }
+thread#0: }
+thread#0: lru_cache::put(1) {
+thread#0:  lru_cache::putMissing(1) {
+thread#0:   lru_cache::increaseCost(11) {
+thread#0:    _current_cost after increase: 44
+thread#0:    lru_cache::dropLast() {
+thread#0:     evicting entry with key: 3
+thread#0:     lru_cache::decreaseCost(33) {
+thread#0:      _current_cost after decrease: 11
+thread#0:     }
+thread#0:    }
+thread#0:    settled _current_cost: 11
+thread#0:   }
+thread#0:  }
+thread#0: }
+)");
 }
 
 #define EXPECT_RANGE_MISSING_FROM_CACHE(CACHE, START, END) \
