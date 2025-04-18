@@ -60,6 +60,11 @@ std::ostream& DebugLog::newLogRequest()
 
 } // namespace LoggingImpl
 
+void Logging::orchestrateConcurrentExecutionVia(const std::string& logOutput)
+{
+  // TODO: implement properly
+}
+
 namespace
 {
 std::ostream* logStreamPtr_;
