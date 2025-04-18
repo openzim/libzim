@@ -34,6 +34,7 @@ class LIBZIM_PRIVATE_API BaseFileReader : public Reader {
       : _offset(offset), _size(size) {}
     ~BaseFileReader() = default;
     zsize_t size() const override { return _size; };
+    size_t getMemorySize() const override { return 0; };
     offset_t offset() const override { return _offset; };
 
     virtual const Buffer get_mmap_buffer(offset_t offset,

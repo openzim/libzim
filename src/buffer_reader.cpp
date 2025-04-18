@@ -44,6 +44,11 @@ zsize_t BufferReader::size() const
   return source.size();
 }
 
+size_t BufferReader::getMemorySize() const
+{
+  return source.size().v;
+}
+
 offset_t BufferReader::offset() const
 {
   return offset_t((offset_type)(static_cast<const void*>(source.data(offset_t(0)))));

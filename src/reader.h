@@ -36,6 +36,7 @@ class LIBZIM_PRIVATE_API Reader {
   public:
     Reader() {};
     virtual zsize_t size() const = 0;
+    virtual size_t getMemorySize() const = 0;
     virtual ~Reader() {};
 
     void read(char* dest, offset_t offset, zsize_t size) const {
