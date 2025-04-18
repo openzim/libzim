@@ -17,6 +17,9 @@
  *
  */
 
+#ifndef ZIM_LOG_H
+#define ZIM_LOG_H
+
 #include "config.h"
 
 // Should we keep the dependence on cxxtools logging framework?
@@ -209,3 +212,5 @@ namespace LoggingImpl
 #define log_init()
 
 #endif
+
+#endif // ZIM_LOG_H

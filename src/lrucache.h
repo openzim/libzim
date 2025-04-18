@@ -46,6 +46,8 @@
 #include <vector>
 #include <iostream>
 
+#include "log.h"
+
 namespace zim {
 
 struct UnitCostEstimation {
@@ -119,11 +121,14 @@ public: // functions
   // otherwise puts the given value into the cache (and returns it with
   // a status of a cache miss).
   AccessResult getOrPut(const key_t& key, const value_t& value) {
+    log_debug_func_call("lru_cache::getOrPut", key);
     auto it = _cache_items_map.find(key);
     if (it != _cache_items_map.end()) {
       _cache_items_list.splice(_cache_items_list.begin(), _cache_items_list, it->second);
+      log_debug("already in cache, moved to the beginning of the LRU list.");
       return AccessResult(it->second->second, HIT);
     } else {
+      log_debug("not in cache, adding...");
       putMissing(key, value);
       return AccessResult(value, PUT);
     }
@@ -152,10 +157,12 @@ public: // functions
   }
 
   bool drop(const key_t& key) {
+    log_debug_func_call("lru_cache::drop", key);
     list_iterator_t list_it;
     try {
       list_it = _cache_items_map.at(key);
     } catch (std::out_of_range& e) {
+      log_debug("key not in cache, there is nothing to do");
       return false;
     }
     decreaseCost(CostEstimation::cost(list_it->second));
@@ -201,6 +208,7 @@ public: // functions
  protected:
 
   void increaseCost(size_t extra_cost) {
+    log_debug_func_call("lru_cache::increaseCost", extra_cost);
     // increaseSize is called after we have added a value to the cache to update
     // the size of the current cache.
     // We must ensure that we don't drop the value we just added.
@@ -220,6 +228,7 @@ public: // functions
   }
 
   void decreaseCost(size_t costToRemove) {
+    log_debug_func_call("lru_cache::decreaseCost", costToRemove);
     if (costToRemove > _current_cost) {
       std::cerr << "WARNING: We have detected inconsistant cache management, trying to remove " << costToRemove << " from a cache with size " << _current_cost << std::endl;
       std::cerr << "Please open an issue on https://github.com/openzim/libzim/issues with this message and the zim file you use" << std::endl;
@@ -231,9 +240,12 @@ public: // functions
 
 private: // functions
   void dropLast() {
+    log_debug_func_call("lru_cache::dropLast");
     auto list_it = _cache_items_list.back();
+    const auto key = _cache_items_list.back().first;
+    log_debug("evicting entry with key: " << key);
     decreaseCost(CostEstimation::cost(list_it.second));
-    _cache_items_map.erase(_cache_items_list.back().first);
+    _cache_items_map.erase(key);
     _cache_items_list.pop_back();
   }
 

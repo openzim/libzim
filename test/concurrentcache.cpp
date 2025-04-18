@@ -50,20 +50,39 @@ TEST(ConcurrentCacheXRayTest, simpleFlow) {
 
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(3) {
+thread#0:  lru_cache::getOrPut(3) {
+thread#0:   not in cache, adding...
+thread#0:   lru_cache::increaseCost(0) {
+thread#0:   }
+thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1. Committing to cache...
+thread#0:  lru_cache::increaseCost(1) {
+thread#0:  }
 thread#0:  Done. Cache cost is at 1
 thread#0: } (return value: 2025)
 thread#0: ConcurrentCache::getOrPut(3) {
+thread#0:  lru_cache::getOrPut(3) {
+thread#0:   already in cache, moved to the beginning of the LRU list.
+thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0: } (return value: 2025)
 thread#0: ConcurrentCache::getOrPut(2) {
+thread#0:  lru_cache::getOrPut(2) {
+thread#0:   not in cache, adding...
+thread#0:   lru_cache::increaseCost(0) {
+thread#0:   }
+thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Evaluation failed. Releasing the cache slot...
 thread#0:  ConcurrentCache::drop(2) {
+thread#0:   lru_cache::drop(2) {
+thread#0:    lru_cache::decreaseCost(0) {
+thread#0:    }
+thread#0:   }
 thread#0:  }
 thread#0: }
 )");
