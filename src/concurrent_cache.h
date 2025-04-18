@@ -117,6 +117,7 @@ public: // functions
   }
 
   void setMaxCost(size_t newSize) {
+    log_debug_func_call("ConcurrentCache::setMaxCost", newSize);
     std::unique_lock<std::mutex> l(lock_);
     return impl_.setMaxCost(newSize);
   }
@@ -124,9 +125,9 @@ public: // functions
 private: // functions
   typename Impl::AccessResult getCacheSlot(const Key& key, const ValuePlaceholder& v)
   {
+    log_debug_func_call("ConcurrentCache::getCacheSlot", key);
     std::unique_lock<std::mutex> l(lock_);
-    const auto x = impl_.getOrPut(key, CacheEntry{0, v});
-    return x;
+    return impl_.getOrPut(key, CacheEntry{0, v});
   }
 
   template<class F>
@@ -142,7 +143,7 @@ private: // functions
 
   void finalizeCacheMiss(const Key& key, const CacheEntry& cacheEntry)
   {
-    log_debug("Committing to cache...");
+    log_debug_func_call("ConcurrentCache::finalizeCacheMiss", key);
     std::unique_lock<std::mutex> l(lock_);
     impl_.put(key, cacheEntry);
   }

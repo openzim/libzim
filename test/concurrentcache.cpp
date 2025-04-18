@@ -48,12 +48,14 @@ TEST(ConcurrentCacheTest, addAnItemToAnEmptyCache) {
     EXPECT_EQ(cache.getOrPut(3, LazyValue(2025)), 2025);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(3) {
-thread#0:  lru_cache::getOrPut(3) {
-thread#0:   not in cache, adding...
-thread#0:   lru_cache::putMissing(3) {
-thread#0:    lru_cache::increaseCost(0) {
-thread#0:     _current_cost after increase: 0
-thread#0:     settled _current_cost: 0
+thread#0:  ConcurrentCache::getCacheSlot(3) {
+thread#0:   lru_cache::getOrPut(3) {
+thread#0:    not in cache, adding...
+thread#0:    lru_cache::putMissing(3) {
+thread#0:     lru_cache::increaseCost(0) {
+thread#0:      _current_cost after increase: 0
+thread#0:      settled _current_cost: 0
+thread#0:     }
 thread#0:    }
 thread#0:   }
 thread#0:  }
@@ -61,14 +63,15 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1
-thread#0:  Committing to cache...
-thread#0:  lru_cache::put(3) {
-thread#0:   lru_cache::decreaseCost(0) {
-thread#0:    _current_cost after decrease: 0
-thread#0:   }
-thread#0:   lru_cache::increaseCost(1) {
-thread#0:    _current_cost after increase: 1
-thread#0:    settled _current_cost: 1
+thread#0:  ConcurrentCache::finalizeCacheMiss(3) {
+thread#0:   lru_cache::put(3) {
+thread#0:    lru_cache::decreaseCost(0) {
+thread#0:     _current_cost after decrease: 0
+thread#0:    }
+thread#0:    lru_cache::increaseCost(1) {
+thread#0:     _current_cost after increase: 1
+thread#0:     settled _current_cost: 1
+thread#0:    }
 thread#0:   }
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
@@ -84,8 +87,10 @@ TEST(ConcurrentCacheTest, cacheHit) {
     EXPECT_EQ(cache.getOrPut(3, LazyValue(123)),  2025);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(3) {
-thread#0:  lru_cache::getOrPut(3) {
-thread#0:   already in cache, moved to the beginning of the LRU list.
+thread#0:  ConcurrentCache::getCacheSlot(3) {
+thread#0:   lru_cache::getOrPut(3) {
+thread#0:    already in cache, moved to the beginning of the LRU list.
+thread#0:   }
 thread#0:  }
 thread#0:  Obtained the cache slot
 thread#0: } (return value: 2025)
@@ -100,12 +105,14 @@ TEST(ConcurrentCacheTest, attemptToAddNonMaterializableItemToFullCache) {
     EXPECT_THROW(cache.getOrPut(2, ExceptionSource()), std::runtime_error);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(2) {
-thread#0:  lru_cache::getOrPut(2) {
-thread#0:   not in cache, adding...
-thread#0:   lru_cache::putMissing(2) {
-thread#0:    lru_cache::increaseCost(0) {
-thread#0:     _current_cost after increase: 1
-thread#0:     settled _current_cost: 1
+thread#0:  ConcurrentCache::getCacheSlot(2) {
+thread#0:   lru_cache::getOrPut(2) {
+thread#0:    not in cache, adding...
+thread#0:    lru_cache::putMissing(2) {
+thread#0:     lru_cache::increaseCost(0) {
+thread#0:      _current_cost after increase: 1
+thread#0:      settled _current_cost: 1
+thread#0:     }
 thread#0:    }
 thread#0:   }
 thread#0:  }
@@ -131,12 +138,14 @@ TEST(ConcurrentCacheTest, addItemToFullCache) {
     EXPECT_EQ(cache.getOrPut(2, LazyValue(123)),  123);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(2) {
-thread#0:  lru_cache::getOrPut(2) {
-thread#0:   not in cache, adding...
-thread#0:   lru_cache::putMissing(2) {
-thread#0:    lru_cache::increaseCost(0) {
-thread#0:     _current_cost after increase: 1
-thread#0:     settled _current_cost: 1
+thread#0:  ConcurrentCache::getCacheSlot(2) {
+thread#0:   lru_cache::getOrPut(2) {
+thread#0:    not in cache, adding...
+thread#0:    lru_cache::putMissing(2) {
+thread#0:     lru_cache::increaseCost(0) {
+thread#0:      _current_cost after increase: 1
+thread#0:      settled _current_cost: 1
+thread#0:     }
 thread#0:    }
 thread#0:   }
 thread#0:  }
@@ -144,20 +153,21 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=1
-thread#0:  Committing to cache...
-thread#0:  lru_cache::put(2) {
-thread#0:   lru_cache::decreaseCost(0) {
-thread#0:    _current_cost after decrease: 1
-thread#0:   }
-thread#0:   lru_cache::increaseCost(1) {
-thread#0:    _current_cost after increase: 2
-thread#0:    lru_cache::dropLast() {
-thread#0:     evicting entry with key: 3
-thread#0:     lru_cache::decreaseCost(1) {
-thread#0:      _current_cost after decrease: 1
-thread#0:     }
+thread#0:  ConcurrentCache::finalizeCacheMiss(2) {
+thread#0:   lru_cache::put(2) {
+thread#0:    lru_cache::decreaseCost(0) {
+thread#0:     _current_cost after decrease: 1
 thread#0:    }
-thread#0:    settled _current_cost: 1
+thread#0:    lru_cache::increaseCost(1) {
+thread#0:     _current_cost after increase: 2
+thread#0:     lru_cache::dropLast() {
+thread#0:      evicting entry with key: 3
+thread#0:      lru_cache::decreaseCost(1) {
+thread#0:       _current_cost after decrease: 1
+thread#0:      }
+thread#0:     }
+thread#0:     settled _current_cost: 1
+thread#0:    }
 thread#0:   }
 thread#0:  }
 thread#0:  Done. Cache cost is at 1
@@ -177,12 +187,14 @@ TEST(ConcurrentCacheTest, addOversizedItemToEmptyCache) {
     cache.getOrPut(151, LazyValue(2025));
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(151) {
-thread#0:  lru_cache::getOrPut(151) {
-thread#0:   not in cache, adding...
-thread#0:   lru_cache::putMissing(151) {
-thread#0:    lru_cache::increaseCost(0) {
-thread#0:     _current_cost after increase: 0
-thread#0:     settled _current_cost: 0
+thread#0:  ConcurrentCache::getCacheSlot(151) {
+thread#0:   lru_cache::getOrPut(151) {
+thread#0:    not in cache, adding...
+thread#0:    lru_cache::putMissing(151) {
+thread#0:     lru_cache::increaseCost(0) {
+thread#0:      _current_cost after increase: 0
+thread#0:      settled _current_cost: 0
+thread#0:     }
 thread#0:    }
 thread#0:   }
 thread#0:  }
@@ -190,14 +202,15 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=6075
-thread#0:  Committing to cache...
-thread#0:  lru_cache::put(151) {
-thread#0:   lru_cache::decreaseCost(0) {
-thread#0:    _current_cost after decrease: 0
-thread#0:   }
-thread#0:   lru_cache::increaseCost(6075) {
-thread#0:    _current_cost after increase: 6075
-thread#0:    settled _current_cost: 6075
+thread#0:  ConcurrentCache::finalizeCacheMiss(151) {
+thread#0:   lru_cache::put(151) {
+thread#0:    lru_cache::decreaseCost(0) {
+thread#0:     _current_cost after decrease: 0
+thread#0:    }
+thread#0:    lru_cache::increaseCost(6075) {
+thread#0:     _current_cost after increase: 6075
+thread#0:     settled _current_cost: 6075
+thread#0:    }
 thread#0:   }
 thread#0:  }
 thread#0:  Done. Cache cost is at 6075
@@ -219,12 +232,14 @@ TEST(ConcurrentCacheTest, addItemsToEmptyCacheWithoutOverflowingIt) {
     populateCache(cache, { {22, 100}, {11, 200} } );
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
 R"(thread#0: ConcurrentCache::getOrPut(22) {
-thread#0:  lru_cache::getOrPut(22) {
-thread#0:   not in cache, adding...
-thread#0:   lru_cache::putMissing(22) {
-thread#0:    lru_cache::increaseCost(0) {
-thread#0:     _current_cost after increase: 0
-thread#0:     settled _current_cost: 0
+thread#0:  ConcurrentCache::getCacheSlot(22) {
+thread#0:   lru_cache::getOrPut(22) {
+thread#0:    not in cache, adding...
+thread#0:    lru_cache::putMissing(22) {
+thread#0:     lru_cache::increaseCost(0) {
+thread#0:      _current_cost after increase: 0
+thread#0:      settled _current_cost: 0
+thread#0:     }
 thread#0:    }
 thread#0:   }
 thread#0:  }
@@ -232,25 +247,28 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=300
-thread#0:  Committing to cache...
-thread#0:  lru_cache::put(22) {
-thread#0:   lru_cache::decreaseCost(0) {
-thread#0:    _current_cost after decrease: 0
-thread#0:   }
-thread#0:   lru_cache::increaseCost(300) {
-thread#0:    _current_cost after increase: 300
-thread#0:    settled _current_cost: 300
+thread#0:  ConcurrentCache::finalizeCacheMiss(22) {
+thread#0:   lru_cache::put(22) {
+thread#0:    lru_cache::decreaseCost(0) {
+thread#0:     _current_cost after decrease: 0
+thread#0:    }
+thread#0:    lru_cache::increaseCost(300) {
+thread#0:     _current_cost after increase: 300
+thread#0:     settled _current_cost: 300
+thread#0:    }
 thread#0:   }
 thread#0:  }
 thread#0:  Done. Cache cost is at 300
 thread#0: } (return value: 100)
 thread#0: ConcurrentCache::getOrPut(11) {
-thread#0:  lru_cache::getOrPut(11) {
-thread#0:   not in cache, adding...
-thread#0:   lru_cache::putMissing(11) {
-thread#0:    lru_cache::increaseCost(0) {
-thread#0:     _current_cost after increase: 300
-thread#0:     settled _current_cost: 300
+thread#0:  ConcurrentCache::getCacheSlot(11) {
+thread#0:   lru_cache::getOrPut(11) {
+thread#0:    not in cache, adding...
+thread#0:    lru_cache::putMissing(11) {
+thread#0:     lru_cache::increaseCost(0) {
+thread#0:      _current_cost after increase: 300
+thread#0:      settled _current_cost: 300
+thread#0:     }
 thread#0:    }
 thread#0:   }
 thread#0:  }
@@ -258,14 +276,15 @@ thread#0:  Obtained the cache slot
 thread#0:  It was a cache miss. Going to obtain the value...
 thread#0:  Value was successfully obtained. Computing its cost...
 thread#0:  cost=600
-thread#0:  Committing to cache...
-thread#0:  lru_cache::put(11) {
-thread#0:   lru_cache::decreaseCost(0) {
-thread#0:    _current_cost after decrease: 300
-thread#0:   }
-thread#0:   lru_cache::increaseCost(600) {
-thread#0:    _current_cost after increase: 900
-thread#0:    settled _current_cost: 900
+thread#0:  ConcurrentCache::finalizeCacheMiss(11) {
+thread#0:   lru_cache::put(11) {
+thread#0:    lru_cache::decreaseCost(0) {
+thread#0:     _current_cost after decrease: 300
+thread#0:    }
+thread#0:    lru_cache::increaseCost(600) {
+thread#0:     _current_cost after increase: 900
+thread#0:     settled _current_cost: 900
+thread#0:    }
 thread#0:   }
 thread#0:  }
 thread#0:  Done. Cache cost is at 900
@@ -282,21 +301,23 @@ TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCurrentCostValue) {
     cache.setMaxCost(500);
     ASSERT_EQ(cache.getCurrentCost(), 450);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
-R"(thread#0: lru_cache::increaseCost(0) {
-thread#0:  _current_cost after increase: 900
-thread#0:  lru_cache::dropLast() {
-thread#0:   evicting entry with key: 5
-thread#0:   lru_cache::decreaseCost(150) {
-thread#0:    _current_cost after decrease: 750
+R"(thread#0: ConcurrentCache::setMaxCost(500) {
+thread#0:  lru_cache::increaseCost(0) {
+thread#0:   _current_cost after increase: 900
+thread#0:   lru_cache::dropLast() {
+thread#0:    evicting entry with key: 5
+thread#0:    lru_cache::decreaseCost(150) {
+thread#0:     _current_cost after decrease: 750
+thread#0:    }
 thread#0:   }
-thread#0:  }
-thread#0:  lru_cache::dropLast() {
-thread#0:   evicting entry with key: 10
-thread#0:   lru_cache::decreaseCost(300) {
-thread#0:    _current_cost after decrease: 450
+thread#0:   lru_cache::dropLast() {
+thread#0:    evicting entry with key: 10
+thread#0:    lru_cache::decreaseCost(300) {
+thread#0:     _current_cost after decrease: 450
+thread#0:    }
 thread#0:   }
+thread#0:   settled _current_cost: 450
 thread#0:  }
-thread#0:  settled _current_cost: 450
 thread#0: }
 )");
 }
@@ -310,27 +331,29 @@ TEST(ConcurrentCacheTest, reduceCacheCostLimitBelowCostOfMRUItem) {
     cache.setMaxCost(400);
     ASSERT_EQ(cache.getCurrentCost(), 0);
     ASSERT_EQ(zim::Logging::getInMemLogContent(),
-R"(thread#0: lru_cache::increaseCost(0) {
-thread#0:  _current_cost after increase: 900
-thread#0:  lru_cache::dropLast() {
-thread#0:   evicting entry with key: 5
-thread#0:   lru_cache::decreaseCost(150) {
-thread#0:    _current_cost after decrease: 750
+R"(thread#0: ConcurrentCache::setMaxCost(400) {
+thread#0:  lru_cache::increaseCost(0) {
+thread#0:   _current_cost after increase: 900
+thread#0:   lru_cache::dropLast() {
+thread#0:    evicting entry with key: 5
+thread#0:    lru_cache::decreaseCost(150) {
+thread#0:     _current_cost after decrease: 750
+thread#0:    }
 thread#0:   }
-thread#0:  }
-thread#0:  lru_cache::dropLast() {
-thread#0:   evicting entry with key: 10
-thread#0:   lru_cache::decreaseCost(300) {
-thread#0:    _current_cost after decrease: 450
+thread#0:   lru_cache::dropLast() {
+thread#0:    evicting entry with key: 10
+thread#0:    lru_cache::decreaseCost(300) {
+thread#0:     _current_cost after decrease: 450
+thread#0:    }
 thread#0:   }
-thread#0:  }
-thread#0:  lru_cache::dropLast() {
-thread#0:   evicting entry with key: 15
-thread#0:   lru_cache::decreaseCost(450) {
-thread#0:    _current_cost after decrease: 0
+thread#0:   lru_cache::dropLast() {
+thread#0:    evicting entry with key: 15
+thread#0:    lru_cache::decreaseCost(450) {
+thread#0:     _current_cost after decrease: 0
+thread#0:    }
 thread#0:   }
+thread#0:   settled _current_cost: 0
 thread#0:  }
-thread#0:  settled _current_cost: 0
 thread#0: }
 )");
 }
