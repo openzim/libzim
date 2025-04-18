@@ -24,6 +24,7 @@
 
 #include "log.h"
 
+#include <condition_variable>
 #include <iomanip>
 #include <sstream>
 
@@ -37,6 +38,18 @@ namespace
 {
 
 std::mutex mutex_;
+
+// When non-empty, the last element represents the name of the thread
+// that should be allowed to proceed for the next logging statement.
+std::vector<std::string> orchestrationStack_;
+
+std::condition_variable cv_;
+
+bool threadMayProceed(const std::string& threadName)
+{
+  return orchestrationStack_.empty()
+      || threadName == orchestrationStack_.back();
+}
 
 } // unnamed namespace
 
@@ -52,8 +65,16 @@ DebugLog::DebugLog(std::ostream* os)
 std::ostream& DebugLog::newLogRequest()
 {
   const auto threadName = NamedThread::getCurrentThreadName();
+  if ( !threadMayProceed(threadName) ) {
+    cv_.wait(lock_, [threadName]() { return threadMayProceed(threadName); });
+  }
 
   *os_ << threadName << ": ";
+
+  if ( !orchestrationStack_.empty() ) {
+    orchestrationStack_.pop_back();
+    cv_.notify_all();
+  }
 
   return *os_;
 }
@@ -62,7 +83,12 @@ std::ostream& DebugLog::newLogRequest()
 
 void Logging::orchestrateConcurrentExecutionVia(const std::string& logOutput)
 {
-  // TODO: implement properly
+  orchestrationStack_.clear();
+  for ( auto line : zim::split(logOutput, "\n") ) {
+    const std::string threadName = zim::split(line, ":")[0];
+    orchestrationStack_.push_back(threadName);
+  }
+  std::reverse(orchestrationStack_.begin(), orchestrationStack_.end());
 }
 
 namespace
