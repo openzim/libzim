@@ -23,6 +23,8 @@
 #include "../src/namedthread.h"
 #include "gtest/gtest.h"
 
+#include <mutex>
+
 using namespace zim;
 
 TEST(Log, inMemLog) {
@@ -262,4 +264,27 @@ thread#2: Done
   thread2.join();
 
   ASSERT_EQ(Logging::getInMemLogContent(), targetOutput);
+}
+
+TEST(Log, log_debug_raii_sync_statement) {
+  Logging::logIntoMemory();
+  log_debug("Is there anyone in the bathroom?");
+  {
+    std::mutex mutex;
+    log_debug_raii_sync_statement(std::unique_lock<std::mutex> lock(mutex));
+    log_debug("Taking shower...");
+  }
+  log_debug("Did you expect something else?");
+  log_debug("When I say 'bathroom', I mean 'bathroom'.");
+  log_debug("FYI, I know the word 'toilet' and use it if needed.");
+
+  ASSERT_EQ(Logging::getInMemLogContent(),
+R"(thread#0: Is there anyone in the bathroom?
+thread#0: entered synchronized section
+thread#0: Taking shower...
+thread#0: exiting synchronized section
+thread#0: Did you expect something else?
+thread#0: When I say 'bathroom', I mean 'bathroom'.
+thread#0: FYI, I know the word 'toilet' and use it if needed.
+)");
 }
