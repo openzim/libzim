@@ -51,6 +51,15 @@ bool threadMayProceed(const std::string& threadName)
       || threadName == orchestrationStack_.back();
 }
 
+std::map<std::string, size_t> nestingLevelMap_;
+std::mutex nestingLevelMapMutex_;
+
+size_t getNestingLevel(const std::string& threadName)
+{
+  std::lock_guard<std::mutex> lock(nestingLevelMapMutex_);
+  return nestingLevelMap_[threadName];
+}
+
 } // unnamed namespace
 
 namespace LoggingImpl
@@ -69,7 +78,8 @@ std::ostream& DebugLog::newLogRequest()
     cv_.wait(lock_, [threadName]() { return threadMayProceed(threadName); });
   }
 
-  *os_ << threadName << ": ";
+  const auto nestingLevel = getNestingLevel(threadName);
+  *os_ << threadName << ": " << std::setw(nestingLevel) << "";
 
   if ( !orchestrationStack_.empty() ) {
     orchestrationStack_.pop_back();
@@ -99,6 +109,44 @@ std::ostringstream inMemLog_;
 
 namespace LoggingImpl
 {
+
+void logValue(std::ostream& out, const char* x)
+{
+    if ( x ) {
+      out << '"' << x << '"';
+    } else {
+      out << "nullptr";
+    }
+}
+
+void logValue(std::ostream& out, const std::string& x)
+{
+    out << '"' << x << '"';
+}
+
+void logValue(std::ostream& out, bool x)
+{
+    out << (x ? "true" : "false");
+}
+
+FunctionCallLogger::~FunctionCallLogger()
+{
+  changeNestingLevel(-1);
+  if (auto debugLog = getDebugLog()) {
+    std::ostream& os = debugLog.newLogRequest();
+    os << "}";
+    if ( !returnValue_.empty() ) {
+      os << " (return value: " << returnValue_ << ")";
+    }
+    os << std::endl;
+  }
+}
+
+void FunctionCallLogger::changeNestingLevel(int delta)
+{
+  std::lock_guard<std::mutex> lock(nestingLevelMapMutex_);
+  nestingLevelMap_[NamedThread::getCurrentThreadName()] += delta;
+}
 
 DebugLog getDebugLog()
 {

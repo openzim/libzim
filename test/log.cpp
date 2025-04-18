@@ -148,3 +148,66 @@ TEST(Log, concurrencyOrchestration) {
     ASSERT_EQ(Logging::getInMemLogContent(), desiredOutput);
   }
 }
+
+int foo(const std::string& s, size_t n)
+{
+  log_debug_func_call("foo", s, n);
+  for(size_t i = 0; i < n; ++i)
+    log_debug("fooing " << s);
+  return log_debug_return_value(s.size() * n);
+}
+
+void vee(bool b)
+{
+  log_debug_func_call("vee", b);
+  if ( b ) {
+    log_debug("Vee are the champignons!");
+  }
+}
+
+int bar(const char* s)
+{
+  log_debug_func_call("bar", s);
+  if ( !s ) {
+    vee(true);
+    vee(false);
+    return log_debug_return_value(0);
+  }
+  log_debug("Ready!");
+  const auto r1 = foo(s, 1);
+  log_debug("Steady!");
+  const auto r2 = foo(s, 2);
+  log_debug("Go!");
+  return log_debug_return_value(r1 + r2);
+}
+
+TEST(Log, nestedFunctionCalls) {
+  Logging::logIntoMemory();
+  log_debug("Calling bar()...");
+  bar("qwerty");
+  bar(nullptr);
+  log_debug("That's all");
+  ASSERT_EQ(Logging::getInMemLogContent(),
+R"(thread#0: Calling bar()...
+thread#0: bar("qwerty") {
+thread#0:  Ready!
+thread#0:  foo("qwerty", 1) {
+thread#0:   fooing qwerty
+thread#0:  } (return value: 6)
+thread#0:  Steady!
+thread#0:  foo("qwerty", 2) {
+thread#0:   fooing qwerty
+thread#0:   fooing qwerty
+thread#0:  } (return value: 12)
+thread#0:  Go!
+thread#0: } (return value: 18)
+thread#0: bar(nullptr) {
+thread#0:  vee(true) {
+thread#0:   Vee are the champignons!
+thread#0:  }
+thread#0:  vee(false) {
+thread#0:  }
+thread#0: } (return value: 0)
+thread#0: That's all
+)");
+}

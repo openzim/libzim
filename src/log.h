@@ -62,6 +62,100 @@ namespace LoggingImpl
   };
 
   DebugLog getDebugLog();
+
+  template<class T>
+  void logValue(std::ostream& out, const T& x)
+  {
+      out << x;
+  }
+
+  void logValue(std::ostream& out, const char* x);
+  void logValue(std::ostream& out, const std::string& x);
+  void logValue(std::ostream& out, bool x);
+
+  class FunctionCallLogger
+  {
+    std::string returnValue_;
+
+  public:
+    ~FunctionCallLogger();
+
+    void changeNestingLevel(int delta);
+
+    template<class T>
+    const T& setReturnValue(const T& v)
+    {
+      std::ostringstream ss;
+      logValue(ss, v);
+      returnValue_ = ss.str();
+      return v;
+    }
+  };
+
+  template<size_t COUNT>
+  struct TupleDumper
+  {
+      template<class TupleType>
+      static void dump(std::ostream& out, const TupleType& t)
+      {
+          TupleDumper<COUNT-1>::dump(out, t);
+          out << ", ";
+          logValue(out, std::get<COUNT-1>(t));
+      }
+  };
+
+  template<>
+  struct TupleDumper<1>
+  {
+      template<class TupleType>
+      static void dump(std::ostream& out, const TupleType& t)
+      {
+          logValue(out, std::get<0>(t));
+      }
+  };
+
+  template<>
+  struct TupleDumper<0>
+  {
+      template<class TupleType>
+      static void dump(std::ostream& out, const TupleType& t)
+      {
+      }
+  };
+
+  template<class... Types>
+  class FuncArgs
+  {
+  public:
+      typedef std::tuple<Types...> ImplType;
+      enum { ArgCount = std::tuple_size<ImplType>::value };
+
+  public:
+      FuncArgs(const Types&... t) : impl_(t...) {}
+
+      void dump(std::ostream& out) const
+      {
+          out << "(";
+          TupleDumper<ArgCount>::dump(out, impl_);
+          out << ")";
+      }
+
+  private:
+      ImplType impl_;
+  };
+
+  template<class... Types>
+  static FuncArgs<Types...> funcArgs(Types... t)
+  {
+      return FuncArgs<Types...>(t...);
+  };
+
+  template<class... Types>
+  std::ostream& operator<<(std::ostream& out, const FuncArgs<Types...>& x)
+  {
+      x.dump(out);
+      return out;
+  }
 } // namespace LoggingImpl
 
 } // namespace zim
@@ -70,6 +164,14 @@ namespace LoggingImpl
   if (auto debugLog = zim::LoggingImpl::getDebugLog()) { \
     debugLog.newLogRequest() << x << std::endl; \
   } else {}
+
+#define log_debug_func_call(FUNCNAME, ...) \
+  zim::LoggingImpl::FunctionCallLogger functionCallLogger; \
+  log_debug(FUNCNAME << zim::LoggingImpl::funcArgs(__VA_ARGS__) << " {"); \
+  functionCallLogger.changeNestingLevel(+1);
+
+
+#define log_debug_return_value(v) functionCallLogger.setReturnValue(v)
 
 // Below logging macros are not yet implemented
 #define log_define(e)
@@ -88,6 +190,8 @@ namespace LoggingImpl
 #define log_warn(e)
 #define log_info(e)
 #define log_debug(e)
+#define log_debug_func_call(FUNCNAME, ...)
+#define log_debug_return_value(v) v
 #define log_trace(e)
 #define log_init()
 
