@@ -93,6 +93,12 @@ namespace LoggingImpl
     }
   };
 
+  class RAIISyncLogger
+  {
+  public:
+    ~RAIISyncLogger();
+  };
+
   template<size_t COUNT>
   struct TupleDumper
   {
@@ -174,6 +180,11 @@ namespace LoggingImpl
 
 #define log_debug_return_value(v) functionCallLogger.setReturnValue(v)
 
+#define log_debug_raii_sync_statement(statement) \
+  statement; \
+  log_debug("entered synchronized section"); \
+  zim::LoggingImpl::RAIISyncLogger raiiSyncLogger;
+
 // Below logging macros are not yet implemented
 #define log_define(e)
 #define log_fatal(e)
@@ -193,6 +204,7 @@ namespace LoggingImpl
 #define log_debug(e)
 #define log_debug_func_call(FUNCNAME, ...)
 #define log_debug_return_value(v) v
+#define log_debug_raii_sync_statement(statement) statement
 #define log_trace(e)
 #define log_init()
 

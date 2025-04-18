@@ -129,6 +129,13 @@ void logValue(std::ostream& out, bool x)
     out << (x ? "true" : "false");
 }
 
+RAIISyncLogger::~RAIISyncLogger()
+{
+  if (auto debugLog = getDebugLog()) {
+    debugLog.newLogRequest() << "exiting synchronized section" << std::endl;
+  }
+}
+
 FunctionCallLogger::~FunctionCallLogger()
 {
   changeNestingLevel(-1);
