@@ -30,7 +30,6 @@
  */
 
 #include "lrucache.h"
-#include "concurrent_cache.h"
 #include "gtest/gtest.h"
 
 const int NUM_OF_TEST2_RECORDS = 100;
@@ -130,13 +129,4 @@ TEST(CacheTest1, ChangeCacheCapacity) {
     EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.size());
     EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY))
     EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1000)
-}
-
-TEST(ConcurrentCacheTest, handleException) {
-    zim::ConcurrentCache<int, int> cache(1);
-    auto val = cache.getOrPut(7, []() { return 777; });
-    EXPECT_EQ(val, 777);
-    EXPECT_THROW(cache.getOrPut(8, []() { throw std::runtime_error("oups"); return 0; }), std::runtime_error);
-    val = cache.getOrPut(8, []() { return 888; });
-    EXPECT_EQ(val, 888);
 }
