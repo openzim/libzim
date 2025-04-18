@@ -71,3 +71,80 @@ TEST(Log, inMemLogInANamedThread) {
   thread2.join();
   ASSERT_EQ(Logging::getInMemLogContent(), "producer: qwerty\nconsumer: z\n");
 }
+
+#include <chrono>
+
+TEST(Log, concurrencyOrchestration) {
+  using namespace std::chrono_literals;
+
+  const auto oddFlow = [](){
+    std::this_thread::sleep_for(10ms);
+    log_debug("Humpty Dumpty sat on a wall.");
+    std::this_thread::sleep_for(10ms);
+    log_debug("All the king's horses and all the king's men");
+  };
+
+  const auto evenFlow = [](){
+    log_debug("Humpty Dumpty had a great fall.");
+    std::this_thread::sleep_for(15ms);
+    log_debug("Couldn't put Humpty together again.");
+  };
+
+  {
+    // Make sure that non-orchestrated execution produces a serialization of
+    // the concurrent operations that is different from the desired one
+    Logging::logIntoMemory();
+    NamedThread thread1("even", evenFlow);
+    NamedThread thread2(" odd", oddFlow);
+
+    thread1.join();
+    thread2.join();
+
+    ASSERT_EQ(Logging::getInMemLogContent(),
+              "even: Humpty Dumpty had a great fall.\n"
+              " odd: Humpty Dumpty sat on a wall.\n"
+              "even: Couldn't put Humpty together again.\n"
+              " odd: All the king's horses and all the king's men\n"
+    );
+  }
+
+  const std::string outputsFromVariousOtherSerializations[] = {
+    " odd: Humpty Dumpty sat on a wall.\n"
+    "even: Humpty Dumpty had a great fall.\n"
+    " odd: All the king's horses and all the king's men\n"
+    "even: Couldn't put Humpty together again.\n"
+    ,
+    " odd: Humpty Dumpty sat on a wall.\n"
+    " odd: All the king's horses and all the king's men\n"
+    "even: Humpty Dumpty had a great fall.\n"
+    "even: Couldn't put Humpty together again.\n"
+    ,
+    "even: Humpty Dumpty had a great fall.\n"
+    "even: Couldn't put Humpty together again.\n"
+    " odd: Humpty Dumpty sat on a wall.\n"
+    " odd: All the king's horses and all the king's men\n"
+    ,
+    "even: Humpty Dumpty had a great fall.\n"
+    " odd: Humpty Dumpty sat on a wall.\n"
+    " odd: All the king's horses and all the king's men\n"
+    "even: Couldn't put Humpty together again.\n"
+    ,
+    " odd: Humpty Dumpty sat on a wall.\n"
+    "even: Humpty Dumpty had a great fall.\n"
+    "even: Couldn't put Humpty together again.\n"
+    " odd: All the king's horses and all the king's men\n"
+  };
+
+  for (const auto& desiredOutput : outputsFromVariousOtherSerializations)
+  {
+    Logging::logIntoMemory();
+    Logging::orchestrateConcurrentExecutionVia(desiredOutput);
+    NamedThread thread1("even", evenFlow);
+    NamedThread thread2(" odd", oddFlow);
+
+    thread1.join();
+    thread2.join();
+
+    ASSERT_EQ(Logging::getInMemLogContent(), desiredOutput);
+  }
+}

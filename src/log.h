@@ -40,6 +40,7 @@ class Logging
 public:
   static void logIntoMemory();
   static std::string getInMemLogContent();
+  static void orchestrateConcurrentExecutionVia(const std::string& logOutput);
 };
 
 namespace LoggingImpl
