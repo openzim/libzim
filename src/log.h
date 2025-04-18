@@ -19,9 +19,65 @@
 
 #include "config.h"
 
+// Should we keep the dependence on cxxtools logging framework?
 #ifdef WITH_CXXTOOLS
 
 #include <cxxtools/log.h>
+
+#elif defined(LIBZIM_ENABLE_LOGGING)
+
+#include <iostream>
+#include <mutex>
+#include <string>
+#include <sstream>
+#include <tuple>
+
+namespace zim
+{
+
+class Logging
+{
+public:
+  static void logIntoMemory();
+  static std::string getInMemLogContent();
+};
+
+namespace LoggingImpl
+{
+  class DebugLog
+  {
+    std::ostream* const os_;
+    std::unique_lock<std::mutex> lock_;
+
+  public:
+    explicit DebugLog(std::ostream* os);
+
+    DebugLog(const DebugLog& ) = delete;
+    void operator=(const DebugLog& ) = delete;
+
+    operator bool() const { return os_ != nullptr; }
+
+    std::ostream& newLogRequest();
+  };
+
+  DebugLog getDebugLog();
+} // namespace LoggingImpl
+
+} // namespace zim
+
+#define log_debug(x) \
+  if (auto debugLog = zim::LoggingImpl::getDebugLog()) { \
+    debugLog.newLogRequest() << x << std::endl; \
+  } else {}
+
+// Below logging macros are not yet implemented
+#define log_define(e)
+#define log_fatal(e)
+#define log_error(e)
+#define log_warn(e)
+#define log_info(e)
+#define log_trace(e)
+#define log_init()
 
 #else
 
