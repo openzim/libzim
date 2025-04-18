@@ -20,11 +20,21 @@
 #include "concurrent_cache.h"
 #include "gtest/gtest.h"
 
+struct LazyValue
+{
+    const int value;
+    explicit LazyValue(int v) : value(v) {}
+    int operator()() const { return value; }
+};
+
+struct ExceptionSource
+{
+    int operator()() const { throw std::runtime_error("oops"); return 0; }
+};
+
 TEST(ConcurrentCacheTest, handleException) {
     zim::ConcurrentCache<int, int> cache(1);
-    auto val = cache.getOrPut(7, []() { return 777; });
-    EXPECT_EQ(val, 777);
-    EXPECT_THROW(cache.getOrPut(8, []() { throw std::runtime_error("oups"); return 0; }), std::runtime_error);
-    val = cache.getOrPut(8, []() { return 888; });
-    EXPECT_EQ(val, 888);
+    EXPECT_EQ(cache.getOrPut(7, LazyValue(777)), 777);
+    EXPECT_THROW(cache.getOrPut(8, ExceptionSource()), std::runtime_error);
+    EXPECT_EQ(cache.getOrPut(8, LazyValue(888)), 888);
 }
