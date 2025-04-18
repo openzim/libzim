@@ -27,6 +27,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "namedthread.h"
 #include "tools.h"
 
 namespace zim
@@ -50,6 +51,10 @@ DebugLog::DebugLog(std::ostream* os)
 
 std::ostream& DebugLog::newLogRequest()
 {
+  const auto threadName = NamedThread::getCurrentThreadName();
+
+  *os_ << threadName << ": ";
+
   return *os_;
 }
 
