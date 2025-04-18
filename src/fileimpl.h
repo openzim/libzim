@@ -37,6 +37,7 @@
 #include "file_compound.h"
 #include "fileheader.h"
 #include "zim/archive.h"
+#include "lrucache.h"
 #include "zim_types.h"
 #include "direntreader.h"
 
@@ -59,7 +60,7 @@ namespace zim
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
       typedef std::shared_ptr<const Cluster> ClusterHandle;
-      mutable ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
+      mutable ConcurrentCache<cluster_index_type, ClusterHandle, UnitCostEstimation> clusterCache;
 
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;

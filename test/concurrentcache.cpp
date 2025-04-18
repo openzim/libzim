@@ -33,7 +33,7 @@ struct ExceptionSource
 };
 
 TEST(ConcurrentCacheTest, handleException) {
-    zim::ConcurrentCache<int, int> cache(1);
+    zim::ConcurrentCache<int, int, zim::UnitCostEstimation> cache(1);
     EXPECT_EQ(cache.getOrPut(7, LazyValue(777)), 777);
     EXPECT_THROW(cache.getOrPut(8, ExceptionSource()), std::runtime_error);
     EXPECT_EQ(cache.getOrPut(8, LazyValue(888)), 888);

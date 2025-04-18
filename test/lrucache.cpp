@@ -37,45 +37,108 @@ const unsigned int TEST2_CACHE_CAPACITY = 50u;
 const unsigned int TEST2_CACHE_CAPACITY_SMALL = 10u;
 
 TEST(CacheTest, SimplePut) {
-    zim::lru_cache<int, int> cache_lru(1);
+    zim::lru_cache<int, int, zim::UnitCostEstimation> cache_lru(1);
     cache_lru.put(7, 777);
     EXPECT_TRUE(cache_lru.exists(7));
     EXPECT_EQ(777, cache_lru.get(7));
-    EXPECT_EQ(1u, cache_lru.size());
+    EXPECT_EQ(1u, cache_lru.cost());
 }
 
 TEST(CacheTest, OverwritingPut) {
-    zim::lru_cache<int, int> cache_lru(1);
+    zim::lru_cache<int, int, zim::UnitCostEstimation> cache_lru(1);
     cache_lru.put(7, 777);
     cache_lru.put(7, 222);
     EXPECT_TRUE(cache_lru.exists(7));
     EXPECT_EQ(222, cache_lru.get(7));
-    EXPECT_EQ(1u, cache_lru.size());
+    EXPECT_EQ(1u, cache_lru.cost());
 }
 
 TEST(CacheTest, MissingValue) {
-    zim::lru_cache<int, int> cache_lru(1);
+    zim::lru_cache<int, int, zim::UnitCostEstimation> cache_lru(1);
     EXPECT_TRUE(cache_lru.get(7).miss());
     EXPECT_FALSE(cache_lru.get(7).hit());
     EXPECT_THROW(cache_lru.get(7).value(), std::range_error);
 }
 
 TEST(CacheTest, DropValue) {
-    zim::lru_cache<int, int> cache_lru(3);
+    zim::lru_cache<int, int, zim::UnitCostEstimation> cache_lru(3);
     cache_lru.put(7, 777);
     cache_lru.put(8, 888);
     cache_lru.put(9, 999);
-    EXPECT_EQ(3u, cache_lru.size());
+    EXPECT_EQ(3u, cache_lru.cost());
     EXPECT_TRUE(cache_lru.exists(7));
     EXPECT_EQ(777, cache_lru.get(7));
 
     EXPECT_TRUE(cache_lru.drop(7));
 
-    EXPECT_EQ(2u, cache_lru.size());
+    EXPECT_EQ(2u, cache_lru.cost());
     EXPECT_FALSE(cache_lru.exists(7));
     EXPECT_THROW(cache_lru.get(7).value(), std::range_error);
 
     EXPECT_FALSE(cache_lru.drop(7));
+}
+
+struct IdCost {
+    static size_t cost(size_t value ) {
+        return value;
+    }
+};
+
+TEST(CacheTest, VariableCost) {
+    zim::lru_cache<size_t, size_t, IdCost> cache_lru(100);
+
+    cache_lru.put(1, 11);
+    cache_lru.put(2, 22);
+    cache_lru.put(3, 33);
+    EXPECT_EQ(66u, cache_lru.cost());
+
+    cache_lru.put(4, 44);
+    EXPECT_EQ(99u, cache_lru.cost());
+    EXPECT_FALSE(cache_lru.exists(1));
+    EXPECT_TRUE(cache_lru.exists(2));
+    EXPECT_TRUE(cache_lru.exists(3));
+    EXPECT_TRUE(cache_lru.exists(4));
+
+    cache_lru.put(5, 55);
+    EXPECT_EQ(99u, cache_lru.cost());
+    EXPECT_FALSE(cache_lru.exists(1));
+    EXPECT_FALSE(cache_lru.exists(2));
+    EXPECT_FALSE(cache_lru.exists(3));
+    EXPECT_TRUE(cache_lru.exists(4));
+    EXPECT_TRUE(cache_lru.exists(5));
+
+    cache_lru.put(1, 11);
+    EXPECT_EQ(66u, cache_lru.cost());
+    EXPECT_TRUE(cache_lru.exists(1));
+    EXPECT_FALSE(cache_lru.exists(2));
+    EXPECT_FALSE(cache_lru.exists(3));
+    EXPECT_FALSE(cache_lru.exists(4));
+    EXPECT_TRUE(cache_lru.exists(5));
+}
+
+TEST(CacheTest, TooBigValue) {
+    zim::lru_cache<size_t, size_t, IdCost> cache_lru(10);
+
+    cache_lru.put(1, 11);
+    EXPECT_EQ(11u, cache_lru.cost());
+    EXPECT_TRUE(cache_lru.exists(1));
+
+    cache_lru.put(2, 22);
+    EXPECT_EQ(22u, cache_lru.cost());
+    EXPECT_FALSE(cache_lru.exists(1));
+    EXPECT_TRUE(cache_lru.exists(2));
+
+    cache_lru.put(3, 33);
+    EXPECT_EQ(33u, cache_lru.cost());
+    EXPECT_FALSE(cache_lru.exists(1));
+    EXPECT_FALSE(cache_lru.exists(2));
+    EXPECT_TRUE(cache_lru.exists(3));
+
+    cache_lru.put(1, 11);
+    EXPECT_EQ(11u, cache_lru.cost());
+    EXPECT_TRUE(cache_lru.exists(1));
+    EXPECT_FALSE(cache_lru.exists(2));
+    EXPECT_FALSE(cache_lru.exists(3));
 }
 
 #define EXPECT_RANGE_MISSING_FROM_CACHE(CACHE, START, END) \
@@ -92,7 +155,7 @@ for (unsigned i = START; i  < END; ++i)  {                              \
 
 
 TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
-    zim::lru_cache<int, int> cache_lru(TEST2_CACHE_CAPACITY);
+    zim::lru_cache<int, int, zim::UnitCostEstimation> cache_lru(TEST2_CACHE_CAPACITY);
 
     for (int i = 0; i < NUM_OF_TEST2_RECORDS; ++i) {
         cache_lru.put(i, i);
@@ -102,31 +165,31 @@ TEST(CacheTest1, KeepsAllValuesWithinCapacity) {
 
     EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1)
 
-    size_t size = cache_lru.size();
+    size_t size = cache_lru.cost();
     EXPECT_EQ(TEST2_CACHE_CAPACITY, size);
 }
 
 TEST(CacheTest1, ChangeCacheCapacity) {
-    zim::lru_cache<int, int> cache_lru(TEST2_CACHE_CAPACITY);
+    zim::lru_cache<int, int, zim::UnitCostEstimation> cache_lru(TEST2_CACHE_CAPACITY);
 
     for (int i = 0; i < NUM_OF_TEST2_RECORDS; ++i) {
         cache_lru.put(i, i);
     }
 
-    EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.size());
+    EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.cost());
     EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY))
     EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1)
 
-    cache_lru.setMaxSize(TEST2_CACHE_CAPACITY_SMALL);
-    EXPECT_EQ(TEST2_CACHE_CAPACITY_SMALL, cache_lru.size());
+    cache_lru.setMaxCost(TEST2_CACHE_CAPACITY_SMALL);
+    EXPECT_EQ(TEST2_CACHE_CAPACITY_SMALL, cache_lru.cost());
     EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY_SMALL))
     EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY_SMALL), NUM_OF_TEST2_RECORDS, 1)
 
-    cache_lru.setMaxSize(TEST2_CACHE_CAPACITY);
+    cache_lru.setMaxCost(TEST2_CACHE_CAPACITY);
     for (int i = 0; i < NUM_OF_TEST2_RECORDS; ++i) {
         cache_lru.put(i, 1000*i);
     }
-    EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.size());
+    EXPECT_EQ(TEST2_CACHE_CAPACITY, cache_lru.cost());
     EXPECT_RANGE_MISSING_FROM_CACHE(cache_lru, 0, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY))
     EXPECT_RANGE_FULLY_IN_CACHE(cache_lru, (NUM_OF_TEST2_RECORDS - TEST2_CACHE_CAPACITY), NUM_OF_TEST2_RECORDS, 1000)
 }

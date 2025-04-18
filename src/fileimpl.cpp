@@ -805,13 +805,13 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
 
 
   size_t FileImpl::getClusterCacheMaxSize() const {
-    return clusterCache.getMaxSize();
+    return clusterCache.getMaxCost();
   }
   size_t FileImpl::getClusterCacheCurrentSize() const {
-    return clusterCache.getCurrentSize();
+    return clusterCache.getCurrentCost();
   }
   void FileImpl::setClusterCacheMaxSize(size_t nbClusters) {
-    clusterCache.setMaxSize(nbClusters);
+    clusterCache.setMaxCost(nbClusters);
   }
 
   size_t FileImpl::getDirentCacheMaxSize() const {
