@@ -195,7 +195,7 @@ private: // functions
     log_debug("_current_cost after increase: " << _current_cost);
     const auto costLimit = std::max(_max_cost, extra_cost);
     while (_current_cost > costLimit) {
-      dropLast();
+      dropLRU();
     }
     log_debug("settled _current_cost: " << _current_cost);
   }
@@ -207,14 +207,28 @@ private: // functions
     log_debug("_current_cost after decrease: " << _current_cost);
   }
 
-  void dropLast() {
-    log_debug_func_call("lru_cache::dropLast");
-    auto list_it = _cache_items_list.back();
-    const auto key = _cache_items_list.back().first;
-    log_debug("evicting entry with key: " << key);
-    decreaseCost(CostEstimation::cost(list_it.second));
-    _cache_items_map.erase(key);
-    _cache_items_list.pop_back();
+  list_iterator_t getLRUItem() {
+    for ( list_iterator_t it = _cache_items_list.end(); it != _cache_items_list.begin(); ) {
+      --it;
+      if ( CostEstimation::cost(it->second) > 0 )
+        return it;
+    }
+    return _cache_items_list.end();
+  }
+
+  void dropLRU() {
+    log_debug_func_call("lru_cache::dropLRU");
+    const auto lruIt = getLRUItem();
+    if ( lruIt == _cache_items_list.end() )
+      return;
+    const auto key = lruIt->first;
+    const auto itemCost = CostEstimation::cost(lruIt->second);
+    if ( itemCost > 0 ) {
+      log_debug("evicting entry with key: " << key);
+      decreaseCost(itemCost);
+      _cache_items_map.erase(key);
+      _cache_items_list.erase(lruIt);
+    }
   }
 
   void putMissing(const key_t& key, const value_t& value) {

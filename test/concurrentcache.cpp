@@ -193,7 +193,7 @@ thread#0:     _current_cost after decrease: 1
 thread#0:    }
 thread#0:    lru_cache::increaseCost(1) {
 thread#0:     _current_cost after increase: 2
-thread#0:     lru_cache::dropLast() {
+thread#0:     lru_cache::dropLRU() {
 thread#0:      evicting entry with key: 3
 thread#0:      lru_cache::decreaseCost(1) {
 thread#0:       _current_cost after decrease: 1
@@ -361,13 +361,13 @@ R"(thread#0: ConcurrentCache::setMaxCost(500) {
 thread#0:  entered synchronized section
 thread#0:  lru_cache::increaseCost(0) {
 thread#0:   _current_cost after increase: 900
-thread#0:   lru_cache::dropLast() {
+thread#0:   lru_cache::dropLRU() {
 thread#0:    evicting entry with key: 5
 thread#0:    lru_cache::decreaseCost(150) {
 thread#0:     _current_cost after decrease: 750
 thread#0:    }
 thread#0:   }
-thread#0:   lru_cache::dropLast() {
+thread#0:   lru_cache::dropLRU() {
 thread#0:    evicting entry with key: 10
 thread#0:    lru_cache::decreaseCost(300) {
 thread#0:     _current_cost after decrease: 450
@@ -393,19 +393,19 @@ R"(thread#0: ConcurrentCache::setMaxCost(400) {
 thread#0:  entered synchronized section
 thread#0:  lru_cache::increaseCost(0) {
 thread#0:   _current_cost after increase: 900
-thread#0:   lru_cache::dropLast() {
+thread#0:   lru_cache::dropLRU() {
 thread#0:    evicting entry with key: 5
 thread#0:    lru_cache::decreaseCost(150) {
 thread#0:     _current_cost after decrease: 750
 thread#0:    }
 thread#0:   }
-thread#0:   lru_cache::dropLast() {
+thread#0:   lru_cache::dropLRU() {
 thread#0:    evicting entry with key: 10
 thread#0:    lru_cache::decreaseCost(300) {
 thread#0:     _current_cost after decrease: 450
 thread#0:    }
 thread#0:   }
-thread#0:   lru_cache::dropLast() {
+thread#0:   lru_cache::dropLRU() {
 thread#0:    evicting entry with key: 15
 thread#0:    lru_cache::decreaseCost(450) {
 thread#0:     _current_cost after decrease: 0
@@ -600,13 +600,7 @@ s  :  It was a cache miss. Going to obtain the value...
   f:    }
   f:    lru_cache::increaseCost(60) {
   f:     _current_cost after increase: 210
-  f:     lru_cache::dropLast() {
-  f:      evicting entry with key: 6
-  f:      lru_cache::decreaseCost(0) {
-  f:       _current_cost after decrease: 210
-  f:      }
-  f:     }
-  f:     lru_cache::dropLast() {
+  f:     lru_cache::dropLRU() {
   f:      evicting entry with key: 5
   f:      lru_cache::decreaseCost(150) {
   f:       _current_cost after decrease: 60
@@ -624,20 +618,15 @@ s  :  It was a cache miss. Going to obtain the value...
  x :  ConcurrentCache::getCacheSlot(6) {
  x :   entered synchronized section
  x :   lru_cache::getOrPut(6) {
- x :    not in cache, adding...
- x :    lru_cache::putMissing(6) {
- x :     lru_cache::increaseCost(0) {
- x :      _current_cost after increase: 60
- x :      settled _current_cost: 60
- x :     }
- x :    }
+ x :    already in cache, moved to the beginning of the LRU list.
  x :   }
  x :   exiting synchronized section
  x :  }
  x :  Obtained the cache slot
- x :  It was a cache miss. Going to obtain the value...
+ x :  Waiting for result...
 s  :  Value was successfully obtained.
 s  :  Made the value available for concurrent access.
+ x : } (return value: 60)
 s  :  Computing the cost of the new entry...
 s  :  cost=180
 s  :  ConcurrentCache::finalizeCacheMiss(6) {
@@ -648,7 +637,7 @@ s  :     _current_cost after decrease: 60
 s  :    }
 s  :    lru_cache::increaseCost(180) {
 s  :     _current_cost after increase: 240
-s  :     lru_cache::dropLast() {
+s  :     lru_cache::dropLRU() {
 s  :      evicting entry with key: 2
 s  :      lru_cache::decreaseCost(60) {
 s  :       _current_cost after decrease: 180
@@ -662,26 +651,6 @@ s  :  }
 s  :  Done. Cache cost is at 180
 s  :  Returning immediately...
 s  : } (return value: 60)
- x :  Value was successfully obtained.
- x :  Made the value available for concurrent access.
- x :  Computing the cost of the new entry...
- x :  cost=180
- x :  ConcurrentCache::finalizeCacheMiss(6) {
- x :   entered synchronized section
- x :   lru_cache::put(6) {
- x :    lru_cache::decreaseCost(180) {
- x :     _current_cost after decrease: 0
- x :    }
- x :    lru_cache::increaseCost(180) {
- x :     _current_cost after increase: 180
- x :     settled _current_cost: 180
- x :    }
- x :   }
- x :   exiting synchronized section
- x :  }
- x :  Done. Cache cost is at 180
- x :  Returning immediately...
- x : } (return value: 60)
 )";
 
     zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(200);

@@ -148,7 +148,7 @@ thread#0: lru_cache::put(4) {
 thread#0:  lru_cache::putMissing(4) {
 thread#0:   lru_cache::increaseCost(44) {
 thread#0:    _current_cost after increase: 110
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 1
 thread#0:     lru_cache::decreaseCost(11) {
 thread#0:      _current_cost after decrease: 99
@@ -162,13 +162,13 @@ thread#0: lru_cache::put(5) {
 thread#0:  lru_cache::putMissing(5) {
 thread#0:   lru_cache::increaseCost(55) {
 thread#0:    _current_cost after increase: 154
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 2
 thread#0:     lru_cache::decreaseCost(22) {
 thread#0:      _current_cost after decrease: 132
 thread#0:     }
 thread#0:    }
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 3
 thread#0:     lru_cache::decreaseCost(33) {
 thread#0:      _current_cost after decrease: 99
@@ -182,7 +182,7 @@ thread#0: lru_cache::put(1) {
 thread#0:  lru_cache::putMissing(1) {
 thread#0:   lru_cache::increaseCost(11) {
 thread#0:    _current_cost after increase: 110
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 4
 thread#0:     lru_cache::decreaseCost(44) {
 thread#0:      _current_cost after decrease: 66
@@ -234,7 +234,7 @@ thread#0: lru_cache::put(2) {
 thread#0:  lru_cache::putMissing(2) {
 thread#0:   lru_cache::increaseCost(22) {
 thread#0:    _current_cost after increase: 33
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 1
 thread#0:     lru_cache::decreaseCost(11) {
 thread#0:      _current_cost after decrease: 22
@@ -248,7 +248,7 @@ thread#0: lru_cache::put(3) {
 thread#0:  lru_cache::putMissing(3) {
 thread#0:   lru_cache::increaseCost(33) {
 thread#0:    _current_cost after increase: 55
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 2
 thread#0:     lru_cache::decreaseCost(22) {
 thread#0:      _current_cost after decrease: 33
@@ -262,7 +262,7 @@ thread#0: lru_cache::put(1) {
 thread#0:  lru_cache::putMissing(1) {
 thread#0:   lru_cache::increaseCost(11) {
 thread#0:    _current_cost after increase: 44
-thread#0:    lru_cache::dropLast() {
+thread#0:    lru_cache::dropLRU() {
 thread#0:     evicting entry with key: 3
 thread#0:     lru_cache::decreaseCost(33) {
 thread#0:      _current_cost after decrease: 11
