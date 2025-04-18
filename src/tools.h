@@ -79,7 +79,7 @@ namespace zim {
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
   std::string LIBZIM_PRIVATE_API removeAccents(const std::string& text);
-  bool getDbFromAccessInfo(Item::DirectAccessInfo accessInfo, Xapian::Database& database);
+  bool getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, Xapian::Database& database);
 #endif
 }
 

@@ -22,13 +22,16 @@
  *
  */
 
+#include <mutex>
 #include <zim/error.h>
 #include <zim/search.h>
 #include <zim/archive.h>
 #include <zim/item.h>
 #include "fileimpl.h"
+#include "lock.h"
 #include "search_internal.h"
 #include "tools.h"
+#include "zim/zim.h"
 
 #include <sstream>
 
@@ -49,6 +52,49 @@
 
 namespace zim
 {
+XapianDbMetadata::XapianDbMetadata(const Xapian::Database& db, std::string defaultLanguage)
+    : m_language(defaultLanguage)
+{
+    m_valuesmap = read_valuesmap(db.get_metadata("valuesmap"));
+    auto language = db.get_metadata("language");
+    if (! language.empty()) {
+        m_language = language;
+    }
+    if (!m_language.empty()) {
+        icu::Locale languageLocale(language.c_str());
+        /* Configuring language base steemming */
+        try {
+            m_stemmer = Xapian::Stem(languageLocale.getLanguage());
+        } catch (...) {
+            std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
+        }
+    }
+    m_stopwords = db.get_metadata("stopwords");
+}
+
+
+Xapian::Stopper* XapianDbMetadata::new_stopper() {
+    // Xapian (for stopper) use a internal intrusive smart pointer with a optional ref count.
+    // By default (it is not ref counted) so it is to us to delete it.
+    // But if we call `release` on it, it is then ref counted and pass it to Xapian to
+    // let it handle the deletion. We may delete it ourselves
+    // (but as any other deleted value, we must ensure no use after delete)
+    if ( !m_stopwords.empty() ){
+        std::string stopWord;
+        std::istringstream file(m_stopwords);
+        Xapian::SimpleStopper*  stopper = new Xapian::SimpleStopper();
+        while (std::getline(file, stopWord, '\n')) {
+            stopper->add(stopWord);
+        }
+        return stopper->release();
+    }
+    return nullptr;
+}
+
+XapianDb::XapianDb(const Xapian::Database& db, std::string defaultLanguage)
+  : m_metadata(db, defaultLanguage),
+    m_db(db)
+{}
 
 InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool verbose)
   : m_verbose(verbose)
@@ -56,100 +102,55 @@ InternalDataBase::InternalDataBase(const std::vector<Archive>& archives, bool ve
     bool first = true;
     m_queryParser.set_database(m_database);
     m_queryParser.set_default_op(Xapian::Query::op::OP_AND);
+    std::vector<std::recursive_mutex*> mutexes;
 
     for(auto& archive: archives) {
-        auto impl = archive.getImpl();
-        FileImpl::FindxResult r;
-        r = impl->findx('X', "fulltext/xapian");
-        if (!r.first) {
-          r = impl->findx('Z', "/fulltextIndex/xapian");
-        }
-        if (!r.first) {
-            continue;
-        }
-        auto xapianEntry = Entry(impl, entry_index_type(r.second));
-        auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
-        if (accessInfo.second == 0) {
+        auto database = archive.getImpl()->getXapianDb();
+
+        if (!database) {
             continue;
         }
 
-        Xapian::Database database;
-        if (!getDbFromAccessInfo(accessInfo, database)) {
-          continue;
-        }
-
-        try {
-            if ( first ) {
-                m_valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-                auto language = database.get_metadata("language");
-                if (language.empty() ) {
-                    // Database created before 2017/03 has no language metadata.
-                    // However, term were stemmed anyway and we need to stem our
-                    // search query the same the database was created.
-                    // So we need a language, let's use the one of the zim.
-                    // If zimfile has no language metadata, we can't do lot more here :/
-                    try {
-                        language = archive.getMetadata("Language");
-                    } catch(...) {}
-                }
-                if (!language.empty()) {
-                    icu::Locale languageLocale(language.c_str());
-                    /* Configuring language base steemming */
-                    try {
-                        m_stemmer = Xapian::Stem(languageLocale.getLanguage());
-                        m_queryParser.set_stemmer(m_stemmer);
-                        m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
-                    } catch (...) {
-                        std::cout << "No stemming for language '" << languageLocale.getLanguage() << "'" << std::endl;
-                    }
-                }
-                auto stopwords = database.get_metadata("stopwords");
-                if ( !stopwords.empty() ){
-                    std::string stopWord;
-                    std::istringstream file(stopwords);
-                    Xapian::SimpleStopper* stopper = new Xapian::SimpleStopper();
-                    while (std::getline(file, stopWord, '\n')) {
-                        stopper->add(stopWord);
-                    }
-                    stopper->release();
-                    m_queryParser.set_stopper(stopper);
-                }
-            } else {
-                std::map<std::string, int> valuesmap = read_valuesmap(database.get_metadata("valuesmap"));
-                if (m_valuesmap != valuesmap ) {
-                    // [TODO] Ignore the database, raise a error ?
-                }
-            }
-            m_xapianDatabases.push_back(database);
-            m_database.add_database(database);
-            m_archives.push_back(archive);
+        if ( first ) {
+            m_metadata = database->m_metadata;
+            m_queryParser.set_stemmer(m_metadata.m_stemmer);
+            m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_ALL);
+            m_queryParser.set_stopper(m_metadata.new_stopper());
             first = false;
-        } catch( Xapian::DatabaseError& e ) {
-            // [TODO] Ignore the database or raise a error ?
-            // As we already ignore the database if `getDbFromAccessInfo` "detects" a DatabaseError,
-            // we also ignore here.
         }
+        m_database.add_database(database->m_db);
+        mutexes.push_back(&database->m_mutex);
+        m_archives.push_back(archive);
     }
+
+    m_mutexes = MultiMutex(mutexes);
 }
 
 bool InternalDataBase::hasDatabase() const
 {
-  return !m_xapianDatabases.empty();
+  return !m_archives.empty();
 }
 
 bool InternalDataBase::hasValuesmap() const
 {
-  return !m_valuesmap.empty();
+  return m_metadata.hasValuesmap();
 }
 
 bool InternalDataBase::hasValue(const std::string& valueName) const
 {
-  return (m_valuesmap.find(valueName) != m_valuesmap.end());
+  return m_metadata.hasValue(valueName);
 }
 
 int InternalDataBase::valueSlot(const std::string& valueName) const
 {
-  return m_valuesmap.at(valueName);
+  return m_metadata.valueSlot(valueName);
+}
+
+std::lock_guard<MultiMutex> InternalDataBase::lock() {
+  // Construct the guard with a list-initialization, so we don't have to move it
+  // (which we can't do as lock_guard is not movable).
+  // See https://stackoverflow.com/questions/22502606/why-is-stdlock-guard-not-movable
+  return { m_mutexes, std::adopt_lock };
 }
 
 Xapian::Query InternalDataBase::parseQuery(const Query& query)
@@ -277,6 +278,7 @@ Query& Query::setGeorange(float latitude, float longitude, float distance) {
 
 int Search::getEstimatedMatches() const
 {
+    LOCK_SEARCH(mp_internalDb);
     try {
       auto enquire = getEnquire();
       // Force xapian to check at least 10 documents even if we ask for an empty mset.
@@ -291,6 +293,7 @@ int Search::getEstimatedMatches() const
 }
 
 const SearchResultSet Search::getResults(int start, int maxResults) const {
+    LOCK_SEARCH(mp_internalDb);
     try {
       auto enquire = getEnquire();
       auto mset = enquire.get_mset(start, maxResults);
@@ -308,6 +311,7 @@ Xapian::Enquire& Search::getEnquire() const
         return *mp_enquire;
     }
 
+    LOCK_SEARCH(mp_internalDb);
     auto enquire = std::unique_ptr<Xapian::Enquire>(new Xapian::Enquire(mp_internalDb->m_database));
 
     auto query = mp_internalDb->parseQuery(m_query);
@@ -336,6 +340,7 @@ int SearchResultSet::size() const
   if (! mp_mset) {
       return 0;
   }
+  LOCK_SEARCH(mp_internalDb);
   try {
       return mp_mset->size();
   } catch(Xapian::DatabaseError& e) {
@@ -348,6 +353,7 @@ SearchResultSet::iterator SearchResultSet::begin() const
     if ( ! mp_mset ) {
         return nullptr;
     }
+    LOCK_SEARCH(mp_internalDb);
     try {
         return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->begin());
     } catch(Xapian::DatabaseError& e) {
@@ -360,6 +366,7 @@ SearchResultSet::iterator SearchResultSet::end() const
     if ( ! mp_mset ) {
         return nullptr;
     }
+    LOCK_SEARCH(mp_internalDb);
     try {
         return new SearchIterator::InternalData(mp_internalDb, mp_mset, mp_mset->end());
     } catch(Xapian::DatabaseError& e) {

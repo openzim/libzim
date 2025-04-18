@@ -334,13 +334,11 @@ TEST(ZimArchive, cacheDontImpactReading)
     auto ref_archive = zim::Archive(testfile.path);
 
     for (auto cacheConfig: cacheConfigs) {
-      auto test_archive = zim::Archive(testfile.path);
+      auto test_archive = zim::Archive(testfile.path, zim::OpenConfig().preloadDirentRanges(cacheConfig.direntLookupCacheSize));
       test_archive.setDirentCacheMaxSize(cacheConfig.direntCacheSize);
-      test_archive.setDirentLookupCacheMaxSize(cacheConfig.direntLookupCacheSize);
       test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
 
       EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
-      EXPECT_EQ(test_archive.getDirentLookupCacheMaxSize(), cacheConfig.direntLookupCacheSize);
       EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
 
       ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
@@ -865,11 +863,11 @@ TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
 
 
 #if WITH_TEST_DATA
-zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
+zim::Blob readItemData(const zim::ItemDataDirectAccessInfo& dai, zim::size_type size)
 {
-  zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.first));
+  zim::DEFAULTFS::FD fd(zim::DEFAULTFS::openFile(dai.filename));
   std::shared_ptr<char> data(new char[size], std::default_delete<char[]>());
-  fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.second));
+  fd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(dai.offset));
   return zim::Blob(data, size);
 }
 
@@ -883,7 +881,7 @@ TEST(ZimArchive, getDirectAccessInformation)
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
         const auto dai = item.getDirectAccessInformation();
-        if ( dai.first != "" ) {
+        if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
         }
@@ -905,7 +903,7 @@ TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
         const auto dai = item.getDirectAccessInformation();
-        if ( dai.first != "" ) {
+        if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
         }
@@ -931,7 +929,7 @@ TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
         const auto dai = item.getDirectAccessInformation();
-        if ( dai.first != "" ) {
+        if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
         }

@@ -22,38 +22,87 @@
 #ifndef ZIM_SEARCH_INTERNAL_H
 #define ZIM_SEARCH_INTERNAL_H
 
+#include "tools.h"
+#include "lock.h"
+#include <mutex>
 #include <xapian.h>
 
+#include <zim/archive.h>
+#include <zim/search.h>
 #include <zim/entry.h>
 #include <zim/error.h>
 
 namespace zim {
+
+class XapianDbMetadata {
+  public: // methods
+    XapianDbMetadata() = default;
+    XapianDbMetadata(const Xapian::Database& db, std::string defaultLanguage);
+
+    // Return a newly allocated stopper.
+    // This stopper can (and should to be properly deleted) be directly passed to xapian
+    // (queryparser or TermGenerator)
+    Xapian::Stopper* new_stopper();
+
+    bool hasValuesmap() const {
+        return !m_valuesmap.empty();
+    }
+
+    bool hasValue(const std::string& valueName) const {
+        return (m_valuesmap.find(valueName) != m_valuesmap.end());
+    }
+
+    int valueSlot(const std::string& valueName) const {
+        return m_valuesmap.at(valueName);
+    }
+
+  public: // data
+    // The valuesmap associated with the database.
+    std::map<std::string, int> m_valuesmap;
+
+    // The language of the database
+    std::string m_language;
+
+    // The stemmer associated to the language
+    Xapian::Stem m_stemmer;
+
+    // The stop words stored in the database
+    std::string m_stopwords;
+};
+
+class XapianDb {
+  public: // method
+    XapianDb(const Xapian::Database& db, std::string defaultLanguage);
+
+  public: // data
+    XapianDbMetadata m_metadata;
+
+    Xapian::Database m_db;
+
+    std::recursive_mutex m_mutex;
+};
 
 /**
  * A class to encapsulate a xapian database and all the information we can gather from it.
  */
 class InternalDataBase {
   public: // methods
-    InternalDataBase(const std::vector<Archive>& archives, bool verbose);
+    InternalDataBase(const std::vector<zim::Archive>& archives, bool verbose);
     bool hasDatabase() const;
     bool hasValuesmap() const;
     bool hasValue(const std::string& valueName) const;
     int  valueSlot(const std::string&  valueName) const;
 
-    Xapian::Query parseQuery(const Query& query);
+    Xapian::Query parseQuery(const zim::Query& query);
+
+    std::lock_guard<MultiMutex> lock();
 
   public: // data
     // The (main) database we will search on (wrapping other xapian databases).
     Xapian::Database m_database;
 
-    // The real databases.
-    std::vector<Xapian::Database> m_xapianDatabases;
-
     // The archives we are searching on.
     std::vector<Archive> m_archives;
-
-    // The valuesmap associated with the database.
-    std::map<std::string, int> m_valuesmap;
 
     // If the database is open for suggestion.
     // True even if the dabase has no newSuggestionformat.
@@ -62,8 +111,11 @@ class InternalDataBase {
     // The query parser corresponding to the database.
     Xapian::QueryParser m_queryParser;
 
-    // The stemmer used to parse queries
-    Xapian::Stem m_stemmer;
+    // The metadata of the db
+    XapianDbMetadata m_metadata;
+
+    // The MultiMutex associated to the multi db
+    MultiMutex m_mutexes;
 
     // Verbosity of operations.
     bool m_verbose;
@@ -160,6 +212,7 @@ struct SearchIterator::InternalData {
 };
 
 
+#define LOCK_SEARCH(InternalDataBase) auto&& lock = (InternalDataBase)->lock(); (void) lock;
 
 }; //namespace zim
 
