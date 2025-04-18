@@ -211,3 +211,55 @@ thread#0: } (return value: 0)
 thread#0: That's all
 )");
 }
+
+TEST(Log, nestedFunctionCallsMultithreaded) {
+  Logging::logIntoMemory();
+  const std::string targetOutput = R"(thread#2: Calling bar(qwerty)...
+thread#1: Calling bar(asdf)...
+thread#1: bar("asdf") {
+thread#2: bar("qwerty") {
+thread#1:  Ready!
+thread#2:  Ready!
+thread#2:  foo("qwerty", 1) {
+thread#2:   fooing qwerty
+thread#1:  foo("asdf", 1) {
+thread#2:  } (return value: 6)
+thread#1:   fooing asdf
+thread#1:  } (return value: 4)
+thread#2:  Steady!
+thread#1:  Steady!
+thread#1:  foo("asdf", 2) {
+thread#1:   fooing asdf
+thread#1:   fooing asdf
+thread#1:  } (return value: 8)
+thread#1:  Go!
+thread#2:  foo("qwerty", 2) {
+thread#2:   fooing qwerty
+thread#2:   fooing qwerty
+thread#2:  } (return value: 12)
+thread#1: } (return value: 12)
+thread#1: That's all
+thread#2:  Go!
+thread#2: } (return value: 18)
+thread#2: Done
+)";
+
+  Logging::orchestrateConcurrentExecutionVia(targetOutput);
+
+  NamedThread thread1("thread#1", []() {
+    log_debug("Calling bar(asdf)...");
+    bar("asdf");
+    log_debug("That's all");
+  });
+
+  NamedThread thread2("thread#2", []() {
+    log_debug("Calling bar(qwerty)...");
+    bar("qwerty");
+    log_debug("Done");
+  });
+
+  thread1.join();
+  thread2.join();
+
+  ASSERT_EQ(Logging::getInMemLogContent(), targetOutput);
+}
