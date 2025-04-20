@@ -12,7 +12,7 @@ https://openzim.org/.
 [![Repositories](https://img.shields.io/repology/repositories/libzim?label=repositories)](https://github.com/openzim/libzim/wiki/Repology)
 [![macOS Homebrew](https://badgen.net/homebrew/v/libzim)](https://formulae.brew.sh/formula/libzim)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![Build](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amain)](https://github.com/openzim/libzim/actions?query=branch%3Amain)
+[![CI](https://github.com/openzim/libzim/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/openzim/libzim/actions/workflows/ci.yml?query=branch%3Amain)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/openzim/libzim/badge)](https://securityscorecards.dev/viewer/?uri=github.com/openzim/libzim)
 [![Doc](https://readthedocs.org/projects/libzim/badge/?style=flat)](https://libzim.readthedocs.io/en/latest/?badge=latest)
 [![Codecov](https://codecov.io/gh/openzim/libzim/branch/main/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
