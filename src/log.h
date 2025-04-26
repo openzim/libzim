@@ -51,17 +51,15 @@ namespace LoggingImpl
     std::unique_lock<std::mutex> lock_;
 
   public:
-    explicit DebugLog(std::ostream* os);
+    static bool isEnabled();
+
+    DebugLog();
 
     DebugLog(const DebugLog& ) = delete;
     void operator=(const DebugLog& ) = delete;
 
-    operator bool() const { return os_ != nullptr; }
-
     std::ostream& newLogRequest();
   };
-
-  DebugLog getDebugLog();
 
   template<class T>
   void logValue(std::ostream& out, const T& x)
@@ -167,8 +165,8 @@ namespace LoggingImpl
 } // namespace zim
 
 #define log_debug(x) \
-  if (auto debugLog = zim::LoggingImpl::getDebugLog()) { \
-    debugLog.newLogRequest() << x << std::endl; \
+  if (zim::LoggingImpl::DebugLog::isEnabled()) { \
+    zim::LoggingImpl::DebugLog().newLogRequest() << x << std::endl; \
   } else {}
 
 #define log_debug_func_call(FUNCNAME, ...) \

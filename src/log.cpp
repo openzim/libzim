@@ -37,6 +37,8 @@ namespace zim
 namespace
 {
 
+std::ostream* logStreamPtr_;
+std::ostringstream inMemLog_;
 std::mutex mutex_;
 
 // When non-empty, the last element represents the name of the thread
@@ -65,10 +67,15 @@ size_t getNestingLevel(const std::string& threadName)
 namespace LoggingImpl
 {
 
-DebugLog::DebugLog(std::ostream* os)
-  : os_(os)
+DebugLog::DebugLog()
+  : os_(logStreamPtr_)
   , lock_(mutex_)
 {
+}
+
+bool DebugLog::isEnabled()
+{
+  return logStreamPtr_ != nullptr;
 }
 
 std::ostream& DebugLog::newLogRequest()
@@ -101,12 +108,6 @@ void Logging::orchestrateConcurrentExecutionVia(const std::string& logOutput)
   std::reverse(orchestrationStack_.begin(), orchestrationStack_.end());
 }
 
-namespace
-{
-std::ostream* logStreamPtr_;
-std::ostringstream inMemLog_;
-} // unnamed namespace
-
 namespace LoggingImpl
 {
 
@@ -131,15 +132,16 @@ void logValue(std::ostream& out, bool x)
 
 RAIISyncLogger::~RAIISyncLogger()
 {
-  if (auto debugLog = getDebugLog()) {
-    debugLog.newLogRequest() << "exiting synchronized section" << std::endl;
+  if (LoggingImpl::DebugLog::isEnabled()) {
+    DebugLog().newLogRequest() << "exiting synchronized section" << std::endl;
   }
 }
 
 FunctionCallLogger::~FunctionCallLogger()
 {
   changeNestingLevel(-1);
-  if (auto debugLog = getDebugLog()) {
+  if (LoggingImpl::DebugLog::isEnabled()) {
+    LoggingImpl::DebugLog debugLog;
     std::ostream& os = debugLog.newLogRequest();
     os << "}";
     if ( !returnValue_.empty() ) {
@@ -153,11 +155,6 @@ void FunctionCallLogger::changeNestingLevel(int delta)
 {
   std::lock_guard<std::mutex> lock(nestingLevelMapMutex_);
   nestingLevelMap_[NamedThread::getCurrentThreadName()] += delta;
-}
-
-DebugLog getDebugLog()
-{
-  return DebugLog(logStreamPtr_);
 }
 
 } // namespace LoggingImpl
