@@ -23,10 +23,12 @@
 #include <string>
 #include <thread>
 
+#include "config.h"
+
 namespace zim
 {
 
-class NamedThread
+class LIBZIM_PRIVATE_API NamedThread
 {
 private:
   explicit NamedThread(const std::string& name);

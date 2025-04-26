@@ -35,7 +35,7 @@
 namespace zim
 {
 
-class Logging
+class LIBZIM_PRIVATE_API Logging
 {
 public:
   static void logIntoMemory();
@@ -45,7 +45,7 @@ public:
 
 namespace LoggingImpl
 {
-  class DebugLog
+  class LIBZIM_PRIVATE_API DebugLog
   {
     std::ostream* const os_;
     std::unique_lock<std::mutex> lock_;
@@ -62,16 +62,16 @@ namespace LoggingImpl
   };
 
   template<class T>
-  void logValue(std::ostream& out, const T& x)
+  void LIBZIM_PRIVATE_API logValue(std::ostream& out, const T& x)
   {
       out << x;
   }
 
-  void logValue(std::ostream& out, const char* x);
-  void logValue(std::ostream& out, const std::string& x);
-  void logValue(std::ostream& out, bool x);
+  void LIBZIM_PRIVATE_API logValue(std::ostream& out, const char* x);
+  void LIBZIM_PRIVATE_API logValue(std::ostream& out, const std::string& x);
+  void LIBZIM_PRIVATE_API logValue(std::ostream& out, bool x);
 
-  class FunctionCallLogger
+  class LIBZIM_PRIVATE_API FunctionCallLogger
   {
     std::string returnValue_;
 
@@ -90,7 +90,7 @@ namespace LoggingImpl
     }
   };
 
-  class RAIISyncLogger
+  class LIBZIM_PRIVATE_API RAIISyncLogger
   {
   public:
     ~RAIISyncLogger();
