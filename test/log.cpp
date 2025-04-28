@@ -80,15 +80,15 @@ TEST(Log, concurrencyOrchestration) {
   using namespace std::chrono_literals;
 
   const auto oddFlow = [](){
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(100ms);
     log_debug("Humpty Dumpty sat on a wall.");
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(100ms);
     log_debug("All the king's horses and all the king's men");
   };
 
   const auto evenFlow = [](){
     log_debug("Humpty Dumpty had a great fall.");
-    std::this_thread::sleep_for(15ms);
+    std::this_thread::sleep_for(150ms);
     log_debug("Couldn't put Humpty together again.");
   };
 
