@@ -112,6 +112,13 @@ public: // functions
     return impl_.drop(key);
   }
 
+  template<class F>
+  void dropAll(F f) {
+    log_debug_func_call("ConcurrentCache::dropAll");
+    log_debug_raii_sync_statement(std::unique_lock<std::mutex> l(lock_));
+    impl_.dropAll(f);
+  }
+
   size_t getMaxCost() const {
     std::unique_lock<std::mutex> l(lock_);
     return impl_.getMaxCost();
