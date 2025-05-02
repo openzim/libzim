@@ -25,6 +25,8 @@ common_sources = [
     'tools.cpp',
     'compression.cpp',
     'istreamreader.cpp',
+    'namedthread.cpp',
+    'log.cpp',
     'writer/contentProvider.cpp',
     'writer/creator.cpp',
     'writer/item.cpp',
