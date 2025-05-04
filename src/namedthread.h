@@ -43,9 +43,10 @@ public:
     // the thread_ data member has completed (so that any possible
     // calls to NamedThread::getCurrentThreadName() from inside f()
     // read the correct value of thread id).
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::mutex& mutex = getMutex();
+    std::lock_guard<std::mutex> lock(mutex);
 
-    thread_ = std::thread([f]() { mutex_.lock(); mutex_.unlock(); f(); });
+    thread_ = std::thread([f, &mutex]() { mutex.lock(); mutex.unlock(); f(); });
   }
 
   ~NamedThread();
@@ -57,11 +58,15 @@ public:
 
   static std::string getCurrentThreadName();
 
-private:
+private: // functions
+  // This is a workaround for a bug in our build system that prevents
+  // LIBZIM_PRIVATE_API and/or LIBZIM_API classes from having static data
+  // members
+  static std::mutex& getMutex();
+
+private: // data
   const std::string name_;
   std::thread thread_;
-
-  static std::mutex mutex_;
 };
 
 } // namespace zim
