@@ -38,6 +38,12 @@ std::map<std::thread::id, std::string> threadId2NameMap_;
 
 } // unnamed namespace
 
+
+std::mutex& NamedThread::getMutex()
+{
+  return mutex_;
+}
+
 NamedThread::NamedThread(const std::string& name)
   : name_(name)
 {
