@@ -31,12 +31,13 @@ namespace zim
 namespace
 {
 
-std::mutex mutex_;
 size_t threadCounter_ = 0;
 std::vector<const NamedThread*> namedThreads_;
 std::map<std::thread::id, std::string> threadId2NameMap_;
 
 } // unnamed namespace
+
+std::mutex NamedThread::mutex_;
 
 NamedThread::NamedThread(const std::string& name)
   : name_(name)

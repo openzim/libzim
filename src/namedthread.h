@@ -20,6 +20,7 @@
 #ifndef OPENZIM_LIBZIM_NAMEDTHREAD_H
 #define OPENZIM_LIBZIM_NAMEDTHREAD_H
 
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -34,11 +35,17 @@ private:
   explicit NamedThread(const std::string& name);
 
 public:
-  template <class F, class... Args>
-  NamedThread(const std::string& name, F&& f, Args&&... args)
+  template <class F>
+  NamedThread(const std::string& name, F&& f)
     : NamedThread(name)
   {
-    thread_ = std::thread(std::forward<F>(f), std::forward<Args>(args)...);
+    // Ensure that f starts executing after the assignment to
+    // the thread_ data member has completed (so that any possible
+    // calls to NamedThread::getCurrentThreadName() from inside f()
+    // read the correct value of thread id).
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    thread_ = std::thread([f]() { mutex_.lock(); mutex_.unlock(); f(); });
   }
 
   ~NamedThread();
@@ -53,6 +60,8 @@ public:
 private:
   const std::string name_;
   std::thread thread_;
+
+  static std::mutex mutex_;
 };
 
 } // namespace zim
