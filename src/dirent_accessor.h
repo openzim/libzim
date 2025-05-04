@@ -55,9 +55,9 @@ public: // functions
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
   entry_index_t getDirentCount() const  {  return m_direntCount; }
 
-  size_t getMaxCacheSize() const { return m_direntCache.getMaxSize(); }
-  size_t getCurrentCacheSize() const { return m_direntCache.size(); }
-  void setMaxCacheSize(size_t nbDirents) const { m_direntCache.setMaxSize(nbDirents); }
+  size_t getMaxCacheSize() const { return m_direntCache.getMaxCost(); }
+  size_t getCurrentCacheSize() const { return m_direntCache.cost(); }
+  void setMaxCacheSize(size_t nbDirents) const { m_direntCache.setMaxCost(nbDirents); }
 
 private: // functions
   std::shared_ptr<const Dirent> readDirent(offset_t) const;
@@ -67,7 +67,7 @@ private: // data
   std::unique_ptr<const Reader>  mp_pathPtrReader;
   entry_index_t                  m_direntCount;
 
-  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>> m_direntCache;
+  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>, UnitCostEstimation> m_direntCache;
   mutable std::mutex m_direntCacheLock;
 
   mutable std::vector<char>  m_bufferDirentZone;
