@@ -31,8 +31,6 @@
 
 #include "log.h"
 
-#include "config.h"
-
 log_define("zim.cluster")
 
 #define log_debug1(e)
@@ -179,4 +177,39 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     }
   }
 
+  // This function must return the memory consumption for a given cluster so
+  // that it can be used as a cost estimate during caching.
+  // However, because of partial (incremental) decompression, this size depends
+  // on the state of decompression:
+  // - As decompression advances, new blob readers are created in
+  //   `m_blobReaders`
+  // - The decoding/decompressing stream itself may allocate memory.
+  // Our approach is to return the average memory consumption by this cluster
+  // under the assumption that half of its data is decompressed.
+  // Note:
+  //  - No need to protect this method from concurent access (as well
+  //    as memoize its result) as it is intended to be called by ConcurentCache
+  //    which should invoke this method exactly once per cluster object
+  size_t Cluster::getMemorySize() const {
+    const auto blobOffsetsSize = sizeof(offset_t) * m_blobOffsets.size();
+    const auto decompressedDataSize = m_blobOffsets.back().v;
+
+    // If the cluster is not compressed, we rely on mmap and kernel
+    // to do the memory management.
+    const auto dataSize = isCompressed() ? decompressedDataSize : 0;
+
+    // Memory consumption by the decompressor stream.
+    // For non-compressed data reader it is assumed to be 0 (see the comment
+    // in BaseFileReader::getMemorySize())
+    auto streamSize = m_reader->getMemorySize();
+
+    // Compression levels may define a huge window and make decompression
+    // stream allocate a huge memory to store it. However (at least on
+    // linux) the actual memory used (as opposed to allocated memory) will
+    // not exceed the content size, even for a larger window. So, let's
+    // clamp the stream size to the size of the content itself.
+    streamSize = std::min<size_type>(streamSize, decompressedDataSize);
+
+    return blobOffsetsSize + dataSize/2 + streamSize;
+  }
 }

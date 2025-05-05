@@ -59,6 +59,78 @@ namespace zim
   // An offset.
   typedef uint64_t offset_type;
 
+  /**
+   * Configuration to pass to archive constructors.
+   *
+   * This struct contains options controlling the opening of a ZIM archive. For
+   * now, it is only related to preloading of data but it may change in the
+   * future.
+   *
+   * Archive may eagerly preload certain data to speed up future operations.
+   * However, such preloading itself takes some time.
+   *
+   * OpenConfig allows the user to define which data should be preloaded when
+   * opening the archive.
+   */
+  struct LIBZIM_API OpenConfig {
+     /**
+      * Default configuration.
+      *
+      * - Dirent ranges is activated.
+      * - Xapian preloading is activated.
+      */
+     OpenConfig();
+
+     /**
+      * Configure xapian preloading.
+      *
+      * This method modifies the configuration and returns itself.
+      */
+     OpenConfig& preloadXapianDb(bool load) {
+       m_preloadXapianDb = load;
+       return *this;
+     }
+
+     /**
+      * Configure xapian preloading.
+      *
+      * This method creates a new configuration with the new value.
+      */
+     OpenConfig preloadXapianDb(bool load) const {
+       return OpenConfig(*this).preloadXapianDb(load);
+     }
+
+     /**
+      * Configure direntRanges preloading.
+      *
+      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent
+      * ranges. This will be used to speed up dirent lookup. This is an extra
+      * layer on top of classic dirent cache.
+      *
+      * This method modifies the configuration and returns itself.
+      */
+     OpenConfig& preloadDirentRanges(int nbRanges) {
+       m_preloadDirentRanges = nbRanges;
+       return *this;
+     }
+
+     /**
+      * Configure direntRanges preloading.
+      *
+      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent
+      * ranges. This will be used to speed up dirent lookup. This is an extra
+      * layer on top of classic dirent cache.
+      *
+      * This method creates a new configuration with the new value.
+      */
+     OpenConfig preloadDirentRanges(int nbRanges) const {
+       return OpenConfig(*this).preloadDirentRanges(nbRanges);
+     }
+
+     bool m_preloadXapianDb;
+     int  m_preloadDirentRanges;
+  };
+
   struct FdInput {
     // An open file descriptor
     int fd;

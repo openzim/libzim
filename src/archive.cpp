@@ -34,7 +34,7 @@ log_define("zim.archive")
 namespace zim
 {
   OpenConfig::OpenConfig()
-    : 
+    :
         m_preloadXapianDb(true),
         m_preloadDirentRanges(DIRENT_LOOKUP_CACHE_SIZE)
     { }
@@ -530,19 +530,19 @@ namespace zim
     return m_impl->hasNewNamespaceScheme();
   }
 
-  size_t Archive::getClusterCacheMaxSize() const
+  size_t getClusterCacheMaxSize()
   {
-    return m_impl->getClusterCacheMaxSize();
+    return getClusterCache().getMaxCost();
   }
 
-  size_t Archive::getClusterCacheCurrentSize() const
+  size_t getClusterCacheCurrentSize()
   {
-    return m_impl->getClusterCacheCurrentSize();
+    return getClusterCache().getCurrentCost();
   }
 
-  void Archive::setClusterCacheMaxSize(size_t nbClusters)
+  void setClusterCacheMaxSize(size_t sizeInB)
   {
-    m_impl->setClusterCacheMaxSize(nbClusters);
+    getClusterCache().setMaxCost(sizeInB);
   }
 
   size_t Archive::getDirentCacheMaxSize() const

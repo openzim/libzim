@@ -677,3 +677,28 @@ s  : } (return value: 60)
 
     ASSERT_EQ(zim::Logging::getInMemLogContent(), targetOutput);
 }
+
+TEST(ConcurrentCacheTest, dropAll) {
+    zim::ConcurrentCache<int, size_t, CostAs3xValue> cache(1000);
+
+    populateCache(cache, { {5, 50}, {10, 100}, {15, 150} } );
+
+    zim::Logging::logIntoMemory();
+    cache.dropAll([](int key) { return key % 2 != 0; });
+    ASSERT_EQ(zim::Logging::getInMemLogContent(),
+R"(thread#0: ConcurrentCache::dropAll() {
+thread#0:  entered synchronized section
+thread#0:  lru_cache::drop(5) {
+thread#0:   lru_cache::decreaseCost(150) {
+thread#0:    _current_cost after decrease: 750
+thread#0:   }
+thread#0:  }
+thread#0:  lru_cache::drop(15) {
+thread#0:   lru_cache::decreaseCost(450) {
+thread#0:    _current_cost after decrease: 300
+thread#0:   }
+thread#0:  }
+thread#0:  exiting synchronized section
+thread#0: }
+)");
+}

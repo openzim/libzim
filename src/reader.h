@@ -35,7 +35,13 @@ namespace zim {
 class LIBZIM_PRIVATE_API Reader {
   public:
     Reader() {};
+
+    // Returns the full size of data accessible via this reader object
     virtual zsize_t size() const = 0;
+
+    // Returns the memory consumption by this reader object
+    virtual size_t getMemorySize() const = 0;
+
     virtual ~Reader() {};
 
     void read(char* dest, offset_t offset, zsize_t size) const {

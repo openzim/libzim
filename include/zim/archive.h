@@ -42,73 +42,26 @@ namespace zim
     efficientOrder
   };
 
-  /**
-   * Configuration to pass to archive constructors.
+  /** Get the maximum size of the cluster cache.
    *
-   * Some configuration option specifying how to open a zim archive.
-   * For now, it is only related to preload data but it may change in the future.
-   *
-   * Archive may preload few data to speedup future accessing.
-   * However, this preload itself can take times.
-   *
-   * OpenConfig allow user to define how Archive should preload data.
+   * @return The maximum memory size used the cluster cache.
    */
-  struct LIBZIM_API OpenConfig {
-     /**
-      * Default configuration.
-      *
-      * - Dirent ranges is activated.
-      * - Xapian preloading is activated.
-      */
-     OpenConfig();
+  size_t LIBZIM_API getClusterCacheMaxSize();
 
-     /**
-      * Configure xapian preloading.
-      *
-      * This method modify the configuration and return itelf.
-      */
-     OpenConfig& preloadXapianDb(bool load) { m_preloadXapianDb = load; return *this; }
+  /** Get the current size of the cluster cache.
+   *
+   * @return The current memory size used by the cluster cache.
+   */
+  size_t LIBZIM_API getClusterCacheCurrentSize();
 
-     /**
-      * Configure xapian preloading.
-      *
-      * This method create a new configuration with the new value.
-      */
-     OpenConfig preloadXapianDb(bool load) const {
-      auto other = *this;
-      other.m_preloadXapianDb = load;
-      return other;
-     }
-
-     /**
-      * Configure direntRanges preloading.
-      *
-      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent ranges.
-      * This will be used to speedup dirent lookup. This is an extra layer on top of
-      * classic dirent cache.
-      *
-      * This method modify the configuration and return itelf.
-      */
-     OpenConfig& preloadDirentRanges(int nbRanges) { m_preloadDirentRanges = nbRanges; return *this; }
-
-     /**
-      * Configure direntRanges preloading.
-      *
-      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent ranges.
-      * This will be used to speedup dirent lookup. This is an extra layer on top of
-      * classic dirent cache.
-      *
-      * This method create a new configuration with the new value.
-      */
-     OpenConfig preloadDirentRanges(int nbRanges) const {
-      auto other = *this;
-      other.m_preloadDirentRanges = nbRanges;
-      return other;
-     }
-
-     bool m_preloadXapianDb;
-     int  m_preloadDirentRanges;
-  };
+  /** Set the size of the cluster cache.
+   *
+   * If the new size is lower than the number of currently stored clusters
+   * some clusters will be dropped from cache to respect the new size.
+   *
+   * @param sizeInB The memory limit (in bytes) for the cluster cache.
+   */
+  void LIBZIM_API setClusterCacheMaxSize(size_t sizeInB);
 
 
   /**
@@ -678,27 +631,6 @@ namespace zim
        *  @return The shared_ptr
        */
       std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
-
-      /** Get the maximum size of the cluster cache.
-       *
-       * @return The maximum number of clusters stored in  the cache.
-       */
-      size_t getClusterCacheMaxSize() const;
-
-      /** Get the current size of the cluster cache.
-       *
-       * @return The number of clusters currently stored in  the cache.
-       */
-      size_t getClusterCacheCurrentSize() const;
-
-      /** Set the size of the cluster cache.
-       *
-       * If the new size is lower than the number of currently stored clusters
-       * some clusters will be dropped from cache to respect the new size.
-       *
-       * @param nbClusters The maximum number of clusters stored in the cache.
-       */
-      void setClusterCacheMaxSize(size_t nbClusters);
 
       /** Get the size of the dirent cache.
        *

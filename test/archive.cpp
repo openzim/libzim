@@ -43,6 +43,18 @@ using zim::unittests::TempFile;
 using zim::unittests::TestItem;
 using zim::unittests::IsFrontArticle;
 
+class ZimArchive: public testing::Test {
+  protected:
+  void SetUp() override {
+    zim::setClusterCacheMaxSize(0);
+    zim::setClusterCacheMaxSize(CLUSTER_CACHE_SIZE);
+    ASSERT_EQ(zim::getClusterCacheCurrentSize(), 0);
+  }
+  void TearDown() override {
+    ASSERT_EQ(zim::getClusterCacheCurrentSize(), 0);
+  }
+};
+
 using TestContextImpl = std::vector<std::pair<std::string, std::string> >;
 struct TestContext : TestContextImpl {
   TestContext(const std::initializer_list<value_type>& il)
@@ -80,7 +92,7 @@ emptyZimArchiveContent()
   return content;
 }
 
-TEST(ZimArchive, openingAnInvalidZimArchiveFails)
+TEST_F(ZimArchive, openingAnInvalidZimArchiveFails)
 {
   const char* const prefixes[] = { "ZIM\x04", "" };
   const unsigned char bytes[] = {0x00, 0x01, 0x11, 0x30, 0xFF};
@@ -101,7 +113,7 @@ TEST(ZimArchive, openingAnInvalidZimArchiveFails)
   }
 }
 
-TEST(ZimArchive, openingAnEmptyZimArchiveSucceeds)
+TEST_F(ZimArchive, openingAnEmptyZimArchiveSucceeds)
 {
   const auto tmpfile = makeTempFile("empty_zim_file", emptyZimArchiveContent());
 
@@ -122,7 +134,7 @@ bool isNastyOffset(int offset) {
   return true;
 }
 
-TEST(ZimArchive, nastyEmptyZimArchive)
+TEST_F(ZimArchive, nastyEmptyZimArchive)
 {
   const std::string correctContent = emptyZimArchiveContent();
   for ( int offset = 0; offset < 80; ++offset ) {
@@ -136,7 +148,7 @@ TEST(ZimArchive, nastyEmptyZimArchive)
   }
 }
 
-TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
+TEST_F(ZimArchive, wrongChecksumInEmptyZimArchive)
 {
   std::string zimfileContent = emptyZimArchiveContent();
   zimfileContent[85] = '\xff';
@@ -147,7 +159,7 @@ TEST(ZimArchive, wrongChecksumInEmptyZimArchive)
 }
 
 
-TEST(ZimArchive, openCreatedArchive)
+TEST_F(ZimArchive, openCreatedArchive)
 {
   TempFile temp("zimfile");
   auto tempPath = temp.path();
@@ -245,7 +257,7 @@ TEST(ZimArchive, openCreatedArchive)
 }
 
 #if WITH_TEST_DATA
-TEST(ZimArchive, openRealZimArchive)
+TEST_F(ZimArchive, openRealZimArchive)
 {
   const char* const zimfiles[] = {
     "small.zim",
@@ -266,7 +278,7 @@ TEST(ZimArchive, openRealZimArchive)
   }
 }
 
-TEST(ZimArchive, openSplitZimArchive)
+TEST_F(ZimArchive, openSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02_splitted.zim";
 
@@ -286,117 +298,235 @@ struct TestCacheConfig {
   size_t direntLookupCacheSize;
 };
 
-
-#define ASSERT_ARCHIVE_EQUIVALENT(REF_ARCHIVE, TEST_ARCHIVE)  \
-  ASSERT_ARCHIVE_EQUIVALENT_LIMIT(REF_ARCHIVE, TEST_ARCHIVE, REF_ARCHIVE.getEntryCount())
-
-#define ASSERT_ARCHIVE_EQUIVALENT_LIMIT(REF_ARCHIVE, TEST_ARCHIVE, LIMIT)             \
-  {                                                                                   \
-    auto range = REF_ARCHIVE.iterEfficient();                                         \
-    auto ref_it = range.begin();                                                      \
-    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), TEST_ARCHIVE, LIMIT)      \
+struct RefEntry {
+  void test_is_equal(const zim::Entry& entry) {
+    ASSERT_EQ(path, entry.getPath());
+    ASSERT_EQ(title, entry.getTitle());
+    ASSERT_EQ(isRedirect, entry.isRedirect());
+    if (isRedirect) {
+      zim::entry_index_type redirectId = redirect_or_hash;
+      ASSERT_EQ(redirectId, entry.getRedirectEntryIndex());
+    } else {
+      auto hash = std::hash<std::string>{}(std::string(entry.getItem().getData()));
+      ASSERT_EQ(redirect_or_hash, hash);
+    }
   }
 
+  std::string path;
+  std::string title;
+  bool        isRedirect;
+  // size_t is either 32 or 64 bits and entry_index_type (redirect id) is always 32 bits.
+  size_t      redirect_or_hash;
+};
 
-#define ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(REF_IT, REF_END, TEST_ARCHIVE, LIMIT)      \
-  for (auto i = 0U; i<LIMIT && REF_IT != REF_END; i++, REF_IT++) {                    \
-    auto test_entry = TEST_ARCHIVE.getEntryByPath(REF_IT->getPath());                 \
-    ASSERT_EQ(REF_IT->getPath(), test_entry.getPath());                               \
-    ASSERT_EQ(REF_IT->getTitle(), test_entry.getTitle());                             \
-    ASSERT_EQ(REF_IT->isRedirect(), test_entry.isRedirect());                         \
-    if (REF_IT->isRedirect()) {                                                       \
-      ASSERT_EQ(REF_IT->getRedirectEntryIndex(), test_entry.getRedirectEntryIndex()); \
-    }                                                                                 \
-    auto ref_item = REF_IT->getItem(true);                                            \
-    auto test_item = test_entry.getItem(true);                                        \
-    ASSERT_EQ(ref_item.getClusterIndex(), test_item.getClusterIndex());               \
-    ASSERT_EQ(ref_item.getBlobIndex(), test_item.getBlobIndex());                     \
-    ASSERT_EQ(ref_item.getData(), test_item.getData());                               \
+struct RefArchiveContent {
+  RefArchiveContent(const zim::Archive& archive) {
+    for (auto entry:archive.iterEfficient()) {
+      RefEntry ref_entry = {
+          entry.getPath(),
+          entry.getTitle(),
+          entry.isRedirect(),
+          entry.isRedirect() ? entry.getRedirectEntryIndex() : std::hash<std::string>{}(std::string(entry.getItem().getData())),
+      };
+      ref_entries.push_back(ref_entry);
+    }
   }
 
-TEST(ZimArchive, cacheDontImpactReading)
+  void test_is_equal(const zim::Archive& archive) {
+    for (auto ref_entry:ref_entries) {
+      auto entry = archive.getEntryByPath(ref_entry.path);
+      ref_entry.test_is_equal(entry);
+    }
+  }
+  std::vector<RefEntry> ref_entries;
+};
+
+
+TEST_F(ZimArchive, cacheDontImpactReading)
 {
   const TestCacheConfig cacheConfigs[] = {
     {0, 0, 0},
-    {1, 1, 1},
-    {2, 2, 2},
-    {10, 10, 10},
-    {1000, 2000, 1000},
-    {0, 2000, 1000},
-    {1000, 0, 1000},
-    {1000, 2000, 0},
-    {1, 2000, 1000},
-    {1000, 1, 1000},
-    {1000, 2000, 1},
+    {1, 1<<20, 1},
+    {2, 2<<20, 2},
+    {10, 10<<20, 10},
+    {1000, 2000<<20, 1000},
+    {0, 2000<<20, 1000},
+    {1000, 0<<20, 1000},
+    {1000, 2000<<20, 0},
+    {1, 2000<<20, 1000},
+    {1000, 1<<20, 1000},
+    {1000, 2000<<20, 1},
   };
 
   for (auto& testfile: getDataFilePath("small.zim")) {
-    auto ref_archive = zim::Archive(testfile.path);
+    RefArchiveContent ref_archive(zim::Archive(testfile.path));
 
     for (auto cacheConfig: cacheConfigs) {
       auto test_archive = zim::Archive(testfile.path, zim::OpenConfig().preloadDirentRanges(cacheConfig.direntLookupCacheSize));
       test_archive.setDirentCacheMaxSize(cacheConfig.direntCacheSize);
-      test_archive.setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
+      zim::setClusterCacheMaxSize(cacheConfig.clusterCacheSize);
 
       EXPECT_EQ(test_archive.getDirentCacheMaxSize(), cacheConfig.direntCacheSize);
-      EXPECT_EQ(test_archive.getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
+      EXPECT_EQ(zim::getClusterCacheMaxSize(), cacheConfig.clusterCacheSize);
 
-      ASSERT_ARCHIVE_EQUIVALENT(ref_archive, test_archive)
+      ref_archive.test_is_equal(test_archive);
     }
   }
 }
 
-
-TEST(ZimArchive, cacheChange)
-{
+TEST_F(ZimArchive, cacheClean) {
   for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim")) {
-    auto ref_archive = zim::Archive(testfile.path);
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
+    {
+      auto archive = zim::Archive(testfile.path);
+      auto range = archive.iterEfficient();
+      auto it = range.begin();
+      for (auto i = 0; i<50 && it != range.end(); i++, it++) {
+        // Be sure to search by path to populate the dirent cache
+        auto entry = archive.getEntryByPath(it->getPath());
+        auto item = entry.getItem(true);
+        auto data = item.getData();
+      }
+      EXPECT_GT(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
+    }
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0); // No clusters in cache
+  }
+}
+
+TEST_F(ZimArchive, cacheChange)
+{
+  // We test only one variant here.
+  // Each variant has cluster of different size (especially the old "withns" which
+  // have a cluster compressed with a algorithm/compression level making input stream
+  // having a size of 64MB),
+  // this make all the following reasoning about cluster size a bit too complex.
+  // As the test here don't test that we can read all variant, we don't have too.
+  for (auto& testfile: getDataFilePath("wikibooks_be_all_nopic_2017-02.zim", {"noTitleListingV0"})) {
+    // wikibooks has only 2 clusters. One of 492121 bytes and one of 823716 bytes.
+    // For a total of 1315837 bytes.
+    // Has we try to keep one cluster in the cache, any size under the size of one
+    // cluster will not be respected.
+    // So we will define 2 limits:
+    // 850<<10 : size higher than a cluster size but under 2
+    // 2 << 20 : size higher than two clusters
+    const size_t L1_SIZE = 850 << 10;
+    const size_t L2_SIZE = 2 << 20;
+
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
+    RefArchiveContent ref_archive(zim::Archive(testfile.path));
     auto archive = zim::Archive(testfile.path);
 
     archive.setDirentCacheMaxSize(30);
-    archive.setClusterCacheMaxSize(5);
+    zim::setClusterCacheMaxSize(L2_SIZE);
 
-    auto range = ref_archive.iterEfficient();
-    auto ref_it = range.begin();
-    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
+    auto ref_it = ref_archive.ref_entries.begin();
+    for (auto i = 0; i<50 && ref_it != ref_archive.ref_entries.end(); i++, ref_it++) {
+      auto entry = archive.getEntryByPath(ref_it->path);
+      ref_it->test_is_equal(entry);
+    }
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 30);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 2); // Only 2 clusters in the file
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L2_SIZE); // Only 2 clusters in the file
 
     // Reduce cache size
     archive.setDirentCacheMaxSize(10);
-    archive.setClusterCacheMaxSize(1);
+    zim::setClusterCacheMaxSize(L1_SIZE);
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 1);
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L1_SIZE);
 
     // We want to test change of cache while we are iterating on the archive.
     // So we don't reset the ref_it to `range.begin()`.
-    ASSERT_ARCHIVE_EQUIVALENT_IT_LIMIT(ref_it, range.end(), archive, 50)
+    for (auto i = 0; i<50 && ref_it != ref_archive.ref_entries.end(); i++, ref_it++) {
+      auto entry = archive.getEntryByPath(ref_it->path);
+      ref_it->test_is_equal(entry);
+    }
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 10);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 1);
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L1_SIZE);
 
     // Clean cache
     // (More than testing the value, this is needed as we want to be sure the cache is actually populated later)
     archive.setDirentCacheMaxSize(0);
-    archive.setClusterCacheMaxSize(0);
+    zim::setClusterCacheMaxSize(0);
 
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 
     // Increase the cache
     archive.setDirentCacheMaxSize(20);
-    archive.setClusterCacheMaxSize(1);
+    zim::setClusterCacheMaxSize(L1_SIZE);
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 0);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 0);
+    EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 
-    ASSERT_ARCHIVE_EQUIVALENT(ref_archive, archive)
+    ref_archive.test_is_equal(archive);
     EXPECT_EQ(archive.getDirentCacheCurrentSize(), 20);
-    EXPECT_EQ(archive.getClusterCacheCurrentSize(), 1);
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), L1_SIZE);
   }
 }
 
-TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
+
+TEST_F(ZimArchive, MultiZimCache)
+{
+  // Get a list of several zim files to open (whatever the variant)
+  std::vector<std::string> zimPaths;
+  const char* const zimfiles[] = {
+    "wikibooks_be_all_nopic_2017-02.zim",
+    "wikibooks_be_all_nopic_2017-02_splitted.zim",
+    "wikipedia_en_climate_change_mini_2024-06.zim"
+  };
+
+  for ( const std::string fname : zimfiles ) {
+    for (auto& testfile: getDataFilePath(fname)) {
+      zimPaths.push_back(testfile.path);
+    }
+  }
+
+
+  const size_t SMALL_LIMIT = 5 << 20;
+  const size_t BIG_LIMIT = 200 << 20;
+  zim::setClusterCacheMaxSize(BIG_LIMIT);
+
+  std::vector<zim::Archive> archives;
+  for (auto path:zimPaths) {
+    auto archive = zim::Archive(path);
+    for (auto entry:archive.iterEfficient()) {
+      auto item = entry.getItem(true);
+      auto data = item.getData();
+    }
+    archives.push_back(archive);
+  }
+
+  EXPECT_LE(zim::getClusterCacheCurrentSize(), BIG_LIMIT);
+  zim::setClusterCacheMaxSize(SMALL_LIMIT);
+  EXPECT_LE(zim::getClusterCacheCurrentSize(), SMALL_LIMIT);
+
+  // Opening an archive should increase the cluster cache
+  zim::setClusterCacheMaxSize(BIG_LIMIT);
+  auto current_limit = zim::getClusterCacheCurrentSize();
+  {
+    auto archive = zim::Archive(zimPaths[0]);
+    for (auto entry:archive.iterEfficient()) {
+      auto item = entry.getItem(true);
+      auto data = item.getData();
+    }
+    EXPECT_GT(zim::getClusterCacheCurrentSize(), current_limit);
+    current_limit = zim::getClusterCacheCurrentSize();
+  }
+  // Destroying an archive should decrease the cluster cache
+  EXPECT_LT(zim::getClusterCacheCurrentSize(), current_limit);
+
+  // Be sure that decreasing the number of archives open also decrease the
+  // current cache size, until we reach 0.
+  current_limit = zim::getClusterCacheCurrentSize();
+  while (!archives.empty()) {
+    archives.pop_back();
+    EXPECT_LE(zim::getClusterCacheCurrentSize(), current_limit);
+    current_limit = zim::getClusterCacheCurrentSize();
+  }
+  EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
+}
+
+TEST_F(ZimArchive, openDontFallbackOnNonSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02.zim";
 
@@ -412,7 +542,7 @@ TEST(ZimArchive, openDontFallbackOnNonSplitZimArchive)
   }
 }
 
-TEST(ZimArchive, openNonExistantZimArchive)
+TEST_F(ZimArchive, openNonExistantZimArchive)
 {
   const std::string fname = "non_existant.zim";
 
@@ -425,7 +555,7 @@ TEST(ZimArchive, openNonExistantZimArchive)
   }
 }
 
-TEST(ZimArchive, openNonExistantZimSplitArchive)
+TEST_F(ZimArchive, openNonExistantZimSplitArchive)
 {
   const std::string fname = "non_existant.zimaa";
 
@@ -438,7 +568,7 @@ TEST(ZimArchive, openNonExistantZimSplitArchive)
   }
 }
 
-TEST(ZimArchive, randomEntry)
+TEST_F(ZimArchive, randomEntry)
 {
   const char* const zimfiles[] = {
     "wikibooks_be_all_nopic_2017-02.zim",
@@ -463,7 +593,7 @@ TEST(ZimArchive, randomEntry)
   }
 }
 
-TEST(ZimArchive, illustration)
+TEST_F(ZimArchive, illustration)
 {
   const char* const zimfiles[] = {
     "small.zim",
@@ -508,7 +638,7 @@ struct TestDataInfo {
   }
 };
 
-TEST(ZimArchive, articleNumber)
+TEST_F(ZimArchive, articleNumber)
 {
   TestDataInfo zimfiles[] = {
      // Name                                          mediaCount,  withns                               nons                                 noTitleListingV0
@@ -562,7 +692,8 @@ public:
 #define EXPECT_BROKEN_ZIMFILE(ZIMPATH, EXPECTED_STDERROR_TEXT) \
   CapturedStderr stderror;                                     \
   EXPECT_FALSE(zim::validate(ZIMPATH, checksToRun));           \
-  EXPECT_EQ(EXPECTED_STDERROR_TEXT, std::string(stderror)) << ZIMPATH;
+  EXPECT_EQ(EXPECTED_STDERROR_TEXT, std::string(stderror)) << ZIMPATH; \
+  ASSERT_EQ(zim::getClusterCacheCurrentSize(), 0);
 
 #define TEST_BROKEN_ZIM_NAME(ZIMNAME, EXPECTED)                \
 for(auto& testfile: getDataFilePath(ZIMNAME)) {EXPECT_BROKEN_ZIMFILE(testfile.path, EXPECTED)}
@@ -574,7 +705,7 @@ for(auto& testfile: getDataFilePath(ZIMNAME, CAT)) {EXPECT_BROKEN_ZIMFILE(testfi
 #define WITH_TITLE_IDX_CAT {"withns", "nons"}
 
 #if WITH_TEST_DATA
-TEST(ZimArchive, validate)
+TEST_F(ZimArchive, validate)
 {
   zim::IntegrityCheckList all;
   all.set();
@@ -772,7 +903,7 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
 #endif
 }
 
-TEST(ZimArchive, multipart)
+TEST_F(ZimArchive, multipart)
 {
   auto nonSplittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02.zim");
   auto splittedZims = getDataFilePath("wikibooks_be_all_nopic_2017-02_splitted.zim");
@@ -801,7 +932,7 @@ TEST(ZimArchive, multipart)
 #endif
 
 #ifndef _WIN32
-TEST(ZimArchive, openByFD)
+TEST_F(ZimArchive, openByFD)
 {
   for(auto& testfile: getDataFilePath("small.zim")) {
     const zim::Archive archive1(testfile.path);
@@ -812,7 +943,7 @@ TEST(ZimArchive, openByFD)
   }
 }
 
-TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
+TEST_F(ZimArchive, openZIMFileEmbeddedInAnotherFile)
 {
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded");
@@ -828,7 +959,7 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   }
 }
 
-TEST(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
+TEST_F(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
 {
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded.multi");
@@ -871,7 +1002,7 @@ zim::Blob readItemData(const zim::ItemDataDirectAccessInfo& dai, zim::size_type 
   return zim::Blob(data, size);
 }
 
-TEST(ZimArchive, getDirectAccessInformation)
+TEST_F(ZimArchive, getDirectAccessInformation)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
     const zim::Archive archive(testfile.path);
@@ -892,7 +1023,7 @@ TEST(ZimArchive, getDirectAccessInformation)
 }
 
 #ifndef _WIN32
-TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
+TEST_F(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
     const int fd = OPEN_READ_ONLY(testfile.path);
@@ -913,7 +1044,7 @@ TEST(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
   }
 }
 
-TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
+TEST_F(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
 {
   auto normalZims = getDataFilePath("small.zim");
   auto embeddedZims = getDataFilePath("small.zim.embedded");
