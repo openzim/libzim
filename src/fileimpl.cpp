@@ -259,38 +259,49 @@ private: // data
       const_cast<entry_index_t&>(m_endUserEntry) = getCountArticles();
     }
 
-    auto result = m_direntLookup->find('X', "listing/titleOrdered/v1");
-    if (result.first) {
-      mp_titleDirentAccessor = getTitleAccessorV1(result.second);
-    }
-
-    if (!mp_titleDirentAccessor) {
-      if (!header.hasTitleListingV0()) {
-        throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+    // The following code may load clusters and we want to remove them from the
+    // cache if something goes wrong.
+    try {
+      auto result = m_direntLookup->find('X', "listing/titleOrdered/v1");
+      if (result.first) {
+        mp_titleDirentAccessor = getTitleAccessorV1(result.second);
       }
-      offset_t titleOffset(header.getTitleIdxPos());
-      zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
-      mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
-      const_cast<bool&>(m_hasFrontArticlesIndex) = false;
-    }
-    m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
+
+      if (!mp_titleDirentAccessor) {
+        if (!header.hasTitleListingV0()) {
+          throw ZimFileFormatError("Zim file doesn't contain a title ordered index");
+        }
+        offset_t titleOffset(header.getTitleIdxPos());
+        zsize_t  titleSize(sizeof(entry_index_type)*header.getArticleCount());
+        mp_titleDirentAccessor = getTitleAccessor(titleOffset, titleSize, "Title index table");
+        const_cast<bool&>(m_hasFrontArticlesIndex) = false;
+      }
+      m_byTitleDirentLookup.reset(new ByTitleDirentLookup(mp_titleDirentAccessor.get()));
 
 #ifdef ENABLE_XAPIAN
-    if (openConfig.m_preloadXapianDb) {
-      mp_xapianDb = loadXapianDb();
-      m_xapianDbCreated.store(true, std::memory_order_release);
-    }
+      if (openConfig.m_preloadXapianDb) {
+        mp_xapianDb = loadXapianDb();
+        m_xapianDbCreated.store(true, std::memory_order_release);
+      }
 #endif
 
-    readMimeTypes();
+      readMimeTypes();
+    } catch (...) {
+      dropCachedClusters();
+      throw;
+    }
   }
 
   FileImpl::~FileImpl() {
-    // Remove clusters of this ZIM file from the cache
+    dropCachedClusters();
+  }
+
+  void FileImpl::dropCachedClusters() const {
     getClusterCache().dropAll([this](const ClusterRef& key) {
         return std::get<0>(key) == this;
     });
   }
+
 
   std::unique_ptr<IndirectDirentAccessor> FileImpl::getTitleAccessorV1(const entry_index_t idx)
   {

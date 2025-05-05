@@ -680,7 +680,8 @@ public:
 #define EXPECT_BROKEN_ZIMFILE(ZIMPATH, EXPECTED_STDERROR_TEXT) \
   CapturedStderr stderror;                                     \
   EXPECT_FALSE(zim::validate(ZIMPATH, checksToRun));           \
-  EXPECT_EQ(EXPECTED_STDERROR_TEXT, std::string(stderror)) << ZIMPATH;
+  EXPECT_EQ(EXPECTED_STDERROR_TEXT, std::string(stderror)) << ZIMPATH; \
+  ASSERT_EQ(zim::getClusterCacheCurrentSize(), 0);
 
 #define TEST_BROKEN_ZIM_NAME(ZIMNAME, EXPECTED)                \
 for(auto& testfile: getDataFilePath(ZIMNAME)) {EXPECT_BROKEN_ZIMFILE(testfile.path, EXPECTED)}

@@ -181,6 +181,8 @@ namespace zim
       FileImpl(std::shared_ptr<FileCompound> zimFile, OpenConfig openConfig);
       FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size, OpenConfig openConfig);
 
+      void dropCachedClusters() const;
+
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessorV1(const entry_index_t idx);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);
 
