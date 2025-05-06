@@ -76,19 +76,27 @@ TEST(Log, inMemLogInANamedThread) {
 
 #include <chrono>
 
-TEST(Log, concurrencyOrchestration) {
+void millisleep(unsigned milliseconds) {
+  // Pause the current thread for a given number of milliseconds
+  // in multiple 1ms shots. This gives the scheduler higher probability
+  // of waking up the concurrent thread at the right time under high load.
   using namespace std::chrono_literals;
 
+  for ( unsigned i = 0; i < milliseconds; ++i )
+    std::this_thread::sleep_for(1ms);
+}
+
+TEST(Log, concurrencyOrchestration) {
   const auto oddFlow = [](){
-    std::this_thread::sleep_for(100ms);
+    millisleep(10);
     log_debug("Humpty Dumpty sat on a wall.");
-    std::this_thread::sleep_for(100ms);
+    millisleep(10);
     log_debug("All the king's horses and all the king's men");
   };
 
   const auto evenFlow = [](){
     log_debug("Humpty Dumpty had a great fall.");
-    std::this_thread::sleep_for(150ms);
+    millisleep(15);
     log_debug("Couldn't put Humpty together again.");
   };
 
