@@ -671,17 +671,39 @@ std::shared_ptr<TestItem> makeHtmlItem(std::string path, std::string title) {
   return std::make_shared<TestItem>(path, "text/html", title);
 }
 
+class TempZimArchiveMadeOfEmptyHtmlArticles
+{
+  using PathAndTitle = std::pair<std::string, std::string>;
+
+public:
+  TempZimArchiveMadeOfEmptyHtmlArticles(std::string lang,
+                                        const std::vector<PathAndTitle>& data)
+    : tza("testZim")
+  {
+    zim::writer::Creator creator;
+    creator.configIndexing(true, lang);
+    creator.startZimCreation(tza.getPath());
+
+    for ( const auto& pathAndTile : data ) {
+      creator.addItem(makeHtmlItem(pathAndTile.first, pathAndTile.second));
+    }
+
+    creator.addMetadata("Title", "Test zim");
+    creator.finishZimCreation();
+  }
+
+  std::string getPath() const { return tza.getPath(); }
+
+private:
+  TempZimArchive tza;
+};
+
 TEST(Suggestion, CJK) {
-  TempZimArchive tza("testZim");
-  zim::writer::Creator creator;
-  creator.configIndexing(true, "zh");
-  creator.startZimCreation(tza.getPath());
-
-  creator.addItem(makeHtmlItem("testPath1", "平方"));
-  creator.addItem(makeHtmlItem("testPath2", "平方根"));
-
-  creator.addMetadata("Title", "Test zim");
-  creator.finishZimCreation();
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("zh", {
+       //  path     , title
+       { "testPath1", "平方"   },
+       { "testPath2", "平方根" },
+  });
 
   zim::Archive archive(tza.getPath());
   EXPECT_SUGGESTION_RESULTS(archive, "平方",
@@ -695,26 +717,17 @@ TEST(Suggestion, CJK) {
 }
 
 TEST(Suggestion, titleEdgeCases) {
-  TempZimArchive tza("testZim");
-  zim::writer::Creator creator;
-  creator.configIndexing(true, "en");
-  creator.startZimCreation(tza.getPath());
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+     // { path     , title   }
 
-  // Title identical to path
-  creator.addItem(makeHtmlItem("About", "About"));
+        { "About"  , "About" }, // Title identical to path
+        { "Trout"  , "trout" }, // Title differing from path in case only
+        { "Without", ""      }, // No title
 
-  // Title differing from path in case only
-  creator.addItem(makeHtmlItem("Trout", "trout"));
-
-  // No title
-  creator.addItem(makeHtmlItem("Without", ""));
-
-  // Non edge cases
-  creator.addItem(makeHtmlItem("Stout", "About Rex Stout"));
-  creator.addItem(makeHtmlItem("Hangout", "Without a trout"));
-
-  creator.addMetadata("Title", "Test zim");
-  creator.finishZimCreation();
+        // Non edge cases
+        { "Stout",   "About Rex Stout" },
+        { "Hangout", "Without a trout" },
+  });
 
   zim::Archive archive(tza.getPath());
   EXPECT_SUGGESTION_RESULTS(archive, "abo",
