@@ -729,6 +729,66 @@ TEST(Suggestion, titleEdgeCases) {
   );
 }
 
+using SuggestionTuple = std::tuple<std::string, std::string, std::string>;
+
+std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive, std::string query, int range) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  auto suggestionSearch = suggestionSearcher.suggest(query);
+  auto suggestionResult = suggestionSearch.getResults(0, range);
+
+  std::vector<SuggestionTuple> result;
+  for (const auto& s : suggestionResult) {
+    const SuggestionTuple sTuple{s.getTitle(), s.getPath(), s.getSnippet()};
+    result.push_back(sTuple);
+  }
+  return result;
+}
+
+#define EXPECT_SUGGESTION_RESULTS(archive, query, parenthesizedExpectedResult) \
+  ASSERT_EQ(                                                                   \
+      getSuggestions(archive, query, archive.getEntryCount()),                 \
+      std::vector<SuggestionTuple> parenthesizedExpectedResult                 \
+  )
+
+TEST(Suggestion, autoCompletionAndSpellingCorrection) {
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+    //{ path         , title                      }
+      { "2001/01/15" , "Wikipedia Day"            },
+      { "1966/08/07" , "J. Wales' birth date"     },
+      { "-1/12/25"   , "Birth date of J. Christ"  },
+      { "*/06/29"    , "The Little Prince Day"    },
+      { "1970+/04/22", "Earth Day"                },
+      { "*/11/0[12]" , "Day of the Dead"          },
+      { "-14e9/11/11", "Big Bang"                 },
+      { "7/2025/59"  , "invalid date"             },
+      { "/etc/passwd", "User account data"        },
+      { "Date_palm"  , "Date palm"                },
+      { "Date_(city)", "Date, Fukushima"          },
+  });
+
+  zim::Archive archive(tza.getPath());
+
+  EXPECT_SUGGESTION_RESULTS(archive, "bi", ({
+    {"Big Bang", "-14e9/11/11", "<b>Big</b> Bang"},
+    {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> date"},
+    {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> date of J. Christ"},
+  }));
+
+  EXPECT_SUGGESTION_RESULTS(archive, "da", ({
+    {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
+    {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
+    {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
+    {"Wikipedia Day"          , "2001/01/15" , "Wikipedia <b>Day</b>"         },
+    {"invalid date"           , "7/2025/59"  , "invalid <b>date</b>"          },
+    {"User account data"      , "/etc/passwd", "User account <b>data</b>"     },
+    {"Day of the Dead"        , "*/11/0[12]" , "<b>Day</b> of the Dead"       },
+    {"J. Wales' birth date"   , "1966/08/07" , "J. Wales' birth <b>date</b>"  },
+    {"The Little Prince Day"  , "*/06/29"    , "The Little Prince <b>Day</b>" },
+    {"Birth date of J. Christ", "-1/12/25", "Birth <b>date</b> of J. Christ"  },
+  }));
+}
+
 zim::Entry getTitleIndexEntry(const zim::Archive& a)
 {
   return a.getEntryByPathWithNamespace('X', "title/xapian");
