@@ -261,9 +261,9 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults
 
 const SuggestionResultSet SuggestionSearch::getAutocompletionResults(int start, int maxResults) const {
   // XXX: implement properly
-  auto emptyEntryRange = mp_internalDb->m_archive.iterByTitle();
-  emptyEntryRange.offset(0, 0);
-  return SuggestionResultSet(emptyEntryRange);
+  const auto allTitlesRange = mp_internalDb->m_archive.iterByTitle();
+  const auto noTitlesRange = allTitlesRange.offset(0, 0);
+  return SuggestionResultSet(noTitlesRange);
 }
 
 const void SuggestionSearch::forceRangeSuggestion() {
