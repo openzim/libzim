@@ -731,11 +731,13 @@ TEST(Suggestion, titleEdgeCases) {
 
 using SuggestionTuple = std::tuple<std::string, std::string, std::string>;
 
-std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive, std::string query, int range) {
+std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive,
+                                            std::string query,
+                                            int maxSuggestions) {
   zim::SuggestionSearcher suggestionSearcher(archive);
   suggestionSearcher.setVerbose(true);
   auto suggestionSearch = suggestionSearcher.suggest(query);
-  auto suggestionResult = suggestionSearch.getResults(0, range);
+  auto suggestionResult = suggestionSearch.getResults(0, maxSuggestions);
 
   std::vector<SuggestionTuple> result;
   for (const auto& s : suggestionResult) {
@@ -745,9 +747,9 @@ std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive, std::str
   return result;
 }
 
-#define EXPECT_SUGGESTION_RESULTS(archive, query, parenthesizedExpectedResult) \
+#define EXPECT_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
   ASSERT_EQ(                                                                   \
-      getSuggestions(archive, query, archive.getEntryCount()),                 \
+      getSuggestions(archive, query, maxSuggestions),                          \
       std::vector<SuggestionTuple> parenthesizedExpectedResult                 \
   )
 
@@ -769,13 +771,13 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
 
   zim::Archive archive(tza.getPath());
 
-  EXPECT_SUGGESTION_RESULTS(archive, "bi", ({
+  EXPECT_SUGGESTION_RESULTS(archive, "bi", 10, ({
     {"Big Bang", "-14e9/11/11", "<b>Big</b> Bang"},
     {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> date"},
     {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> date of J. Christ"},
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "da", ({
+  EXPECT_SUGGESTION_RESULTS(archive, "da", 10, ({
     {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
     {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
     {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
@@ -786,6 +788,14 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
     {"J. Wales' birth date"   , "1966/08/07" , "J. Wales' birth <b>date</b>"  },
     {"The Little Prince Day"  , "*/06/29"    , "The Little Prince <b>Day</b>" },
     {"Birth date of J. Christ", "-1/12/25", "Birth <b>date</b> of J. Christ"  },
+  }));
+
+  EXPECT_SUGGESTION_RESULTS(archive, "da", 5, ({
+    {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
+    {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
+    {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
+    {"Wikipedia Day"          , "2001/01/15" , "Wikipedia <b>Day</b>"         },
+    {"invalid date"           , "7/2025/59"  , "invalid <b>date</b>"          },
   }));
 }
 
