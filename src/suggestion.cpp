@@ -327,7 +327,7 @@ SuggestionResultSet::iterator SuggestionResultSet::begin() const
 {
 #if defined(ENABLE_XAPIAN)
     if ( ! mp_entryRange ) {
-        return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin());
+        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin()));
     }
 #endif  // ENABLE_XAPIAN
 
@@ -338,7 +338,7 @@ SuggestionResultSet::iterator SuggestionResultSet::end() const
 {
 #if defined(ENABLE_XAPIAN)
     if ( ! mp_entryRange ) {
-        return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end());
+        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end()));
     }
 #endif  // ENABLE_XAPIAN
 

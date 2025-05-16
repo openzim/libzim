@@ -102,7 +102,7 @@ class LIBZIM_API SuggestionIterator
         std::string getIndexPath() const;
         std::string getIndexTitle() const;
         std::string getIndexSnippet() const;
-        SuggestionIterator(SuggestionInternalData* internal_data);
+        explicit SuggestionIterator(SuggestionInternalData* internal_data);
 #endif  // LIBZIM_WITH_XAPIAN
 };
 
