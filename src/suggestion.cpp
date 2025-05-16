@@ -293,7 +293,7 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
     return *mp_enquire;
 }
 
-SuggestionResultSet::SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset) :
+SuggestionResultSet::SuggestionResultSet(SuggestionDBPtr p_internalDb, Xapian::MSet&& mset) :
   mp_internalDb(p_internalDb),
   mp_entryRange(nullptr),
   mp_mset(std::make_shared<Xapian::MSet>(mset))
