@@ -210,42 +210,46 @@ SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
 SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
 SuggestionSearch::~SuggestionSearch() = default;
 
+#if ! defined(ENABLE_XAPIAN)
+#define TRY_UTILIZING_SUGGESTIONDB(CODE) // empty
+#else
+#define TRY_UTILIZING_SUGGESTIONDB(CODE) \
+  if (mp_internalDb->hasDatabase()) {                                   \
+    try {                                                               \
+      CODE                                                              \
+    } catch(...) {                                                      \
+      std::cerr << "There was a problem utilizing the suggestions DB, " \
+                << "switching to title listing mode."                   \
+                << std::endl;                                           \
+    }                                                                   \
+  }
+#endif
+
+
 int SuggestionSearch::getEstimatedMatches() const
 {
-#if defined(ENABLE_XAPIAN)
-  if (mp_internalDb->hasDatabase()) {
-    try {
-      auto enquire = getEnquire();
-      // Force xapian to check at least 10 documents even if we ask for an empty mset.
-      // Else, the get_matches_estimated may be wrong and return 0 even if we have results.
-      auto mset = enquire.get_mset(0, 0, 10);
-      return mset.get_matches_estimated();
-    } catch(...) {
-      std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
-    }
-  }
-#endif  // ENABLE_XAPIAN
+  TRY_UTILIZING_SUGGESTIONDB(
+    auto enquire = getEnquire();
+    // Force xapian to check at least 10 documents even if we ask for an
+    // empty mset. Else, the get_matches_estimated() may be wrong and return 0
+    // even if we have results.
+    auto mset = enquire.get_mset(0, 0, 10);
+    return mset.get_matches_estimated();
+  );
 
   return mp_internalDb->m_archive.findByTitle(m_query).size();
 }
 
 const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults) const {
-#if defined(ENABLE_XAPIAN)
-    if (mp_internalDb->hasDatabase())
-    {
-      try {
-        auto enquire = getEnquire();
-        auto mset = enquire.get_mset(start, maxResults);
-        return SuggestionResultSet(mp_internalDb, std::move(mset));
-      } catch(...) {
-        std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
-      }
-    }
-#endif  // ENABLE_XAPIAN
+  TRY_UTILIZING_SUGGESTIONDB(
+    auto enquire = getEnquire();
+    auto mset = enquire.get_mset(start, maxResults);
+    return SuggestionResultSet(mp_internalDb, std::move(mset));
+  );
 
-    auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
-    entryRange = entryRange.offset(start, maxResults);
-    return SuggestionResultSet(entryRange);
+  auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
+  entryRange = entryRange.offset(start, maxResults);
+  return SuggestionResultSet(entryRange);
 }
 
 const void SuggestionSearch::forceRangeSuggestion() {
