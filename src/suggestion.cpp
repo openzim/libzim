@@ -180,12 +180,13 @@ SuggestionSearcher::SuggestionSearcher(SuggestionSearcher&& other) = default;
 SuggestionSearcher& SuggestionSearcher::operator=(SuggestionSearcher&& other) = default;
 SuggestionSearcher::~SuggestionSearcher() = default;
 
-SuggestionSearch SuggestionSearcher::suggest(const std::string& query)
+SuggestionSearch SuggestionSearcher::suggest(const std::string& query,
+                                             uint32_t maxResults)
 {
   if (!mp_internalDb) {
     initDatabase();
   }
-  return SuggestionSearch(mp_internalDb, query);
+  return SuggestionSearch(mp_internalDb, query, maxResults);
 }
 
 void SuggestionSearcher::setVerbose(bool verbose)
@@ -198,9 +199,12 @@ void SuggestionSearcher::initDatabase()
   mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
 }
 
-SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)
- : mp_internalDb(p_internalDb),
-   m_query(query)
+SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb,
+                                   const std::string& query,
+                                   uint32_t maxResults)
+ : mp_internalDb(p_internalDb)
+ , m_query(query)
+ , m_maxResults(maxResults)
 #if defined(ENABLE_XAPIAN)
    , mp_enquire(nullptr)
 #endif  // ENABLE_XAPIAN
@@ -244,12 +248,22 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults
   TRY_UTILIZING_SUGGESTIONDB(
     auto enquire = getEnquire();
     auto mset = enquire.get_mset(start, maxResults);
-    return SuggestionResultSet(mp_internalDb, std::move(mset));
+    if ( m_maxResults == 0 || mset.get_matches_estimated() <= m_maxResults ) {
+      return SuggestionResultSet(mp_internalDb, std::move(mset));
+    }
+    return getAutocompletionResults(start, maxResults);
   );
 
   auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
   entryRange = entryRange.offset(start, maxResults);
   return SuggestionResultSet(entryRange);
+}
+
+const SuggestionResultSet SuggestionSearch::getAutocompletionResults(int start, int maxResults) const {
+  // XXX: implement properly
+  auto emptyEntryRange = mp_internalDb->m_archive.iterByTitle();
+  emptyEntryRange.offset(0, 0);
+  return SuggestionResultSet(emptyEntryRange);
 }
 
 const void SuggestionSearch::forceRangeSuggestion() {

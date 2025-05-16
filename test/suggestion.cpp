@@ -736,7 +736,7 @@ std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive,
                                             int maxSuggestions) {
   zim::SuggestionSearcher suggestionSearcher(archive);
   suggestionSearcher.setVerbose(true);
-  auto suggestionSearch = suggestionSearcher.suggest(query);
+  auto suggestionSearch = suggestionSearcher.suggest(query, maxSuggestions);
   auto suggestionResult = suggestionSearch.getResults(0, maxSuggestions);
 
   std::vector<SuggestionTuple> result;
@@ -790,12 +790,14 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
     {"Birth date of J. Christ", "-1/12/25", "Birth <b>date</b> of J. Christ"  },
   }));
 
+  // Since the count of title suggestions will exceed the specified limit,
+  // autocompletion suggestions should be returned instead
   EXPECT_SUGGESTION_RESULTS(archive, "da", 5, ({
-    {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
-    {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
-    {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
-    {"Wikipedia Day"          , "2001/01/15" , "Wikipedia <b>Day</b>"         },
-    {"invalid date"           , "7/2025/59"  , "invalid <b>date</b>"          },
+    // XXX: Support for autocompletion suggestions is not yet implemented
+    // XXX: and so an empty list is returned.
+    //{"", "", "<b>data</b>" },
+    //{"", "", "<b>date</b>" },
+    //{"", "", "<b>day</b>"  },
   }));
 }
 

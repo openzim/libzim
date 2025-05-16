@@ -74,8 +74,12 @@ class LIBZIM_API SuggestionSearcher
      * The search is made on the archive under the SuggestionSearcher.
      *
      * @param query The SuggestionQuery to search.
+     * @param maxResults The limit on the suggestion count (0 for no limit).
+     *
+     * If the estimated count of title suggestions would exceed the specified
+     * limit, automcompletion suggestions are returned instead.
      */
-    SuggestionSearch suggest(const std::string& query);
+    SuggestionSearch suggest(const std::string& query, uint32_t maxResults = 0);
 
     /** Set the verbosity of search operations.
      *
@@ -118,11 +122,16 @@ class LIBZIM_API SuggestionSearch
         int getEstimatedMatches() const;
 
     private: // methods
-        SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query);
+        SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb,
+                         const std::string& query,
+                         uint32_t maxResults);
+
+        const SuggestionResultSet getAutocompletionResults(int start, int maxResults) const;
 
     private: // data
          std::shared_ptr<SuggestionDataBase> mp_internalDb;
          std::string m_query;
+         uint32_t m_maxResults;
 
   friend class SuggestionSearcher;
 
