@@ -24,6 +24,8 @@
 #include "zim/suggestion.h"
 #include "zim/archive.h"
 
+#include "./smartptr.h"
+
 #include <stdexcept>
 #include <mutex>
 
@@ -87,30 +89,7 @@ struct SuggestionIterator::SuggestionInternalData {
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
     bool document_fetched;
-    std::unique_ptr<Entry> _entry;
-
-    SuggestionInternalData(const SuggestionInternalData& other) :
-      mp_internalDb(other.mp_internalDb),
-      mp_mset(other.mp_mset),
-      iterator(other.iterator),
-      _document(other._document),
-      document_fetched(other.document_fetched),
-      _entry(other._entry ? new Entry(*other._entry) : nullptr )
-    {
-    }
-
-    SuggestionInternalData& operator=(const SuggestionInternalData& other)
-    {
-      if (this != &other) {
-        mp_internalDb = other.mp_internalDb;
-        mp_mset = other.mp_mset;
-        iterator = other.iterator;
-        _document = other._document;
-        document_fetched = other.document_fetched;
-        _entry.reset(other._entry ? new Entry(*other._entry) : nullptr);
-      }
-      return *this;
-    }
+    ValuePtr<Entry> _entry;
 
     SuggestionInternalData(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
         mp_internalDb(p_internalDb),
