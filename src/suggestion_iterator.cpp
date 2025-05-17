@@ -154,23 +154,19 @@ std::string SuggestionIterator::getDbData() const {
     }
 }
 
-std::string SuggestionIterator::getIndexPath() const
+std::string SuggestionIterator::SuggestionInternalData::getIndexPath()
 {
-    if (! mp_internal) {
-        return "";
-    }
-
     try {
-        std::string path = mp_internal->get_document().get_data();
-        bool hasNewNamespaceScheme = mp_internal->mp_internalDb->m_archive.hasNewNamespaceScheme();
+        std::string path = get_document().get_data();
+        bool hasNewNamespaceScheme = mp_internalDb->m_archive.hasNewNamespaceScheme();
 
-        std::string dbDataType = mp_internal->mp_internalDb->m_database.get_metadata("data");
+        std::string dbDataType = mp_internalDb->m_database.get_metadata("data");
         if (dbDataType.empty()) {
             dbDataType = "fullPath";
         }
 
-        // If the archive has new namespace scheme and the type of its indexed data
-        // is `fullPath` we return only the `path` without namespace
+        // If the archive has new namespace scheme and the type of its indexed
+        // data is `fullPath` we return only the `path` without namespace
         if (hasNewNamespaceScheme && dbDataType == "fullPath") {
             path = path.substr(2);
         }
@@ -180,24 +176,17 @@ std::string SuggestionIterator::getIndexPath() const
     }
 }
 
-std::string SuggestionIterator::getIndexTitle() const {
-    if ( ! mp_internal) {
-        return "";
-    }
+std::string SuggestionIterator::SuggestionInternalData::getIndexTitle() {
     try {
-        return mp_internal->get_entry().getTitle();
+        return get_entry().getTitle();
     } catch (...) {
         return "";
     }
 }
 
-std::string SuggestionIterator::getIndexSnippet() const {
-    if (! mp_internal) {
-        return "";
-    }
-
+std::string SuggestionIterator::SuggestionInternalData::getIndexSnippet() {
     try {
-        return mp_internal->mp_mset->snippet(getIndexTitle(), 500, mp_internal->mp_internalDb->m_stemmer);
+        return mp_mset->snippet(getIndexTitle(), 500, mp_internalDb->m_stemmer);
     } catch(...) {
         return "";
     }
@@ -208,8 +197,9 @@ SuggestionItem* SuggestionIterator::instantiateSuggestion() const
 {
 #if defined(LIBZIM_WITH_XAPIAN)
     if (mp_internal) {
-        return new SuggestionItem(getIndexTitle(),
-                                  getIndexPath(), getIndexSnippet());
+        return new SuggestionItem(mp_internal->getIndexTitle(),
+                                  mp_internal->getIndexPath(),
+                                  mp_internal->getIndexSnippet());
     }
 #endif  // LIBZIM_WITH_XAPIAN
 

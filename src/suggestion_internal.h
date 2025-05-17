@@ -121,6 +121,10 @@ struct SuggestionIterator::SuggestionInternalData {
             &&  mp_mset == other.mp_mset
             &&  iterator == other.iterator);
     }
+
+    std::string getIndexPath();
+    std::string getIndexTitle();
+    std::string getIndexSnippet();
 };
 #endif  // LIBZIM_WITH_XAPIAN
 

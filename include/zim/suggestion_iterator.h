@@ -104,9 +104,6 @@ class LIBZIM_API SuggestionIterator
         std::unique_ptr<SuggestionInternalData> mp_internal;
 
     private: // xapian based methods
-        std::string getIndexPath() const;
-        std::string getIndexTitle() const;
-        std::string getIndexSnippet() const;
         explicit SuggestionIterator(SuggestionInternalData* internal_data);
 #endif  // LIBZIM_WITH_XAPIAN
 };
