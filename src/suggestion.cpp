@@ -323,26 +323,4 @@ int SuggestionResultSet::size() const
   return mp_entryRange->size();
 }
 
-SuggestionResultSet::iterator SuggestionResultSet::begin() const
-{
-#if defined(ENABLE_XAPIAN)
-    if ( ! mp_entryRange ) {
-        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin()));
-    }
-#endif  // ENABLE_XAPIAN
-
-    return iterator(mp_entryRange->begin());
-}
-
-SuggestionResultSet::iterator SuggestionResultSet::end() const
-{
-#if defined(ENABLE_XAPIAN)
-    if ( ! mp_entryRange ) {
-        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end()));
-    }
-#endif  // ENABLE_XAPIAN
-
-    return iterator(mp_entryRange->end());
-}
-
 } // namespace zim

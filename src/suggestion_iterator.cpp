@@ -22,10 +22,58 @@
 
 #include "zim/suggestion_iterator.h"
 #include "suggestion_internal.h"
+#include "./smartptr.h"
+
 #include <stdexcept>
 
 namespace zim
 {
+
+#if defined(LIBZIM_WITH_XAPIAN)
+struct SuggestionIterator::SuggestionInternalData {
+    std::shared_ptr<SuggestionDataBase> mp_internalDb;
+    std::shared_ptr<Xapian::MSet> mp_mset;
+    Xapian::MSetIterator iterator;
+    Xapian::Document _document;
+    bool document_fetched;
+    ValuePtr<Entry> _entry;
+
+    SuggestionInternalData(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
+        mp_internalDb(p_internalDb),
+        mp_mset(p_mset),
+        iterator(iterator),
+        document_fetched(false)
+    {};
+
+    Xapian::Document get_document() {
+        if ( !document_fetched ) {
+            if (iterator == mp_mset->end()) {
+                throw std::runtime_error("Cannot get entry for end iterator");
+            }
+            _document = iterator.get_document();
+            document_fetched = true;
+        }
+        return _document;
+    }
+
+    Entry& get_entry() {
+        if (!_entry) {
+            _entry.reset(new Entry(mp_internalDb->m_archive.getEntryByPath(get_document().get_data())));
+        }
+        return *_entry.get();
+    }
+
+    bool operator==(const SuggestionInternalData& other) const {
+        return (mp_internalDb == other.mp_internalDb
+            &&  mp_mset == other.mp_mset
+            &&  iterator == other.iterator);
+    }
+
+    std::string getIndexPath();
+    std::string getIndexTitle();
+    std::string getIndexSnippet();
+};
+#endif  // LIBZIM_WITH_XAPIAN
 
 SuggestionIterator::~SuggestionIterator() = default;
 SuggestionIterator::SuggestionIterator(SuggestionIterator&& it) = default;
@@ -225,6 +273,32 @@ const SuggestionItem& SuggestionIterator::operator*() {
 const SuggestionItem* SuggestionIterator::operator->() {
     operator*();
     return m_suggestionItem.get();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SuggestionIterator related methods of SuggestionResultSet
+////////////////////////////////////////////////////////////////////////////////
+
+SuggestionResultSet::iterator SuggestionResultSet::begin() const
+{
+#if defined(LIBZIM_WITH_XAPIAN)
+    if ( ! mp_entryRange ) {
+        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin()));
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    return iterator(mp_entryRange->begin());
+}
+
+SuggestionResultSet::iterator SuggestionResultSet::end() const
+{
+#if defined(LIBZIM_WITH_XAPIAN)
+    if ( ! mp_entryRange ) {
+        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end()));
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    return iterator(mp_entryRange->end());
 }
 
 } // namespace zim

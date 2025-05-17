@@ -86,7 +86,6 @@ class LIBZIM_API SuggestionIterator
         const SuggestionItem* operator->();
 
     private: // data
-        struct SuggestionInternalData;
         std::unique_ptr<RangeIterator> mp_rangeIterator;
         std::unique_ptr<SuggestionItem> m_suggestionItem;
 
@@ -101,6 +100,7 @@ class LIBZIM_API SuggestionIterator
         std::string getDbData() const;
 #endif
     private: // xapian based data
+        struct SuggestionInternalData;
         std::unique_ptr<SuggestionInternalData> mp_internal;
 
     private: // xapian based methods
