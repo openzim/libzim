@@ -32,48 +32,33 @@ SuggestionIterator::SuggestionIterator(SuggestionIterator&& it) = default;
 SuggestionIterator& SuggestionIterator::operator=(SuggestionIterator&& it) = default;
 
 SuggestionIterator::SuggestionIterator(RangeIterator rangeIterator)
-  : mp_rangeIterator(std::unique_ptr<RangeIterator>(new RangeIterator(rangeIterator)))
-#if defined(LIBZIM_WITH_XAPIAN)
-    , mp_internal(nullptr)
-#endif  // LIBZIM_WITH_XAPIAN
+  : mp_rangeIterator(new RangeIterator(rangeIterator))
 {}
 
 #if defined(LIBZIM_WITH_XAPIAN)
 SuggestionIterator::SuggestionIterator(SuggestionInternalData* internal)
-  : mp_rangeIterator(nullptr),
-    mp_internal(internal)
+  : mp_internal(internal)
 {}
 #endif  // LIBZIM_WITH_XAPIAN
 
 SuggestionIterator::SuggestionIterator(const SuggestionIterator& it)
-    : mp_rangeIterator(nullptr)
 {
 #if defined(LIBZIM_WITH_XAPIAN)
-    mp_internal.reset(nullptr);
-    if (it.mp_internal) {
-        mp_internal = std::unique_ptr<SuggestionInternalData>(new SuggestionInternalData(*it.mp_internal));
-    }
-#endif  // LIBZIM_WITH_XAPIAN
-
-    if (it.mp_rangeIterator) {
-        mp_rangeIterator = std::unique_ptr<RangeIterator>(new RangeIterator(*it.mp_rangeIterator));
-    }
-}
-
-SuggestionIterator& SuggestionIterator::operator=(const SuggestionIterator& it) {
-    mp_rangeIterator.reset();
-    if (it.mp_rangeIterator) {
-        mp_rangeIterator.reset(new RangeIterator(*it.mp_rangeIterator));
-    }
-
-#if defined(LIBZIM_WITH_XAPIAN)
-    mp_internal.reset();
     if (it.mp_internal) {
         mp_internal.reset(new SuggestionInternalData(*it.mp_internal));
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
-    m_suggestionItem.reset();
+    if (it.mp_rangeIterator) {
+        mp_rangeIterator.reset(new RangeIterator(*it.mp_rangeIterator));
+    }
+}
+
+SuggestionIterator& SuggestionIterator::operator=(const SuggestionIterator& it) {
+    if ( this != &it ) {
+      this->~SuggestionIterator();
+      new(this) SuggestionIterator(it);
+    }
     return *this;
 }
 
