@@ -73,6 +73,44 @@ struct SuggestionIterator::SuggestionInternalData {
     std::string getIndexTitle();
     std::string getIndexSnippet();
 };
+
+std::string SuggestionIterator::SuggestionInternalData::getIndexPath()
+{
+    try {
+        std::string path = get_document().get_data();
+        bool hasNewNamespaceScheme = mp_internalDb->m_archive.hasNewNamespaceScheme();
+
+        std::string dbDataType = mp_internalDb->m_database.get_metadata("data");
+        if (dbDataType.empty()) {
+            dbDataType = "fullPath";
+        }
+
+        // If the archive has new namespace scheme and the type of its indexed
+        // data is `fullPath` we return only the `path` without namespace
+        if (hasNewNamespaceScheme && dbDataType == "fullPath") {
+            path = path.substr(2);
+        }
+        return path;
+    } catch ( Xapian::DatabaseError& e) {
+        throw ZimFileFormatError(e.get_description());
+    }
+}
+
+std::string SuggestionIterator::SuggestionInternalData::getIndexTitle() {
+    try {
+        return get_entry().getTitle();
+    } catch (...) {
+        return "";
+    }
+}
+
+std::string SuggestionIterator::SuggestionInternalData::getIndexSnippet() {
+    try {
+        return mp_mset->snippet(getIndexTitle(), 500, mp_internalDb->m_stemmer);
+    } catch(...) {
+        return "";
+    }
+}
 #endif  // LIBZIM_WITH_XAPIAN
 
 SuggestionIterator::~SuggestionIterator() = default;
@@ -202,43 +240,6 @@ std::string SuggestionIterator::getDbData() const {
     }
 }
 
-std::string SuggestionIterator::SuggestionInternalData::getIndexPath()
-{
-    try {
-        std::string path = get_document().get_data();
-        bool hasNewNamespaceScheme = mp_internalDb->m_archive.hasNewNamespaceScheme();
-
-        std::string dbDataType = mp_internalDb->m_database.get_metadata("data");
-        if (dbDataType.empty()) {
-            dbDataType = "fullPath";
-        }
-
-        // If the archive has new namespace scheme and the type of its indexed
-        // data is `fullPath` we return only the `path` without namespace
-        if (hasNewNamespaceScheme && dbDataType == "fullPath") {
-            path = path.substr(2);
-        }
-        return path;
-    } catch ( Xapian::DatabaseError& e) {
-        throw ZimFileFormatError(e.get_description());
-    }
-}
-
-std::string SuggestionIterator::SuggestionInternalData::getIndexTitle() {
-    try {
-        return get_entry().getTitle();
-    } catch (...) {
-        return "";
-    }
-}
-
-std::string SuggestionIterator::SuggestionInternalData::getIndexSnippet() {
-    try {
-        return mp_mset->snippet(getIndexTitle(), 500, mp_internalDb->m_stemmer);
-    } catch(...) {
-        return "";
-    }
-}
 #endif  // LIBZIM_WITH_XAPIAN
 
 SuggestionItem* SuggestionIterator::instantiateSuggestion() const
