@@ -204,22 +204,29 @@ std::string SuggestionIterator::getIndexSnippet() const {
 }
 #endif  // LIBZIM_WITH_XAPIAN
 
+SuggestionItem* SuggestionIterator::instantiateSuggestion() const
+{
+#if defined(LIBZIM_WITH_XAPIAN)
+    if (mp_internal) {
+        return new SuggestionItem(getIndexTitle(),
+                                  getIndexPath(), getIndexSnippet());
+    }
+#endif  // LIBZIM_WITH_XAPIAN
+
+    if (mp_rangeIterator) {
+        return new SuggestionItem((*mp_rangeIterator)->getTitle(),
+                                  (*mp_rangeIterator)->getPath());
+    }
+
+    return nullptr;
+}
+
 const SuggestionItem& SuggestionIterator::operator*() {
     if (m_suggestionItem) {
         return *m_suggestionItem;
     }
 
-#if defined(LIBZIM_WITH_XAPIAN)
-    if (mp_internal) {
-        m_suggestionItem.reset(new SuggestionItem(getIndexTitle(),
-                getIndexPath(), getIndexSnippet()));
-    } else
-#endif  // LIBZIM_WITH_XAPIAN
-
-    if (mp_rangeIterator) {
-        m_suggestionItem.reset(new SuggestionItem((*mp_rangeIterator)->getTitle(),
-                                                (*mp_rangeIterator)->getPath()));
-    }
+    m_suggestionItem.reset(instantiateSuggestion());
 
     if (!m_suggestionItem){
         throw std::runtime_error("Cannot dereference iterator");

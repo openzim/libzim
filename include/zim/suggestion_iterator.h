@@ -92,6 +92,7 @@ class LIBZIM_API SuggestionIterator
 
     private: // methods
         explicit SuggestionIterator(RangeIterator rangeIterator);
+        SuggestionItem* instantiateSuggestion() const;
 
 // Xapian based methods and data
 #if defined(LIBZIM_WITH_XAPIAN)
