@@ -222,17 +222,14 @@ SuggestionItem* SuggestionIterator::instantiateSuggestion() const
 }
 
 const SuggestionItem& SuggestionIterator::operator*() {
-    if (m_suggestionItem) {
-        return *m_suggestionItem;
+    if (!m_suggestionItem) {
+      m_suggestionItem.reset(instantiateSuggestion());
+
+      if (!m_suggestionItem){
+          throw std::runtime_error("Cannot dereference iterator");
+      }
     }
-
-    m_suggestionItem.reset(instantiateSuggestion());
-
-    if (!m_suggestionItem){
-        throw std::runtime_error("Cannot dereference iterator");
-    }
-
-    return *m_suggestionItem.get();
+    return *m_suggestionItem;
 }
 
 const SuggestionItem* SuggestionIterator::operator->() {
