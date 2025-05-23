@@ -34,9 +34,9 @@ class SuggestionIterator::Impl {
     std::shared_ptr<SuggestionDataBase> mp_db;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
-    Xapian::Document _document;
-    bool document_fetched;
-    ValuePtr<Entry> _entry;
+    mutable Xapian::Document _document;
+    mutable bool document_fetched;
+    mutable ValuePtr<Entry> _entry;
 
 public:
     Impl(std::shared_ptr<SuggestionDataBase> p_db,
@@ -60,14 +60,13 @@ public:
         document_fetched = false;
     }
 
-    SuggestionItem get_suggestion()
-    {
+    SuggestionItem get_suggestion() const {
         return SuggestionItem(getIndexTitle(),
                               getIndexPath(),
                               getIndexSnippet());
     }
 
-    Xapian::Document get_document() {
+    Xapian::Document get_document() const {
         if ( !document_fetched ) {
             if (iterator == mp_mset->end()) {
                 throw std::runtime_error("Cannot get entry for end iterator");
@@ -78,7 +77,7 @@ public:
         return _document;
     }
 
-    Entry& get_entry() {
+    Entry& get_entry() const {
         if (!_entry) {
             const auto path = get_document().get_data();
             _entry.reset(new Entry(mp_db->m_archive.getEntryByPath(path)));
@@ -93,12 +92,12 @@ public:
     }
 
 private:
-    std::string getIndexPath();
-    std::string getIndexTitle();
-    std::string getIndexSnippet();
+    std::string getIndexPath() const;
+    std::string getIndexTitle() const;
+    std::string getIndexSnippet() const;
 };
 
-std::string SuggestionIterator::Impl::getIndexPath()
+std::string SuggestionIterator::Impl::getIndexPath() const
 {
     try {
         std::string path = get_document().get_data();
@@ -120,7 +119,7 @@ std::string SuggestionIterator::Impl::getIndexPath()
     }
 }
 
-std::string SuggestionIterator::Impl::getIndexTitle() {
+std::string SuggestionIterator::Impl::getIndexTitle() const {
     try {
         return get_entry().getTitle();
     } catch (...) {
@@ -128,7 +127,7 @@ std::string SuggestionIterator::Impl::getIndexTitle() {
     }
 }
 
-std::string SuggestionIterator::Impl::getIndexSnippet() {
+std::string SuggestionIterator::Impl::getIndexSnippet() const {
     try {
         return mp_mset->snippet(getIndexTitle(), 500, mp_db->m_stemmer);
     } catch(...) {
