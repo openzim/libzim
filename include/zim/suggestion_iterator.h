@@ -100,11 +100,11 @@ class LIBZIM_API SuggestionIterator
         std::string getDbData() const;
 #endif
     private: // xapian based data
-        struct SuggestionInternalData;
-        std::unique_ptr<SuggestionInternalData> mp_internal;
+        struct Impl;
+        std::unique_ptr<Impl> mp_impl;
 
     private: // xapian based methods
-        explicit SuggestionIterator(SuggestionInternalData* internal_data);
+        explicit SuggestionIterator(Impl* impl);
 #endif  // LIBZIM_WITH_XAPIAN
 };
 

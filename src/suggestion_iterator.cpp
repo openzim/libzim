@@ -30,7 +30,7 @@ namespace zim
 {
 
 #if defined(LIBZIM_WITH_XAPIAN)
-struct SuggestionIterator::SuggestionInternalData {
+struct SuggestionIterator::Impl {
     std::shared_ptr<SuggestionDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
@@ -38,7 +38,7 @@ struct SuggestionIterator::SuggestionInternalData {
     bool document_fetched;
     ValuePtr<Entry> _entry;
 
-    SuggestionInternalData(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
+    Impl(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
         mp_internalDb(p_internalDb),
         mp_mset(p_mset),
         iterator(iterator),
@@ -63,7 +63,7 @@ struct SuggestionIterator::SuggestionInternalData {
         return *_entry.get();
     }
 
-    bool operator==(const SuggestionInternalData& other) const {
+    bool operator==(const Impl& other) const {
         return (mp_internalDb == other.mp_internalDb
             &&  mp_mset == other.mp_mset
             &&  iterator == other.iterator);
@@ -74,7 +74,7 @@ struct SuggestionIterator::SuggestionInternalData {
     std::string getIndexSnippet();
 };
 
-std::string SuggestionIterator::SuggestionInternalData::getIndexPath()
+std::string SuggestionIterator::Impl::getIndexPath()
 {
     try {
         std::string path = get_document().get_data();
@@ -96,7 +96,7 @@ std::string SuggestionIterator::SuggestionInternalData::getIndexPath()
     }
 }
 
-std::string SuggestionIterator::SuggestionInternalData::getIndexTitle() {
+std::string SuggestionIterator::Impl::getIndexTitle() {
     try {
         return get_entry().getTitle();
     } catch (...) {
@@ -104,7 +104,7 @@ std::string SuggestionIterator::SuggestionInternalData::getIndexTitle() {
     }
 }
 
-std::string SuggestionIterator::SuggestionInternalData::getIndexSnippet() {
+std::string SuggestionIterator::Impl::getIndexSnippet() {
     try {
         return mp_mset->snippet(getIndexTitle(), 500, mp_internalDb->m_stemmer);
     } catch(...) {
@@ -122,16 +122,16 @@ SuggestionIterator::SuggestionIterator(RangeIterator rangeIterator)
 {}
 
 #if defined(LIBZIM_WITH_XAPIAN)
-SuggestionIterator::SuggestionIterator(SuggestionInternalData* internal)
-  : mp_internal(internal)
+SuggestionIterator::SuggestionIterator(Impl* impl)
+  : mp_impl(impl)
 {}
 #endif  // LIBZIM_WITH_XAPIAN
 
 SuggestionIterator::SuggestionIterator(const SuggestionIterator& it)
 {
 #if defined(LIBZIM_WITH_XAPIAN)
-    if (it.mp_internal) {
-        mp_internal.reset(new SuggestionInternalData(*it.mp_internal));
+    if (it.mp_impl) {
+        mp_impl.reset(new Impl(*it.mp_impl));
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -154,8 +154,8 @@ bool SuggestionIterator::operator==(const SuggestionIterator& it) const {
     }
 
 #if defined(LIBZIM_WITH_XAPIAN)
-    if (mp_internal && it.mp_internal) {
-        return (*mp_internal == *it.mp_internal);
+    if (mp_impl && it.mp_impl) {
+        return (*mp_impl == *it.mp_impl);
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -168,10 +168,10 @@ bool SuggestionIterator::operator!=(const SuggestionIterator& it) const {
 
 SuggestionIterator& SuggestionIterator::operator++() {
 #if defined(LIBZIM_WITH_XAPIAN)
-    if (mp_internal) {
-        ++(mp_internal->iterator);
-        mp_internal->_entry.reset();
-        mp_internal->document_fetched = false;
+    if (mp_impl) {
+        ++(mp_impl->iterator);
+        mp_impl->_entry.reset();
+        mp_impl->document_fetched = false;
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -190,10 +190,10 @@ SuggestionIterator SuggestionIterator::operator++(int) {
 
 SuggestionIterator& SuggestionIterator::operator--() {
 #if defined(LIBZIM_WITH_XAPIAN)
-    if (mp_internal) {
-        --(mp_internal->iterator);
-        mp_internal->_entry.reset();
-        mp_internal->document_fetched = false;
+    if (mp_impl) {
+        --(mp_impl->iterator);
+        mp_impl->_entry.reset();
+        mp_impl->document_fetched = false;
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -212,9 +212,9 @@ SuggestionIterator SuggestionIterator::operator--(int) {
 
 Entry SuggestionIterator::getEntry() const {
 #if defined(LIBZIM_WITH_XAPIAN)
-    if (mp_internal) {
+    if (mp_impl) {
         try {
-            return mp_internal->get_entry();
+            return mp_impl->get_entry();
         } catch ( Xapian::DatabaseError& e) {
             throw ZimFileFormatError(e.get_description());
         }
@@ -229,12 +229,12 @@ Entry SuggestionIterator::getEntry() const {
 
 #if defined(LIBZIM_WITH_XAPIAN)
 std::string SuggestionIterator::getDbData() const {
-    if (! mp_internal) {
+    if (! mp_impl) {
         return "";
     }
 
     try {
-        return mp_internal->get_document().get_data();
+        return mp_impl->get_document().get_data();
     } catch ( Xapian::DatabaseError& e) {
         throw ZimFileFormatError(e.get_description());
     }
@@ -245,10 +245,10 @@ std::string SuggestionIterator::getDbData() const {
 SuggestionItem* SuggestionIterator::instantiateSuggestion() const
 {
 #if defined(LIBZIM_WITH_XAPIAN)
-    if (mp_internal) {
-        return new SuggestionItem(mp_internal->getIndexTitle(),
-                                  mp_internal->getIndexPath(),
-                                  mp_internal->getIndexSnippet());
+    if (mp_impl) {
+        return new SuggestionItem(mp_impl->getIndexTitle(),
+                                  mp_impl->getIndexPath(),
+                                  mp_impl->getIndexSnippet());
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -284,7 +284,7 @@ SuggestionResultSet::iterator SuggestionResultSet::begin() const
 {
 #if defined(LIBZIM_WITH_XAPIAN)
     if ( ! mp_entryRange ) {
-        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin()));
+        return iterator(new iterator::Impl(mp_internalDb, mp_mset, mp_mset->begin()));
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -295,7 +295,7 @@ SuggestionResultSet::iterator SuggestionResultSet::end() const
 {
 #if defined(LIBZIM_WITH_XAPIAN)
     if ( ! mp_entryRange ) {
-        return iterator(new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end()));
+        return iterator(new iterator::Impl(mp_internalDb, mp_mset, mp_mset->end()));
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
