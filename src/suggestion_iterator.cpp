@@ -31,7 +31,7 @@ namespace zim
 
 #if defined(LIBZIM_WITH_XAPIAN)
 class SuggestionIterator::Impl {
-    std::shared_ptr<SuggestionDataBase> mp_internalDb;
+    std::shared_ptr<SuggestionDataBase> mp_db;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
     Xapian::Document _document;
@@ -39,8 +39,10 @@ class SuggestionIterator::Impl {
     ValuePtr<Entry> _entry;
 
 public:
-    Impl(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
-        mp_internalDb(p_internalDb),
+    Impl(std::shared_ptr<SuggestionDataBase> p_db,
+         std::shared_ptr<Xapian::MSet> p_mset,
+         Xapian::MSetIterator iterator) :
+        mp_db(p_db),
         mp_mset(p_mset),
         iterator(iterator),
         document_fetched(false)
@@ -78,13 +80,14 @@ public:
 
     Entry& get_entry() {
         if (!_entry) {
-            _entry.reset(new Entry(mp_internalDb->m_archive.getEntryByPath(get_document().get_data())));
+            const auto path = get_document().get_data();
+            _entry.reset(new Entry(mp_db->m_archive.getEntryByPath(path)));
         }
         return *_entry.get();
     }
 
     bool operator==(const Impl& other) const {
-        return (mp_internalDb == other.mp_internalDb
+        return (mp_db == other.mp_db
             &&  mp_mset == other.mp_mset
             &&  iterator == other.iterator);
     }
@@ -99,9 +102,9 @@ std::string SuggestionIterator::Impl::getIndexPath()
 {
     try {
         std::string path = get_document().get_data();
-        bool hasNewNamespaceScheme = mp_internalDb->m_archive.hasNewNamespaceScheme();
+        bool hasNewNamespaceScheme = mp_db->m_archive.hasNewNamespaceScheme();
 
-        std::string dbDataType = mp_internalDb->m_database.get_metadata("data");
+        std::string dbDataType = mp_db->m_database.get_metadata("data");
         if (dbDataType.empty()) {
             dbDataType = "fullPath";
         }
@@ -127,7 +130,7 @@ std::string SuggestionIterator::Impl::getIndexTitle() {
 
 std::string SuggestionIterator::Impl::getIndexSnippet() {
     try {
-        return mp_mset->snippet(getIndexTitle(), 500, mp_internalDb->m_stemmer);
+        return mp_mset->snippet(getIndexTitle(), 500, mp_db->m_stemmer);
     } catch(...) {
         return "";
     }
