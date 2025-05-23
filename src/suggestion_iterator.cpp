@@ -45,6 +45,18 @@ struct SuggestionIterator::Impl {
         document_fetched(false)
     {};
 
+    void operator++() {
+        ++iterator;
+        _entry.reset();
+        document_fetched = false;
+    }
+
+    void operator--() {
+        --iterator;
+        _entry.reset();
+        document_fetched = false;
+    }
+
     Xapian::Document get_document() {
         if ( !document_fetched ) {
             if (iterator == mp_mset->end()) {
@@ -169,9 +181,7 @@ bool SuggestionIterator::operator!=(const SuggestionIterator& it) const {
 SuggestionIterator& SuggestionIterator::operator++() {
 #if defined(LIBZIM_WITH_XAPIAN)
     if (mp_impl) {
-        ++(mp_impl->iterator);
-        mp_impl->_entry.reset();
-        mp_impl->document_fetched = false;
+        ++(*mp_impl);
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -191,9 +201,7 @@ SuggestionIterator SuggestionIterator::operator++(int) {
 SuggestionIterator& SuggestionIterator::operator--() {
 #if defined(LIBZIM_WITH_XAPIAN)
     if (mp_impl) {
-        --(mp_impl->iterator);
-        mp_impl->_entry.reset();
-        mp_impl->document_fetched = false;
+        --(*mp_impl);
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
