@@ -57,6 +57,13 @@ struct SuggestionIterator::Impl {
         document_fetched = false;
     }
 
+    SuggestionItem get_suggestion()
+    {
+        return SuggestionItem(getIndexTitle(),
+                              getIndexPath(),
+                              getIndexSnippet());
+    }
+
     Xapian::Document get_document() {
         if ( !document_fetched ) {
             if (iterator == mp_mset->end()) {
@@ -254,9 +261,7 @@ SuggestionItem* SuggestionIterator::instantiateSuggestion() const
 {
 #if defined(LIBZIM_WITH_XAPIAN)
     if (mp_impl) {
-        return new SuggestionItem(mp_impl->getIndexTitle(),
-                                  mp_impl->getIndexPath(),
-                                  mp_impl->getIndexSnippet());
+        return new SuggestionItem(mp_impl->get_suggestion());
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
