@@ -34,8 +34,10 @@ class SuggestionIterator::Impl {
     std::shared_ptr<SuggestionDataBase> mp_db;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
-    mutable Xapian::Document _document;
-    mutable bool document_fetched;
+
+    // cached/memoized data
+    mutable std::string _entryPath;
+    mutable bool _entryPathValid;
     mutable ValuePtr<Entry> _entry;
 
 public:
@@ -45,19 +47,19 @@ public:
         mp_db(p_db),
         mp_mset(p_mset),
         iterator(iterator),
-        document_fetched(false)
+        _entryPathValid(false)
     {};
 
     void operator++() {
         ++iterator;
         _entry.reset();
-        document_fetched = false;
+        _entryPathValid = false;
     }
 
     void operator--() {
         --iterator;
         _entry.reset();
-        document_fetched = false;
+        _entryPathValid = false;
     }
 
     SuggestionItem get_suggestion() const {
@@ -66,20 +68,20 @@ public:
                               getIndexSnippet());
     }
 
-    Xapian::Document get_document() const {
-        if ( !document_fetched ) {
+    std::string get_entry_path() const {
+        if ( !_entryPathValid ) {
             if (iterator == mp_mset->end()) {
                 throw std::runtime_error("Cannot get entry for end iterator");
             }
-            _document = iterator.get_document();
-            document_fetched = true;
+            _entryPath = iterator.get_document().get_data();
+            _entryPathValid = true;
         }
-        return _document;
+        return _entryPath;
     }
 
     Entry& get_entry() const {
         if (!_entry) {
-            const auto path = get_document().get_data();
+            const auto path = get_entry_path();
             _entry.reset(new Entry(mp_db->m_archive.getEntryByPath(path)));
         }
         return *_entry.get();
@@ -100,7 +102,7 @@ private:
 std::string SuggestionIterator::Impl::getIndexPath() const
 {
     try {
-        std::string path = get_document().get_data();
+        std::string path = get_entry_path();
         bool hasNewNamespaceScheme = mp_db->m_archive.hasNewNamespaceScheme();
 
         std::string dbDataType = mp_db->m_database.get_metadata("data");
@@ -253,7 +255,7 @@ std::string SuggestionIterator::getDbData() const {
     }
 
     try {
-        return mp_impl->get_document().get_data();
+        return mp_impl->get_entry_path();
     } catch ( Xapian::DatabaseError& e) {
         throw ZimFileFormatError(e.get_description());
     }
