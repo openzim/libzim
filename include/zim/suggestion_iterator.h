@@ -100,7 +100,7 @@ class LIBZIM_API SuggestionIterator
         std::string getDbData() const;
 #endif
     private: // xapian based data
-        struct Impl;
+        class Impl;
         std::unique_ptr<Impl> mp_impl;
 
     private: // xapian based methods

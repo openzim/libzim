@@ -30,7 +30,7 @@ namespace zim
 {
 
 #if defined(LIBZIM_WITH_XAPIAN)
-struct SuggestionIterator::Impl {
+class SuggestionIterator::Impl {
     std::shared_ptr<SuggestionDataBase> mp_internalDb;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
@@ -38,6 +38,7 @@ struct SuggestionIterator::Impl {
     bool document_fetched;
     ValuePtr<Entry> _entry;
 
+public:
     Impl(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
         mp_internalDb(p_internalDb),
         mp_mset(p_mset),
@@ -88,6 +89,7 @@ struct SuggestionIterator::Impl {
             &&  iterator == other.iterator);
     }
 
+private:
     std::string getIndexPath();
     std::string getIndexTitle();
     std::string getIndexSnippet();
