@@ -95,10 +95,6 @@ class LIBZIM_API SuggestionIterator
 
 // Xapian based methods and data
 #if defined(LIBZIM_WITH_XAPIAN)
-#ifdef ZIM_PRIVATE
-    public:
-        std::string getDbData() const;
-#endif
     private: // xapian based data
         class Impl;
         std::unique_ptr<Impl> mp_impl;

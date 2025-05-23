@@ -23,7 +23,10 @@
 #include <zim/suggestion.h>
 #include <zim/item.h>
 
+#include <xapian.h>
+
 #include "tools.h"
+#include "../src/tools.h"
 
 #include "gtest/gtest.h"
 
@@ -477,30 +480,6 @@ TEST(Suggestion, anchorQueryToBeginning) {
   );
 }
 
-// To secure compatibity of new zim files with older kiwixes, we need to index
-// full path of the entries as data of documents.
-TEST(Suggestion, indexFullPath) {
-  TempZimArchive tza("testZim");
-  zim::writer::Creator creator;
-  creator.configIndexing(true, "en");
-  creator.startZimCreation(tza.getPath());
-
-  auto item = std::make_shared<TestItem>("testPath", "text/html", "Test Article");
-  creator.addItem(item);
-
-  creator.addMetadata("Title", "Test zim");
-  creator.finishZimCreation();
-
-  zim::Archive archive(tza.getPath());
-
-  zim::SuggestionSearcher suggestionSearcher(archive);
-  auto suggestionSearch = suggestionSearcher.suggest("Test Article");
-  auto result = suggestionSearch.getResults(0, archive.getEntryCount());
-
-  ASSERT_EQ(result.begin()->getPath(), "testPath");
-  ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
-}
-
 TEST(Suggestion, nonWordCharacters) {
   TempZimArchive tza("testZim");
   {
@@ -749,4 +728,46 @@ TEST(Suggestion, titleEdgeCases) {
       /* nothing */
   );
 }
+
+zim::Entry getTitleIndexEntry(const zim::Archive& a)
+{
+  return a.getEntryByPathWithNamespace('X', "title/xapian");
+}
+
+// To secure compatibity of new zim files with older kiwixes, we need to index
+// full path of the entries as data of documents.
+TEST(Suggestion, indexFullPath) {
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+    //{ path               , title                      }
+      { "MainPage"         , "Table of Contents"        },
+      { "Preface"          , "Preface"                  },
+      { "Volume1/Chapter1" , "The Rise of Blefuscu"     },
+      { "Volume1/Chapter2" , "Blefuscu at its Peak"     },
+      { "Volume2/Chapter3" , "War with Lilliput"        },
+      { "Volume2/Chapter4" , "Awakening"                },
+      { "Postbutt"         , "Sadbuttrue"               },
+  });
+
+  zim::Archive archive(tza.getPath());
+  const zim::Entry titleIndexEntry = getTitleIndexEntry(archive);
+  const auto dai = titleIndexEntry.getItem().getDirectAccessInformation();
+
+  ASSERT_TRUE(dai.isValid());
+
+  Xapian::Database database;
+  ASSERT_TRUE(zim::getDbFromAccessInfo(dai, database));
+  const auto lastdocid = database.get_lastdocid();
+  ASSERT_EQ(lastdocid, 7);
+
+  // Make sure that the namespace is included in the path recorded
+  // with each indexed document
+  ASSERT_EQ(database.get_document(1).get_data(), "C/MainPage");
+  ASSERT_EQ(database.get_document(2).get_data(), "C/Preface");
+  ASSERT_EQ(database.get_document(3).get_data(), "C/Volume1/Chapter1");
+  ASSERT_EQ(database.get_document(4).get_data(), "C/Volume1/Chapter2");
+  ASSERT_EQ(database.get_document(5).get_data(), "C/Volume2/Chapter3");
+  ASSERT_EQ(database.get_document(6).get_data(), "C/Volume2/Chapter4");
+  ASSERT_EQ(database.get_document(7).get_data(), "C/Postbutt");
+}
+
 } // unnamed namespace

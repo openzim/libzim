@@ -248,21 +248,6 @@ Entry SuggestionIterator::getEntry() const {
     throw std::runtime_error("Cannot dereference iterator");
 }
 
-#if defined(LIBZIM_WITH_XAPIAN)
-std::string SuggestionIterator::getDbData() const {
-    if (! mp_impl) {
-        return "";
-    }
-
-    try {
-        return mp_impl->get_entry_path();
-    } catch ( Xapian::DatabaseError& e) {
-        throw ZimFileFormatError(e.get_description());
-    }
-}
-
-#endif  // LIBZIM_WITH_XAPIAN
-
 SuggestionItem* SuggestionIterator::instantiateSuggestion() const
 {
 #if defined(LIBZIM_WITH_XAPIAN)
