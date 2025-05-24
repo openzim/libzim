@@ -86,22 +86,29 @@ class LIBZIM_API SuggestionIterator
         const SuggestionItem* operator->();
 
     private: // data
+        // XXX: The order of the data members is inherited from the older
+        // XXX: days when `mp_impl` (then named `mp_internalDb`) was
+        // XXX: conditionally compiled (missing when LIBZIM_WITH_XAPIAN was set
+        // XXX: to false) and is preserved for ABI compatibility.
+
+        // Fallback implementation if no title index is available or libzim
+        // is built without Xapian
         std::unique_ptr<RangeIterator> mp_rangeIterator;
+
+        // cached/memoized result of dereference
         std::unique_ptr<SuggestionItem> m_suggestionItem;
 
-    private: // methods
-        explicit SuggestionIterator(RangeIterator rangeIterator);
-        SuggestionItem* instantiateSuggestion() const;
-
-// Xapian based methods and data
-#if defined(LIBZIM_WITH_XAPIAN)
-    private: // xapian based data
         class Impl;
+
+        // Main (xapian-based) implementation; is null if no title index is
+        // available or libzim is built without Xapian
         std::unique_ptr<Impl> mp_impl;
 
-    private: // xapian based methods
+    private: // methods
         explicit SuggestionIterator(Impl* impl);
-#endif  // LIBZIM_WITH_XAPIAN
+
+        explicit SuggestionIterator(RangeIterator rangeIterator);
+        SuggestionItem* instantiateSuggestion() const;
 };
 
 class LIBZIM_API SuggestionItem

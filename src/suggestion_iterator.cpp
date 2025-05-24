@@ -29,8 +29,8 @@
 namespace zim
 {
 
-#if defined(LIBZIM_WITH_XAPIAN)
 class SuggestionIterator::Impl {
+#if defined(LIBZIM_WITH_XAPIAN)
     std::shared_ptr<SuggestionDataBase> mp_db;
     std::shared_ptr<Xapian::MSet> mp_mset;
     Xapian::MSetIterator iterator;
@@ -97,8 +97,10 @@ private:
     std::string getIndexPath() const;
     std::string getIndexTitle() const;
     std::string getIndexSnippet() const;
+#endif
 };
 
+#if defined(LIBZIM_WITH_XAPIAN)
 std::string SuggestionIterator::Impl::getIndexPath() const
 {
     try {
