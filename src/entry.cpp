@@ -21,18 +21,15 @@
 #include <zim/entry.h>
 #include <zim/error.h>
 #include <zim/item.h>
-#include "_dirent.h"
+#include <zim/tools.h>
 #include "fileimpl.h"
-#include "file_part.h"
 #include "log.h"
-
-#include <sstream>
 
 log_define("zim.entry")
 
 using namespace zim;
 
-Entry::Entry(std::shared_ptr<FileImpl> file, entry_index_type idx)
+Entry::Entry(std::shared_ptr<const FileImpl> file, entry_index_type idx)
   : m_file(file),
     m_idx(idx),
     m_dirent(file->getDirent(entry_index_t(idx)))
@@ -46,9 +43,9 @@ std::string Entry::getTitle() const
 std::string Entry::getPath() const
 {
   if (m_file->hasNewNamespaceScheme()) {
-    return m_dirent->getUrl();
+    return m_dirent->getPath();
   } else {
-    return m_dirent->getLongUrl();
+    return m_dirent->getLongPath();
   }
 }
 
@@ -59,16 +56,15 @@ bool Entry::isRedirect() const
 
 Item Entry::getItem(bool follow) const
 {
-  if (isRedirect()) {
-    if (! follow) {
-      std::ostringstream sstream;
-      sstream << "Entry " << getPath() << " is a redirect entry.";
-      throw InvalidType(sstream.str());
-    }
+  if (isRedirect())
+  {
+    if (!follow)
+      throw InvalidType(Formatter()
+                        << "Entry " << getPath() << " is a redirect entry.");
     return getRedirect();
- }
+  }
 
-  return Item(m_file, m_idx);
+  return Item(*this);
 }
 
 Item Entry::getRedirect() const {
@@ -81,11 +77,10 @@ Item Entry::getRedirect() const {
 }
 
 entry_index_type Entry::getRedirectEntryIndex() const  {
-  if (!isRedirect()) {
-    std::ostringstream sstream;
-    sstream << "Entry " << getPath() << " is not a redirect entry.";
-    throw InvalidType(sstream.str());
-  }
+  if (!isRedirect())
+    throw InvalidType(Formatter()
+                      << "Entry " << getPath() << " is not a redirect entry.");
+
   return m_dirent->getRedirectIndex().v;
 }
 

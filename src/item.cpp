@@ -20,34 +20,21 @@
 
 #define ZIM_PRIVATE
 #include <zim/item.h>
-#include "_dirent.h"
 #include "cluster.h"
+#include "zim/zim.h"
 #include "fileimpl.h"
-#include "file_part.h"
 #include "log.h"
+
+#include <cassert>
 
 log_define("zim.item")
 
 using namespace zim;
 
-Item::Item(std::shared_ptr<FileImpl> file, entry_index_type idx)
-  : m_file(file),
-    m_idx(idx),
-    m_dirent(file->getDirent(entry_index_t(idx)))
-{}
-
-std::string Item::getTitle() const
+Item::Item(const Entry& entry)
+  : Entry(entry)
 {
-  return m_dirent->getTitle();
-}
-
-std::string Item::getPath() const
-{
-  if (m_file->hasNewNamespaceScheme()) {
-    return m_dirent->getUrl();
-  } else {
-    return m_dirent->getLongUrl();
-  }
+  assert(!entry.isRedirect());
 }
 
 std::string Item::getMimetype() const
@@ -57,16 +44,12 @@ std::string Item::getMimetype() const
 
 Blob Item::getData(offset_type offset) const
 {
-  auto size = getSize()-offset;
-  return getData(offset, size);
+  return m_file->getBlob(*m_dirent, offset_t(offset));
 }
 
 Blob Item::getData(offset_type offset, size_type size) const
 {
-  auto cluster = m_file->getCluster(m_dirent->getClusterNumber());
-  return cluster->getBlob(m_dirent->getBlobNumber(),
-                          offset_t(offset),
-                          zsize_t(size));
+  return m_file->getBlob(*m_dirent, offset_t(offset), zsize_t(size));
 }
 
 size_type Item::getSize() const
@@ -75,31 +58,17 @@ size_type Item::getSize() const
   return size_type(cluster->getBlobSize(m_dirent->getBlobNumber()));
 }
 
-std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
+ItemDataDirectAccessInfo Item::getDirectAccessInformation() const
 {
-  auto cluster = m_file->getCluster(m_dirent->getClusterNumber());
-  if (cluster->isCompressed()) {
-    return std::make_pair("", 0);
-  }
-
-  auto full_offset = m_file->getBlobOffset(m_dirent->getClusterNumber(),
-                                         m_dirent->getBlobNumber());
-
-  full_offset += m_file->getArchiveStartOffset().v;
-
-  auto part_its = m_file->getFileParts(full_offset, zsize_t(getSize()));
-  auto first_part = part_its.first;
-  if (++part_its.first != part_its.second) {
-   // The content is split on two parts. We cannot have direct access
-    return std::make_pair("", 0);
-  }
-  auto range = first_part->first;
-  auto part = first_part->second;
-  const offset_type local_offset(full_offset - range.min);
-  return std::make_pair(part->filename(), local_offset);
+  return m_file->getDirectAccessInformation(m_dirent->getClusterNumber(), m_dirent->getBlobNumber());
 }
 
 cluster_index_type Item::getClusterIndex() const
 {
   return m_dirent->getClusterNumber().v;
+}
+
+blob_index_type Item::getBlobIndex() const
+{
+  return m_dirent->getBlobNumber().v;
 }

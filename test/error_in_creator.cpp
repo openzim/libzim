@@ -182,36 +182,21 @@ TEST_P(FaultyItemErrorTest, faultyItem)
   EXPECT_NO_THROW(creator.finishZimCreation());
 }
 
-// It would be more natural to put the `#if defined` only around the
-// discarded values, but when crosscompiling on Windows, compiler fail to
-// understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
-// macro. I suspect some macro definition conflicts.
+const auto errorKinds = {
+  ERRORKIND::PATH,
+  ERRORKIND::TITLE,
+  ERRORKIND::MIMETYPE,
+  ERRORKIND::HINTS,
+  ERRORKIND::GET_CONTENTPROVIDER,
+  ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE,
 #if defined(ENABLE_XAPIAN)
-INSTANTIATE_TEST_CASE_P(
-CreatorError,
-FaultyItemErrorTest,
-::testing::Values(
-    ERRORKIND::PATH,
-    ERRORKIND::TITLE,
-    ERRORKIND::MIMETYPE,
-    ERRORKIND::HINTS,
-    ERRORKIND::GET_CONTENTPROVIDER,
-    ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE,
-    ERRORKIND::GET_INDEXDATA
-));
-#else
-INSTANTIATE_TEST_CASE_P(
-CreatorError,
-FaultyItemErrorTest,
-::testing::Values(
-    ERRORKIND::PATH,
-    ERRORKIND::TITLE,
-    ERRORKIND::MIMETYPE,
-    ERRORKIND::HINTS,
-    ERRORKIND::GET_CONTENTPROVIDER,
-    ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE
-));
+  ERRORKIND::GET_INDEXDATA,
 #endif //ENABLE_XAPIAN
+};
+INSTANTIATE_TEST_SUITE_P(
+CreatorError,
+FaultyItemErrorTest,
+::testing::ValuesIn(errorKinds));
 
 double getWaitTimeFactor() {
   char* str_time_factor = std::getenv("WAIT_TIME_FACTOR_TEST");
@@ -288,7 +273,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   // The exact value is specific to each computer, so we need to make this configurable.
   // We use a base and we multiply it by a factor taken from env variable.
   const long sleep_time = 1000000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
-  zim::microsleep(sleep_time * getWaitTimeFactor());
+  zim::microsleep((int)(sleep_time * getWaitTimeFactor()));
   // We detect it for any call after
   CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
   CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));
@@ -320,7 +305,7 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   // Note here, that we have a base smaller than for compressed test as we don't compress the content
   // and the writer thread (the one using the contentProvider) detect the error sooner
   const long sleep_time = 10000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
-  zim::microsleep(sleep_time * getWaitTimeFactor());
+  zim::microsleep((int)(sleep_time * getWaitTimeFactor()));
   // But we detect it for any call after
   CHECK_ASYNC_EXCEPT(creator.addMetadata("Title", "This is a title"));
   CHECK_ASYNC_EXCEPT(creator.addIllustration(48, "PNGBinaryContent48"));
@@ -352,35 +337,21 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnfinishedCreator)
       zim::ZimFileFormatError
   );
 }
-// It would be more natural to put the `#if defined` only around the
-// discarded values, but when crosscompiling on Windows, compiler fail to
-// understand ``#if defined` when used inside the `INSTANTIATE_TEST_CASE_P`
-// macro. I suspect some macro definition conflicts.
+const auto delayedErrorKinds = {
+  ERRORKIND::EXCEPTION_CONTENTPROVIDER_FEED,
+  ERRORKIND::WRONG_OVER_SIZE_CONTENTPROVIDER,
+  ERRORKIND::WRONG_UNDER_SIZE_CONTENTPROVIDER,
 #if defined(ENABLE_XAPIAN)
-INSTANTIATE_TEST_CASE_P(
-CreatorError,
-FaultyDelayedItemErrorTest,
-::testing::Values(
-    ERRORKIND::EXCEPTION_CONTENTPROVIDER_FEED,
-    ERRORKIND::WRONG_OVER_SIZE_CONTENTPROVIDER,
-    ERRORKIND::WRONG_UNDER_SIZE_CONTENTPROVIDER ,
-    ERRORKIND::HAS_INDEXDATA,
-    ERRORKIND::GET_INDEXDATA_TITLE,
-    ERRORKIND::GET_INDEXDATA_CONTENT,
-    ERRORKIND::GET_INDEXDATA_KEYWORD,
-    ERRORKIND::GET_INDEXDATA_WORDCOUNT,
-    ERRORKIND::GET_INDEXDATA_POSITION
-));
-#else
-INSTANTIATE_TEST_CASE_P(
-CreatorError,
-FaultyDelayedItemErrorTest,
-::testing::Values(
-    ERRORKIND::EXCEPTION_CONTENTPROVIDER_FEED,
-    ERRORKIND::WRONG_OVER_SIZE_CONTENTPROVIDER,
-    ERRORKIND::WRONG_UNDER_SIZE_CONTENTPROVIDER
-));
+  ERRORKIND::HAS_INDEXDATA,
+  ERRORKIND::GET_INDEXDATA_TITLE,
+  ERRORKIND::GET_INDEXDATA_CONTENT,
+  ERRORKIND::GET_INDEXDATA_KEYWORD,
+  ERRORKIND::GET_INDEXDATA_WORDCOUNT,
+  ERRORKIND::GET_INDEXDATA_POSITION,
 #endif // ENABLE_XAPIAN
+};
+INSTANTIATE_TEST_SUITE_P(
+CreatorError,
+FaultyDelayedItemErrorTest,
+::testing::ValuesIn(delayedErrorKinds));
 } // unnamed namespace
-
-

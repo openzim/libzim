@@ -22,6 +22,8 @@
 #include <zim/writer/item.h>
 #include <zim/writer/contentProvider.h>
 #include <zim/archive.h>
+#include <zim/error.h>
+#include <zim/tools.h>
 
 #include "tools.h"
 #include "../src/file_compound.h"
@@ -65,7 +67,7 @@ struct Optional<const std::string> {
 void test_article_dirent(
   std::shared_ptr<const Dirent> dirent,
   Optional<char> ns,
-  Optional<const std::string> url,
+  Optional<const std::string> path,
   Optional<const std::string> title,
   Optional<uint16_t> mimetype,
   Optional<cluster_index_t> clusterNumber,
@@ -73,7 +75,7 @@ void test_article_dirent(
 {
   ASSERT_TRUE(dirent->isArticle());
   ns.check(dirent->getNamespace());
-  url.check(dirent->getUrl());
+  path.check(dirent->getPath());
   title.check(dirent->getTitle());
   mimetype.check(dirent->getMimeType());
   clusterNumber.check(dirent->getClusterNumber());
@@ -83,13 +85,13 @@ void test_article_dirent(
 void test_redirect_dirent(
   std::shared_ptr<const Dirent> dirent,
   Optional<char> ns,
-  Optional<const std::string> url,
+  Optional<const std::string> path,
   Optional<const std::string> title,
   Optional<entry_index_t> target)
 {
   ASSERT_TRUE(dirent->isRedirect());
   ns.check(dirent->getNamespace());
-  url.check(dirent->getUrl());
+  path.check(dirent->getPath());
   title.check(dirent->getTitle());
   target.check(dirent->getRedirectIndex());
 }
@@ -120,18 +122,18 @@ TEST(ZimCreator, createEmptyZim)
   Fileheader header;
   header.read(*reader);
   ASSERT_FALSE(header.hasMainPage());
-  ASSERT_EQ(header.getArticleCount(), 2); // counter + titleListIndexesv0
+  ASSERT_EQ(header.getArticleCount(), 2u); // counter + titleListIndexesv0
 
   //Read the only one item existing.
-  auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
-  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(urlPtrReader), entry_index_t(header.getArticleCount()));
+  auto pathPtrReader = reader->sub_reader(offset_t(header.getPathPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
+  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(pathPtrReader), entry_index_t(header.getArticleCount()));
   std::shared_ptr<const Dirent> dirent;
 
   dirent = direntAccessor.getDirent(entry_index_t(0));
   test_article_dirent(dirent, 'M', "Counter", None, 1, cluster_index_t(0), None);
 
   dirent = direntAccessor.getDirent(entry_index_t(1));
-  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, 0, cluster_index_t(1), None);
+  test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, 0, cluster_index_t(1), None);
   auto v0BlobIndex = dirent->getBlobNumber();
 
   auto clusterPtrPos = header.getClusterPtrPos();
@@ -140,7 +142,7 @@ TEST(ZimCreator, createEmptyZim)
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
   ASSERT_EQ(cluster->count(), blob_index_t(1)); // Only titleListIndexesv0
   auto blob = cluster->getBlob(v0BlobIndex);
-  ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
+  ASSERT_EQ(blob.size(), 0);
 }
 
 
@@ -182,14 +184,16 @@ TEST(ZimCreator, createZim)
   auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
   EXPECT_NO_THROW(creator.addItem(item));
   EXPECT_THROW(creator.addItem(item), std::runtime_error);
-  // Be sure that title order is not the same that url order
+  // Be sure that title order is not the same that path order
   item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
+  creator.addAlias("foo_bis", "The same Foo", "foo2");
   creator.addMetadata("Title", "This is a title");
   creator.addIllustration(48, "PNGBinaryContent48");
   creator.addIllustration(96, "PNGBinaryContent96");
   creator.setMainPath("foo");
-  creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
+  creator.addRedirection("foo3", "FooRedirection", "foo"); // Not a front article.
+  creator.addAlias("foo_ter", "The same redirection", "foo3", {{ zim::writer::FRONT_ARTICLE, true}}); // a clone of the previous redirect, but as a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistant", {{zim::writer::FRONT_ARTICLE, true}}); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
@@ -200,7 +204,7 @@ TEST(ZimCreator, createZim)
   header.read(*reader);
   ASSERT_TRUE(header.hasMainPage());
 #if defined(ENABLE_XAPIAN)
-  entry_index_type nb_entry = 12; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 13; // counter + 2*illustration + xapiantitleIndex + xapianfulltextIndex + foo + foo2 + foo_bis + foo3 + foo_ter + Title + mainPage + titleListIndexes
   int xapian_mimetype = 0;
   int listing_mimetype = 1;
   int png_mimetype = 2;
@@ -208,7 +212,7 @@ TEST(ZimCreator, createZim)
   int plain_mimetype = 4;
   int plainutf8_mimetype = 5;
 #else
-  entry_index_type nb_entry = 10; // counter + 2*illustration + foo + foo2 + foo3 + Title + mainPage + titleListIndexes*2
+  entry_index_type nb_entry = 11; // counter + 2*illustration + foo + foo_bis + foo2 + foo3 + foo_ter + Title + mainPage + titleListIndexes
   int listing_mimetype = 0;
   int png_mimetype = 1;
   int html_mimetype = 2;
@@ -219,8 +223,8 @@ TEST(ZimCreator, createZim)
   ASSERT_EQ(header.getArticleCount(), nb_entry);
 
   // Read dirent
-  auto urlPtrReader = reader->sub_reader(offset_t(header.getUrlPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
-  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(urlPtrReader), entry_index_t(header.getArticleCount()));
+  auto pathPtrReader = reader->sub_reader(offset_t(header.getPathPtrPos()), zsize_t(sizeof(offset_t)*header.getArticleCount()));
+  DirectDirentAccessor direntAccessor(std::make_shared<DirentReader>(reader), std::move(pathPtrReader), entry_index_t(header.getArticleCount()));
   std::shared_ptr<const Dirent> dirent;
 
   entry_index_type direntIdx = 0;
@@ -234,6 +238,12 @@ TEST(ZimCreator, createZim)
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_redirect_dirent(dirent, 'C', "foo3", "FooRedirection", entry_index_t(0));
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_article_dirent(dirent, 'C', "foo_bis", "The same Foo", html_mimetype, cluster_index_t(0), foo2BlobIndex);
+
+  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
+  test_redirect_dirent(dirent, 'C', "foo_ter", "The same redirection", entry_index_t(0));
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'M', "Counter", None, plain_mimetype, cluster_index_t(0), None);
@@ -258,10 +268,6 @@ TEST(ZimCreator, createZim)
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'X', "fulltext/xapian", "fulltext/xapian", xapian_mimetype, cluster_index_t(1), None);
 #endif
-
-  dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
-  test_article_dirent(dirent, 'X', "listing/titleOrdered/v0", None, listing_mimetype, cluster_index_t(1), None);
-  auto v0BlobIndex = dirent->getBlobNumber();
 
   dirent = direntAccessor.getDirent(entry_index_t(direntIdx++));
   test_article_dirent(dirent, 'X', "listing/titleOrdered/v1", None, listing_mimetype, cluster_index_t(1), None);
@@ -297,37 +303,17 @@ TEST(ZimCreator, createZim)
   clusterOffset = offset_t(reader->read_uint<offset_type>(offset_t(clusterPtrPos + 8)));
   cluster = Cluster::read(*reader, clusterOffset);
   ASSERT_EQ(cluster->getCompression(), Cluster::Compression::None);
-  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-6)); // 6 entries are either compressed or redirections
+  ASSERT_EQ(cluster->count(), blob_index_t(nb_entry-8)); // 7 entries are either compressed or redirections + 1 entry is a clone of content
 
-  ASSERT_EQ(header.getTitleIdxPos(), (clusterOffset+cluster->getBlobOffset(v0BlobIndex)).v);
-
-  blob = cluster->getBlob(v0BlobIndex);
-  ASSERT_EQ(blob.size(), nb_entry*sizeof(title_index_t));
-  std::vector<char> blob0Data(blob.data(), blob.end());
-  std::vector<char> expectedBlob0Data = {
-    1, 0, 0, 0,
-    0, 0, 0, 0,
-    2, 0, 0, 0,
-    3, 0, 0, 0,
-    4, 0, 0, 0,
-    5, 0, 0, 0,
-    6, 0, 0, 0,
-    7, 0, 0, 0,
-    8, 0, 0, 0,
-    9, 0, 0, 0
-#if defined(ENABLE_XAPIAN)
-    ,10, 0, 0, 0
-    ,11, 0, 0, 0
-#endif
-    };
-  ASSERT_EQ(blob0Data, expectedBlob0Data);
+  ASSERT_EQ(header.getTitleIdxPos(), 0xffffffffffffffffUL);
 
   blob = cluster->getBlob(v1BlobIndex);
-  ASSERT_EQ(blob.size(), 2*sizeof(title_index_t));
+  ASSERT_EQ(blob.size(), 3*sizeof(title_index_t));
   std::vector<char> blob1Data(blob.data(), blob.end());
   std::vector<char> expectedBlob1Data = {
     1, 0, 0, 0,
-    0, 0, 0, 0
+    0, 0, 0, 0,
+    4, 0, 0, 0 // "The same redirection" is the 5th entry "by title order"
   };
   ASSERT_EQ(blob1Data, expectedBlob1Data);
 
@@ -346,11 +332,11 @@ TEST(ZimCreator, interruptedZimCreation)
     writer::Creator creator;
     creator.configClusterSize(16*1024);
     creator.startZimCreation(tmpFile.path());
-    std::ostringstream oss;
+    zim::Formatter fmt;
     for ( size_t i = 0; i < 12345; ++i ) {
-      oss << i;
+      fmt << i;
     }
-    const std::string content(oss.str());
+    const std::string content(fmt);
     for ( char c = 'a'; c <= 'z'; ++c ) {
       const std::string path(1, c);
       creator.addItem(std::make_shared<TestItem>(path, path, content));

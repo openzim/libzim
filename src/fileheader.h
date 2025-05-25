@@ -21,10 +21,10 @@
 #ifndef ZIM_FILEHEADER_H
 #define ZIM_FILEHEADER_H
 
-#include <memory>
 #include <zim/zim.h>
 #include <zim/uuid.h>
-#include <iosfwd>
+#include "config.h"
+
 #include <limits>
 
 // max may be defined as a macro by window includes
@@ -35,7 +35,7 @@
 namespace zim
 {
   class Reader;
-  class Fileheader
+  class LIBZIM_PRIVATE_API Fileheader
   {
     public:
       static const uint32_t zimMagic;
@@ -50,7 +50,7 @@ namespace zim
       Uuid uuid;
       entry_index_type articleCount;
       offset_type titleIdxPos;
-      offset_type urlPtrPos;
+      offset_type pathPtrPos;
       offset_type mimeListPos;
       cluster_index_type clusterCount;
       offset_type clusterPtrPos;
@@ -59,19 +59,7 @@ namespace zim
       offset_type checksumPos;
 
     public:
-      Fileheader()
-        : majorVersion(zimMajorVersion),
-          minorVersion(zimMinorVersion),
-          articleCount(0),
-          titleIdxPos(0),
-          urlPtrPos(0),
-          clusterCount(0),
-          clusterPtrPos(0),
-          mainPage(std::numeric_limits<entry_index_type>::max()),
-          layoutPage(std::numeric_limits<entry_index_type>::max()),
-          checksumPos(std::numeric_limits<offset_type>::max())
-      {}
-
+      Fileheader();
       void write(int out_fd) const;
       void read(const Reader& reader);
 
@@ -91,11 +79,12 @@ namespace zim
       entry_index_type getArticleCount() const            { return articleCount; }
       void      setArticleCount(entry_index_type s)       { articleCount = s; }
 
+      bool hasTitleListingV0() const;
       offset_type getTitleIdxPos() const           { return titleIdxPos; }
       void        setTitleIdxPos(offset_type p)    { titleIdxPos = p; }
 
-      offset_type getUrlPtrPos() const             { return urlPtrPos; }
-      void        setUrlPtrPos(offset_type p)      { urlPtrPos = p; }
+      offset_type getPathPtrPos() const            { return pathPtrPos; }
+      void        setPathPtrPos(offset_type p)     { pathPtrPos = p; }
 
       offset_type getMimeListPos() const           { return mimeListPos; }
       void        setMimeListPos(offset_type p)    { mimeListPos = p; }
@@ -117,6 +106,9 @@ namespace zim
       bool        hasChecksum() const              { return getMimeListPos() >= 80; }
       offset_type getChecksumPos() const           { return hasChecksum() ? checksumPos : 0; }
       void        setChecksumPos(offset_type p)    { checksumPos = p; }
+
+      bool        useNewNamespaceScheme() const    { return minorVersion >= 1; }
+
   };
 
 }

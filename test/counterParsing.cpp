@@ -25,7 +25,7 @@
 #include "../src/tools.h"
 
 using namespace zim;
-#define parse parseMimetypeCounter
+const auto parse = parseMimetypeCounter;
 
 namespace
 {
@@ -137,7 +137,7 @@ TEST(ParseCounterTest, wrongType)
 }
 
 #define CHECK(TEST, EXPECTED) \
-{ auto count = countMimeType(counterStr, [](const std::string& s) { return TEST;}); ASSERT_EQ(count, EXPECTED); }
+{ auto count = countMimeType(counterStr, [](const std::string& s) { return TEST;}); ASSERT_EQ(count, (unsigned)EXPECTED); }
 
 TEST(ParseCounterTest, countMimeType) {
   {

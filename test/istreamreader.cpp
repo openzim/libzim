@@ -34,23 +34,41 @@ using namespace zim;
 // Implement the IStreamReader interface in the simplest way
 class InfiniteZeroStream : public IStreamReader
 {
-  void readImpl(char* buf, zim::zsize_t nbytes) { memset(buf, 0, nbytes.v); }
+  void readImpl(char* buf, zim::zsize_t nbytes) override { memset(buf, 0, nbytes.v); }
+  size_t getMemorySize() const override {
+    return 0;
+  }
+};
+
+class InfiniteIncreasingStream: public IStreamReader
+{
+  zim::offset_type current_offset = 0;
+
+  void readImpl(char* buf, zim::zsize_t nbytes) override {
+    for (size_type i=0; i<nbytes.v; i++) {
+      buf[i] = (current_offset++)%256;
+    }
+  }
+
+  size_t getMemorySize() const override {
+    return 0;
+  }
 };
 
 // ... and test that it compiles and works as intended
 
-TEST(IStreamReader, read)
+TEST(IStreamReader, read_zero)
 {
   InfiniteZeroStream izs;
   IStreamReader& ids = izs;
-  EXPECT_EQ(0, ids.read<int>());
-  EXPECT_EQ(0L, ids.read<long>());
+  EXPECT_EQ(0, ids.read<uint32_t>());
+  EXPECT_EQ(0L, ids.read<uint64_t>());
 
   // zim::fromLittleEndian() handles only integer types
   // EXPECT_EQ(0.0, ids.read<double>());
 }
 
-TEST(IStreamReader, sub_reader)
+TEST(IStreamReader, sub_reader_zero)
 {
   const size_t N = 16;
   const char zerobuf[N] = {0};
@@ -62,5 +80,34 @@ TEST(IStreamReader, sub_reader)
   EXPECT_EQ(buffer.size().v, N);
   EXPECT_EQ(0, memcmp(buffer.data(), zerobuf, N));
 }
+
+TEST(IStreamReader, read_increasing)
+{
+  InfiniteIncreasingStream iis;
+  IStreamReader& ids = iis;
+  EXPECT_EQ(0x03020100, ids.read<uint32_t>());
+  EXPECT_EQ(0x0B0A090807060504, ids.read<uint64_t>());
+
+  // zim::fromLittleEndian() handles only integer types
+  // EXPECT_EQ(0.0, ids.read<double>());
+}
+
+TEST(IStreamReader, sub_reader_increasing)
+{
+  const size_t N = 16;
+  const char refbuf[N] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  InfiniteIncreasingStream iis;
+  IStreamReader& ids = iis;
+  auto subReader = ids.sub_reader(zim::zsize_t(N));
+  EXPECT_EQ(subReader->size().v, N);
+  auto buffer = subReader->get_buffer(zim::offset_t(0), zim::zsize_t(N));
+  EXPECT_EQ(buffer.size().v, N);
+  EXPECT_EQ(0, memcmp(buffer.data(), refbuf, N));
+
+  buffer = subReader->get_buffer(zim::offset_t(5), zim::zsize_t(N-5));
+  EXPECT_EQ(buffer.size().v, N-5);
+  EXPECT_EQ(0, memcmp(buffer.data(), refbuf+5, N-5));
+}
+
 
 } // unnamed namespace

@@ -19,11 +19,10 @@
 
 #include "fs_unix.h"
 #include <stdexcept>
-#include <vector>
-#include <sstream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <zim/tools.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -37,10 +36,10 @@ namespace unix {
 
 zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
 {
-#if defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-# define PREAD pread
-#else
+#if defined(__linux__)
 # define PREAD pread64
+#else
+# define PREAD pread
 #endif
   ssize_t full_size_read = 0;
   auto size_to_read = size.v;
@@ -48,8 +47,11 @@ zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
   errno = 0;
   while (size_to_read > 0) {
     auto size_read = PREAD(m_fd, dest, size_to_read, current_offset);
+    if (size_read == 0) {
+      throw std::runtime_error("Cannot read past the end of the file");
+    }
     if (size_read == -1) {
-      return zsize_t(-1);
+      throw std::runtime_error("Cannot read file");
     }
     size_to_read -= size_read;
     current_offset += size_read;
@@ -139,10 +141,7 @@ bool FS::removeFile(path_t path) {
 
 std::string getFilePathFromFD(int fd)
 {
-  std::ostringstream oss;
-  oss << "/dev/fd/" << fd;
-
-  return oss.str();
+  return Formatter()  << "/dev/fd/" << fd;
 }
 
 }; // zim namespace

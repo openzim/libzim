@@ -21,20 +21,15 @@
 #ifndef ZIM_BUFFER_H_
 #define ZIM_BUFFER_H_
 
-#include <cstddef>
-#include <exception>
 #include <memory>
-#include <iostream>
 
 #include "config.h"
 #include "zim_types.h"
-#include "endian_tools.h"
-#include "debug.h"
 #include <zim/blob.h>
 
 namespace zim {
 
-class Buffer {
+class LIBZIM_PRIVATE_API Buffer {
   public: // types
     typedef std::shared_ptr<const char> DataPtr;
 

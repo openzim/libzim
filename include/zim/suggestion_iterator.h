@@ -31,11 +31,36 @@ class SuggestionResultSet;
 class SuggestionItem;
 class SearchIterator;
 
-class LIBZIM_API SuggestionIterator : public std::iterator<std::bidirectional_iterator_tag, SuggestionItem>
+/**
+ * A interator on suggestion.
+ *
+ * Be aware that the referenced/pointed SuggestionItem is generated and stored
+ * in the iterator itself.
+ * Once the iterator is destructed or incremented/decremented, you must NOT
+ * use the SuggestionItem.
+ */
+class LIBZIM_API SuggestionIterator
 {
     typedef Archive::iterator<EntryOrder::titleOrder> RangeIterator;
     friend class SuggestionResultSet;
     public:
+        /* SuggestionIterator is conceptually a bidirectional iterator.
+         * But std *LegayBidirectionalIterator* is also a *LegacyForwardIterator* and
+         * it would impose us that :
+         * > Given a and b, dereferenceable iterators of type It:
+         * >  If a and b compare equal (a == b is contextually convertible to true)
+         * >  then either they are both non-dereferenceable or *a and *b are references bound to the same object.
+         * and
+         * > the LegacyForwardIterator requirements requires dereference to return a reference.
+         * Which cannot be as we create the entry on demand.
+         *
+         * So we are stick with declaring ourselves at `input_iterator`.
+         */
+        using iterator_category = std::input_iterator_tag;
+        using value_type = SuggestionItem;
+        using pointer = SuggestionItem*;
+        using reference = SuggestionItem&;
+
         SuggestionIterator() = delete;
         SuggestionIterator(const SuggestionIterator& it);
         SuggestionIterator& operator=(const SuggestionIterator& it);

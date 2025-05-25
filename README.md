@@ -12,7 +12,8 @@ https://openzim.org/.
 [![Repositories](https://img.shields.io/repology/repositories/libzim?label=repositories)](https://github.com/openzim/libzim/wiki/Repology)
 [![macOS Homebrew](https://badgen.net/homebrew/v/libzim)](https://formulae.brew.sh/formula/libzim)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![Build](https://github.com/openzim/libzim/workflows/CI/badge.svg?query=branch%3Amain)](https://github.com/openzim/libzim/actions?query=branch%3Amain)
+[![CI](https://github.com/openzim/libzim/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/openzim/libzim/actions/workflows/ci.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/openzim/libzim/badge)](https://securityscorecards.dev/viewer/?uri=github.com/openzim/libzim)
 [![Doc](https://readthedocs.org/projects/libzim/badge/?style=flat)](https://libzim.readthedocs.io/en/latest/?badge=latest)
 [![Codecov](https://codecov.io/gh/openzim/libzim/branch/main/graph/badge.svg)](https://codecov.io/gh/openzim/libzim)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/libzim/badge)](https://www.codefactor.io/repository/github/openzim/libzim)
@@ -24,6 +25,17 @@ This document assumes you have a little knowledge about software
 compilation. If you experience difficulties with the dependencies or
 with the Libzim compilation itself, we recommend to have a look to
 [kiwix-build](https://github.com/kiwix/kiwix-build).
+
+Usage
+-----
+
+Beside the source code, compiled versions of the libzim are made
+[available for various
+platforms](https://download.openzim.org/release/libzim/).
+
+Please notice that on Microsoft Windows with Microsoft compiler, you
+need to be careful to not compile in debug mode (because our released
+binaries are not).
 
 Preamble
 --------

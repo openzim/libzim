@@ -17,12 +17,12 @@
  *
  */
 
+#include <zim/error.h>
 #define ZIM_PRIVATE
 
 #include <zim/suggestion.h>
 #include <zim/item.h>
 #include "suggestion_internal.h"
-#include <iostream>
 #include "fileimpl.h"
 #include "tools.h"
 #include "constants.h"
@@ -40,7 +40,11 @@ SuggestionDataBase::SuggestionDataBase(const Archive& archive, bool verbose)
 {
 // Initialize Xapian DB if it is enabled
 #if defined(ENABLE_XAPIAN)
-  initXapianDb();
+  try {
+    initXapianDb();
+  } catch ( Xapian::DatabaseError& e) {
+     throw zim::ZimFileFormatError(e.get_description());
+  }
 #endif  // ENABLE_XAPIAN
 }
 
@@ -59,7 +63,7 @@ void SuggestionDataBase::initXapianDb() {
 
   auto xapianEntry = Entry(impl, entry_index_type(r.second));
   auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
-  if (accessInfo.second == 0) {
+  if (!accessInfo.isValid()) {
       return;
   }
 
@@ -139,7 +143,7 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
   m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
   xquery = m_queryParser.parse_query(query, flags);
 
-  if ( !query.empty() && xquery.get_num_subqueries() == 0 ) {
+  if ( !query.empty() && xquery.empty() ) {
     // a non-empty query string produced an empty xapian query which means
     // that the query string is made solely of punctuation.
     xquery = Xapian::Query(Xapian::Query::OP_WILDCARD, query);
@@ -191,7 +195,7 @@ void SuggestionSearcher::setVerbose(bool verbose)
 
 void SuggestionSearcher::initDatabase()
 {
-    mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
+  mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
 }
 
 SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)

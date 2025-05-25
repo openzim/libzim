@@ -25,9 +25,9 @@
 #include <synchapi.h>
 #include <io.h>
 #include <fileapi.h>
+#include <zim/tools.h>
 
 #include <iostream>
-#include <sstream>
 
 namespace zim {
 
@@ -69,26 +69,41 @@ FD::~FD()
 zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
 {
   if (!mp_impl)
-    return zsize_t(-1);
+    throw std::runtime_error("FD is not open");
   EnterCriticalSection(&mp_impl->m_criticalSection);
   LARGE_INTEGER off;
   off.QuadPart = offset.v;
+  std::string errorMsg;
+  auto size_to_read = size.v;
+
   if (!SetFilePointerEx(mp_impl->m_handle, off, NULL, FILE_BEGIN)) {
+    errorMsg = "Seek fail";
     goto err;
   }
 
   DWORD size_read;
-  if (!ReadFile(mp_impl->m_handle, dest, size.v, &size_read, NULL)) {
-    goto err;
-  }
-  if (size_read != size.v) {
-    goto err;
+  while (size_to_read > 0) {
+    // Read by batch < 4GiB
+    // Lets use a batch of 1GiB
+    auto batch_to_read = std::min(size_to_read, (size_type)1024*1024*1024);
+    if (!ReadFile(mp_impl->m_handle, dest, batch_to_read, &size_read, NULL)) {
+      errorMsg = "Read fail";
+      goto err;
+    }
+
+    if (size_read == 0) {
+      errorMsg = "Cannot read past the end of the file";
+      goto err;
+    }
+
+    size_to_read -= size_read;
+    dest += size_read;
   }
   LeaveCriticalSection(&mp_impl->m_criticalSection);
   return size;
 err:
   LeaveCriticalSection(&mp_impl->m_criticalSection);
-  return zsize_t(-1);
+  throw std::runtime_error(errorMsg);
 }
 
 bool FD::seek(offset_t offset)
@@ -135,11 +150,10 @@ std::unique_ptr<wchar_t[]> FS::toWideChar(path_t path)
   auto wdata = std::unique_ptr<wchar_t[]>(new wchar_t[size]);
   auto ret = MultiByteToWideChar(CP_UTF8, 0,
                 path.c_str(), -1, wdata.get(), size);
-  if (0 == ret) {
-    std::ostringstream oss;
-    oss << "Cannot convert path to wchar : " << GetLastError();
-    throw std::runtime_error(oss.str());
-  }
+  if (0 == ret)
+    throw std::runtime_error(Formatter() << "Cannot convert path to wchar : "
+                                         << GetLastError());
+
   return wdata;
 }
 
@@ -154,11 +168,10 @@ FD FS::openFile(path_t filepath)
              OPEN_EXISTING,
              FILE_ATTRIBUTE_READONLY|FILE_FLAG_RANDOM_ACCESS,
              NULL);
-  if (handle == INVALID_HANDLE_VALUE) {
-    std::ostringstream oss;
-    oss << "Cannot open file : " << GetLastError();
-    throw std::runtime_error(oss.str());
-  }
+  if (handle == INVALID_HANDLE_VALUE)
+    throw std::runtime_error(Formatter()
+                             << "Cannot open file : " << GetLastError());
+
   return FD(handle);
 }
 
@@ -173,11 +186,9 @@ bool FS::makeDirectory(path_t path)
 void FS::rename(path_t old_path, path_t new_path)
 {
   auto ret = MoveFileExW(toWideChar(old_path).get(), toWideChar(new_path).get(), MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH);
-  if (!ret) {
-    std::ostringstream oss;
-    oss << "Cannot move file " << old_path << " to " << new_path;
-    throw std::runtime_error(oss.str());
-  }
+  if (!ret)
+    throw std::runtime_error(Formatter() << "Cannot move file " << old_path
+                                         << " to " << new_path);
 }
 
 std::string FS::join(path_t base, path_t name)

@@ -22,10 +22,8 @@
 #ifndef _LIBZIM_COMPRESSION_
 #define _LIBZIM_COMPRESSION_
 
-#include <vector>
-#include "string.h"
+#include "reader.h"
 
-#include "file_reader.h"
 #include <zim/error.h>
 
 #include "config.h"
@@ -35,6 +33,10 @@
 
 #include "zim_types.h"
 #include "constants.h"
+
+#include <cstring>
+#include <vector>
+#include <memory>
 
 //#define DEB(X) std::cerr << __func__ << " " << X << std::endl ;
 #define DEB(X)
@@ -63,11 +65,12 @@ struct LZMA_INFO {
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
   static CompStatus stream_run(stream_t* stream, CompStep step);
   static void stream_end_decode(stream_t* stream);
+  static size_t state_size(const stream_t& stream);
 };
 
 
-struct ZSTD_INFO {
-  struct stream_t
+struct LIBZIM_PRIVATE_API ZSTD_INFO {
+  struct LIBZIM_PRIVATE_API stream_t
   {
     const unsigned char* next_in;
     size_t avail_in;
@@ -92,6 +95,7 @@ struct ZSTD_INFO {
   static CompStatus stream_run_decode(stream_t* stream, CompStep step);
   static void stream_end_encode(stream_t* stream);
   static void stream_end_decode(stream_t* stream);
+  static size_t state_size(const stream_t& stream);
 };
 
 

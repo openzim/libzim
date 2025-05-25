@@ -6,23 +6,31 @@ on:
     branches:
       - main
   release:
-    types: [published]
+    types: [ published ]
 
 jobs:
   build-deb:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         distro:
-          - debian-unstable
-          - debian-bullseye
-          - debian-buster
-          - ubuntu-kinetic
+#          - debian-unstable
+#          - debian-trixie
+#          - debian-bookworm
+#          - debian-bullseye
+          - ubuntu-noble
           - ubuntu-jammy
           - ubuntu-focal
+
+    # Pin your dependencies with https://github.com/mheap/pin-github-action
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # pin@v2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v4
 
       # Determine which PPA we should upload to
       - name: PPA
@@ -30,57 +38,62 @@ jobs:
         run: |
           if [[ $REF == refs/tags* ]]
           then
-            echo "::set-output name=ppa::kiwixteam/release"
+            echo "ppa=kiwixteam/release" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=ppa::kiwixteam/dev"
+            echo "ppa=kiwixteam/dev" >> $GITHUB_OUTPUT
           fi
         env:
           REF: ${{ github.ref }}
 
-      - uses: legoktm/gh-action-auto-dch@master
+      - uses: legoktm/gh-action-auto-dch@2b7d6a33db93a408d4b5e2edf38be7fd578b11d7 # pin@main
         with:
           fullname: Kiwix builder
           email: release+launchpad@kiwix.org
           distro: ${{ matrix.distro }}
 
-      - uses: legoktm/gh-action-build-deb@debian-unstable
-        if: matrix.distro == 'debian-unstable'
-        name: Build package for debian-unstable
-        id: build-debian-unstable
+#      - uses: legoktm/gh-action-build-deb@7a6b22239275ae4e425fefc6f1aeb1118160500d # pin@debian-unstable
+#        if: matrix.distro == 'debian-unstable'
+#        name: Build package for debian-unstable
+#        id: build-debian-unstable
+#        with:
+#          args: --no-sign
+
+#      - uses: legoktm/gh-action-build-deb@b47978ba8498dc8b8153cc3b5f99a5fc1afa5de1 # pin@debian-trixie
+#        if: matrix.distro == 'debian-trixie'
+#        name: Build package for debian-trixie
+#        id: build-debian-trixie
+#        with:
+#          args: --no-sign
+
+#      - uses: legoktm/gh-action-build-deb@1f4e86a6bb34aaad388167eaf5eb85d553935336 # pin@debian-bookworm
+#        if: matrix.distro == 'debian-bookworm'
+#        name: Build package for debian-bookworm
+#        id: build-debian-bookworm
+#        with:
+#          args: --no-sign
+
+#      - uses: legoktm/gh-action-build-deb@084b4263209252ec80a75d2c78a586192c17f18d # pin@debian-bullseye
+#        if: matrix.distro == 'debian-bullseye'
+#        name: Build package for debian-bullseye
+#        id: build-debian-bullseye
+#        with:
+#          args: --no-sign
+
+      - uses: legoktm/gh-action-build-deb@9114a536498b65c40b932209b9833aa942bf108d # pin@ubuntu-noble
+        if: matrix.distro == 'ubuntu-noble'
+        name: Build package for ubuntu-noble
+        id: build-ubuntu-noble
         with:
           args: --no-sign
 
-      - uses: legoktm/gh-action-build-deb@debian-bullseye
-        if: matrix.distro == 'debian-bullseye'
-        name: Build package for debian-bullseye
-        id: build-debian-bullseye
-        with:
-          args: --no-sign
-
-      - uses: legoktm/gh-action-build-deb@debian-buster
-        if: matrix.distro == 'debian-buster'
-        name: Build package for debian-buster
-        id: build-debian-buster
-        with:
-          args: --no-sign
-
-      - uses: legoktm/gh-action-build-deb@ubuntu-kinetic
-        if: matrix.distro == 'ubuntu-kinetic'
-        name: Build package for ubuntu-kinetic
-        id: build-ubuntu-kinetic
-        with:
-          args: --no-sign
-          ppa: ${{ steps.ppa.outputs.ppa }}
-
-      - uses: legoktm/gh-action-build-deb@ubuntu-jammy
+      - uses: legoktm/gh-action-build-deb@1553bc52b826020691af83a7354a047f2727106c # pin@ubuntu-jammy
         if: matrix.distro == 'ubuntu-jammy'
         name: Build package for ubuntu-jammy
         id: build-ubuntu-jammy
         with:
           args: --no-sign
-          ppa: ${{ steps.ppa.outputs.ppa }}
 
-      - uses: legoktm/gh-action-build-deb@ubuntu-focal
+      - uses: legoktm/gh-action-build-deb@77900afcbdc12874b7177e0e9fca2f4da043cd05 # pin@ubuntu-focal
         if: matrix.distro == 'ubuntu-focal'
         name: Build package for ubuntu-focal
         id: build-ubuntu-focal
@@ -88,12 +101,12 @@ jobs:
           args: --no-sign
           ppa: ${{ steps.ppa.outputs.ppa }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # pin@v4
         with:
           name: Packages for ${{ matrix.distro }}
           path: output
 
-      - uses: legoktm/gh-action-dput@master
+      - uses: legoktm/gh-action-dput@4f46c373c7d114c8885c376be07f9ad5490c4f51 # pin@main
         name: Upload dev package
         # Only upload on pushes to main
         if: github.event_name == 'push' && github.event.ref == 'refs/heads/main' && startswith(matrix.distro, 'ubuntu-')
@@ -102,7 +115,7 @@ jobs:
           repository: ppa:kiwixteam/dev
           packages: output/*_source.changes
 
-      - uses: legoktm/gh-action-dput@master
+      - uses: legoktm/gh-action-dput@4f46c373c7d114c8885c376be07f9ad5490c4f51 # pin@main
         name: Upload release package
         if: github.event_name == 'release' && startswith(matrix.distro, 'ubuntu-')
         with:

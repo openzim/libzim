@@ -26,8 +26,8 @@ from urllib.error import *
 import tarfile
 import sys
 
-TEST_DATA_VERSION = "0.3"
-ARCHIVE_URL_TEMPL = "https://github.com/openzim/zim-testing-suite/releases/download/v{version}/zim-testing-suite-{version}.tar.gz"
+TEST_DATA_VERSION = "0.8.0"
+ARCHIVE_URL_TEMPL = "https://github.com/openzim/zim-testing-suite/releases/download/{version}/zim-testing-suite-{version}.tar.gz"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

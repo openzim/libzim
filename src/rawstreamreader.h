@@ -23,7 +23,6 @@
 
 #include "istreamreader.h"
 #include "reader.h"
-#include "debug.h"
 
 namespace zim
 {
@@ -35,6 +34,10 @@ public: // functions
     : m_reader(reader),
       m_readerPos(0)
   {}
+
+  size_t getMemorySize() const override {
+    return m_reader->getMemorySize();
+  }
 
   void readImpl(char* buf, zsize_t nbytes) override
   {
@@ -57,4 +60,4 @@ private: // data
 
 } // namespace zim
 
-#endif // ZIM_READERDATASTREAMWRAPPER_H
+#endif // ZIM_RAWSTREAMREADER_H

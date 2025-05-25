@@ -84,6 +84,10 @@ TEST(FileReader, shouldJustWork)
     reader->read(out, offset_t(10), zsize_t(4));
     ASSERT_EQ(0, memcmp(out, "klmn", 4));
 
+    ASSERT_EQ(0, memcmp(reader->get_buffer(offset_t(0), zsize_t(4)).data(), "abcd", 4));
+    ASSERT_EQ(0, memcmp(reader->get_buffer(offset_t(5), zsize_t(4)).data(), "fghi", 4));
+    ASSERT_EQ(0, memcmp(reader->get_buffer(offset_t(5), zsize_t(2)).data(), "fg", 2));
+
     // Can read last bit of the file.
     ASSERT_EQ('z', reader->read(offset_t(25)));
     reader->read(out, offset_t(25), zsize_t(1));
@@ -118,6 +122,10 @@ TEST(FileReader, subReader)
 
     subReader->read(out, offset_t(5), zsize_t(2));
     ASSERT_EQ(0, memcmp(out, "jkgh", 4));
+
+    ASSERT_EQ(0, memcmp(subReader->get_buffer(offset_t(0), zsize_t(4)).data(), "efgh", 4));
+    ASSERT_EQ(0, memcmp(subReader->get_buffer(offset_t(5), zsize_t(4)).data(), "jklm", 4));
+    ASSERT_EQ(0, memcmp(subReader->get_buffer(offset_t(5), zsize_t(2)).data(), "jk", 2));
 
     // Can read last bit of the file.
     ASSERT_EQ('x', subReader->read(offset_t(19)));

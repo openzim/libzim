@@ -1,7 +1,7 @@
 project('libzim', ['c', 'cpp'],
-  version : '8.2.0',
+  version : '9.3.0',
   license : 'GPL2',
-  default_options : ['c_std=c11', 'cpp_std=c++11'])
+  default_options : ['c_std=c11', 'cpp_std=c++17', 'werror=true'])
 
 if build_machine.system() != 'windows'
   add_project_arguments('-D_LARGEFILE64_SOURCE=1', '-D_FILE_OFFSET_BITS=64', language: 'cpp')
@@ -30,6 +30,7 @@ else
     private_conf.set('ENABLE_USE_MMAP', get_option('USE_MMAP'))
 endif
 private_conf.set('ENABLE_USE_BUFFER_HEADER', get_option('USE_BUFFER_HEADER'))
+private_conf.set('ENABLE_XAPIAN_FULLER', get_option('with_xapian_fuller'))
 
 static_linkage = get_option('static-linkage')
 static_linkage = static_linkage or get_option('default_library')=='static'
@@ -37,11 +38,14 @@ static_linkage = static_linkage or get_option('default_library')=='static'
 lzma_dep = dependency('liblzma', static:static_linkage)
 if static_linkage
   add_project_arguments('-DLZMA_API_STATIC', language: 'cpp')
-else
-  public_conf.set('LIBZIM_EXPORT_DLL', true)
 endif
 
-zstd_dep = dependency('libzstd', static:static_linkage)
+if get_option('default_library') == 'shared'
+  public_conf.set('LIBZIM_EXPORT_DLL', true)
+  add_project_arguments('-DLIBZIM_EXPORT_PRIVATE_DLL', language: 'cpp')
+endif
+
+zstd_dep = dependency('libzstd', static:static_linkage, default_options:['werror=false'])
 
 if host_machine.system() == 'freebsd'
     execinfo_dep = cpp.find_library('execinfo')
@@ -55,13 +59,13 @@ endif
 private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
 public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
-pkg_requires = ['liblzma', 'libzstd']
 if build_machine.system() == 'windows'
-    extra_link_args = ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-licuuc', '-licuin']
-    extra_cpp_args = ['-DSORTPP_PASS']
+    win_deps = declare_dependency(
+        compile_args: ['-DSORTPP_PASS'],
+        link_args: ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-lshlwapi']
+    )
 else
-    extra_link_args = []
-    extra_cpp_args = []
+    win_deps = declare_dependency()
 endif
 
 compiler = meson.get_compiler('cpp')
@@ -73,14 +77,12 @@ else
 endif
 
 if xapian_dep.found()
-    pkg_requires += ['xapian-core']
     icu_dep = dependency('icu-i18n', static:static_linkage)
-    pkg_requires += ['icu-i18n']
 else
     icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
 endif
 
-gtest_dep = dependency('gtest', main:true, fallback:['gtest', 'gtest_main_dep'], required:false)
+gtest_dep = dependency('gtest', version: '>=1.10.0', main:true, fallback:['gtest', 'gtest_main_dep'], required:false)
 
 inc = include_directories('include')
 
@@ -91,7 +93,9 @@ subdir('src')
 if get_option('examples')
   subdir('examples')
 endif
-subdir('test')
+if get_option('tests')
+  subdir('test')
+endif
 if get_option('doc')
   subdir('docs')
 endif
@@ -101,5 +105,4 @@ pkg_mod.generate(libraries : libzim,
                  version : meson.project_version(),
                  name : 'libzim',
                  filebase : 'libzim',
-                 description : 'A Library to read/write ZIM files.',
-                 requires : pkg_requires)
+                 description : 'A Library to read/write ZIM files.')

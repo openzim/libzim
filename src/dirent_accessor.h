@@ -21,9 +21,10 @@
 #define ZIM_DIRENT_ACCESSOR_H
 
 #include "zim_types.h"
-#include "debug.h"
 #include "lrucache.h"
+#include "config.h"
 
+#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -43,24 +44,30 @@ class DirentReader;
  *
  */
 
-class DirectDirentAccessor
+class LIBZIM_PRIVATE_API DirectDirentAccessor
 {
 public: // functions
-  DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader, std::unique_ptr<const Reader> urlPtrReader, entry_index_t direntCount);
+  DirectDirentAccessor(std::shared_ptr<DirentReader> direntReader,
+                       std::unique_ptr<const Reader> pathPtrReader,
+                       entry_index_t direntCount);
 
   offset_t    getOffset(entry_index_t idx) const;
   std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
   entry_index_t getDirentCount() const  {  return m_direntCount; }
+
+  size_t getMaxCacheSize() const { return m_direntCache.getMaxCost(); }
+  size_t getCurrentCacheSize() const { return m_direntCache.cost(); }
+  void setMaxCacheSize(size_t nbDirents) const { m_direntCache.setMaxCost(nbDirents); }
 
 private: // functions
   std::shared_ptr<const Dirent> readDirent(offset_t) const;
 
 private: // data
   std::shared_ptr<DirentReader>  mp_direntReader;
-  std::unique_ptr<const Reader>  mp_urlPtrReader;
+  std::unique_ptr<const Reader>  mp_pathPtrReader;
   entry_index_t                  m_direntCount;
 
-  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>> m_direntCache;
+  mutable lru_cache<entry_index_type, std::shared_ptr<const Dirent>, UnitCostEstimation> m_direntCache;
   mutable std::mutex m_direntCacheLock;
 
   mutable std::vector<char>  m_bufferDirentZone;

@@ -33,7 +33,7 @@ namespace zim
 // Unlke FileReader and MemoryReader (which read data from a file and memory,
 // respectively), DirentReader is a helper class that reads Dirents (rather
 // than from a Dirent).
-class DirentReader
+class LIBZIM_PRIVATE_API DirentReader
 {
 public: // functions
   explicit DirentReader(std::shared_ptr<const Reader> zimReader)

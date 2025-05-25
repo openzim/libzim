@@ -24,6 +24,7 @@
 #include <zim/entry.h>
 #include <zim/item.h>
 #include <zim/error.h>
+#include <zim/tools.h>
 #include "fileimpl.h"
 #include "tools.h"
 #include "log.h"
@@ -32,17 +33,51 @@ log_define("zim.archive")
 
 namespace zim
 {
+  OpenConfig::OpenConfig()
+    :
+        m_preloadXapianDb(true),
+        m_preloadDirentRanges(DIRENT_LOOKUP_CACHE_SIZE)
+    { }
+
   Archive::Archive(const std::string& fname)
-    : m_impl(new FileImpl(fname))
+    : Archive(fname, OpenConfig())
+    { }
+
+  Archive::Archive(const std::string& fname, OpenConfig openConfig)
+    : m_impl(new FileImpl(fname, openConfig))
     { }
 
 #ifndef _WIN32
   Archive::Archive(int fd)
-    : m_impl(new FileImpl(fd))
+    : Archive(fd, OpenConfig())
+    { }
+
+  Archive::Archive(int fd, OpenConfig openConfig)
+    : m_impl(new FileImpl(fd, openConfig))
+    { }
+
+  Archive::Archive(FdInput fd)
+    : Archive(fd, OpenConfig())
+    { }
+
+  Archive::Archive(FdInput fd, OpenConfig openConfig)
+    : m_impl(new FileImpl(fd, openConfig))
     { }
 
   Archive::Archive(int fd, offset_type offset, size_type size)
-    : m_impl(new FileImpl(fd, offset_t(offset), zsize_t(size)))
+    : Archive(FdInput(fd, offset, size), OpenConfig())
+    { }
+
+  Archive::Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig)
+    : Archive(FdInput(fd, offset, size), openConfig)
+    { }
+
+  Archive::Archive(const std::vector<FdInput>& fds)
+    : Archive(fds, OpenConfig())
+    { }
+
+  Archive::Archive(const std::vector<FdInput>& fds, OpenConfig openConfig)
+    : m_impl(new FileImpl(fds, openConfig))
     { }
 #endif
 
@@ -85,14 +120,19 @@ namespace zim
 
   entry_index_type Archive::getMediaCount() const
   {
-    return countMimeType(
-      getMetadata("Counter"),
-      [](const std::string& mimetype) {
-        return mimetype.find("image/") == 0 ||
-               mimetype.find("video/") == 0 ||
-               mimetype.find("audio/") == 0;
-      }
-    );
+    try {
+      return countMimeType(
+        getMetadata("Counter"),
+        [](const std::string& mimetype) {
+          return mimetype.find("image/") == 0 ||
+                 mimetype.find("video/") == 0 ||
+                 mimetype.find("audio/") == 0;
+        }
+      );
+    } catch(const EntryNotFound& e) {
+      return (m_impl->getNamespaceEntryCount('I').v
+            + m_impl->getNamespaceEntryCount('J').v);
+    }
   }
 
   Uuid Archive::getUuid() const
@@ -102,7 +142,7 @@ namespace zim
 
   Item Archive::getMetadataItem(const std::string& name) const
   {
-    auto r = m_impl->findx('M', name);
+    auto r = m_impl->findxMetadata(name);
     if (!r.first) {
       throw EntryNotFound("Cannot find metadata");
     }
@@ -122,7 +162,7 @@ namespace zim
     auto end = m_impl->getNamespaceEndOffset('M');
     for (auto idx=start; idx!=end; idx++) {
       auto dirent = m_impl->getDirent(idx);
-      ret.push_back(dirent->getUrl());
+      ret.push_back(dirent->getPath());
     }
     return ret;
   }
@@ -141,9 +181,8 @@ namespace zim
   }
 
   Item Archive::getIllustrationItem(unsigned int size) const {
-    std::ostringstream ss;
-    ss  << "Illustration_" << size << "x" << size << "@" << 1;
-    auto r = m_impl->findx('M', ss.str());
+    auto r = m_impl->findx('M', Formatter() << "Illustration_" << size << "x"
+                                            << size << "@" << 1);
     if (r.first) {
       return getEntryByPath(entry_index_type(r.second)).getItem();
     }
@@ -245,6 +284,15 @@ namespace zim
     throw EntryNotFound("Cannot find entry");
   }
 
+  Entry Archive::getEntryByPathWithNamespace(char ns, const std::string& path) const
+  {
+    auto r = m_impl->findx(ns, path);
+    if (r.first) {
+      return Entry(m_impl, entry_index_type(r.second));
+    }
+    throw EntryNotFound("Cannot find entry");
+  }
+
   Entry Archive::getEntryByTitle(entry_index_type idx) const
   {
     return Entry(m_impl, entry_index_type(m_impl->getIndexByTitle(title_index_t(idx))));
@@ -312,7 +360,7 @@ namespace zim
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
     auto accessInfo = item.getDirectAccessInformation();
-    return accessInfo.second;
+    return accessInfo.isValid();
   }
 
   bool Archive::hasTitleIndex() const {
@@ -323,7 +371,7 @@ namespace zim
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
     auto accessInfo = item.getDirectAccessInformation();
-    return accessInfo.second;
+    return accessInfo.isValid();
   }
 
   Archive::EntryRange<EntryOrder::pathOrder> Archive::iterByPath() const
@@ -480,6 +528,36 @@ namespace zim
   bool Archive::hasNewNamespaceScheme() const
   {
     return m_impl->hasNewNamespaceScheme();
+  }
+
+  size_t getClusterCacheMaxSize()
+  {
+    return getClusterCache().getMaxCost();
+  }
+
+  size_t getClusterCacheCurrentSize()
+  {
+    return getClusterCache().getCurrentCost();
+  }
+
+  void setClusterCacheMaxSize(size_t sizeInB)
+  {
+    getClusterCache().setMaxCost(sizeInB);
+  }
+
+  size_t Archive::getDirentCacheMaxSize() const
+  {
+    return m_impl->getDirentCacheMaxSize();
+  }
+
+  size_t Archive::getDirentCacheCurrentSize() const
+  {
+    return m_impl->getDirentCacheCurrentSize();
+  }
+
+  void Archive::setDirentCacheMaxSize(size_t nbDirents)
+  {
+    m_impl->setDirentCacheMaxSize(nbDirents);
   }
 
   cluster_index_type Archive::getClusterCount() const

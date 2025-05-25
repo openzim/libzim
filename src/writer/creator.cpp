@@ -32,12 +32,14 @@
 #include <zim/blob.h>
 #include <zim/error.h>
 #include <zim/writer/contentProvider.h>
+#include <zim/tools.h>
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
 #include "../md5.h"
 #include "../constants.h"
 #include "counterHandler.h"
+#include "writer/_dirent.h"
 
 #if defined(ENABLE_XAPIAN)
 # include "xapianHandler.h"
@@ -190,9 +192,8 @@ namespace zim
     void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider)
     {
       checkError();
-      std::stringstream ss;
-      ss << "Illustration_" << size << "x" << size << "@1";
-      addMetadata(ss.str(), std::move(provider), "image/png");
+      addMetadata(Formatter() << "Illustration_" << size << "x" << size << "@1",
+                  std::move(provider), "image/png");
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
@@ -203,6 +204,23 @@ namespace zim
         TPROGRESS();
       }
 
+      data->handle(dirent, hints);
+    }
+
+    void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
+    {
+      checkError();
+      Dirent tmpDirent(NS::C, targetPath);
+      auto existing_dirent_it = data->dirents.find(&tmpDirent);
+
+      if (existing_dirent_it == data->dirents.end()) {
+        Formatter fmt;
+        fmt << "Impossible to alias C/" << targetPath << " as C/" << path << std::endl;
+        fmt << "C/" << targetPath << " doesn't exist." << std::endl;
+        throw InvalidEntry(fmt);
+      }
+
+      auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
       data->handle(dirent, hints);
     }
 
@@ -219,12 +237,10 @@ namespace zim
 
       TPROGRESS();
 
-      // mp_titleListingHandler is a special case, it have to handle all dirents (including itself)
+      // We need to create all dirents before resolving redirects and setting entry indexes.
       for(auto& handler:data->m_direntHandlers) {
         // This silently create all the needed dirents.
-        for(auto dirent:handler->getDirents()) {
-          data->mp_titleListingHandler->handle(dirent, Hints());
-        }
+        handler->getDirents();
       }
 
       // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
@@ -239,7 +255,6 @@ namespace zim
       data->resolveMimeTypes();
 
       // We can now stop the direntHandlers, and get their content
-      bool titleListDirentSeen = false;
       for(auto& handler:data->m_direntHandlers) {
         handler->stop();
         const auto& dirents = handler->getDirents();
@@ -253,13 +268,6 @@ namespace zim
           // As we use a "handler level" isCompressible, all content of the same handler
           // must have the same compression.
           data->addItemData(dirent, std::move(*provider_it), handler->isCompressible());
-          if (handler == data->mp_titleListingHandler && !titleListDirentSeen) {
-            // We have to get the offset of the titleList in the cluster before
-            // we close the cluster. Once the cluster is close, the offset information is dropped.
-            // This works only if titleListingHandler create the full (V0) titlelist in its first dirent.
-            data->m_titleListBlobOffset = data->uncompCluster->getBlobOffset(dirent->getBlobNumber());
-            titleListDirentSeen = true;
-          }
           provider_it++;
         }
       }
@@ -309,11 +317,7 @@ namespace zim
 
       header->setMimeListPos( Fileheader::size );
 
-      // We assume here that titleListingHandler create the V0 listing in its first dirent.
-      auto cluster = data->mp_titleListingHandler->getDirents()[0]->getCluster();
-      header->setTitleIdxPos(
-        offset_type(cluster->getOffset() + cluster->getDataOffset() + data->m_titleListBlobOffset));
-
+      header->setTitleIdxPos(offset_type(-1));
       header->setClusterCount( data->clustersList.size() );
     }
 
@@ -343,8 +347,8 @@ namespace zim
         dirent->write(out_fd);
       }
 
-      TINFO(" write url prt list");
-      header.setUrlPtrPos(lseek(out_fd, 0, SEEK_CUR));
+      TINFO(" write path prt list");
+      header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
       for (auto& dirent: data->dirents)
       {
         char tmp_buff[sizeof(offset_type)];
@@ -451,8 +455,7 @@ namespace zim
       m_direntHandlers.push_back(xapianIndexer);
 #endif
 
-      mp_titleListingHandler = std::make_shared<TitleListingHandler>(this);
-      m_direntHandlers.push_back(mp_titleListingHandler);
+      m_direntHandlers.push_back(std::make_shared<TitleListingHandler>(this));
       m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
       for(auto& handler:m_direntHandlers) {
@@ -526,11 +529,11 @@ namespace zim
           existing->markRemoved();
           dirents.insert(dirent);
         } else {
-          std::ostringstream ss;
-          ss << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
-          ss << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
-          ss << "  existing dirent's title is : " << existing->getTitle() << std::endl;
-          throw InvalidEntry(ss.str());
+          Formatter fmt;
+          fmt << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
+          fmt << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
+          fmt << "  existing dirent's title is : " << existing->getTitle() << std::endl;
+          throw InvalidEntry(fmt);
         }
       };
 
@@ -594,6 +597,13 @@ namespace zim
     Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
     {
       auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
+      addDirent(dirent);
+      return dirent;
+    }
+
+    Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
+    {
+      auto dirent = pool.getAliasDirent(path, title, target);
       addDirent(dirent);
       return dirent;
     }

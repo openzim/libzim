@@ -1,12 +1,13 @@
 tests = [
+    'log',
     'lrucache',
+    'concurrentcache',
     'cluster',
     'creator',
     'dirent',
     'error_in_creator',
     'header',
     'uuid',
-    'template',
     'archive',
     'iterator',
     'reader',
@@ -32,9 +33,9 @@ endif
 
 datadir = get_option('test_data_dir')
 if datadir == 'none'
-    test_cpp_args = '-DWITH_TEST_DATA=0'
+    test_cpp_args = ['-DWITH_TEST_DATA=0']
 else
-    test_cpp_args = '-DWITH_TEST_DATA=1'
+    test_cpp_args = ['-DWITH_TEST_DATA=1']
     if datadir == ''
         # We need to download the test data.
         datadir = join_paths(meson.current_build_dir(), 'data')
@@ -45,13 +46,16 @@ endif
 testenv = environment()
 testenv.set('ZIM_TEST_DATA_DIR', datadir)
 
+if cpp.get_id() == 'gcc' and cpp.version().version_compare('>=12.0.0') and cpp.version().version_compare('<13.0.0')
+    test_cpp_args += ['-Wno-error=restrict']
+endif
+
 if gtest_dep.found() and not meson.is_cross_build()
     foreach test_name : tests
         test_exe = executable(test_name, [test_name+'.cpp', 'tools.cpp'],
                               implicit_include_directories: false,
                               include_directories: [include_directory, src_directory],
                               link_with: libzim,
-                              link_args: extra_link_args,
                               cpp_args: test_cpp_args,
                               dependencies: deps + [gtest_dep],
                               build_rpath: '$ORIGIN')

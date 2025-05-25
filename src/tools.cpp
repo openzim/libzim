@@ -22,17 +22,16 @@
 #include "tools.h"
 #include "zim/tools.h"
 #include "fs.h"
+#include "writer/_dirent.h"
 
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <random>
-#include <errno.h>
 #include <sstream>
 
 #ifdef _WIN32
@@ -69,14 +68,14 @@ uint32_t zim::countWords(const std::string& text)
   unsigned int i = 0;
 
   // Find first word
-  while ( i < length && std::isspace(text[i]) ) i++;
+  while ( i < length && std::isspace(static_cast<unsigned char>(text[i])) ) i++;
 
   while ( i < length ) {
     // Find end of word
-    while ( i < length && !std::isspace(text[i]) ) i++;
+    while ( i < length && !std::isspace(static_cast<unsigned char>(text[i])) ) i++;
     numWords++;
     // Find start of next word
-    while ( i < length && std::isspace(text[i]) ) i++;
+    while ( i < length && std::isspace(static_cast<unsigned char>(text[i])) ) i++;
   }
   return numWords;
 }
@@ -125,7 +124,7 @@ uint32_t zim::randomNumber(uint32_t max)
   static std::mutex mutex;
 
   std::lock_guard<std::mutex> l(mutex);
-  return ((double)random() / random.max()) * max;
+  return (uint32_t)(((double)random() / random.max()) * max);
 }
 
 /* Split string in a token array */
@@ -220,6 +219,20 @@ zim::MimeCounterType zim::parseMimetypeCounter(const std::string& counterData)
   return counters;
 }
 
+bool zim::writer::isFrontArticle(const zim::writer::Dirent* dirent, const zim::writer::Hints& hints)
+{
+  // By definition, dirent not in `C` namespace are not FRONT_ARTICLE
+  if (dirent->getNamespace() != NS::C) {
+    return false;
+  }
+  try {
+    return bool(hints.at(FRONT_ARTICLE));
+  } catch(std::out_of_range&) {
+    return false;
+  }
+}
+
+
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
 
@@ -262,19 +275,19 @@ std::string zim::removeAccents(const std::string& text)
   return unaccentedText;
 }
 
-bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Database& database) {
+bool zim::getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, Xapian::Database& database) {
   zim::DEFAULTFS::FD databasefd;
   try {
-      databasefd = zim::DEFAULTFS::openFile(accessInfo.first);
+      databasefd = zim::DEFAULTFS::openFile(accessInfo.filename);
   } catch (...) {
-      std::cerr << "Impossible to open " << accessInfo.first << std::endl;
+      std::cerr << "Impossible to open " << accessInfo.filename << std::endl;
       std::cerr << strerror(errno) << std::endl;
       return false;
   }
-  if (!databasefd.seek(zim::offset_t(accessInfo.second))) {
+  if (!databasefd.seek(zim::offset_t(accessInfo.offset))) {
       std::cerr << "Something went wrong seeking databasedb "
-                << accessInfo.first << std::endl;
-      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+                << accessInfo.filename << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.offset << std::endl;
       return false;
   }
 
@@ -282,8 +295,8 @@ bool zim::getDbFromAccessInfo(zim::Item::DirectAccessInfo accessInfo, Xapian::Da
       database = Xapian::Database(databasefd.release());
   } catch( Xapian::DatabaseError& e) {
       std::cerr << "Something went wrong opening xapian database for zimfile "
-                << accessInfo.first << std::endl;
-      std::cerr << "dbOffest = " << accessInfo.second << std::endl;
+                << accessInfo.filename << std::endl;
+      std::cerr << "dbOffest = " << accessInfo.offset << std::endl;
       std::cerr << "error = " << e.get_msg() << std::endl;
       return false;
   }

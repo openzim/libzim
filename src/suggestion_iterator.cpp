@@ -17,6 +17,7 @@
  *
  */
 
+#include <zim/error.h>
 #define ZIM_PRIVATE
 
 #include "zim/suggestion_iterator.h"
@@ -141,7 +142,11 @@ SuggestionIterator SuggestionIterator::operator--(int) {
 Entry SuggestionIterator::getEntry() const {
 #if defined(LIBZIM_WITH_XAPIAN)
     if (mp_internal) {
-        return mp_internal->get_entry();
+        try {
+            return mp_internal->get_entry();
+        } catch ( Xapian::DatabaseError& e) {
+            throw ZimFileFormatError(e.get_description());
+        }
     }
 #endif  // LIBZIM_WITH_XAPIAN
 
@@ -157,7 +162,11 @@ std::string SuggestionIterator::getDbData() const {
         return "";
     }
 
-    return mp_internal->get_document().get_data();
+    try {
+        return mp_internal->get_document().get_data();
+    } catch ( Xapian::DatabaseError& e) {
+        throw ZimFileFormatError(e.get_description());
+    }
 }
 
 std::string SuggestionIterator::getIndexPath() const
@@ -166,20 +175,24 @@ std::string SuggestionIterator::getIndexPath() const
         return "";
     }
 
-    std::string path = mp_internal->get_document().get_data();
-    bool hasNewNamespaceScheme = mp_internal->mp_internalDb->m_archive.hasNewNamespaceScheme();
+    try {
+        std::string path = mp_internal->get_document().get_data();
+        bool hasNewNamespaceScheme = mp_internal->mp_internalDb->m_archive.hasNewNamespaceScheme();
 
-    std::string dbDataType = mp_internal->mp_internalDb->m_database.get_metadata("data");
-    if (dbDataType.empty()) {
-        dbDataType = "fullPath";
-    }
+        std::string dbDataType = mp_internal->mp_internalDb->m_database.get_metadata("data");
+        if (dbDataType.empty()) {
+            dbDataType = "fullPath";
+        }
 
-    // If the archive has new namespace scheme and the type of its indexed data
-    // is `fullPath` we return only the `path` without namespace
-    if (hasNewNamespaceScheme && dbDataType == "fullPath") {
-        path = path.substr(2);
+        // If the archive has new namespace scheme and the type of its indexed data
+        // is `fullPath` we return only the `path` without namespace
+        if (hasNewNamespaceScheme && dbDataType == "fullPath") {
+            path = path.substr(2);
+        }
+        return path;
+    } catch ( Xapian::DatabaseError& e) {
+        throw ZimFileFormatError(e.get_description());
     }
-    return path;
 }
 
 std::string SuggestionIterator::getIndexTitle() const {

@@ -24,6 +24,7 @@
 #include "creatordata.h"
 
 #include <zim/writer/contentProvider.h>
+#include "tools.h"
 
 using namespace zim::writer;
 
@@ -84,7 +85,7 @@ DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
 }
 
 void XapianHandler::indexTitle(Dirent* dirent) {
-  auto title = dirent->getRealTitle();
+  auto title = dirent->getTitle();
   if (title.empty()) {
     return;
   }
@@ -99,15 +100,9 @@ void XapianHandler::indexTitle(Dirent* dirent) {
 
 void XapianHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  if (dirent->getNamespace() != NS::C) {
-    return;
-  }
-
-  try {
-    if (bool(hints.at(FRONT_ARTICLE))) {
+  if (isFrontArticle(dirent, hints)) {
       indexTitle(dirent);
-    }
-  } catch(std::out_of_range&) {}
+  }
 }
 
 void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)

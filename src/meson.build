@@ -13,7 +13,6 @@ common_sources = [
     'dirent.cpp',
     'dirent_accessor.cpp',
     'entry.cpp',
-    'envvalue.cpp',
     'fileheader.cpp',
     'fileimpl.cpp',
     'file_compound.cpp',
@@ -22,11 +21,12 @@ common_sources = [
     'blob.cpp',
     'buffer.cpp',
     'md5.c',
-    'template.cpp',
     'uuid.cpp',
     'tools.cpp',
     'compression.cpp',
     'istreamreader.cpp',
+    'namedthread.cpp',
+    'log.cpp',
     'writer/contentProvider.cpp',
     'writer/creator.cpp',
     'writer/item.cpp',
@@ -58,7 +58,7 @@ xapian_sources = [
 ]
 
 sources = common_sources
-deps = [thread_dep, lzma_dep, zstd_dep]
+deps = [thread_dep, lzma_dep, zstd_dep, win_deps]
 
 if target_machine.system() == 'freebsd'
     deps += [execinfo_dep]
@@ -74,8 +74,6 @@ libzim = library('zim',
                  sources,
                  include_directories : inc,
                  dependencies : deps,
-                 link_args : extra_link_args,
-                 cpp_args : extra_cpp_args,
                  version: meson.project_version(),
                  install : true)
 libzim_dep = declare_dependency(link_with: libzim,

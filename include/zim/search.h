@@ -26,7 +26,6 @@
 #include "archive.h"
 #include <vector>
 #include <string>
-#include <map>
 
 namespace Xapian {
   class Enquire;
@@ -48,10 +47,8 @@ class SearchResultSet;
  * A Searcher is mainly used to create new `Search`
  * Internaly, this is mainly a wrapper around a Xapian database.
  *
- * You should consider that all search operations are NOT threadsafe.
- * It is up to you to protect your calls to avoid race competition.
- * However, Searcher (and subsequent classes) do not maintain a global/share state.
- * You can create several Searchers and use them in different threads.
+ * All search (at exception of SearchIterator) operation are thread safe.
+ * You can freely create several Search from one Searcher and use them in different threads.
  */
 class LIBZIM_API Searcher
 {

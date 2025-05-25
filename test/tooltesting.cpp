@@ -29,23 +29,23 @@
 
 namespace {
   TEST(Tools, wordCount) {
-    ASSERT_EQ(zim::countWords(""), 0);
-    ASSERT_EQ(zim::countWords("   "), 0);
-    ASSERT_EQ(zim::countWords("One"), 1);
-    ASSERT_EQ(zim::countWords("One Two Three"), 3);
-    ASSERT_EQ(zim::countWords("  One  "), 1);
-    ASSERT_EQ(zim::countWords("One    Two Three   "), 3);
-    ASSERT_EQ(zim::countWords("One.Two\tThree"), 2);
+    ASSERT_EQ(zim::countWords(""), 0U);
+    ASSERT_EQ(zim::countWords("   "), 0U);
+    ASSERT_EQ(zim::countWords("One"), 1U);
+    ASSERT_EQ(zim::countWords("One Two Three"), 3U);
+    ASSERT_EQ(zim::countWords("  One  "), 1U);
+    ASSERT_EQ(zim::countWords("One    Two Three   "), 3U);
+    ASSERT_EQ(zim::countWords("One.Two\tThree"), 2U);
   }
 
 
   TEST(Tools, parseIllustrationPathToSize) {
-    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_0x0@1"), 0);
-    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_1x1@1"), 1);
-    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_01x01@1"), 1);
-    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_64x64@1"), 64);
-    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_128x128@1"), 128);
-    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_1024x1024@1"), 1024);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_0x0@1"), 0U);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_1x1@1"), 1U);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_01x01@1"), 1U);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_64x64@1"), 64U);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_128x128@1"), 128U);
+    ASSERT_EQ(zim::parseIllustrationPathToSize("Illustration_1024x1024@1"), 1024U);
     ASSERT_THROW(zim::parseIllustrationPathToSize("Illsration_64x64@1"), std::runtime_error);
     ASSERT_THROW(zim::parseIllustrationPathToSize("Illstration_"), std::runtime_error);
     ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_64x@1"), std::runtime_error);
@@ -83,7 +83,10 @@ namespace {
     auto accentedString(ss.str());
     // Check our input data (that we have a char in the middle of a batch boundary)
     // Indexing is made on u16
-    icu::UnicodeString ustring(accentedString.c_str());
+    // `zim::removeAccents` calls `ucnv_setDefaultName` before creating the UnicodeString
+    // so it will be converted using the right encoding ("utf8").
+    // But we don't so we need to be explicit on the encoding here.
+    icu::UnicodeString ustring(accentedString.c_str(), "utf8");
 
     // Test input data.
     // "bépo" is 4 chars

@@ -1,3 +1,75 @@
+libzim 9.3.0
+============
+
+ * Make the cache configurable by cpp API (@mgautierfr #950)
+ * Remove old ZIM (v0) titleindex (title pointer list) (@mgautierfr #949, @veloman-yunkan #969)
+ * Fixed ZIM title indexing of items with title identical to the item's path (@veloman-yunkan #968)
+ * Fixed ZIM suggestions for a single-word-followed-by-space query (@veloman-yunkan #953)
+ * Testing based on latest zim-testing-suite 0.8.0 (@veloman-yunkan #971)
+ * Fix compilation on NetBSD because MAP_POPULATE & pread64() undefined (@leleliu008 #928 #929)
+ * Upload GitHub workflows (@kelson42 #940 #942 #970)
+
+libzim 9.2.3
+============
+
+ * Correctly locate part range in which read data in case of ZIM chunks (@mgautierfr #903)
+ * Fix test compilation GCC12 #899 (#mgautierfr #899)
+ * Move Windows CI/CD to native MS Windows via GitHub Actions (@mgautierfr #899 #914)
+ * Update deb package CI/CD for Debian & Ubuntu with latest releases (@kelson42 #905 #906 #922)
+
+libzim 9.2.2
+============
+
+ * Avoid crash scenario in case of invalid offset in clusters (@mgautierfr #895)
+ * Many improvements around testing (@mgautierfr #889 #897)
+ * Windows CI using GitHub Windows runner (@mgautierfr #894)
+ * Better error message when failin to open (split) ZIM file (@mgautierfr #884)
+
+libzim 9.2.1
+============
+
+ *  Better handling of split ZIM files (@mgautierfr #879)
+ *  Fix creation of shared_ptr<char> in test (@mgautierfr #881)
+
+libzim 9.2.0
+============
+
+ * Allow open Archive with a set of (positionned) file descriptors (@mgautierfr #860)
+ * Introduce new (private) method `getEntryByPathWithNamespace` (@mgautierfr #859)
+ * Internally catch xapian exception and rethrow ZimFileFormatError instead (@mgautierfr #873)
+ * Fix compilation on Haiku (@Begasus #857)
+ * Fix macos mmap (@mgautierfr #867)
+ * Optimize checksum calculation (@aryanA101a #861)
+ * Introduce `Formatter` helper (@ShaopengLin #862)
+ * Rename all `*Url*` symbols to `*Path*` (@mgautierfr #869)
+ * Build script: Allow to disable compilation of test (@kelson42 #854)
+ * [CI] Use kiwix-build github's action to download deps archive (@mgautierfr #850)
+ * [CI] Build libzim on macos-14 (@kelson42 #856)
+
+libzim 9.1.0
+============
+
+ * New addAlias() method in the creator (@mgautierfr #833)
+ * Bump-up ZIM format minor version to 6.1.2 (@mgautierfr #847)
+
+libzim 9.0.0
+============
+
+ * getMediaCount() does not fail anymore if M/Counter is missing (@mgautierfr #827)
+ * Reintroduce optimization of Entry::getItem() (@kelson42 @mgautierfr #836)
+ * C++17 compatible code (@mgautierfr #819)
+ * Add support to recent googletest framework (@kelson42 #830)
+ * Multiple fixes for Apple macOS/iOS compilation & CI (@mgautierfr @kelson42 @rgaudin #832 #839)
+
+libzim 8.2.1
+============
+
+ * Better indexer CJK content (@mgautierfr #806)
+ * Fix export of symbol on Windows dll (@xiaoyifang @mgautierfr #796 #807)
+ * Remove accents from the search query (@mgautierfr #804)
+ * Improved performance of removing of accents when working on long string (@mgautierfr #797)
+ * Various improvement and fixes of the CI (@mgautierfr @kelson42)
+
 libzim 8.2.0
 ============
 

@@ -21,16 +21,14 @@
 
 #include "compression.h"
 
-#include "envvalue.h"
-
+#include <zim/tools.h>
 #include <stdexcept>
 
 const std::string LZMA_INFO::name = "lzma";
 void LZMA_INFO::init_stream_decoder(stream_t* stream, char* raw_data)
 {
   *stream = LZMA_STREAM_INIT;
-  unsigned memsize = zim::envMemSize("ZIM_LZMA_MEMORY_SIZE", LZMA_MEMORY_SIZE * 1024 * 1024);
-  auto errcode = lzma_stream_decoder(stream, memsize, 0);
+  auto errcode = lzma_stream_decoder(stream, LZMA_MEMORY_SIZE * 1024 * 1024, 0);
   if (errcode != LZMA_OK) {
     throw std::runtime_error("Impossible to allocated needed memory to uncompress lzma stream");
   }
@@ -51,9 +49,8 @@ CompStatus LZMA_INFO::stream_run(stream_t* stream, CompStep step)
     case LZMA_OK:
       return CompStatus::OK;
     default: {
-      std::ostringstream ss;
-      ss << "Unexpected lzma status : " << errcode;
-      throw std::runtime_error(ss.str());
+      throw std::runtime_error(zim::Formatter()
+                               << "Unexpected lzma status : " << errcode);
     }
   }
 }
@@ -61,6 +58,11 @@ CompStatus LZMA_INFO::stream_run(stream_t* stream, CompStep step)
 void LZMA_INFO::stream_end_decode(stream_t* stream)
 {
   lzma_end(stream);
+}
+
+size_t LZMA_INFO::state_size(const stream_t& stream)
+{
+  return lzma_memusage(&stream);
 }
 
 
@@ -172,4 +174,12 @@ void ZSTD_INFO::stream_end_decode(stream_t* stream)
 
 void ZSTD_INFO::stream_end_encode(stream_t* stream)
 {
+}
+
+size_t ZSTD_INFO::state_size(const stream_t& stream) {
+  if (stream.decoder_stream) {
+    return ZSTD_sizeof_CStream(stream.encoder_stream);
+  } else {
+    return ZSTD_sizeof_DStream(stream.decoder_stream);
+  }
 }

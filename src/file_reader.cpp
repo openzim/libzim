@@ -20,6 +20,7 @@
 
 #include <zim/zim.h>
 #include <zim/error.h>
+#include <zim/tools.h>
 #include "file_reader.h"
 #include "file_compound.h"
 #include "buffer.h"
@@ -27,9 +28,9 @@
 #include <string.h>
 #include <cstring>
 #include <fcntl.h>
-#include <sstream>
 #include <system_error>
 #include <algorithm>
+#include <stdexcept>
 
 
 #ifndef _WIN32
@@ -43,6 +44,19 @@
   typedef SSIZE_T ssize_t;
 #endif
 
+namespace {
+  [[noreturn]] void throwSystemError(const std::string& errorText)
+  {
+#ifdef _WIN32
+    // Windows doesn't use errno.
+    throw std::system_error(std::error_code(), errorText);
+#else
+    std::error_code ec(errno, std::generic_category());
+    throw std::system_error(ec, errorText);
+#endif
+  }
+}
+
 namespace zim {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,69 +67,64 @@ MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> sou
   : MultiPartFileReader(source, offset_t(0), source->fsize()) {}
 
 MultiPartFileReader::MultiPartFileReader(std::shared_ptr<const FileCompound> source, offset_t offset, zsize_t size)
-  : source(source),
-    _offset(offset),
-    _size(size)
+  : BaseFileReader(offset, size),
+    source(source)
 {
   ASSERT(offset.v, <=, source->fsize().v);
   ASSERT(offset.v+size.v, <=, source->fsize().v);
 }
 
-char MultiPartFileReader::read(offset_t offset) const {
-  ASSERT(offset.v, <, _size.v);
+char MultiPartFileReader::readImpl(offset_t offset) const {
   offset += _offset;
   auto part_pair = source->locate(offset);
   auto& fhandle = part_pair->second->fhandle();
-  offset_t local_offset = offset - part_pair->first.min;
-  ASSERT(local_offset, <=, part_pair->first.max);
+  offset_t logical_local_offset = offset - part_pair->first.min;
+  ASSERT(logical_local_offset, <=, part_pair->first.max);
+  offset_t physical_local_offset = logical_local_offset + part_pair->second->offset();
   char ret;
   try {
-    fhandle.readAt(&ret, zsize_t(1), local_offset);
+    fhandle.readAt(&ret, zsize_t(1), physical_local_offset);
   } catch (std::runtime_error& e) {
     //Error while reading.
-    std::ostringstream s;
-    s << "Cannot read a char.\n";
-    s << " - File part is " <<  part_pair->second->filename() << "\n";
-    s << " - File part size is " << part_pair->second->size().v << "\n";
-    s << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - local offset is " << local_offset.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
+    Formatter fmt;
+    fmt << "Cannot read a char.\n";
+    fmt << " - File part is " <<  part_pair->second->filename() << "\n";
+    fmt << " - File part size is " << part_pair->second->size().v << "\n";
+    fmt << " - File part range is " << part_pair->first.min << "-" << part_pair->first.max << "\n";
+    fmt << " - Reading offset at " << offset.v << "\n";
+    fmt << " - logical local offset is " << logical_local_offset.v << "\n";
+    fmt << " - physical local offset is " << physical_local_offset.v << "\n";
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
   return ret;
 }
 
-void MultiPartFileReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <=, _size.v);
-  ASSERT(offset.v+size.v, <=, _size.v);
-  if (! size ) {
-    return;
-  }
+void MultiPartFileReader::readImpl(char* dest, offset_t offset, zsize_t size) const {
   offset += _offset;
   auto found_range = source->locate(offset, size);
   for(auto current = found_range.first; current!=found_range.second; current++){
     auto part = current->second;
     Range partRange = current->first;
-    offset_t local_offset = offset-partRange.min;
+    offset_t logical_local_offset = offset - partRange.min;
     ASSERT(size.v, >, 0U);
-    zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-local_offset.v));
+    zsize_t size_to_get = zsize_t(std::min(size.v, part->size().v-logical_local_offset.v));
+    offset_t physical_local_offset = logical_local_offset + part->offset();
     try {
-      part->fhandle().readAt(dest, size_to_get, local_offset);
+      part->fhandle().readAt(dest, size_to_get, physical_local_offset);
     } catch (std::runtime_error& e) {
-      std::ostringstream s;
-      s << "Cannot read chars.\n";
-      s << " - File part is " <<  part->filename() << "\n";
-      s << " - File part size is " << part->size().v << "\n";
-      s << " - File part range is " << partRange.min << "-" << partRange.max << "\n";
-      s << " - size_to_get is " << size_to_get.v << "\n";
-      s << " - total size is " << size.v << "\n";
-      s << " - Reading offset at " << offset.v << "\n";
-      s << " - local offset is " << local_offset.v << "\n";
-      s << " - error is " << strerror(errno) << "\n";
-      std::error_code ec(errno, std::generic_category());
-      throw std::system_error(ec, s.str());
+      Formatter fmt;
+      fmt << "Cannot read chars.\n";
+      fmt << " - File part is " <<  part->filename() << "\n";
+      fmt << " - File part size is " << part->size().v << "\n";
+      fmt << " - File part range is " << partRange.min << "-" << partRange.max << "\n";
+      fmt << " - size_to_get is " << size_to_get.v << "\n";
+      fmt << " - total size is " << size.v << "\n";
+      fmt << " - Reading offset at " << offset.v << "\n";
+      fmt << " - logical local offset is " << logical_local_offset.v << "\n";
+      fmt << " - physical local offset is " << physical_local_offset.v << "\n";
+      fmt << " - error is " << e.what() << "\n";
+      throwSystemError(fmt);
     };
     ASSERT(size_to_get, <=, size);
     dest += size_to_get.v;
@@ -134,21 +143,21 @@ class MMapException : std::exception {};
 char*
 mmapReadOnly(int fd, offset_type offset, size_type size)
 {
-#if defined(__APPLE__) || defined(__OpenBSD__)
-  const auto MAP_FLAGS = MAP_PRIVATE;
+#if defined(__linux__)
+  const auto MAP_FLAGS = MAP_PRIVATE|MAP_POPULATE;
 #elif defined(__FreeBSD__)
   const auto MAP_FLAGS = MAP_PRIVATE|MAP_PREFAULT_READ;
 #else
-  const auto MAP_FLAGS = MAP_PRIVATE|MAP_POPULATE;
+  const auto MAP_FLAGS = MAP_PRIVATE;
 #endif
 
   const auto p = (char*)mmap(NULL, size, PROT_READ, MAP_FLAGS, fd, offset);
-  if (p == MAP_FAILED )
-  {
-    std::ostringstream s;
-    s << "Cannot mmap size " << size << " at off " << offset
-      << " : " << strerror(errno);
-    throw std::runtime_error(s.str());
+  if (p == MAP_FAILED) {
+    // mmap may fails for a lot of reason.
+    // Most of them (io error, too big size...) may not recoverable but some of
+    // them may be relative to mmap only and a "simple" read from the file would work.
+    // Let's throw a MMapException to fallback to read (and potentially fail again there).
+    throw MMapException();
   }
   return p;
 }
@@ -176,33 +185,46 @@ makeMmappedBuffer(int fd, offset_t offset, zsize_t size)
 } // unnamed namespace
 #endif // ENABLE_USE_MMAP
 
-const Buffer MultiPartFileReader::get_buffer(offset_t offset, zsize_t size) const {
+const Buffer BaseFileReader::get_buffer(offset_t offset, zsize_t size) const {
   ASSERT(size, <=, _size);
 #ifdef ENABLE_USE_MMAP
   try {
-    auto found_range = source->locate(_offset+offset, size);
-    auto first_part_containing_it = found_range.first;
-    if (++first_part_containing_it != found_range.second) {
-      throw MMapException();
-    }
-
-    // The range is in only one part
-    auto range = found_range.first->first;
-    auto part = found_range.first->second;
-    auto local_offset = offset + _offset - range.min;
-    ASSERT(size, <=, part->size());
-    int fd = part->fhandle().getNativeHandle();
-    return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
+    return get_mmap_buffer(offset, size);
   } catch(MMapException& e)
 #endif
   {
-    // The range is several part, or we are on Windows.
-    // We will have to do some memory copies :/
+    // We cannot do the mmap, for several possible reasons:
+    // - Mmap offset is too big (>4GB on 32 bits)
+    // - The range is several part
+    // - We are on Windows.
+    // - Mmap itself has failed
+    // We will have to do some memory copies (or fail trying to) :/
     // [TODO] Use Windows equivalent for mmap.
     auto ret_buffer = Buffer::makeBuffer(size);
     read(const_cast<char*>(ret_buffer.data()), offset, size);
     return ret_buffer;
   }
+}
+
+const Buffer MultiPartFileReader::get_mmap_buffer(offset_t offset, zsize_t size) const {
+#ifdef ENABLE_USE_MMAP
+  auto found_range = source->locate(_offset + offset, size);
+  auto first_part_containing_it = found_range.first;
+  if (++first_part_containing_it != found_range.second) {
+    throw MMapException();
+  }
+
+  // The range is in only one part
+  auto range = found_range.first->first;
+  auto part = found_range.first->second;
+  auto logical_local_offset = offset + _offset - range.min;
+  ASSERT(size, <=, part->size());
+  int fd = part->fhandle().getNativeHandle();
+  auto physical_local_offset = logical_local_offset + part->offset();
+  return Buffer::makeBuffer(makeMmappedBuffer(fd, physical_local_offset, size), size);
+#else
+  return Buffer::makeBuffer(size); // unreachable
+#endif
 }
 
 bool Reader::can_read(offset_t offset, zsize_t size) const
@@ -223,63 +245,50 @@ std::unique_ptr<const Reader> MultiPartFileReader::sub_reader(offset_t offset, z
 ////////////////////////////////////////////////////////////////////////////////
 
 FileReader::FileReader(FileHandle fh, offset_t offset, zsize_t size)
-  : _fhandle(fh)
-  , _offset(offset)
-  , _size(size)
+  : BaseFileReader(offset, size)
+    , _fhandle(fh)
 {
 }
 
-char FileReader::read(offset_t offset) const
+char FileReader::readImpl(offset_t offset) const
 {
-  ASSERT(offset.v, <, _size.v);
   offset += _offset;
   char ret;
   try {
     _fhandle->readAt(&ret, zsize_t(1), offset);
   } catch (std::runtime_error& e) {
     //Error while reading.
-    std::ostringstream s;
-    s << "Cannot read a char.\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
+    Formatter fmt;
+    fmt << "Cannot read a char.\n";
+    fmt << " - Reading offset at " << offset.v << "\n";
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
   return ret;
 }
 
-void FileReader::read(char* dest, offset_t offset, zsize_t size) const
+void FileReader::readImpl(char* dest, offset_t offset, zsize_t size) const
 {
-  ASSERT(offset.v, <=, _size.v);
-  ASSERT(offset.v+size.v, <=, _size.v);
-  if (! size ) {
-    return;
-  }
   offset += _offset;
   try {
     _fhandle->readAt(dest, size, offset);
   } catch (std::runtime_error& e) {
-    std::ostringstream s;
-    s << "Cannot read chars.\n";
-    s << " - Reading offset at " << offset.v << "\n";
-    s << " - size is " << size.v << "\n";
-    s << " - error is " << strerror(errno) << "\n";
-    std::error_code ec(errno, std::generic_category());
-    throw std::system_error(ec, s.str());
+    Formatter fmt;
+    fmt << "Cannot read chars.\n";
+    fmt << " - Reading offset at " << offset.v << "\n";
+    fmt << " - size is " << size.v << "\n";
+    fmt << " - error is " << e.what() << "\n";
+    throwSystemError(fmt);
   };
 }
 
-const Buffer FileReader::get_buffer(offset_t offset, zsize_t size) const
-{
-  ASSERT(size, <=, _size);
+const Buffer FileReader::get_mmap_buffer(offset_t offset, zsize_t size) const {
 #ifdef ENABLE_USE_MMAP
-  offset += _offset;
+  auto local_offset = offset + _offset;
   int fd = _fhandle->getNativeHandle();
-  return Buffer::makeBuffer(makeMmappedBuffer(fd, offset, size), size);
-#else // We are on Windows. [TODO] Use Windows equivalent for mmap.
-  auto ret_buffer = Buffer::makeBuffer(size);
-  read(const_cast<char*>(ret_buffer.data()), offset, size);
-  return ret_buffer;
+  return Buffer::makeBuffer(makeMmappedBuffer(fd, local_offset, size), size);
+#else
+  return Buffer::makeBuffer(size); // unreachable
 #endif
 }
 

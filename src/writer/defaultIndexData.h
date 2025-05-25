@@ -21,7 +21,12 @@
 #define ZIM_WRITER_DEFAULTINDEXDATA_H
 
 #include <zim/writer/item.h>
+#include <zim/tools.h>
+
+#include "config.h"
+#if defined(ENABLE_XAPIAN)
 #include "xapian/myhtmlparse.h"
+#endif
 #include "../tools.h"
 
 #include <atomic>
@@ -60,17 +65,17 @@ namespace zim
             return;
           }
 #if defined(ENABLE_XAPIAN)
-          std::ostringstream ss;
+          Formatter fmt;
           while (true) {
             auto blob = mp_contentProvider->feed();
             if(blob.size() == 0) {
               break;
             }
-            ss << blob;
+            fmt << blob;
           }
           MyHtmlParser htmlParser;
           try {
-            htmlParser.parse_html(ss.str(), "UTF-8", true);
+            htmlParser.parse_html(fmt, "UTF-8", true);
           } catch(...) {}
           m_hasIndexData = !htmlParser.dump.empty() && htmlParser.indexing_allowed && (htmlParser.dump.find("NOINDEX") == std::string::npos);
           m_content = zim::removeAccents(htmlParser.dump);

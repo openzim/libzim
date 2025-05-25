@@ -21,8 +21,8 @@
 #define ZIM_FS_WINDOWS_H_
 
 #include "zim_types.h"
+#include "config.h"
 
-#include <stdexcept>
 #include <memory>
 
 typedef void* HANDLE;
@@ -35,7 +35,7 @@ using path_t = const std::string&;
 
 struct ImplFD;
 
-class FD {
+class LIBZIM_PRIVATE_API FD {
   public:
     typedef HANDLE fd_t;
   private:
@@ -56,7 +56,7 @@ class FD {
     bool    close();
 };
 
-struct FS {
+struct LIBZIM_PRIVATE_API FS {
     using FD = zim::windows::FD;
     static std::string join(path_t base, path_t name);
     static std::unique_ptr<wchar_t[]> toWideChar(path_t path);

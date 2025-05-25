@@ -22,45 +22,48 @@
 #ifndef ZIM_FILEIMPL_H
 #define ZIM_FILEIMPL_H
 
+#include <atomic>
 #include <string>
+#include <tuple>
 #include <vector>
-#include <map>
 #include <memory>
 #include <zim/zim.h>
 #include <mutex>
-#include "lrucache.h"
 #include "concurrent_cache.h"
 #include "_dirent.h"
 #include "dirent_accessor.h"
 #include "dirent_lookup.h"
 #include "cluster.h"
-#include "buffer.h"
 #include "file_reader.h"
 #include "file_compound.h"
 #include "fileheader.h"
 #include "zim_types.h"
 #include "direntreader.h"
 
+#ifdef ENABLE_XAPIAN
+#include "search_internal.h"
+#endif
 
 namespace zim
 {
+  class FileImpl;
+  typedef std::shared_ptr<const Cluster> ClusterHandle;
+  typedef std::tuple<const FileImpl*, cluster_index_type> ClusterRef;
+  typedef ConcurrentCache<ClusterRef, ClusterHandle, ClusterMemorySize> ClusterCache;
+  ClusterCache& getClusterCache();
+
   class FileImpl
   {
       std::shared_ptr<FileCompound> zimFile;
-      offset_t archiveStartOffset;
       std::shared_ptr<Reader> zimReader;
       std::shared_ptr<DirentReader> direntReader;
       Fileheader header;
 
       std::unique_ptr<const Reader> clusterOffsetReader;
 
-      std::shared_ptr<const DirectDirentAccessor> mp_urlDirentAccessor;
+      std::shared_ptr<const DirectDirentAccessor> mp_pathDirentAccessor;
       std::unique_ptr<const IndirectDirentAccessor> mp_titleDirentAccessor;
 
-      typedef std::shared_ptr<const Cluster> ClusterHandle;
-      ConcurrentCache<cluster_index_type, ClusterHandle> clusterCache;
-
-      const bool m_newNamespaceScheme;
       const bool m_hasFrontArticlesIndex;
       const entry_index_t m_startUserEntry;
       const entry_index_t m_endUserEntry;
@@ -76,13 +79,13 @@ namespace zim
         typedef DirectDirentAccessor DirentAccessorType;
         typedef entry_index_t index_t;
         static const std::string& getDirentKey(const Dirent& d) {
-          return d.getUrl();
+          return d.getPath();
         }
       };
 
-      using DirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
-      mutable std::unique_ptr<DirentLookup> m_direntLookup;
-      mutable std::mutex m_direntLookupCreationMutex;
+      using DirentLookup = zim::DirentLookup<DirentLookupConfig>;
+      using FastDirentLookup = zim::FastDirentLookup<DirentLookupConfig>;
+      std::unique_ptr<DirentLookup> m_direntLookup;
 
 
       struct ByTitleDirentLookupConfig
@@ -97,40 +100,52 @@ namespace zim
       using ByTitleDirentLookup = zim::DirentLookup<ByTitleDirentLookupConfig>;
       std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
+#ifdef ENABLE_XAPIAN
+      std::shared_ptr<XapianDb> mp_xapianDb;
+      mutable std::mutex m_xapianDbCreationMutex;
+      mutable std::atomic_bool m_xapianDbCreated;
+#endif
+
     public:
       using FindxResult = std::pair<bool, entry_index_t>;
       using FindxTitleResult = std::pair<bool, title_index_t>;
 
-      explicit FileImpl(const std::string& fname);
+      FileImpl(const std::string& fname, OpenConfig openConfig);
 #ifndef _WIN32
-      explicit FileImpl(int fd);
-      FileImpl(int fd, offset_t offset, zsize_t size);
+      FileImpl(int fd, OpenConfig openConfig);
+      FileImpl(FdInput fd, OpenConfig openConfig);
+      FileImpl(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
+      ~FileImpl();
 
-      offset_t getArchiveStartOffset() const { return archiveStartOffset; }
       time_t getMTime() const;
 
       const std::string& getFilename() const   { return zimFile->filename(); }
       const Fileheader& getFileheader() const  { return header; }
       zsize_t getFilesize() const;
-      bool hasNewNamespaceScheme() const { return m_newNamespaceScheme; }
+      bool hasNewNamespaceScheme() const { return header.useNewNamespaceScheme(); }
       bool hasFrontArticlesIndex() const { return m_hasFrontArticlesIndex; }
 
-      FileCompound::PartRange getFileParts(offset_t offset, zsize_t size);
-      std::shared_ptr<const Dirent> getDirent(entry_index_t idx);
-      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx);
+      FileCompound::PartRange getFileParts(offset_t offset, zsize_t size) const;
+      std::shared_ptr<const Dirent> getDirent(entry_index_t idx) const;
+      std::shared_ptr<const Dirent> getDirentByTitle(title_index_t idx) const;
       entry_index_t getIndexByTitle(title_index_t idx) const;
       entry_index_t getIndexByClusterOrder(entry_index_t idx) const;
       entry_index_t getCountArticles() const { return entry_index_t(header.getArticleCount()); }
 
-      FindxResult findx(char ns, const std::string& url);
-      FindxResult findx(const std::string& url);
+      FindxResult findx(char ns, const std::string &path) const;
+      FindxResult findx(const std::string &path) const;
+      FindxResult findxMetadata(const std::string &name) const;
       FindxTitleResult findxByTitle(char ns, const std::string& title);
 
-      std::shared_ptr<const Cluster> getCluster(cluster_index_t idx);
+      Blob getBlob(const Dirent& dirent, offset_t offset = offset_t(0)) const;
+      Blob getBlob(const Dirent& dirent, offset_t offset, zsize_t size) const;
+
+      std::shared_ptr<const Cluster> getCluster(cluster_index_t idx) const;
       cluster_index_t getCountClusters() const       { return cluster_index_t(header.getClusterCount()); }
       offset_t getClusterOffset(cluster_index_t idx) const;
-      offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx);
+      offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
+      ItemDataDirectAccessInfo getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
 
       entry_index_t getNamespaceBeginOffset(char ch) const;
       entry_index_t getNamespaceEndOffset(char ch) const;
@@ -153,16 +168,27 @@ namespace zim
       bool is_multiPart() const;
 
       bool checkIntegrity(IntegrityCheck checkType);
-  private:
-      explicit FileImpl(std::shared_ptr<FileCompound> zimFile);
-      FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size);
 
-      std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const std::string& path);
+      size_t getDirentCacheMaxSize() const;
+      size_t getDirentCacheCurrentSize() const;
+      void setDirentCacheMaxSize(size_t nbDirents);
+
+#ifdef ENABLE_XAPIAN
+      std::shared_ptr<XapianDb> loadXapianDb();
+      std::shared_ptr<XapianDb> getXapianDb();
+#endif
+  private:
+      FileImpl(std::shared_ptr<FileCompound> zimFile, OpenConfig openConfig);
+      FileImpl(std::shared_ptr<FileCompound> zimFile, offset_t offset, zsize_t size, OpenConfig openConfig);
+
+      void dropCachedClusters() const;
+
+      std::unique_ptr<IndirectDirentAccessor> getTitleAccessorV1(const entry_index_t idx);
       std::unique_ptr<IndirectDirentAccessor> getTitleAccessor(const offset_t offset, const zsize_t size, const std::string& name);
 
       void prepareArticleListByCluster() const;
       DirentLookup& direntLookup() const;
-      ClusterHandle readCluster(cluster_index_t idx);
+      ClusterHandle readCluster(cluster_index_t idx) const;
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
       void quickCheckForCorruptFile();
@@ -172,6 +198,7 @@ namespace zim
       bool checkDirentOrder();
       bool checkTitleIndex();
       bool checkClusterPtrs();
+      bool checkClusters();
       bool checkDirentMimeTypes();
   };
 

@@ -25,16 +25,15 @@
 #include <string>
 #include <zim/zim.h>
 #include <exception>
-#include <memory>
 
 #include "zim_types.h"
-#include "debug.h"
+#include "config.h"
 
 namespace zim
 {
   class Buffer;
   class InvalidSize : public std::exception {};
-  class Dirent
+  class LIBZIM_PRIVATE_API Dirent
   {
     protected:
       uint16_t mimeType;
@@ -48,7 +47,7 @@ namespace zim
 
       char ns;
       std::string title;
-      std::string url;
+      std::string path;
       std::string parameter;
 
     public:
@@ -81,15 +80,15 @@ namespace zim
       entry_index_t getRedirectIndex() const      { return isRedirect() ? redirectIndex : entry_index_t(0); }
 
       char getNamespace() const               { return ns; }
-      const std::string& getTitle() const     { return title.empty() ? url : title; }
-      const std::string& getUrl() const       { return url; }
-      std::string getLongUrl() const;
+      const std::string &getTitle() const     { return title.empty() ? path : title; }
+      const std::string &getPath() const      { return path; }
+      std::string getLongPath() const;
       const std::string& getParameter() const { return parameter; }
 
       size_t getDirentSize() const
       {
-        size_t ret = (isRedirect() ? 12 : 16) + url.size() + parameter.size() + 2;
-        if (title != url)
+        size_t ret = (isRedirect() ? 12 : 16) + path.size() + parameter.size() + 2;
+        if (title != path)
           ret += title.size();
         return ret;
       }
@@ -99,10 +98,10 @@ namespace zim
         title = title_;
       }
 
-      void setUrl(char ns_, const std::string& url_)
+      void setPath(char ns_, const std::string &path_)
       {
         ns = ns_;
-        url = url_;
+        path = path_;
       }
 
       void setParameter(const std::string& parameter_)

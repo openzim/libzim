@@ -10,20 +10,20 @@ Build-Depends: debhelper-compat (= 13),
  libgtest-dev,
  meson,
  ninja-build,
- pkg-config
+ pkgconf
 Maintainer: Kiwix team <kiwix@kiwix.org>
 Homepage: https://www.openzim.org/wiki/Libzim
-Standards-Version: 4.4.1
+Standards-Version: 4.6.2
 Rules-Requires-Root: no
 
-Package: libzim8
+Package: libzim9
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
  ${shlibs:Depends}
 Pre-Depends: ${misc:Pre-Depends}
-Conflicts: libzim0, libzim0v5, libzim2, libzim4, libzim5
-Replaces: libzim0, libzim0v5, libzim2, libzim4, libzim5
+Conflicts: libzim0, libzim0v5, libzim2, libzim4, libzim5, libzim6, libzim7, libzim8
+Replaces: libzim0, libzim0v5, libzim2, libzim4, libzim5, libzim6, libzim7, libzim8
 Description: library implementation of ZIM specifications
  ZIM (Zeno IMproved) is an open file format for storing the contents of
  wiki for offline usage. This file format is primarily focused on
@@ -34,20 +34,20 @@ Description: library implementation of ZIM specifications
  implements the read and write method for ZIM files.
  .
  ZIM is a file format created with focus on extracting and encoding data
- from Mediawiki for offline use.
+ from MediaWiki for offline use.
  .
  Features of libzim are:
   * Native, coded in C++
   * Extremely fast
   * Minimal footprint
   * Minimal dependencies
-  * Portable on most OS (Windows, Linux, Mac OS X)
+  * Portable on most OS (Windows, Linux, iOS, MacOS, Android, ...)
 
 Package: libzim-dev
 Section: libdevel
 Architecture: any
 Depends: ${misc:Depends},
- libzim8 (= ${binary:Version}),
+ libzim9 (= ${binary:Version}),
  liblzma-dev,
  libxapian-dev,
  libicu-dev,
@@ -62,6 +62,6 @@ Description: library implementation of ZIM specifications (development)
  implements the read and write method for ZIM files.
  .
  ZIM is a file format created with focus on extracting and encoding data
- from Mediawiki for offline use.
+ from MediaWiki for offline use.
  .
  This package contains development files.

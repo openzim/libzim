@@ -21,13 +21,13 @@
 #ifndef ZIM_NARROWDOWN_H
 #define ZIM_NARROWDOWN_H
 
-#include "zim_types.h"
 #include "debug.h"
 
 #include <algorithm>
 #include <vector>
 
 #include <zim/error.h>
+#include <zim/tools.h>
 
 namespace zim
 {
@@ -98,21 +98,25 @@ public: // functions
     : pred(&keyContentArea)
   {}
 
+  size_t getSize() const {
+    return entries.size();
+  }
+
   // Add another entry to the search index. The key of the next item is used
   // to derive and store a shorter pseudo-key as explained in the long comment
   // above the class.
   void add(const std::string& key, index_type i, const std::string& nextKey)
   {
     // It would be better to have `key >= nextKey`, but pretty old zim file were not enforce to
-    // have unique url, just that entries were sorted by url, but two entries could have the same url.
+    // have unique path, just that entries were sorted by path, but two entries could have the same path.
     // It is somehow a bug and have been fixed then, but we still have to be tolerent here and accept that
     // two concecutive keys can be equal.
     if (key > nextKey) {
-      std::stringstream ss;
-      ss << "Dirent table is not properly sorted:\n";
-      ss << "  #" << i << ": " << key[0] << "/" << key.substr(1) << "\n";
-      ss << "  #" << i+1 << ": " << nextKey[0] << "/" << nextKey.substr(1);
-      throw ZimFileFormatError(ss.str());
+      Formatter fmt;
+      fmt << "Dirent table is not properly sorted:\n";
+      fmt << "  #" << i << ": " << key[0] << "/" << key.substr(1) << "\n";
+      fmt << "  #" << i+1 << ": " << nextKey[0] << "/" << nextKey.substr(1);
+      throw ZimFileFormatError(fmt);
     }
     if ( entries.empty() ) {
       addEntry(key, i);
@@ -121,10 +125,10 @@ public: // functions
     {
       const std::string pseudoKey = shortestStringInBetween(key, nextKey);
       if (pred(pseudoKey, entries.back())) {
-        std::stringstream ss;
-        ss << "Dirent table is not properly sorted:\n";
-        ss << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
-        throw ZimFileFormatError(ss.str());
+        Formatter fmt;
+        fmt << "Dirent table is not properly sorted:\n";
+        fmt << "PseudoKey " << pseudoKey << " should be after (or equal) previously generated " << pred.getKeyContent(entries.back()) << "\n";
+        throw ZimFileFormatError(fmt);
       }
       ASSERT(entries.back().lindex, <, i);
       addEntry(pseudoKey, i);

@@ -22,6 +22,7 @@
 
 #include <zim/writer/contentProvider.h>
 #include <zim/blob.h>
+#include <zim/tools.h>
 
 using namespace zim::writer;
 
@@ -45,16 +46,16 @@ DirentHandler::Dirents CounterHandler::createDirents() const {
 
 DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
   ContentProviders ret;
-  std::stringstream ss;
+  Formatter fmt;
   bool first = true;
   for(auto pair: m_mimetypeCounter) {
     if (! first) {
-      ss << ";";
+      fmt << ";";
     }
-    ss << pair.first << "=" << pair.second;
+    fmt << pair.first << "=" << pair.second;
     first = false;
   }
-  ret.push_back(std::unique_ptr<ContentProvider>(new StringProvider(ss.str())));
+  ret.push_back(std::unique_ptr<ContentProvider>(new StringProvider(fmt)));
   return ret;
 }
 

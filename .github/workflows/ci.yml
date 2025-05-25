@@ -7,59 +7,84 @@ on:
       - main
 
 jobs:
-  Macos:
+  macOS:
     strategy:
       fail-fast: false
       matrix:
+        os:
+          # x86
+          - macos-13
+          # arm
+          - macos-14
         target:
-          - native_dyn
-          - iOS_arm64
-          - iOS_x86_64
-
-    runs-on: macos-12
+          - macos-aarch64-dyn
+          - macos-x86_64-dyn
+          - ios-arm64-dyn
+          - ios-x86_64-dyn
+        include:
+          - target: macos-aarch64-dyn
+            arch_name: arm64-apple-macos
+            run_test: true
+          - target: macos-x86_64-dyn
+            arch_name: x86_64-apple-darwin
+            run_test: true
+          - target: ios-arm64-dyn
+            arch_name: aarch64-apple-ios
+            run_test: false
+          - target: ios-x86_64-dyn
+            arch_name: x86-apple-ios-simulator
+            run_test: false
+        exclude:
+          - target: macos-x86_64-dyn
+            os: macos-14
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup python 3.9
-        uses: actions/setup-python@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2
         with:
-          python-version: '3.9'
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5
+        with:
+          python-version: '3.10'
 
       - name: Install packages
         run: |
           brew update
-          brew install gcovr pkg-config ninja || brew link --overwrite python
+          brew install gcovr || brew link --overwrite python # ninja
 
-      - name: Install python modules
-        run: pip3 install meson==0.52.1 pytest
+      - name: Install Python modules
+        run: pip3 install meson pytest
 
-      - name: Install deps
-        shell: bash
-        run: |
-          ARCHIVE_NAME=deps2_osx_${{matrix.target}}_libzim.tar.xz
-          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C $HOME
+      - name: Install dependencies
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # main
+        with:
+          target_platform: ${{ matrix.target }}
 
       - name: Compile
         shell: bash
         run: |
           MESON_OPTION="--default-library=shared"
-          MESON_CROSSFILE="$HOME/BUILD_${{matrix.target}}/meson_cross_file.txt"
-          if [[ ! "${{matrix.target}}" =~ native_.* ]]; then
-            MESON_OPTION="$MESON_OPTION -Db_bitcode=true --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
+          MESON_CROSSFILE="$HOME/BUILD_${{matrix.arch_name}}/meson_cross_file.txt"
+          if [ -e $MESON_CROSSFILE ]; then
+            MESON_OPTION="$MESON_OPTION --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
             cat $MESON_CROSSFILE
           fi
-          export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig
+          export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib/pkgconfig
           meson . build ${MESON_OPTION}
           cd build
           ninja
 
       - name: Test
-        if: startsWith(matrix.target, 'native_')
+        if: matrix.run_test
         shell: bash
         run: |
-          export LD_LIBRARY_PATH=$HOME/BUILD_${{matrix.target}}/INSTALL/lib:$HOME/BUILD_${{matrix.target}}/INSTALL/lib64
+          export LD_LIBRARY_PATH=$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib:$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib64
           cd build
           ninja download_test_data
           meson test --verbose
@@ -68,34 +93,59 @@ jobs:
           WAIT_TIME_FACTOR_TEST: 10
 
   Windows:
-    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-2022
+    runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup python 3.10
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5
         with:
           python-version: '3.10'
 
       - name: Install packages
         run:
-          choco install ninja
+          choco install pkgconfiglite ninja
 
       - name: Install python modules
         run: pip3 install meson
 
+      - name: Setup MSVC compiler
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d # v1
+        with:
+          architecture: x64
+
+      - name: Install dependencies
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # main
+        with:
+          target_platform: win-x86_64-dyn
+
       - name: Compile
         shell: cmd
-        run: .github\script\build_libzim.cmd
+        run: |
+          set PKG_CONFIG_PATH=%cd%\BUILD_win-amd64\INSTALL\lib\pkgconfig
+          dir %PKG_CONFIG_PATH%
+          meson.exe setup . build -Dwith_xapian_fuller=false -Dwerror=false --buildtype=release
+          cd build
+          ninja.exe
 
       - name: Test
         shell: cmd
         run: |
           cd build
-          ninja download_test_data
-          meson test --verbose
+          ninja.exe download_test_data
+          meson.exe test --verbose
         env:
           WAIT_TIME_FACTOR_TEST: 10
 
@@ -104,109 +154,189 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - native_static
-          - native_dyn
-          - alpine_dyn
-          - aarch64_dyn
-          - android_arm
-          - android_arm64
-          - win32_static
-          - win32_dyn
+          - linux-x86_64-static
+          - linux-x86_64-dyn
+          - linux-aarch64-musl-dyn
+          - linux-aarch64-dyn
+          - android-arm
+          - android-arm64
           - wasm
         with_xapian:
           - true
           - false
         include:
-          - target: native_static
+          - target: linux-x86_64-static
             image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
-          - target: native_dyn
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: true
+          - target: linux-x86_64-dyn
             image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
-          - target: alpine_dyn
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: true
+          - target: linux-aarch64-musl-dyn
             image_variant: alpine
             lib_postfix: '/x86_64-linux-musl'
-          - target: aarch64_dyn
+            arch_name: linux-aarch64-musl
+            run_test: true
+            coverage: false
+          - target: linux-aarch64-dyn
             image_variant: focal
-            lib_postfix: '/aarch64-rpi3-linux-gnu'
-          - target: android_arm
+            lib_postfix: '/aarch64-linux-gnu'
+            arch_name: aarch64-linux-gnu
+            run_test: false
+            coverage: false
+          - target: android-arm
             image_variant: focal
             lib_postfix: '/arm-linux-androideabi'
-          - target: android_arm64
+            arch_name: arm-linux-androideabi
+            run_test: false
+            coverage: false
+          - target: android-arm64
             image_variant: focal
             lib_postfix: '/aarch64-linux-android'
-          - target: win32_static
-            image_variant: f35
-            lib_postfix: '64'
-          - target: win32_dyn
-            image_variant: f35
-            lib_postfix: '64'
+            arch_name: aarch64-linux-android
+            run_test: false
+            coverage: false
           - target: wasm
             image_variant: focal
             lib_postfix: '/x86_64-linux-gnu'
+            arch_name: wasm64-emscripten
+            run_test: false
+            coverage: false
     env:
       HOME: /home/runner
     runs-on: ubuntu-22.04
     container:
-      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:37"
+      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:2023-10-30"
 
     steps:
-      - name: Install dependences
-        if: false == startsWith(matrix.target, 'alpine_')
-        run: |
-          ARCHIVE_NAME=deps2_${OS_NAME}_${{matrix.target}}_libzim.tar.xz
-          wget -O- http://tmp.kiwix.org/ci/${ARCHIVE_NAME} | tar -xJ -C ${{env.HOME}}
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2
+        with:
+          egress-policy: audit
+
+      - name: Install dependencies
+        if: ${{ !contains(matrix.target, 'musl') }}
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # main
+        with:
+          target_platform: ${{ matrix.target }}
 
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Compile source code
         shell: bash
         env:
-          PKG_CONFIG_PATH: ${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib/pkgconfig:${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig
+          PKG_CONFIG_PATH: ${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib/pkgconfig:${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib${{matrix.lib_postfix}}/pkgconfig
         run: |
-          if [[ "${{matrix.target}}" =~ .*_dyn ]]
+          if [[ "${{matrix.target}}" =~ .*-dyn ]]
           then
             MESON_OPTION="--default-library=shared"
           else
             MESON_OPTION="--default-library=static"
           fi
-          if [[ "${{matrix.target}}" =~ native_.* ]]
+
+          if [ -e "${{ env.HOME }}/BUILD_${{ matrix.arch_name }}/meson_cross_file.txt" ]
           then
+            MESON_OPTION="$MESON_OPTION --cross-file ${{ env.HOME }}/BUILD_${{ matrix.arch_name }}/meson_cross_file.txt"
+          else
             MESON_OPTION="$MESON_OPTION -Db_coverage=true"
-          elif [[ "${{matrix.target}}" != alpine_* ]]
-          then
-            MESON_OPTION="$MESON_OPTION --cross-file ${{ env.HOME }}/BUILD_${{ matrix.target }}/meson_cross_file.txt"
           fi
+
           if [[ "${{matrix.target}}" =~ android_.* ]]
           then
             MESON_OPTION="$MESON_OPTION -Dstatic-linkage=true -DUSE_BUFFER_HEADER=false"
           fi
+
           if [[ "${{matrix.target}}" == wasm ]]
           then
             MESON_OPTION="$MESON_OPTION -Dexamples=false"
           fi
+
           meson setup . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
           cd build
           ninja
 
       - name: Run automated tests
         shell: bash
-        if: startsWith(matrix.target, 'native_') || startsWith(matrix.target, 'alpine_')
+        if: matrix.run_test
         env:
-          LD_LIBRARY_PATH: "${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib:${{env.HOME}}/BUILD_${{matrix.target}}/INSTALL/lib${{matrix.lib_postfix}}"
+          LD_LIBRARY_PATH: "${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib:${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib${{matrix.lib_postfix}}"
           SKIP_BIG_MEMORY_TEST: 1
           WAIT_TIME_FACTOR_TEST: 10
         run: |
           cd build
           ninja download_test_data
           meson test --verbose
-          if [[ "${{matrix.target}}" =~ native_.* ]]; then
+          if [[ "${{matrix.coverage}}" = "true" ]]; then
             ninja coverage
           fi
 
       - name: Upload code coverage
-        uses: codecov/codecov-action@v3
-        if: startsWith(matrix.target, 'native_')
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5
+        if: matrix.coverage
         with:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  OSSF-Scorecard:
+    name: OSSF Scorecard
+    runs-on: ubuntu-22.04
+    # `publish_results: true` only works when run from the default branch. conditional can be removed if disabled.
+    if: github.event.repository.default_branch == github.ref_name || github.event_name == 'pull_request'
+    permissions:
+      # Needed to upload the results to code-scanning dashboard.
+      security-events: write
+      # Needed to publish results and get a badge (see publish_results below).
+      id-token: write
+      # Uncomment the permissions below if installing in a private repository.
+      # contents: read
+      # actions: read
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: "Run analysis"
+        uses: ossf/scorecard-action@f49aabe0b5af0936a0987cfb85d86b75731b0186 # v2.4.1
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # (Optional) "write" PAT token. Uncomment the `repo_token` line below if:
+          # - you want to enable the Branch-Protection check on a *public* repository, or
+          # - you are installing Scorecard on a *private* repository
+          # To create the PAT, follow the steps in https://github.com/ossf/scorecard-action?tab=readme-ov-file#authentication-with-fine-grained-pat-optional.
+          # repo_token: ${{ secrets.SCORECARD_TOKEN }}
+
+          # Public repositories:
+          #   - Publish results to OpenSSF REST API for easy access by consumers
+          #   - Allows the repository to include the Scorecard badge.
+          #   - See https://github.com/ossf/scorecard-action#publishing-results.
+          # For private repositories:
+          #   - `publish_results` will always be set to `false`, regardless
+          #     of the value entered here.
+          publish_results: true
+
+          # (Optional) Uncomment file_mode if you have a .gitattributes with files marked export-ignore
+          # file_mode: git
+
+      # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
+      # format to the repository Actions tab.
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 5
+
+      # Upload the results to GitHub's code scanning dashboard (optional).
+      # Commenting out will disable upload of results to your repo's Code Scanning dashboard
+      - name: "Upload to code-scanning"
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3
+        with:
+          sarif_file: results.sarif

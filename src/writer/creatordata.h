@@ -44,7 +44,7 @@ namespace zim
   {
     struct UrlCompare {
       bool operator() (const Dirent* d1, const Dirent* d2) const {
-        return compareUrl(d1, d2);
+        return comparePath(d1, d2);
       }
     };
 
@@ -74,6 +74,7 @@ namespace zim
         Dirent* createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title);
         Dirent* createItemDirent(const Item* item);
         Dirent* createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
+        Dirent* createAliasDirent(const std::string& path, const std::string& title, const Dirent& target);
         Cluster* closeCluster(bool compressed);
 
         void setEntryIndexes();
@@ -118,9 +119,6 @@ namespace zim
         bool withIndex;
         std::string indexingLanguage;
 
-        std::shared_ptr<TitleListingHandler> mp_titleListingHandler;
-        offset_t m_titleListBlobOffset;  // The offset the title list blob,
-                                         // related to the beginning of the start of cluster's data.
         std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
         void handle(Dirent* dirent, const Hints& hints = Hints()) {
           for(auto& handler: m_direntHandlers) {

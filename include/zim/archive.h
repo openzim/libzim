@@ -42,6 +42,28 @@ namespace zim
     efficientOrder
   };
 
+  /** Get the maximum size of the cluster cache.
+   *
+   * @return The maximum memory size used the cluster cache.
+   */
+  size_t LIBZIM_API getClusterCacheMaxSize();
+
+  /** Get the current size of the cluster cache.
+   *
+   * @return The current memory size used by the cluster cache.
+   */
+  size_t LIBZIM_API getClusterCacheCurrentSize();
+
+  /** Set the size of the cluster cache.
+   *
+   * If the new size is lower than the number of currently stored clusters
+   * some clusters will be dropped from cache to respect the new size.
+   *
+   * @param sizeInB The memory limit (in bytes) for the cluster cache.
+   */
+  void LIBZIM_API setClusterCacheMaxSize(size_t sizeInB);
+
+
   /**
    * The Archive class to access content in a zim file.
    *
@@ -50,6 +72,27 @@ namespace zim
    *
    * An `Archive` is read-only, and internal states (as caches) are protected
    * from race-condition. Therefore, all methods of `Archive` are threadsafe.
+   *
+   * Zim archives exist with two different namespace schemes: An old one and the new one.
+   * The method `hasNewNamespaceScheme` permit to know which namespace is used by the archive.
+   *
+   * When using old namespace scheme:
+   * - User entries may be stored in different namespaces (historically `A`, `I`, `J` or `-`).
+   *   So path of the entries contains the namespace as a "top level directory": `A/foo.html`, `I/image.png`, ...
+   * - All API taking or returning a path expect/will return a path with the namespace.
+   *
+   * When using new namespace scheme:
+   * - User entries are always stored without namespace.
+   *   (For information, they are stored in the same namespace `C`. Still consider there is no namespace as all API masks it)
+   *   As there is no namespace, paths don't contain it: `foo.hmtl`, `image.png`, ...
+   * - All API taking or returning a path expect/will return a path without namespace.
+   *
+   * This difference may seem complex to handle, but not so much.
+   * As all paths returned by API is consistent with paths expected, you simply have to use the path as it is.
+   * Forget about the namespace and if a path has it, simply consider it as a subdirectory.
+   * The only place it could be problematic is when you already have a path stored somewhere (bookmark, ...)
+   * using a scheme and use it on an archive with another scheme. For this case, the method `getEntryByPath`
+   * has a compatibility layer trying to transform a path to the new scheme as a fallback if the entry is not found.
    *
    * All methods of archive may throw an `ZimFileFormatError` if the file is invalid.
    */
@@ -72,10 +115,26 @@ namespace zim
        */
       explicit Archive(const std::string& fname);
 
+      /** Archive constructor.
+       *
+       *  Construct an archive from a filename.
+       *  The file is open readonly.
+       *
+       *  The filename is the "logical" path.
+       *  So if you want to open a split zim file (foo.zimaa, foo.zimab, ...)
+       *  you must pass the `foo.zim` path.
+       *
+       *  @param fname The filename to the file to open (utf8 encoded)
+       *  @param openConfig The open configuration to use.
+       */
+      Archive(const std::string& fname, OpenConfig openConfig);
+
 #ifndef _WIN32
       /** Archive constructor.
        *
        *  Construct an archive from a file descriptor.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
        *
        *  Note: This function is not available under Windows.
        *
@@ -85,8 +144,23 @@ namespace zim
 
       /** Archive constructor.
        *
+       *  Construct an archive from a file descriptor.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd The descriptor of a seekable file representing a ZIM archive
+       *  @param openConfig The open configuration to use.
+       */
+      Archive(int fd, OpenConfig openConfig);
+
+      /** Archive constructor.
+       *
        *  Construct an archive from a descriptor of a file with an embedded ZIM
        *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
        *
        *  Note: This function is not available under Windows.
        *
@@ -96,7 +170,85 @@ namespace zim
        *  of the file (rather than the current position associated with fd).
        *  @param size The size of the ZIM archive.
        */
-      Archive(int fd, offset_type offset, size_type size);
+       Archive(int fd, offset_type offset, size_type size);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd The descriptor of a seekable file with a continuous segment
+       *  representing a complete ZIM archive.
+       *  @param offset The offset of the ZIM archive relative to the beginning
+       *  of the file (rather than the current position associated with fd).
+       *  @param size The size of the ZIM archive.
+       *  @param openConfig The open configuration to use.
+       */
+       Archive(int fd, offset_type offset, size_type size, OpenConfig openConfig);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd A FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *            referencing a continuous segment representing a complete ZIM archive.
+       */
+      explicit Archive(FdInput fd);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from a descriptor of a file with an embedded ZIM
+       *  archive inside.
+       *  Fd is used only at Archive creation.
+       *  Ownership of the fd is not taken and it must be closed by caller.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fd A FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *            referencing a continuous segment representing a complete ZIM archive.
+       *  @param openConfig The open configuration to use.
+       */
+      Archive(FdInput fd, OpenConfig openConfig);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from several file descriptors.
+       *  Each part may be embedded in a file.
+       *  Fds are used only at Archive creation.
+       *  Ownership of the fds is not taken and they must be closed by caller.
+       *  Fds (int) can be the same between FdInput if the parts belong to the same file.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fds A vector of FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *             referencing a series of segments representing a complete ZIM archive.
+       */
+      explicit Archive(const std::vector<FdInput>& fds);
+
+      /** Archive constructor.
+       *
+       *  Construct an archive from several file descriptors.
+       *  Each part may be embedded in a file.
+       *  Fds are used only at Archive creation.
+       *  Ownership of the fds is not taken and they must be closed by caller.
+       *  Fds (int) can be the same between FdInput if the parts belong to the same file.
+       *
+       *  Note: This function is not available under Windows.
+       *
+       *  @param fds A vector of FdInput (tuple) containing the fd (int), offset (offset_type) and size (size_type)
+       *             referencing a series of segments representing a complete ZIM archive.
+       *  @param openConfig The open configuration to use.
+       */
+      Archive(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
 
       /** Return the filename of the zim file.
@@ -220,8 +372,15 @@ namespace zim
 
       /** Get an entry using a path.
        *
-       *  Get an entry using its path.
-       *  The path must contains the namespace.
+       *  Search an entry in the zim, using its path.
+       *  On archive with new namespace scheme, path must not contain the namespace.
+       *  On archive without new namespace scheme, path must contain the namespace.
+       *  A compatibility layer exists to accept "old" path on new archive (and the opposite)
+       *  to help using saved path (bookmark) on new archive.
+       *  On new archive, we first search the path in `C` namespace, then try to remove the potential namespace in path
+       *  and search again in `C` namespace with path "without namespace".
+       *  On old archive, we first assume path contains a namespace and if not (or no entry found) search in
+       *  namespaces `A`, `I`, `J` and `-`.
        *
        *  @param path The entry's path.
        *  @return The Entry.
@@ -242,7 +401,7 @@ namespace zim
 
       /** Get an entry using a title.
        *
-       *  Get an entry using its path.
+       *  Get an entry using its title.
        *
        *  @param title The entry's title.
        *  @return The Entry.
@@ -282,6 +441,8 @@ namespace zim
       Entry getRandomEntry() const;
 
       /** Check in an entry has path in the archive.
+       *
+       *  The path follows the same requirement than `getEntryByPath`.
        *
        *  @param path The entry's path.
        *  @return True if the path in the archive, false else.
@@ -386,7 +547,9 @@ namespace zim
 
       /** Find a range of entries starting with path.
        *
-       * The path is the "long path". (Ie, with the namespace)
+       * When using new namespace scheme, path must not contain the namespace (`foo.html`).
+       * When using old namespace scheme, path must contain the namespace (`A/foo.html`).
+       * Contrary to `getEntryByPath`, there is no compatibility layer, path must follow the archive scheme.
        *
        * @param path The path prefix to search for.
        * @return A range starting from the first entry starting with path
@@ -397,7 +560,7 @@ namespace zim
 
       /** Find a range of entry starting with title.
        *
-       * The entry title is search in `A` namespace.
+       * When using old namespace scheme, entry title is search in `A` namespace.
        *
        * @param title The title prefix to search for.
        * @return A range starting from the first entry starting with title
@@ -469,10 +632,40 @@ namespace zim
        */
       std::shared_ptr<FileImpl> getImpl() const { return m_impl; }
 
+      /** Get the size of the dirent cache.
+       *
+       * @return The maximum number of dirents stored in  the cache.
+       */
+      size_t getDirentCacheMaxSize() const;
+
+      /** Get the current size of the dirent cache.
+       *
+       * @return The number of dirents currently stored in  the cache.
+       */
+      size_t getDirentCacheCurrentSize() const;
+
+      /** Set the size of the dirent cache.
+       *
+       * If the new size is lower than the number of currently stored dirents
+       * some dirents will be dropped from cache to respect the new size.
+       *
+       * @param nbDirents The maximum number of dirents stored in the cache.
+       */
+      void setDirentCacheMaxSize(size_t nbDirents);
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;
       entry_index_type getMainEntryIndex() const;
+
+      /** Get an entry using a path and a namespace.
+       *
+       * @param ns The namespace to search in
+       * @param path The entry's path (without namespace)
+       * @return The entry
+       * @exception EntryNotFound If no entry has been found.
+       */
+      Entry getEntryByPathWithNamespace(char ns, const std::string& path) const;
 #endif
 
     private:
@@ -539,11 +732,33 @@ private:
    * from race-condition. It is not threadsafe.
    *
    * An `EntryRange` can't be modified and is consequently threadsafe.
+   *
+   * Be aware that the referenced/pointed Entry is generated and stored
+   * in the iterator itself.
+   * Once the iterator is destructed or incremented/decremented, you must NOT
+   * use the Entry.
    */
   template<EntryOrder order>
-  class LIBZIM_API Archive::iterator : public std::iterator<std::bidirectional_iterator_tag, Entry>
+  class LIBZIM_API Archive::iterator
   {
     public:
+      /* SuggestionIterator is conceptually a bidirectional iterator.
+       * But std *LegayBidirectionalIterator* is also a *LegacyForwardIterator* and
+       * it would impose us that :
+       * > Given a and b, dereferenceable iterators of type It:
+       * >  If a and b compare equal (a == b is contextually convertible to true)
+       * >  then either they are both non-dereferenceable or *a and *b are references bound to the same object.
+       * and
+       * > the LegacyForwardIterator requirements requires dereference to return a reference.
+       * Which cannot be as we create the entry on demand.
+       *
+       * So we are stick with declaring ourselves at `input_iterator`.
+       */
+      using iterator_category = std::input_iterator_tag;
+      using value_type = Entry;
+      using pointer = Entry*;
+      using reference = Entry&;
+
       explicit iterator(const std::shared_ptr<FileImpl> file, entry_index_type idx)
         : m_file(file),
           m_idx(idx),
@@ -633,7 +848,7 @@ private:
    * @param checksToRun The set of checks to perform.
    * @return False if any check fails, true otherwise.
    */
-  bool validate(const std::string& zimPath, IntegrityCheckList checksToRun);
+  bool LIBZIM_API validate(const std::string& zimPath, IntegrityCheckList checksToRun);
 }
 
 #endif // ZIM_ARCHIVE_H

@@ -41,8 +41,21 @@ namespace zim
   const uint32_t Fileheader::zimMagic = 0x044d495a; // ="ZIM^d"
   const uint16_t Fileheader::zimOldMajorVersion = 5;
   const uint16_t Fileheader::zimMajorVersion = 6;
-  const uint16_t Fileheader::zimMinorVersion = 1;
+  const uint16_t Fileheader::zimMinorVersion = 3;
   const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
+
+  Fileheader::Fileheader()
+    : majorVersion(zimMajorVersion),
+      minorVersion(zimMinorVersion),
+      articleCount(0),
+      titleIdxPos(0),
+      pathPtrPos(0),
+      clusterCount(0),
+      clusterPtrPos(0),
+      mainPage(std::numeric_limits<entry_index_type>::max()),
+      layoutPage(std::numeric_limits<entry_index_type>::max()),
+      checksumPos(std::numeric_limits<offset_type>::max())
+  {}
 
   void Fileheader::write(int out_fd) const
   {
@@ -53,7 +66,7 @@ namespace zim
     std::copy(getUuid().data, getUuid().data + sizeof(Uuid), header + 8);
     toLittleEndian(getArticleCount(), header + 24);
     toLittleEndian(getClusterCount(), header + 28);
-    toLittleEndian(getUrlPtrPos(), header + 32);
+    toLittleEndian(getPathPtrPos(), header + 32);
     toLittleEndian(getTitleIdxPos(), header + 40);
     toLittleEndian(getClusterPtrPos(), header + 48);
     toLittleEndian(getMimeListPos(), header + 56);
@@ -100,7 +113,7 @@ namespace zim
 
     setArticleCount(seqReader.read<uint32_t>());
     setClusterCount(seqReader.read<uint32_t>());
-    setUrlPtrPos(seqReader.read<uint64_t>());
+    setPathPtrPos(seqReader.read<uint64_t>());
     setTitleIdxPos(seqReader.read<uint64_t>());
     setClusterPtrPos(seqReader.read<uint64_t>());
     setMimeListPos(seqReader.read<uint64_t>());
@@ -109,6 +122,10 @@ namespace zim
     setChecksumPos(seqReader.read<uint64_t>());
 
     sanity_check();
+  }
+
+  bool Fileheader::hasTitleListingV0() const {
+    return titleIdxPos != offset_type(-1);
   }
 
   void Fileheader::sanity_check() const {
@@ -120,12 +137,14 @@ namespace zim
       throw ZimFileFormatError("mimelistPos must be 80.");
     }
 
-    if (urlPtrPos < mimeListPos) {
-      throw ZimFileFormatError("urlPtrPos must be > mimelistPos.");
+    if (pathPtrPos < mimeListPos) {
+      throw ZimFileFormatError("pathPtrPos must be > mimelistPos.");
     }
-    if (titleIdxPos < mimeListPos) {
+
+    if (hasTitleListingV0() && titleIdxPos < mimeListPos) {
       throw ZimFileFormatError("titleIdxPos must be > mimelistPos.");
     }
+
     if (clusterPtrPos < mimeListPos) {
       throw ZimFileFormatError("clusterPtrPos must be > mimelistPos.");
     }

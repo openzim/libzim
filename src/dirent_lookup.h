@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <map>
 #include <mutex>
-#include <vector>
 #include <cassert>
 
 namespace zim
@@ -43,11 +42,13 @@ public: // types
 
 public: // functions
   explicit DirentLookup(const DirentAccessor* _direntAccessor);
+  virtual ~DirentLookup() = default;
 
   index_t getNamespaceRangeBegin(char ns) const;
   index_t getNamespaceRangeEnd(char ns) const;
+  virtual size_t getSize() const { return 0; };
 
-  Result find(char ns, const std::string& key) const;
+  virtual Result find(char ns, const std::string& key) const;
 
 protected: // functions
   int compareWithDirentAt(char ns, const std::string& key, entry_index_type i) const;
@@ -84,7 +85,8 @@ class FastDirentLookup : public DirentLookup<TConfig>
 public: // functions
   FastDirentLookup(const DirentAccessor* _direntAccessor, entry_index_type cacheEntryCount);
 
-  typename BaseType::Result find(char ns, const std::string& key) const;
+  virtual size_t getSize() const;
+  virtual typename BaseType::Result find(char ns, const std::string& key) const;
 
 private: // functions
   std::string getDirentKey(entry_index_type i) const;
@@ -130,6 +132,10 @@ entry_index_t getNamespaceBeginOffset(TDirentAccessor& direntAccessor, char ch)
 {
   ASSERT(ch, >=, 32);
   ASSERT(ch, <=, 127);
+
+  if (direntAccessor.getDirentCount().v == 0) {
+    return entry_index_t(0);
+  }
 
   entry_index_type lower = 0;
   entry_index_type upper = entry_index_type(direntAccessor.getDirentCount());
@@ -200,6 +206,12 @@ DirentLookup<TConfig>::find(char ns, const std::string& key) const
 {
   return findInRange(0, direntCount, ns, key);
 }
+
+template<typename TConfig>
+size_t FastDirentLookup<TConfig>::getSize() const {
+  return lookupGrid.getSize();
+}
+
 
 template<typename TConfig>
 typename DirentLookup<TConfig>::Result

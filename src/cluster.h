@@ -26,14 +26,10 @@
 #include <zim/zim.h>
 #include "buffer.h"
 #include "zim_types.h"
-#include "file_reader.h"
-#include <iosfwd>
 #include <vector>
 #include <memory>
 #include <mutex>
 
-#include "zim_types.h"
-#include "zim/error.h"
 
 namespace zim
 {
@@ -41,7 +37,7 @@ namespace zim
   class Reader;
   class IStreamReader;
 
-  class Cluster : public std::enable_shared_from_this<Cluster> {
+  class LIBZIM_PRIVATE_API Cluster : public std::enable_shared_from_this<Cluster> {
       typedef std::vector<offset_t> BlobOffsets;
       typedef std::vector<std::unique_ptr<const Reader>> BlobReaders;
 
@@ -82,6 +78,7 @@ namespace zim
 
     public:
       Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended);
+      ~Cluster();
       Compression getCompression() const   { return compression; }
       bool isCompressed() const                { return compression != Compression::None; }
 
@@ -93,7 +90,15 @@ namespace zim
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 
+      size_t getMemorySize() const;
+
       static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+  };
+
+  struct ClusterMemorySize {
+    static size_t cost(const std::shared_ptr<const Cluster>& cluster) {
+      return cluster->getMemorySize();
+    }
   };
 
 }

@@ -23,6 +23,7 @@
 #define ZIM_ZIM_H
 
 #include <cstdint>
+#include <string>
 
 #ifdef __GNUC__
 #define DEPRECATED __attribute__((deprecated))
@@ -35,10 +36,10 @@
 
 #include <zim/zim_config.h>
 
-#if (defined _WIN32 || defined __CYGWIN__) && defined LIBZIM_EXPORT_DLL
-#define LIBZIM_API __declspec(dllexport)
+#if (defined(_WIN32) || defined(__CYGWIN__) || defined(_MSC_VER)) && defined(LIBZIM_EXPORT_DLL)
+    #define LIBZIM_API __declspec(dllexport)
 #else
-#define LIBZIM_API
+    #define LIBZIM_API
 #endif
 
 namespace zim
@@ -57,6 +58,92 @@ namespace zim
 
   // An offset.
   typedef uint64_t offset_type;
+
+  /**
+   * Configuration to pass to archive constructors.
+   *
+   * This struct contains options controlling the opening of a ZIM archive. For
+   * now, it is only related to preloading of data but it may change in the
+   * future.
+   *
+   * Archive may eagerly preload certain data to speed up future operations.
+   * However, such preloading itself takes some time.
+   *
+   * OpenConfig allows the user to define which data should be preloaded when
+   * opening the archive.
+   */
+  struct LIBZIM_API OpenConfig {
+     /**
+      * Default configuration.
+      *
+      * - Dirent ranges is activated.
+      * - Xapian preloading is activated.
+      */
+     OpenConfig();
+
+     /**
+      * Configure xapian preloading.
+      *
+      * This method modifies the configuration and returns itself.
+      */
+     OpenConfig& preloadXapianDb(bool load) {
+       m_preloadXapianDb = load;
+       return *this;
+     }
+
+     /**
+      * Configure xapian preloading.
+      *
+      * This method creates a new configuration with the new value.
+      */
+     OpenConfig preloadXapianDb(bool load) const {
+       return OpenConfig(*this).preloadXapianDb(load);
+     }
+
+     /**
+      * Configure direntRanges preloading.
+      *
+      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent
+      * ranges. This will be used to speed up dirent lookup. This is an extra
+      * layer on top of classic dirent cache.
+      *
+      * This method modifies the configuration and returns itself.
+      */
+     OpenConfig& preloadDirentRanges(int nbRanges) {
+       m_preloadDirentRanges = nbRanges;
+       return *this;
+     }
+
+     /**
+      * Configure direntRanges preloading.
+      *
+      * libzim will load `nbRanges + 1` dirents to create `nbRanges` dirent
+      * ranges. This will be used to speed up dirent lookup. This is an extra
+      * layer on top of classic dirent cache.
+      *
+      * This method creates a new configuration with the new value.
+      */
+     OpenConfig preloadDirentRanges(int nbRanges) const {
+       return OpenConfig(*this).preloadDirentRanges(nbRanges);
+     }
+
+     bool m_preloadXapianDb;
+     int  m_preloadDirentRanges;
+  };
+
+  struct FdInput {
+    // An open file descriptor
+    int fd;
+
+    // The (absolute) offset of the data "pointed" by FdInput in fd.
+    offset_type offset;
+
+    // The size (length) of the data "pointed" by FdInput
+    size_type size;
+
+    FdInput(int fd, offset_type offset, size_type size):
+      fd(fd), offset(offset), size(size) {}
+  };
 
   enum class Compression
   {
@@ -81,7 +168,7 @@ namespace zim
     CHECKSUM,
 
     /**
-     * Checks that offsets in UrlPtrList are valid.
+     * Checks that offsets in PathPtrList are valid.
      */
     DIRENT_PTRS,
 
@@ -101,6 +188,11 @@ namespace zim
     CLUSTER_PTRS,
 
     /**
+     * Checks that offsets inside each clusters are valid.
+     */
+    CLUSTERS_OFFSETS,
+
+    /**
      * Checks that mime-type values in dirents are valid.
      */
     DIRENT_MIMETYPES,
@@ -115,6 +207,43 @@ namespace zim
      * number of all supported integrity checks.
      */
     COUNT
+  };
+
+  /**
+   * Information needed to directly access to an item data, bypassing libzim library.
+   *
+   * Some items may have their data store uncompressed in the zim archive.
+   * In such case, an user can read the item data directly by (re)opening the file and
+   * seek at the right offset.
+   */
+  struct ItemDataDirectAccessInfo {
+
+     /**
+      * The filename to open.
+      */
+     std::string filename;
+
+     /**
+      * The offset to seek to before reading.
+      */
+     offset_type offset;
+
+     explicit ItemDataDirectAccessInfo()
+       : filename(),
+         offset()
+     {}
+
+     ItemDataDirectAccessInfo(const std::string& filename, offset_type offset)
+       : filename(filename),
+         offset(offset)
+     {}
+
+     /**
+      * Return if the ItemDataDirectAccessInfo is valid
+      */
+     bool isValid() const {
+      return !filename.empty();
+     }
   };
 }
 

@@ -21,9 +21,9 @@
 #define ZIM_ERROR_H
 
 #include "zim.h"
+#include "tools.h"
 
 #include <stdexcept>
-#include <sstream>
 #include <typeinfo>
 
 namespace zim
@@ -135,11 +135,9 @@ namespace zim
         try {
           std::rethrow_exception(exception);
         } catch (const std::exception& e) {
-          std::stringstream ss;
-          ss << "Asynchronous error: ";
-          ss << typeid(e).name() << std::endl;
-          ss << e.what();
-          return ss.str();
+          return Formatter()
+                 << "Asynchronous error: " << typeid(e).name() << std::endl
+                 << e.what();
         } catch (...) {
           return "Unknown asynchronous exception";
         }

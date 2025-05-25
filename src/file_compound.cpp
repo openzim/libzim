@@ -19,12 +19,12 @@
  */
 
 #include "file_compound.h"
-#include "buffer.h"
 
 #include <errno.h>
+#include <stdexcept>
 #include <string.h>
-#include <sstream>
 #include <sys/stat.h>
+#include <zim/tools.h>
 
 #ifdef _WIN32
 #  include <io.h>
@@ -41,32 +41,54 @@ void FileCompound::addPart(FilePart* fpart)
   _fsize += fpart->size();
 }
 
+std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const std::string& original_filename) {
+  std::shared_ptr<FileCompound> fileCompound;
+  bool multi_parts_asked = false;
+  auto filename = original_filename;
+  if (filename.size() > 6 && filename.substr(filename.size()-6) == ".zimaa") {
+    filename.resize(filename.size()-2);
+    multi_parts_asked = true;
+  } else {
+  try {
+      fileCompound = std::make_shared<FileCompound>(filename);
+    } catch(...) { }
+  }
+
+  if ( !fileCompound ) {
+    fileCompound = std::make_shared<FileCompound>(filename, FileCompound::MultiPartToken::Multi);
+  }
+
+  if (fileCompound->empty()) {
+    // We haven't found any part
+    throw std::runtime_error(Formatter() << "Error opening "
+                             << (multi_parts_asked ? "as a split " : "")
+                             << "ZIM file: " << original_filename);
+  }
+  return fileCompound;
+}
+
 FileCompound::FileCompound(const std::string& filename):
   _filename(filename),
   _fsize(0)
 {
-  try {
-    addPart(new FilePart(filename));
-  } catch(...) {
-    int errnoSave = errno;
-    _fsize = zsize_t(0);
-    try {
-      for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
-      {
-        const std::string fname0 = filename + ch0;
-        for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
-        {
-          addPart(new FilePart(fname0 + ch1));
-        }
-      }
-    } catch (...) { }
+  addPart(new FilePart(filename));
+}
 
-    if (empty())
+FileCompound::FileCompound(const std::string& base_filename, MultiPartToken _token):
+  _filename(base_filename),
+  _fsize(0)
+{
+  try {
+    for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
     {
-      std::ostringstream msg;
-      msg << "error " << errnoSave << " opening file \"" << filename;
-      throw std::runtime_error(msg.str());
+      const std::string fname0 = base_filename + ch0;
+      for (char ch1 = 'a'; ch1 <= 'z'; ++ch1)
+      {
+        addPart(new FilePart(fname0 + ch1));
+      }
     }
+  } catch (std::runtime_error& e) {
+    // This catch acts as a break for the double loop.
   }
 }
 
@@ -76,6 +98,22 @@ FileCompound::FileCompound(int fd):
   _fsize(0)
 {
   addPart(new FilePart(fd));
+}
+
+FileCompound::FileCompound(FdInput fd):
+  _filename(),
+  _fsize(0)
+{
+  addPart(new FilePart(fd));
+}
+
+FileCompound::FileCompound(const std::vector<FdInput>& fds):
+  _filename(),
+  _fsize(0)
+{
+  for (auto& fd: fds) {
+    addPart(new FilePart(fd));
+  }
 }
 #endif
 
@@ -100,11 +138,9 @@ time_t FileCompound::getMTime() const {
     int ret = ::stat(fname, &st);
   #endif
   if (ret != 0)
-  {
-    std::ostringstream msg;
-    msg << "stat failed with errno " << errno << " : " << strerror(errno);
-    throw std::runtime_error(msg.str());
-  }
+    throw std::runtime_error(Formatter() << "stat failed with errno " << errno
+                                          << " : " << strerror(errno));
+
   mtime = st.st_mtime;
 
   return mtime;

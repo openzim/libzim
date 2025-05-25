@@ -95,7 +95,9 @@ std::unique_ptr<TempFile>
 makeTempFile(const char* name, const std::string& content)
 {
   std::unique_ptr<TempFile> p(new TempFile(name));
-  write(p->fd(), &content[0], content.size());
+  if (write(p->fd(), &content[0], content.size()) != (ssize_t)content.size()) {
+    throw std::runtime_error("Error writing temp file " + p->path());
+  }
   p->close();
   return p;
 }
@@ -118,21 +120,23 @@ TestFile::TestFile(const std::string& dataDir, const std::string& category, cons
 {
 }
 
-const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::string& category)
+const std::vector<TestFile> getDataFilePath(const std::string& filename, const std::vector<std::string>& categories)
 {
   std::vector<TestFile> filePaths;
   std::string dataDirPath;
   setDataDir(dataDirPath);
 
-  if (!category.empty()) {
-      // We have asked for a particular category.
+  if (!categories.empty()) {
+    // We have asked for a particular category.
+    for (auto& category: categories) {
       filePaths.emplace_back(dataDirPath, category, filename);
+    }
   } else {
 #ifdef _WIN32
     // We don't have dirent.h in windows.
     // If we move to test data out of the repository, we will need a way to discover the data.
     // Use a static list of categories for now.
-    for (auto& category: {"withns", "nons"}) {
+    for (auto& category: {"withns", "nons", "noTitleListingV0"}) {
       filePaths.emplace_back(dataDirPath, category, filename);
     }
 #else

@@ -22,6 +22,7 @@
 #include "buffer_reader.h"
 #include "buffer.h"
 
+#include <stdexcept>
 #include <cstring>
 
 namespace zim {
@@ -43,24 +44,23 @@ zsize_t BufferReader::size() const
   return source.size();
 }
 
+size_t BufferReader::getMemorySize() const
+{
+  return source.size().v;
+}
+
 offset_t BufferReader::offset() const
 {
   return offset_t((offset_type)(static_cast<const void*>(source.data(offset_t(0)))));
 }
 
 
-void BufferReader::read(char* dest, offset_t offset, zsize_t size) const {
-  ASSERT(offset.v, <=, source.size().v);
-  ASSERT(offset+offset_t(size.v), <=, offset_t(source.size().v));
-  if (! size ) {
-    return;
-  }
+void BufferReader::readImpl(char* dest, offset_t offset, zsize_t size) const {
   memcpy(dest, source.data(offset), size.v);
 }
 
 
-char BufferReader::read(offset_t offset) const {
-  ASSERT(offset.v, <, source.size().v);
+char BufferReader::readImpl(offset_t offset) const {
   char dest;
   dest = *source.data(offset);
   return dest;

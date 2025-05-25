@@ -49,7 +49,7 @@
 
 #include "../src/buffer.h"
 #include "../src/cluster.h"
-#include "../src/file_part.h"
+#include "../src/file_reader.h"
 #include "../src/file_compound.h"
 #include "../src/buffer_reader.h"
 #include "../src/writer/cluster.h"

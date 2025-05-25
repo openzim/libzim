@@ -48,7 +48,13 @@ namespace zim
           t.m_data = nullptr;
           t.m_size = 0;
         };
-        TinyString(const TinyString& t) = delete;
+        TinyString(const TinyString& t) :
+          m_data(new char[(uint16_t)t.m_size]),
+          m_size(t.m_size)
+        {
+          std::memcpy(m_data, t.m_data, m_size);
+        }
+
         ~TinyString() {
           if (m_data) {
             delete[] m_data;
@@ -97,17 +103,13 @@ namespace zim
           }
           return std::string(m_data);
         }
-        std::string getTitle(bool storedOnly) const {
+        std::string getTitle() const {
           if (m_size == 0) {
             return std::string();
           }
           auto title_start = std::strlen(m_data) + 1;
           if (title_start == m_size) {
-            if (storedOnly) {
-              return std::string(); // return empty title
-            } else {
-              return std::string(m_data); // return the path as a title
-            }
+            return std::string(m_data); // return the path as a title
           } else {
             return std::string(m_data+title_start, m_size-title_start);
           }
