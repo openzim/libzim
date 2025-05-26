@@ -783,6 +783,25 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
     {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> date of John Smith"},
   }));
 
+  // Since the count of title suggestions will exceed the specified limit,
+  // autocompletion suggestions should be returned instead
+  EXPECT_SUGGESTION_RESULTS(archive, "bi", 4, ({
+    {"", "", "<b>big</b>" },
+    {"", "", "<b>birth</b>" },
+  }));
+
+  EXPECT_SUGGESTION_RESULTS(archive, "date bi", 10, ({
+    {"Date of my birth", "long_ago", "<b>Date</b> of my <b>birth</b>"},
+    {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> <b>date</b>"},
+    {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> <b>date</b> of J. Christ"},
+    {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> <b>date</b> of John Smith"},
+  }));
+
+  EXPECT_SUGGESTION_RESULTS(archive, "date bi", 3, ({
+    {"", "", "date <b>big</b>" },
+    {"", "", "date <b>birth</b>" },
+  }));
+
   EXPECT_SUGGESTION_RESULTS(archive, "da", 20, ({
     {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
     {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },

@@ -297,11 +297,47 @@ struct TermWithFreq
   }
 };
 
-std::vector<TermWithFreq> getTermCompletions(const SuggestionDataBase& db,
-                                             const std::string& termPrefix)
+typedef std::vector<TermWithFreq> TermCollection;
+
+bool termShouldBeIncludedInAutoCompletions(const std::string& term) {
+  // XXX: implement properly (e.g. omit prefixed terms)
+  return true;
+}
+
+TermCollection getAllTerms(const SuggestionDataBase& db) {
+  TermCollection allTerms;
+
+#ifdef LIBZIM_WITH_XAPIAN
+  const Xapian::Database& titleDb = db.m_database;
+  for (auto it = titleDb.allterms_begin(); it != titleDb.allterms_end(); ++it) {
+    if ( termShouldBeIncludedInAutoCompletions(*it) ) {
+      allTerms.push_back(TermWithFreq{*it, it.get_termfreq()});
+    }
+  }
+#endif // LIBZIM_WITH_XAPIAN
+
+  std::sort(allTerms.begin(), allTerms.end(), TermWithFreq::dictionaryPred);
+  return allTerms;
+}
+
+TermCollection getTermCompletions(const SuggestionDataBase& db,
+                                  const std::string& termPrefix)
 {
-  // XXX: implement properly
-  return {{"daily", 1}, {"data", 2}, {"date", 7}, { "day", 4}};
+  if ( !db.hasDatabase() ) {
+    return TermCollection();
+  }
+
+  const TermCollection allTerms = getAllTerms(db);
+  auto it = std::lower_bound(allTerms.begin(), allTerms.end(),
+                             TermWithFreq{termPrefix, 0},
+                             TermWithFreq::dictionaryPred);
+
+  TermCollection result;
+  for ( ; it != allTerms.end() && startsWith(it->term, termPrefix); ++it ) {
+    result.push_back(*it);
+  }
+
+  return result;
 }
 
 } // unnamed namespace
