@@ -765,39 +765,52 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
       { "/etc/passwd", "User account data"        },
       { "Date_palm"  , "Date palm"                },
       { "Date_(city)", "Date, Fukushima"          },
+      { "xx/xx/xx"   , "Birth date of John Smith" },
+      { "^B"         , "Daily birth control"      },
+      { "USbirthdata", "US birth data"            },
+      { "long_ago"   , "Date of my birth"         },
   });
 
   zim::Archive archive(tza.getPath());
 
   EXPECT_SUGGESTION_RESULTS(archive, "bi", 10, ({
     {"Big Bang", "-14e9/11/11", "<b>Big</b> Bang"},
+    {"Daily birth control", "^B", "Daily <b>birth</b> control"},
+    {"US birth data", "USbirthdata", "US <b>birth</b> data"},
+    {"Date of my birth", "long_ago", "Date of my <b>birth</b>"},
     {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> date"},
     {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> date of J. Christ"},
+    {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> date of John Smith"},
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "da", 10, ({
+  EXPECT_SUGGESTION_RESULTS(archive, "da", 20, ({
     {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
     {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
     {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
     {"Wikipedia Day"          , "2001/01/15" , "Wikipedia <b>Day</b>"         },
     {"invalid date"           , "7/2025/59"  , "invalid <b>date</b>"          },
+    {"Daily birth control"    , "^B"         , "<b>Daily</b> birth control"   },
+    {"US birth data"          , "USbirthdata", "US birth <b>data</b>"         },
     {"User account data"      , "/etc/passwd", "User account <b>data</b>"     },
+    {"Date of my birth"       , "long_ago"   , "<b>Date</b> of my birth"      },
     {"Day of the Dead"        , "*/11/0[12]" , "<b>Day</b> of the Dead"       },
     {"J. Wales' birth date"   , "1966/08/07" , "J. Wales' birth <b>date</b>"  },
     {"The Little Prince Day"  , "*/06/29"    , "The Little Prince <b>Day</b>" },
     {"Birth date of J. Christ", "-1/12/25", "Birth <b>date</b> of J. Christ"  },
+    {"Birth date of John Smith", "xx/xx/xx", "Birth <b>date</b> of John Smith"},
   }));
 
   // Since the count of title suggestions will exceed the specified limit,
   // autocompletion suggestions should be returned instead
   EXPECT_SUGGESTION_RESULTS(archive, "da", 5, ({
+    {"", "", "<b>daily</b>" },
     {"", "", "<b>data</b>" },
     {"", "", "<b>date</b>" },
     {"", "", "<b>day</b>"  },
   }));
 
-  // Autocompletion results are selected based on frequency ("data" is dropped
-  // as the least popular term in the titles)
+  // Autocompletion results are selected based on frequency ("daily" and "data"
+  // are dropped as the least popular terms in the titles)
   EXPECT_SUGGESTION_RESULTS(archive, "da", 2, ({
     {"", "", "<b>date</b>" },
     {"", "", "<b>day</b>"  },

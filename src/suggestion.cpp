@@ -297,7 +297,7 @@ std::vector<TermWithFreq> getTermCompletions(const SuggestionDataBase& db,
                                              const std::string& termPrefix)
 {
   // XXX: implement properly
-  return {{"data", 1}, {"date", 5}, { "day", 4}};
+  return {{"daily", 1}, {"data", 2}, {"date", 7}, { "day", 4}};
 }
 
 } // unnamed namespace
