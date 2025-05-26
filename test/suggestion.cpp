@@ -791,11 +791,16 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
   // Since the count of title suggestions will exceed the specified limit,
   // autocompletion suggestions should be returned instead
   EXPECT_SUGGESTION_RESULTS(archive, "da", 5, ({
-    // XXX: Support for autocompletion suggestions is not yet implemented
-    // XXX: and so an empty list is returned.
-    //{"", "", "<b>data</b>" },
-    //{"", "", "<b>date</b>" },
-    //{"", "", "<b>day</b>"  },
+    {"", "", "<b>data</b>" },
+    {"", "", "<b>date</b>" },
+    {"", "", "<b>day</b>"  },
+  }));
+
+  // Autocompletion results are selected based on frequency ("data" is dropped
+  // as the least popular term in the titles)
+  EXPECT_SUGGESTION_RESULTS(archive, "da", 2, ({
+    {"", "", "<b>date</b>" },
+    {"", "", "<b>day</b>"  },
   }));
 }
 

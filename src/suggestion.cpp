@@ -253,9 +253,74 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults
   return SuggestionResultSet(entryRange);
 }
 
-SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_t maxCount) const {
+namespace
+{
+
+class QueryInfo
+{
+public:
+  explicit QueryInfo(const std::string& query)
+  {
+    // XXX:  implement properly
+    m_queryPrefix = "";
+    m_wordToComplete = "da";
+    m_querySuffix = "";
+  }
+
+  const std::string& wordToComplete() const { return m_wordToComplete; }
+
+  std::string autocompletionSuggestion(const std::string& completedWord) const {
+    return m_queryPrefix + "<b>" + completedWord + "</b>" + m_querySuffix;
+  }
+
+private:
+  std::string m_queryPrefix;
+  std::string m_wordToComplete;
+  std::string m_querySuffix;
+};
+
+struct TermWithFreq
+{
+  std::string term;
+  uint32_t freq;
+
+  static bool freqPred(const TermWithFreq& t1, const TermWithFreq& t2) {
+    return t1.freq > t2.freq;
+  }
+
+  static bool dictionaryPred(const TermWithFreq& t1, const TermWithFreq& t2) {
+    return t1.term < t2.term;
+  }
+};
+
+std::vector<TermWithFreq> getTermCompletions(const SuggestionDataBase& db,
+                                             const std::string& termPrefix)
+{
   // XXX: implement properly
-  return SuggestionSearch::Results{};
+  return {{"data", 1}, {"date", 5}, { "day", 4}};
+}
+
+} // unnamed namespace
+
+SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_t maxCount) const {
+  QueryInfo queryInfo(m_query);
+
+  SuggestionSearch::Results r;
+  if ( !queryInfo.wordToComplete().empty() ) {
+    auto terms = getTermCompletions(*mp_internalDb, queryInfo.wordToComplete());
+    if (maxCount < terms.size() ) {
+      std::sort(terms.begin(), terms.end(), TermWithFreq::freqPred);
+      terms.resize(maxCount);
+    }
+    std::sort(terms.begin(), terms.end(), TermWithFreq::dictionaryPred);
+
+    for (const auto& t : terms) {
+      const auto suggestion = queryInfo.autocompletionSuggestion(t.term);
+      r.push_back(SuggestionItem("", "", suggestion));
+    }
+  }
+
+  return r;
 }
 
 SuggestionSearch::Results SuggestionSearch::getSmartSuggestions(uint32_t maxCount) const {
