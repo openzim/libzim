@@ -74,12 +74,11 @@ class LIBZIM_API SuggestionSearcher
      * The search is made on the archive under the SuggestionSearcher.
      *
      * @param query The SuggestionQuery to search.
-     * @param maxResults The limit on the suggestion count (0 for no limit).
      *
      * If the estimated count of title suggestions would exceed the specified
      * limit, automcompletion suggestions are returned instead.
      */
-    SuggestionSearch suggest(const std::string& query, uint32_t maxResults = 0);
+    SuggestionSearch suggest(const std::string& query);
 
     /** Set the verbosity of search operations.
      *
@@ -101,12 +100,18 @@ class LIBZIM_API SuggestionSearcher
  */
 class LIBZIM_API SuggestionSearch
 {
-    public:
+    public: // types
+        typedef std::vector<SuggestionItem> Results;
+
+    public: // functions
         SuggestionSearch(SuggestionSearch&& s);
         SuggestionSearch& operator=(SuggestionSearch&& s);
         ~SuggestionSearch();
 
         /** Get a set of results for this search.
+         *
+         * Returns a subset of title suggestions for the requested range from
+         * the full set of results.
          *
          * @param start The begining of the range to get
          *              (offset of the first result).
@@ -115,23 +120,45 @@ class LIBZIM_API SuggestionSearch
          */
         const SuggestionResultSet getResults(int start, int maxResults) const;
 
-        /** Get the number of estimated results for this suggestion search.
+        /** Get auto-completion suggestions for this search.
          *
-         * As the name suggest, it is a estimation of the number of results.
+         * Returns auto-completion suggestions for the word preceding the text
+         * edit location. In the current implementation, the text edit location
+         * is assumed to be at the end of the query string provided to the
+         * SuggestionSearch::suggest() method. In the future the text edit
+         * location will be indicated by a special code-point (e.g.
+         * carriage-return, form-feed or soft-hyphen) in the query string.
+         *
+         * @param maxCount The maximum number of results to return.
+         */
+        Results getAutocompletionSuggestions(uint32_t maxCount) const;
+
+        /** Get the top suggestions for the set upper limit on their count
+         *
+         * This method returns the best list of suggestions (title suggestions,
+         * auto-completion or spelling correction suggestions of the word at
+         * the edit location or a sorted mix thereof) fitting within the
+         * specified limit.
+         *
+         * @param maxCount The maximum number of results to return.
+         */
+        Results getSmartSuggestions(uint32_t maxCount) const;
+
+        /** Get the estimated count of title matches for this suggestion search.
+         *
+         * As the name suggest, it is an estimation of the number of results.
+         * As a member of the initial API, the name of this method conceals
+         * the fact that only title suggestions are covered by it.
          */
         int getEstimatedMatches() const;
 
     private: // methods
         SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb,
-                         const std::string& query,
-                         uint32_t maxResults);
-
-        const SuggestionResultSet getAutocompletionResults(int start, int maxResults) const;
+                         const std::string& query);
 
     private: // data
          std::shared_ptr<SuggestionDataBase> mp_internalDb;
          std::string m_query;
-         uint32_t m_maxResults;
 
   friend class SuggestionSearcher;
 

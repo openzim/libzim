@@ -731,16 +731,14 @@ TEST(Suggestion, titleEdgeCases) {
 
 using SuggestionTuple = std::tuple<std::string, std::string, std::string>;
 
-std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive,
-                                            std::string query,
-                                            int maxSuggestions) {
+std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive archive,
+                                                 std::string query,
+                                                 int maxSuggestions) {
   zim::SuggestionSearcher suggestionSearcher(archive);
   suggestionSearcher.setVerbose(true);
-  auto suggestionSearch = suggestionSearcher.suggest(query, maxSuggestions);
-  auto suggestionResult = suggestionSearch.getResults(0, maxSuggestions);
-
+  auto suggestionSearch = suggestionSearcher.suggest(query);
   std::vector<SuggestionTuple> result;
-  for (const auto& s : suggestionResult) {
+  for (const auto& s : suggestionSearch.getSmartSuggestions(maxSuggestions)) {
     const SuggestionTuple sTuple{s.getTitle(), s.getPath(), s.getSnippet()};
     result.push_back(sTuple);
   }
@@ -749,7 +747,7 @@ std::vector<SuggestionTuple> getSuggestions(const zim::Archive archive,
 
 #define EXPECT_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
   ASSERT_EQ(                                                                   \
-      getSuggestions(archive, query, maxSuggestions),                          \
+      getSmartSuggestions(archive, query, maxSuggestions),                     \
       std::vector<SuggestionTuple> parenthesizedExpectedResult                 \
   )
 
