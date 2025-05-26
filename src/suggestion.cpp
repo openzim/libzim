@@ -261,9 +261,13 @@ class QueryInfo
 public:
   explicit QueryInfo(const std::string& query)
   {
-    // XXX:  implement properly
-    m_queryPrefix = "";
-    m_wordToComplete = "da";
+    // XXX: assuming that the query edit location (caret position) is at the end
+    const size_t lastSpacePos = query.find_last_of(' ');
+    const size_t startOfLastWord = lastSpacePos != std::string::npos
+                                 ? lastSpacePos + 1
+                                 : 0;
+    m_queryPrefix = query.substr(0, startOfLastWord);
+    m_wordToComplete = query.substr(startOfLastWord);
     m_querySuffix = "";
   }
 

@@ -815,6 +815,22 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
     {"", "", "<b>date</b>" },
     {"", "", "<b>day</b>"  },
   }));
+
+  EXPECT_SUGGESTION_RESULTS(archive, "birth da", 10, ({
+    {"Daily birth control", "^B", "<b>Daily</b> <b>birth</b> control"},
+    {"US birth data", "USbirthdata", "US <b>birth</b> <b>data</b>"},
+    {"Date of my birth", "long_ago", "<b>Date</b> of my <b>birth</b>"},
+    {"J. Wales' birth date", "1966/08/07", "J. Wales' <b>birth</b> <b>date</b>"},
+    {"Birth date of J. Christ", "-1/12/25", "<b>Birth</b> <b>date</b> of J. Christ"},
+    {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> <b>date</b> of John Smith"},
+  }));
+
+  EXPECT_SUGGESTION_RESULTS(archive, "birth da", 5, ({
+    {"", "", "birth <b>daily</b>" },
+    {"", "", "birth <b>data</b>" },
+    {"", "", "birth <b>date</b>" },
+    {"", "", "birth <b>day</b>"  },
+  }));
 }
 
 zim::Entry getTitleIndexEntry(const zim::Archive& a)
