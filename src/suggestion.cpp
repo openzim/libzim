@@ -299,9 +299,14 @@ struct TermWithFreq
 
 typedef std::vector<TermWithFreq> TermCollection;
 
+bool isXapianTermPrefix(unsigned char c) {
+  return 'A' <= c && c <= 'Z';
+}
+
 bool termShouldBeIncludedInAutoCompletions(const std::string& term) {
-  // XXX: implement properly (e.g. omit prefixed terms)
-  return true;
+  // XXX: does it make sense to include non-words and stop words?
+  return term.size() > 0
+      && !isXapianTermPrefix(term[0]);
 }
 
 TermCollection getAllTerms(const SuggestionDataBase& db) {

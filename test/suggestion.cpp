@@ -805,11 +805,6 @@ TEST(Suggestion, autocompletionSuggestions) {
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ze", 10, ({
-    "<b>Zebay</b>",  // XXX: fake entry (stemmed term)
-    "<b>Zebola</b>", // XXX: fake entry (stemmed term)
-    "<b>Zebook</b>", // XXX: fake entry (stemmed term)
-    "<b>Zeros</b>",  // XXX: fake entry (stemmed term)
-    "<b>Zerror</b>", // XXX: fake entry (stemmed term)
     /* "<b>zebra</b>", */ // XXX: missing because of the case of the query
     /* "<b>zero</b>",  */ // XXX: missing because of the case of the query
   }));
