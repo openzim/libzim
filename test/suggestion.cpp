@@ -731,6 +731,110 @@ TEST(Suggestion, titleEdgeCases) {
 
 using SuggestionTuple = std::tuple<std::string, std::string, std::string>;
 
+std::vector<std::string> getCompletionSuggestions(const zim::Archive& archive,
+                                                  std::string query,
+                                                  int maxSuggestions) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  const auto search = suggestionSearcher.suggest(query);
+  std::vector<std::string> result;
+  for (const auto& s : search.getAutocompletionSuggestions(maxSuggestions)) {
+    EXPECT_EQ(s.getTitle(), "");
+    EXPECT_EQ(s.getPath(), "");
+    result.push_back(s.getSnippet());
+  }
+  return result;
+}
+
+#define EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+  ASSERT_EQ(                                                                   \
+      getCompletionSuggestions(archive, query, maxSuggestions),                \
+      std::vector<std::string> parenthesizedExpectedResult                     \
+  )
+
+TEST(Suggestion, autocompletionSuggestions) {
+  TempZimArchive tza("testZim");
+  const zim::Archive archive = tza.createZimFromTitles({
+      "Hebrew for zebras in 24 hours",
+      "Ebook formats",
+      "Selling on EBay for mummies",
+      "Patient Zero: the horrible story of ebola",
+      "Bank erosion in Zimbabwe",
+      "Error correcting codes",
+      "Zimbabwe patent #15539",
+      "All the king's horses",
+      "Martin Luther King Jr.",
+      "King Kong (1933 film)",
+      "King-fu Panda",
+      "Forrest Gump",
+      "Ebay, Alibaba & the Forty Thieves",
+      "Crazy Horse (disambiguation)"
+  });
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ki", 10, ({
+    "<b>king</b>",
+    "<b>king's</b>", // XXX: possesive form
+    /*"<b>king-fu</b>", */ // missing
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ki", 10, ({
+    // FIXME: query case matters
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "pa", 10, ({
+    "<b>panda</b>",
+    "<b>patent</b>",
+    "<b>patient</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "pâ", 10, ({
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "patient", 10, ({
+    "<b>patient</b>", // XXX: useless completion
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "1", 10, ({
+    "<b>15539</b>", // XXX: non word
+    "<b>1933</b>",  // XXX: non word
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ze", 10, ({
+    "<b>zebras</b>", // XXX: plural form
+    "<b>zero</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ze", 10, ({
+    "<b>Zebay</b>",  // XXX: fake entry (stemmed term)
+    "<b>Zebola</b>", // XXX: fake entry (stemmed term)
+    "<b>Zebook</b>", // XXX: fake entry (stemmed term)
+    "<b>Zeros</b>",  // XXX: fake entry (stemmed term)
+    "<b>Zerror</b>", // XXX: fake entry (stemmed term)
+    /* "<b>zebra</b>", */ // XXX: missing because of the case of the query
+    /* "<b>zero</b>",  */ // XXX: missing because of the case of the query
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "fo", 10, ({
+    "<b>for</b>",     // XXX: stop word
+    "<b>formats</b>", // XXX: plural form
+    "<b>forrest</b>",
+    "<b>forty</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ho", 10, ({
+    "<b>horrible</b>",
+    "<b>horse</b>",
+    "<b>horses</b>", // XXX: plural form in addition to singular form above
+    "<b>hours</b>",  // XXX: plural form
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "asdf pa", 10, ({
+    "asdf <b>panda</b>",
+    "asdf <b>patent</b>",
+    "asdf <b>patient</b>",
+  }));
+}
+
 std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive& archive,
                                                  std::string query,
                                                  int maxSuggestions) {
