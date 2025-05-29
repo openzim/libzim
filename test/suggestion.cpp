@@ -731,7 +731,7 @@ TEST(Suggestion, titleEdgeCases) {
 
 using SuggestionTuple = std::tuple<std::string, std::string, std::string>;
 
-std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive archive,
+std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive& archive,
                                                  std::string query,
                                                  int maxSuggestions) {
   zim::SuggestionSearcher suggestionSearcher(archive);
@@ -745,13 +745,13 @@ std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive archive,
   return result;
 }
 
-#define EXPECT_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+#define EXPECT_SMART_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
   ASSERT_EQ(                                                                   \
       getSmartSuggestions(archive, query, maxSuggestions),                     \
       std::vector<SuggestionTuple> parenthesizedExpectedResult                 \
   )
 
-TEST(Suggestion, autoCompletionAndSpellingCorrection) {
+TEST(Suggestion, smartSuggestions) {
   TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
     //{ path         , title                      }
       { "2001/01/15" , "Wikipedia Day"            },
@@ -773,7 +773,7 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
 
   zim::Archive archive(tza.getPath());
 
-  EXPECT_SUGGESTION_RESULTS(archive, "bi", 10, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "bi", 10, ({
     {"Big Bang", "-14e9/11/11", "<b>Big</b> Bang"},
     {"Daily birth control", "^B", "Daily <b>birth</b> control"},
     {"US birth data", "USbirthdata", "US <b>birth</b> data"},
@@ -785,24 +785,24 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
 
   // Since the count of title suggestions will exceed the specified limit,
   // autocompletion suggestions should be returned instead
-  EXPECT_SUGGESTION_RESULTS(archive, "bi", 4, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "bi", 4, ({
     {"", "", "<b>big</b>" },
     {"", "", "<b>birth</b>" },
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "date bi", 10, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "date bi", 10, ({
     {"Date of my birth", "long_ago", "<b>Date</b> of my <b>birth</b>"},
     {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> <b>date</b>"},
     {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> <b>date</b> of J. Christ"},
     {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> <b>date</b> of John Smith"},
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "date bi", 3, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "date bi", 3, ({
     {"", "", "date <b>big</b>" },
     {"", "", "date <b>birth</b>" },
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "da", 20, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 20, ({
     {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
     {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
     {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
@@ -821,7 +821,7 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
 
   // Since the count of title suggestions will exceed the specified limit,
   // autocompletion suggestions should be returned instead
-  EXPECT_SUGGESTION_RESULTS(archive, "da", 5, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 5, ({
     {"", "", "<b>daily</b>" },
     {"", "", "<b>data</b>" },
     {"", "", "<b>date</b>" },
@@ -830,12 +830,12 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
 
   // Autocompletion results are selected based on frequency ("daily" and "data"
   // are dropped as the least popular terms in the titles)
-  EXPECT_SUGGESTION_RESULTS(archive, "da", 2, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 2, ({
     {"", "", "<b>date</b>" },
     {"", "", "<b>day</b>"  },
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "birth da", 10, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "birth da", 10, ({
     {"Daily birth control", "^B", "<b>Daily</b> <b>birth</b> control"},
     {"US birth data", "USbirthdata", "US <b>birth</b> <b>data</b>"},
     {"Date of my birth", "long_ago", "<b>Date</b> of my <b>birth</b>"},
@@ -844,7 +844,7 @@ TEST(Suggestion, autoCompletionAndSpellingCorrection) {
     {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> <b>date</b> of John Smith"},
   }));
 
-  EXPECT_SUGGESTION_RESULTS(archive, "birth da", 5, ({
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "birth da", 5, ({
     {"", "", "birth <b>daily</b>" },
     {"", "", "birth <b>data</b>" },
     {"", "", "birth <b>date</b>" },
