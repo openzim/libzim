@@ -778,7 +778,9 @@ TEST(Suggestion, autocompletionSuggestions) {
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ki", 10, ({
-    // FIXME: query case matters
+    "<b>king</b>",
+    "<b>king's</b>", // XXX: possesive form
+    /*"<b>king-fu</b>", */ // missing
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "pa", 10, ({
@@ -788,6 +790,9 @@ TEST(Suggestion, autocompletionSuggestions) {
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "pâ", 10, ({
+    "<b>panda</b>",   // XXX: diacritics in the query are ignored
+    "<b>patent</b>",  // XXX: diacritics in the query are ignored
+    "<b>patient</b>", // XXX: diacritics in the query are ignored
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "patient", 10, ({
@@ -805,8 +810,8 @@ TEST(Suggestion, autocompletionSuggestions) {
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ze", 10, ({
-    /* "<b>zebra</b>", */ // XXX: missing because of the case of the query
-    /* "<b>zero</b>",  */ // XXX: missing because of the case of the query
+    "<b>zebras</b>", // XXX: plural form
+    "<b>zero</b>",
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "fo", 10, ({

@@ -348,7 +348,7 @@ TermCollection getTermCompletions(const SuggestionDataBase& db,
 } // unnamed namespace
 
 SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_t maxCount) const {
-  QueryInfo queryInfo(m_query);
+  QueryInfo queryInfo(removeAccents(m_query));
 
   SuggestionSearch::Results r;
   if ( !queryInfo.wordToComplete().empty() ) {
