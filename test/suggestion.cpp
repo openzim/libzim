@@ -882,9 +882,46 @@ TEST(Suggestion, spellingSuggestions) {
       "King-fu Panda",
   });
 
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "", 10, ({
+  }));
+
   EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "kung", 10, ({
     "<b>king</b>",
     "<b>kong</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "song", 10, ({
+    "<b>kong</b>",
+    "<b>king</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "wing", 10, ({
+    "<b>king</b>",
+    "<b>kong</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "hourse", 10, ({
+    "<b>hours</b>",
+    "<b>horses</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "hebras", 10, ({
+    "<b>zebras</b>",
+    "<b>hebrew</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "paient", 10, ({
+    "<b>patent</b>",
+    "<b>patient</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "patent", 10, ({
+    "<b>patient</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "lorem ipsum hebras", 10, ({
+    "lorem ipsum <b>zebras</b>",
+    "lorem ipsum <b>hebrew</b>",
   }));
 }
 

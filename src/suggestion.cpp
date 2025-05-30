@@ -25,6 +25,7 @@
 #include "suggestion_internal.h"
 #include "fileimpl.h"
 #include "tools.h"
+#include "fs_unix.h"
 #include "constants.h"
 
 #if defined(ENABLE_XAPIAN)
@@ -305,22 +306,51 @@ struct TermWithFreq
 
 typedef std::vector<TermWithFreq> TermCollection;
 
+#if defined(LIBZIM_WITH_XAPIAN) && ! defined(_WIN32)
+#define ENABLE_SPELLINGSDB
+#endif
+
+#ifdef ENABLE_SPELLINGSDB
 class SpellingsDB
 {
-public:
+public: // functions
   explicit SpellingsDB(const TermCollection& terms);
+  ~SpellingsDB();
+
+  SpellingsDB(const SpellingsDB& ) = delete;
+  void operator=(const SpellingsDB& ) = delete;
+
   std::vector<std::string> getSpellingCorrections(const std::string& word, uint32_t maxCount) const;
 
-private:
+private: // functions
+  static std::string createTempDir();
+
+private: // data
+  const std::string tmpDirPath_;
   mutable Xapian::WritableDatabase impl_;
 };
 
+std::string SpellingsDB::createTempDir()
+{
+  char tmpDirPath[] = "/dev/shm/libzimspellingdb.XXXXXX";
+  if ( ! mkdtemp(tmpDirPath) ) {
+    throw std::runtime_error("SpellingsDB: mkdtemp() failed");
+  }
+  return tmpDirPath;
+}
+
 SpellingsDB::SpellingsDB(const TermCollection& terms)
-  : impl_("", Xapian::DB_BACKEND_INMEMORY)
+  : tmpDirPath_(createTempDir())
+  , impl_(tmpDirPath_ + "/spellingdb.xapian", Xapian::DB_BACKEND_GLASS)
 {
   for (const auto& t : terms) {
     impl_.add_spelling(t.term);
   }
+}
+
+SpellingsDB::~SpellingsDB()
+{
+  unix::FS::remove(tmpDirPath_);
 }
 
 std::vector<std::string> SpellingsDB::getSpellingCorrections(const std::string& word, uint32_t maxCount) const {
@@ -341,9 +371,9 @@ std::vector<std::string> SpellingsDB::getSpellingCorrections(const std::string& 
     impl_.add_spelling(t);
   }
 
-  std::sort(result.begin(), result.end());
   return result;
 }
+#endif // ENABLE_SPELLINGSDB
 
 bool isXapianTermPrefix(unsigned char c) {
   return 'A' <= c && c <= 'Z';
@@ -395,13 +425,15 @@ std::vector<std::string> getSpellingCorrections(const SuggestionDataBase& db,
                                                 const std::string& word,
                                                 uint32_t maxCount)
 {
-  if ( !db.hasDatabase() ) {
-    return {};
+#ifdef ENABLE_SPELLINGSDB
+  if ( db.hasDatabase() ) {
+    const TermCollection allTerms = getAllTerms(db);
+    const SpellingsDB sdb(allTerms);
+    return sdb.getSpellingCorrections(word, maxCount);
   }
+#endif // ENABLE_SPELLINGSDB
 
-  const TermCollection allTerms = getAllTerms(db);
-  const SpellingsDB sdb(allTerms);
-  return sdb.getSpellingCorrections(word, maxCount);
+  return {};
 }
 
 } // unnamed namespace
