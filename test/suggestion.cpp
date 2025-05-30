@@ -982,6 +982,7 @@ TEST(Suggestion, smartSuggestions) {
   EXPECT_SMART_SUGGESTION_RESULTS(archive, "bi", 4, ({
     {"", "", "<b>big</b>" },
     {"", "", "<b>birth</b>" },
+    {"", "", "<b>big</b>" }, // XXX: duplicated result due to spelling correction
   }));
 
   EXPECT_SMART_SUGGESTION_RESULTS(archive, "date bi", 10, ({
@@ -994,6 +995,7 @@ TEST(Suggestion, smartSuggestions) {
   EXPECT_SMART_SUGGESTION_RESULTS(archive, "date bi", 3, ({
     {"", "", "date <b>big</b>" },
     {"", "", "date <b>birth</b>" },
+    {"", "", "date <b>big</b>" }, // XXX: duplicated result due to spelling correction
   }));
 
   EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 20, ({
@@ -1020,6 +1022,7 @@ TEST(Suggestion, smartSuggestions) {
     {"", "", "<b>data</b>" },
     {"", "", "<b>date</b>" },
     {"", "", "<b>day</b>"  },
+    {"", "", "<b>day</b>"  }, // XXX: duplicated result due to spelling correction
   }));
 
   // Autocompletion results are selected based on frequency ("daily" and "data"
@@ -1043,6 +1046,12 @@ TEST(Suggestion, smartSuggestions) {
     {"", "", "birth <b>data</b>" },
     {"", "", "birth <b>date</b>" },
     {"", "", "birth <b>day</b>"  },
+    {"", "", "birth <b>day</b>"  }, // XXX: duplicated result due to spelling correction
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "barth", 5, ({
+    {"", "", "<b>birth</b>" },
+    {"", "", "<b>earth</b>" },
   }));
 }
 

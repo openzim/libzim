@@ -475,13 +475,18 @@ SuggestionSearch::Results SuggestionSearch::getSpellingSuggestions(uint32_t maxC
   return r;
 }
 SuggestionSearch::Results SuggestionSearch::getSmartSuggestions(uint32_t maxCount) const {
-  if ( static_cast<uint32_t>(getEstimatedMatches()) > maxCount ) {
-    return getAutocompletionSuggestions(maxCount);
-  }
-
   SuggestionSearch::Results r;
-  for ( const auto& s : getResults(0, maxCount) ) {
-    r.push_back(s);
+  const uint32_t titleSuggestionCount = getEstimatedMatches();
+  if ( titleSuggestionCount == 0 || titleSuggestionCount > maxCount ) {
+    r = getAutocompletionSuggestions(maxCount);
+    if ( r.size() < maxCount ) {
+      const auto corrections = getSpellingSuggestions(maxCount - r.size());
+      r.insert(r.end(), corrections.begin(), corrections.end());
+    }
+  } else {
+    for ( const auto& s : getResults(0, maxCount) ) {
+      r.push_back(s);
+    }
   }
   return r;
 }
