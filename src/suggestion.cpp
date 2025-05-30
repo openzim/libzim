@@ -268,18 +268,24 @@ public:
                                  : 0;
     m_queryPrefix = query.substr(0, startOfLastWord);
     m_wordToComplete = query.substr(startOfLastWord);
+    m_wordBeingEdited = m_wordToComplete;
     m_querySuffix = "";
   }
 
   const std::string& wordToComplete() const { return m_wordToComplete; }
+  const std::string& wordBeingEdited() const { return m_wordBeingEdited; }
 
   std::string autocompletionSuggestion(const std::string& completedWord) const {
     return m_queryPrefix + "<b>" + completedWord + "</b>" + m_querySuffix;
   }
 
+  std::string spellingSuggestion(const std::string& correctedWord) const {
+    return m_queryPrefix + "<b>" + correctedWord + "</b>" + m_querySuffix;
+  }
 private:
   std::string m_queryPrefix;
   std::string m_wordToComplete;
+  std::string m_wordBeingEdited;
   std::string m_querySuffix;
 };
 
@@ -298,6 +304,46 @@ struct TermWithFreq
 };
 
 typedef std::vector<TermWithFreq> TermCollection;
+
+class SpellingsDB
+{
+public:
+  explicit SpellingsDB(const TermCollection& terms);
+  std::vector<std::string> getSpellingCorrections(const std::string& word, uint32_t maxCount) const;
+
+private:
+  mutable Xapian::WritableDatabase impl_;
+};
+
+SpellingsDB::SpellingsDB(const TermCollection& terms)
+  : impl_("", Xapian::DB_BACKEND_INMEMORY)
+{
+  for (const auto& t : terms) {
+    impl_.add_spelling(t.term);
+  }
+}
+
+std::vector<std::string> SpellingsDB::getSpellingCorrections(const std::string& word, uint32_t maxCount) const {
+  std::vector<std::string> result;
+  while ( result.size() < maxCount ) {
+    const auto term = impl_.get_spelling_suggestion(word);
+    if ( term.empty() )
+      break;
+
+    result.push_back(term);
+
+    // temporarily remove this term so that another spellings could be obtained
+    impl_.remove_spelling(term);
+  }
+
+  // restore temporarily removed terms
+  for (const auto& t : result) {
+    impl_.add_spelling(t);
+  }
+
+  std::sort(result.begin(), result.end());
+  return result;
+}
 
 bool isXapianTermPrefix(unsigned char c) {
   return 'A' <= c && c <= 'Z';
@@ -345,6 +391,19 @@ TermCollection getTermCompletions(const SuggestionDataBase& db,
   return result;
 }
 
+std::vector<std::string> getSpellingCorrections(const SuggestionDataBase& db,
+                                                const std::string& word,
+                                                uint32_t maxCount)
+{
+  if ( !db.hasDatabase() ) {
+    return {};
+  }
+
+  const TermCollection allTerms = getAllTerms(db);
+  const SpellingsDB sdb(allTerms);
+  return sdb.getSpellingCorrections(word, maxCount);
+}
+
 } // unnamed namespace
 
 SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_t maxCount) const {
@@ -357,7 +416,7 @@ SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_
       std::sort(terms.begin(), terms.end(), TermWithFreq::freqPred);
       terms.resize(maxCount);
     }
-    std::sort(terms.begin(), terms.end(), TermWithFreq::dictionaryPred);
+  std::sort(terms.begin(), terms.end(), TermWithFreq::dictionaryPred);
 
     for (const auto& t : terms) {
       const auto suggestion = queryInfo.autocompletionSuggestion(t.term);
@@ -368,6 +427,21 @@ SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_
   return r;
 }
 
+SuggestionSearch::Results SuggestionSearch::getSpellingSuggestions(uint32_t maxCount) const {
+  QueryInfo queryInfo(removeAccents(m_query));
+
+  SuggestionSearch::Results r;
+  if ( !queryInfo.wordBeingEdited().empty() ) {
+    const auto terms = getSpellingCorrections(*mp_internalDb, queryInfo.wordBeingEdited(), maxCount);
+
+    for (const auto& t : terms) {
+      const auto suggestion = queryInfo.spellingSuggestion(t);
+      r.push_back(SuggestionItem("", "", suggestion));
+    }
+  }
+
+  return r;
+}
 SuggestionSearch::Results SuggestionSearch::getSmartSuggestions(uint32_t maxCount) const {
   if ( static_cast<uint32_t>(getEstimatedMatches()) > maxCount ) {
     return getAutocompletionSuggestions(maxCount);

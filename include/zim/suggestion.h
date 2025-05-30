@@ -133,6 +133,19 @@ class LIBZIM_API SuggestionSearch
          */
         Results getAutocompletionSuggestions(uint32_t maxCount) const;
 
+        /** Get spelling correction suggestions for this search.
+         *
+         * Returns spelling correction suggestions for the word containing the
+         * text edit location. In the current implementation, the text edit
+         * location is assumed to be at the end of the query string provided to
+         * the SuggestionSearch::suggest() method. In the future the text edit
+         * location will be indicated by a special code-point (e.g.
+         * carriage-return, form-feed or soft-hyphen) in the query string.
+         *
+         * @param maxCount The maximum number of results to return.
+         */
+        Results getSpellingSuggestions(uint32_t maxCount) const;
+
         /** Get the top suggestions for the set upper limit on their count
          *
          * This method returns the best list of suggestions (title suggestions,

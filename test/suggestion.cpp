@@ -849,6 +849,45 @@ TEST(Suggestion, autocompletionSuggestions) {
   }));
 }
 
+std::vector<std::string> getSpellingSuggestions(const zim::Archive& archive,
+                                                std::string query,
+                                                int maxSuggestions) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  const auto search = suggestionSearcher.suggest(query);
+  std::vector<std::string> result;
+  for (const auto& s : search.getSpellingSuggestions(maxSuggestions)) {
+    EXPECT_EQ(s.getTitle(), "");
+    EXPECT_EQ(s.getPath(), "");
+    result.push_back(s.getSnippet());
+  }
+  return result;
+}
+
+#define EXPECT_SPELLING_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+  ASSERT_EQ(                                                                   \
+      getSpellingSuggestions(archive, query, maxSuggestions),                  \
+      std::vector<std::string> parenthesizedExpectedResult                     \
+  )
+
+TEST(Suggestion, spellingSuggestions) {
+  TempZimArchive tza("testZim");
+  const zim::Archive archive = tza.createZimFromTitles({
+      "Hebrew for zebras in 24 hours",
+      "Patient Zero: the horrible story of ebola",
+      "Zimbabwe patent #15539",
+      "All the king's horses",
+      "Martin Luther King Jr.",
+      "King Kong (1933 film)",
+      "King-fu Panda",
+  });
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "kung", 10, ({
+    "<b>king</b>",
+    "<b>kong</b>",
+  }));
+}
+
 std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive& archive,
                                                  std::string query,
                                                  int maxSuggestions) {
