@@ -25,6 +25,7 @@
 #include "suggestion_internal.h"
 #include "fileimpl.h"
 #include "tools.h"
+#include "fs_unix.h"
 #include "constants.h"
 
 #if defined(ENABLE_XAPIAN)
@@ -198,9 +199,10 @@ void SuggestionSearcher::initDatabase()
   mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
 }
 
-SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)
- : mp_internalDb(p_internalDb),
-   m_query(query)
+SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb,
+                                   const std::string& query)
+ : mp_internalDb(p_internalDb)
+ , m_query(query)
 #if defined(ENABLE_XAPIAN)
    , mp_enquire(nullptr)
 #endif  // ENABLE_XAPIAN
@@ -210,42 +212,278 @@ SuggestionSearch::SuggestionSearch(SuggestionSearch&& s) = default;
 SuggestionSearch& SuggestionSearch::operator=(SuggestionSearch&& s) = default;
 SuggestionSearch::~SuggestionSearch() = default;
 
+#if ! defined(ENABLE_XAPIAN)
+#define TRY_UTILIZING_SUGGESTIONDB(CODE) // empty
+#else
+#define TRY_UTILIZING_SUGGESTIONDB(CODE) \
+  if (mp_internalDb->hasDatabase()) {                                   \
+    try {                                                               \
+      CODE                                                              \
+    } catch(...) {                                                      \
+      std::cerr << "There was a problem utilizing the suggestions DB, " \
+                << "switching to title listing mode."                   \
+                << std::endl;                                           \
+    }                                                                   \
+  }
+#endif
+
+
 int SuggestionSearch::getEstimatedMatches() const
 {
-#if defined(ENABLE_XAPIAN)
-  if (mp_internalDb->hasDatabase()) {
-    try {
-      auto enquire = getEnquire();
-      // Force xapian to check at least 10 documents even if we ask for an empty mset.
-      // Else, the get_matches_estimated may be wrong and return 0 even if we have results.
-      auto mset = enquire.get_mset(0, 0, 10);
-      return mset.get_matches_estimated();
-    } catch(...) {
-      std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
-    }
-  }
-#endif  // ENABLE_XAPIAN
+  TRY_UTILIZING_SUGGESTIONDB(
+    auto enquire = getEnquire();
+    // Force xapian to check at least 10 documents even if we ask for an
+    // empty mset. Else, the get_matches_estimated() may be wrong and return 0
+    // even if we have results.
+    auto mset = enquire.get_mset(0, 0, 10);
+    return mset.get_matches_estimated();
+  );
 
   return mp_internalDb->m_archive.findByTitle(m_query).size();
 }
 
 const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults) const {
-#if defined(ENABLE_XAPIAN)
-    if (mp_internalDb->hasDatabase())
-    {
-      try {
-        auto enquire = getEnquire();
-        auto mset = enquire.get_mset(start, maxResults);
-        return SuggestionResultSet(mp_internalDb, std::move(mset));
-      } catch(...) {
-        std::cerr << "Query Parsing failed, Switching to search without index." << std::endl;
-      }
-    }
-#endif  // ENABLE_XAPIAN
+  TRY_UTILIZING_SUGGESTIONDB(
+    auto enquire = getEnquire();
+    auto mset = enquire.get_mset(start, maxResults);
+    return SuggestionResultSet(mp_internalDb, std::move(mset));
+  );
 
-    auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
-    entryRange.offset(start, maxResults);
-    return SuggestionResultSet(entryRange);
+  auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
+  entryRange = entryRange.offset(start, maxResults);
+  return SuggestionResultSet(entryRange);
+}
+
+namespace
+{
+
+class QueryInfo
+{
+public:
+  explicit QueryInfo(const std::string& query)
+  {
+    // XXX: assuming that the query edit location (caret position) is at the end
+    const size_t lastSpacePos = query.find_last_of(' ');
+    const size_t startOfLastWord = lastSpacePos != std::string::npos
+                                 ? lastSpacePos + 1
+                                 : 0;
+    m_queryPrefix = query.substr(0, startOfLastWord);
+    m_wordToComplete = query.substr(startOfLastWord);
+    m_wordBeingEdited = m_wordToComplete;
+    m_querySuffix = "";
+  }
+
+  const std::string& wordToComplete() const { return m_wordToComplete; }
+  const std::string& wordBeingEdited() const { return m_wordBeingEdited; }
+
+  std::string autocompletionSuggestion(const std::string& completedWord) const {
+    return m_queryPrefix + "<b>" + completedWord + "</b>" + m_querySuffix;
+  }
+
+  std::string spellingSuggestion(const std::string& correctedWord) const {
+    return m_queryPrefix + "<b>" + correctedWord + "</b>" + m_querySuffix;
+  }
+private:
+  std::string m_queryPrefix;
+  std::string m_wordToComplete;
+  std::string m_wordBeingEdited;
+  std::string m_querySuffix;
+};
+
+using namespace suggestions;
+
+#if defined(LIBZIM_WITH_XAPIAN) && ! defined(_WIN32)
+#define ENABLE_SPELLINGSDB
+#endif
+
+#ifdef ENABLE_SPELLINGSDB
+class SpellingsDB
+{
+public: // functions
+  explicit SpellingsDB(const TermCollection& terms);
+  ~SpellingsDB();
+
+  SpellingsDB(const SpellingsDB& ) = delete;
+  void operator=(const SpellingsDB& ) = delete;
+
+  std::vector<std::string> getSpellingCorrections(const std::string& word, uint32_t maxCount) const;
+
+private: // functions
+  static std::string createTempDir();
+
+private: // data
+  const std::string tmpDirPath_;
+  mutable Xapian::WritableDatabase impl_;
+};
+
+std::string SpellingsDB::createTempDir()
+{
+  char tmpDirPath[] = "/dev/shm/libzimspellingdb.XXXXXX";
+  if ( ! mkdtemp(tmpDirPath) ) {
+    throw std::runtime_error("SpellingsDB: mkdtemp() failed");
+  }
+  return tmpDirPath;
+}
+
+SpellingsDB::SpellingsDB(const TermCollection& terms)
+  : tmpDirPath_(createTempDir())
+  , impl_(tmpDirPath_ + "/spellingdb.xapian", Xapian::DB_BACKEND_GLASS)
+{
+  for (const auto& t : terms) {
+    impl_.add_spelling(t.term);
+  }
+}
+
+SpellingsDB::~SpellingsDB()
+{
+  unix::FS::remove(tmpDirPath_);
+}
+
+std::vector<std::string> SpellingsDB::getSpellingCorrections(const std::string& word, uint32_t maxCount) const {
+  std::vector<std::string> result;
+  while ( result.size() < maxCount ) {
+    const auto term = impl_.get_spelling_suggestion(word);
+    if ( term.empty() )
+      break;
+
+    result.push_back(term);
+
+    // temporarily remove this term so that another spellings could be obtained
+    impl_.remove_spelling(term);
+  }
+
+  // restore temporarily removed terms
+  for (const auto& t : result) {
+    impl_.add_spelling(t);
+  }
+
+  return result;
+}
+#endif // ENABLE_SPELLINGSDB
+
+bool isXapianTermPrefix(unsigned char c) {
+  return 'A' <= c && c <= 'Z';
+}
+
+bool termShouldBeIncludedInAutoCompletions(const std::string& term) {
+  // XXX: does it make sense to include non-words and stop words?
+  return term.size() > 0
+      && !isXapianTermPrefix(term[0]);
+}
+
+TermCollection getAllTerms(const SuggestionDataBase& db) {
+  TermCollection allTerms;
+
+#ifdef LIBZIM_WITH_XAPIAN
+  const Xapian::Database& titleDb = db.m_database;
+  for (auto it = titleDb.allterms_begin(); it != titleDb.allterms_end(); ++it) {
+    if ( termShouldBeIncludedInAutoCompletions(*it) ) {
+      allTerms.push_back(TermWithFreq{*it, it.get_termfreq()});
+    }
+  }
+#endif // LIBZIM_WITH_XAPIAN
+
+  std::sort(allTerms.begin(), allTerms.end(), TermWithFreq::dictionaryPred);
+  return allTerms;
+}
+
+TermCollection getTermCompletions(const SuggestionDataBase& db,
+                                  const std::string& termPrefix)
+{
+  if ( !db.hasDatabase() ) {
+    return TermCollection();
+  }
+
+  const TermCollection& allTerms = db.getAllSuggestionTerms();
+  auto it = std::lower_bound(allTerms.begin(), allTerms.end(),
+                             TermWithFreq{termPrefix, 0},
+                             TermWithFreq::dictionaryPred);
+
+  TermCollection result;
+  for ( ; it != allTerms.end() && startsWith(it->term, termPrefix); ++it ) {
+    result.push_back(*it);
+  }
+
+  return result;
+}
+
+std::vector<std::string> getSpellingCorrections(const SuggestionDataBase& db,
+                                                const std::string& word,
+                                                uint32_t maxCount)
+{
+#ifdef ENABLE_SPELLINGSDB
+  if ( db.hasDatabase() ) {
+    const TermCollection& allTerms = db.getAllSuggestionTerms();
+    const SpellingsDB sdb(allTerms);
+    return sdb.getSpellingCorrections(word, maxCount);
+  }
+#endif // ENABLE_SPELLINGSDB
+
+  return {};
+}
+
+} // unnamed namespace
+
+const TermCollection& SuggestionDataBase::getAllSuggestionTerms() const
+{
+  std::lock_guard<std::mutex> locker(m_suggestionTermsMutex);
+  if ( m_suggestionTerms.empty() ) {
+    m_suggestionTerms = getAllTerms(*this);
+  }
+  return m_suggestionTerms;
+}
+
+SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_t maxCount) const {
+  QueryInfo queryInfo(removeAccents(m_query));
+
+  SuggestionSearch::Results r;
+  if ( queryInfo.wordToComplete().size() > 1 ) {
+    auto terms = getTermCompletions(*mp_internalDb, queryInfo.wordToComplete());
+    if (maxCount < terms.size() ) {
+      std::sort(terms.begin(), terms.end(), TermWithFreq::freqPred);
+      terms.resize(maxCount);
+    }
+  std::sort(terms.begin(), terms.end(), TermWithFreq::dictionaryPred);
+
+    for (const auto& t : terms) {
+      const auto suggestion = queryInfo.autocompletionSuggestion(t.term);
+      r.push_back(SuggestionItem("", "", suggestion));
+    }
+  }
+
+  return r;
+}
+
+SuggestionSearch::Results SuggestionSearch::getSpellingSuggestions(uint32_t maxCount) const {
+  QueryInfo queryInfo(removeAccents(m_query));
+
+  SuggestionSearch::Results r;
+  if ( !queryInfo.wordBeingEdited().empty() ) {
+    const auto terms = getSpellingCorrections(*mp_internalDb, queryInfo.wordBeingEdited(), maxCount);
+
+    for (const auto& t : terms) {
+      const auto suggestion = queryInfo.spellingSuggestion(t);
+      r.push_back(SuggestionItem("", "", suggestion));
+    }
+  }
+
+  return r;
+}
+SuggestionSearch::Results SuggestionSearch::getSmartSuggestions(uint32_t maxCount) const {
+  SuggestionSearch::Results r;
+  const uint32_t titleSuggestionCount = getEstimatedMatches();
+  if ( titleSuggestionCount == 0 || titleSuggestionCount > maxCount ) {
+    r = getAutocompletionSuggestions(maxCount);
+    if ( r.size() < maxCount ) {
+      const auto corrections = getSpellingSuggestions(maxCount - r.size());
+      r.insert(r.end(), corrections.begin(), corrections.end());
+    }
+  } else {
+    for ( const auto& s : getResults(0, maxCount) ) {
+      r.push_back(s);
+    }
+  }
+  return r;
 }
 
 const void SuggestionSearch::forceRangeSuggestion() {
@@ -293,7 +531,7 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
     return *mp_enquire;
 }
 
-SuggestionResultSet::SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset) :
+SuggestionResultSet::SuggestionResultSet(SuggestionDBPtr p_internalDb, Xapian::MSet&& mset) :
   mp_internalDb(p_internalDb),
   mp_entryRange(nullptr),
   mp_mset(std::make_shared<Xapian::MSet>(mset))
@@ -317,28 +555,6 @@ int SuggestionResultSet::size() const
 #endif  // ENABLE_XAPIAN
 
   return mp_entryRange->size();
-}
-
-SuggestionResultSet::iterator SuggestionResultSet::begin() const
-{
-#if defined(ENABLE_XAPIAN)
-    if ( ! mp_entryRange ) {
-        return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->begin());
-    }
-#endif  // ENABLE_XAPIAN
-
-    return iterator(mp_entryRange->begin());
-}
-
-SuggestionResultSet::iterator SuggestionResultSet::end() const
-{
-#if defined(ENABLE_XAPIAN)
-    if ( ! mp_entryRange ) {
-        return new iterator::SuggestionInternalData(mp_internalDb, mp_mset, mp_mset->end());
-    }
-#endif  // ENABLE_XAPIAN
-
-    return iterator(mp_entryRange->end());
 }
 
 } // namespace zim

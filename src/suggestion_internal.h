@@ -34,6 +34,27 @@
 namespace zim
 {
 
+namespace suggestions
+{
+
+struct TermWithFreq
+{
+  std::string term;
+  uint32_t freq;
+
+  static bool freqPred(const TermWithFreq& t1, const TermWithFreq& t2) {
+    return t1.freq > t2.freq;
+  }
+
+  static bool dictionaryPred(const TermWithFreq& t1, const TermWithFreq& t2) {
+    return t1.term < t2.term;
+  }
+};
+
+typedef std::vector<TermWithFreq> TermCollection;
+
+} // namespace suggestions
+
 /**
  * A class to encapsulate a xapian title index and it's archive and all the
  * information we can gather from it.
@@ -41,6 +62,8 @@ namespace zim
 class SuggestionDataBase {
   public: // methods
     SuggestionDataBase(const Archive& archive, bool verbose);
+
+    const suggestions::TermCollection& getAllSuggestionTerms() const;
 
   public: // data
     // The archive to get suggestions from.
@@ -51,6 +74,9 @@ class SuggestionDataBase {
 
   private: // data
     std::mutex m_mutex;
+
+    mutable std::mutex m_suggestionTermsMutex;
+    mutable suggestions::TermCollection m_suggestionTerms;
 
 #if defined(LIBZIM_WITH_XAPIAN)
 
@@ -80,70 +106,6 @@ class SuggestionDataBase {
 #endif  // LIBZIM_WITH_XAPIAN
 };
 
-#if defined(LIBZIM_WITH_XAPIAN)
-struct SuggestionIterator::SuggestionInternalData {
-    std::shared_ptr<SuggestionDataBase> mp_internalDb;
-    std::shared_ptr<Xapian::MSet> mp_mset;
-    Xapian::MSetIterator iterator;
-    Xapian::Document _document;
-    bool document_fetched;
-    std::unique_ptr<Entry> _entry;
-
-    SuggestionInternalData(const SuggestionInternalData& other) :
-      mp_internalDb(other.mp_internalDb),
-      mp_mset(other.mp_mset),
-      iterator(other.iterator),
-      _document(other._document),
-      document_fetched(other.document_fetched),
-      _entry(other._entry ? new Entry(*other._entry) : nullptr )
-    {
-    }
-
-    SuggestionInternalData& operator=(const SuggestionInternalData& other)
-    {
-      if (this != &other) {
-        mp_internalDb = other.mp_internalDb;
-        mp_mset = other.mp_mset;
-        iterator = other.iterator;
-        _document = other._document;
-        document_fetched = other.document_fetched;
-        _entry.reset(other._entry ? new Entry(*other._entry) : nullptr);
-      }
-      return *this;
-    }
-
-    SuggestionInternalData(std::shared_ptr<SuggestionDataBase> p_internalDb, std::shared_ptr<Xapian::MSet> p_mset, Xapian::MSetIterator iterator) :
-        mp_internalDb(p_internalDb),
-        mp_mset(p_mset),
-        iterator(iterator),
-        document_fetched(false)
-    {};
-
-    Xapian::Document get_document() {
-        if ( !document_fetched ) {
-            if (iterator == mp_mset->end()) {
-                throw std::runtime_error("Cannot get entry for end iterator");
-            }
-            _document = iterator.get_document();
-            document_fetched = true;
-        }
-        return _document;
-    }
-
-    Entry& get_entry() {
-        if (!_entry) {
-            _entry.reset(new Entry(mp_internalDb->m_archive.getEntryByPath(get_document().get_data())));
-        }
-        return *_entry.get();
-    }
-
-    bool operator==(const SuggestionInternalData& other) const {
-        return (mp_internalDb == other.mp_internalDb
-            &&  mp_mset == other.mp_mset
-            &&  iterator == other.iterator);
-    }
-};
-#endif  // LIBZIM_WITH_XAPIAN
 
 }
 
