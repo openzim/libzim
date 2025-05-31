@@ -761,7 +761,7 @@ TEST(Suggestion, autocompletionSuggestions) {
       "Patient Zero: the horrible story of ebola",
       "Bank erosion in Zimbabwe",
       "Error correcting codes",
-      "Zimbabwe patent #15539",
+      "Zimbabwe patent #19539",
       "All the king's horses",
       "Martin Luther King Jr.",
       "King Kong (1933 film)",
@@ -770,6 +770,20 @@ TEST(Suggestion, autocompletionSuggestions) {
       "Ebay, Alibaba & the Forty Thieves",
       "Crazy Horse (disambiguation)"
   });
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "", 10, ({
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "asdf ", 10, ({
+  }));
+
+  // no completions for a single letter
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "k", 10, ({
+  }));
+
+  // no completions for a single letter
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "asdf k", 10, ({
+  }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ki", 10, ({
     "<b>king</b>",
@@ -799,9 +813,9 @@ TEST(Suggestion, autocompletionSuggestions) {
     "<b>patient</b>", // XXX: useless completion
   }));
 
-  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "1", 10, ({
-    "<b>15539</b>", // XXX: non word
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "19", 10, ({
     "<b>1933</b>",  // XXX: non word
+    "<b>19539</b>", // XXX: non word
   }));
 
   EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ze", 10, ({

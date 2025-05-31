@@ -351,7 +351,7 @@ SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_
   QueryInfo queryInfo(removeAccents(m_query));
 
   SuggestionSearch::Results r;
-  if ( !queryInfo.wordToComplete().empty() ) {
+  if ( queryInfo.wordToComplete().size() > 1 ) {
     auto terms = getTermCompletions(*mp_internalDb, queryInfo.wordToComplete());
     if (maxCount < terms.size() ) {
       std::sort(terms.begin(), terms.end(), TermWithFreq::freqPred);
