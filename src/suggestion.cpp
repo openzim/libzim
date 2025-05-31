@@ -290,21 +290,7 @@ private:
   std::string m_querySuffix;
 };
 
-struct TermWithFreq
-{
-  std::string term;
-  uint32_t freq;
-
-  static bool freqPred(const TermWithFreq& t1, const TermWithFreq& t2) {
-    return t1.freq > t2.freq;
-  }
-
-  static bool dictionaryPred(const TermWithFreq& t1, const TermWithFreq& t2) {
-    return t1.term < t2.term;
-  }
-};
-
-typedef std::vector<TermWithFreq> TermCollection;
+using namespace suggestions;
 
 #if defined(LIBZIM_WITH_XAPIAN) && ! defined(_WIN32)
 #define ENABLE_SPELLINGSDB
@@ -408,7 +394,7 @@ TermCollection getTermCompletions(const SuggestionDataBase& db,
     return TermCollection();
   }
 
-  const TermCollection allTerms = getAllTerms(db);
+  const TermCollection& allTerms = db.getAllSuggestionTerms();
   auto it = std::lower_bound(allTerms.begin(), allTerms.end(),
                              TermWithFreq{termPrefix, 0},
                              TermWithFreq::dictionaryPred);
@@ -427,7 +413,7 @@ std::vector<std::string> getSpellingCorrections(const SuggestionDataBase& db,
 {
 #ifdef ENABLE_SPELLINGSDB
   if ( db.hasDatabase() ) {
-    const TermCollection allTerms = getAllTerms(db);
+    const TermCollection& allTerms = db.getAllSuggestionTerms();
     const SpellingsDB sdb(allTerms);
     return sdb.getSpellingCorrections(word, maxCount);
   }
@@ -437,6 +423,15 @@ std::vector<std::string> getSpellingCorrections(const SuggestionDataBase& db,
 }
 
 } // unnamed namespace
+
+const TermCollection& SuggestionDataBase::getAllSuggestionTerms() const
+{
+  std::lock_guard<std::mutex> locker(m_suggestionTermsMutex);
+  if ( m_suggestionTerms.empty() ) {
+    m_suggestionTerms = getAllTerms(*this);
+  }
+  return m_suggestionTerms;
+}
 
 SuggestionSearch::Results SuggestionSearch::getAutocompletionSuggestions(uint32_t maxCount) const {
   QueryInfo queryInfo(removeAccents(m_query));
