@@ -196,7 +196,7 @@ zim::Archive TempZimArchive::createZimFromContent(std::vector<std::vector<std::s
   return zim::Archive(this->path());
 }
 
-const std::string TempZimArchive::getPath() {
+const std::string TempZimArchive::getPath() const {
   return this->path();
 }
 
