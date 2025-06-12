@@ -52,6 +52,7 @@ struct TermWithFreq
 };
 
 typedef std::vector<TermWithFreq> TermCollection;
+class SpellingsDB;
 
 } // namespace suggestions
 
@@ -62,8 +63,11 @@ typedef std::vector<TermWithFreq> TermCollection;
 class SuggestionDataBase {
   public: // methods
     SuggestionDataBase(const Archive& archive, bool verbose);
+    ~SuggestionDataBase();
 
     const suggestions::TermCollection& getAllSuggestionTerms() const;
+    std::vector<std::string> getSpellingCorrections(const std::string& word,
+                                                    uint32_t maxCount) const;
 
   public: // data
     // The archive to get suggestions from.
@@ -103,6 +107,10 @@ class SuggestionDataBase {
 
   private:
     void initXapianDb();
+
+    mutable std::mutex m_spellingsDBMutex;
+    mutable std::unique_ptr<suggestions::SpellingsDB> m_spellingsDB;
+
 #endif  // LIBZIM_WITH_XAPIAN
 };
 

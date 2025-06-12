@@ -290,7 +290,10 @@ private:
   std::string m_querySuffix;
 };
 
-using namespace suggestions;
+} // unnamed namespace
+
+namespace suggestions
+{
 
 #if defined(LIBZIM_WITH_XAPIAN) && ! defined(_WIN32)
 #define ENABLE_SPELLINGSDB
@@ -361,6 +364,15 @@ std::vector<std::string> SpellingsDB::getSpellingCorrections(const std::string& 
 }
 #endif // ENABLE_SPELLINGSDB
 
+} // namespace suggestions
+
+SuggestionDataBase::~SuggestionDataBase() = default;
+
+namespace
+{
+
+using namespace suggestions;
+
 bool isXapianTermPrefix(unsigned char c) {
   return 'A' <= c && c <= 'Z';
 }
@@ -407,22 +419,25 @@ TermCollection getTermCompletions(const SuggestionDataBase& db,
   return result;
 }
 
-std::vector<std::string> getSpellingCorrections(const SuggestionDataBase& db,
+} // unnamed namespace
+
+std::vector<std::string> SuggestionDataBase::getSpellingCorrections(
                                                 const std::string& word,
-                                                uint32_t maxCount)
+                                                uint32_t maxCount) const
 {
 #ifdef ENABLE_SPELLINGSDB
-  if ( db.hasDatabase() ) {
-    const TermCollection& allTerms = db.getAllSuggestionTerms();
-    const SpellingsDB sdb(allTerms);
-    return sdb.getSpellingCorrections(word, maxCount);
+  if ( this->hasDatabase() ) {
+    std::lock_guard<std::mutex> locker(m_spellingsDBMutex);
+    if ( !m_spellingsDB ) {
+      const TermCollection& allTerms = this->getAllSuggestionTerms();
+      m_spellingsDB.reset(new SpellingsDB(allTerms));
+    }
+    return m_spellingsDB->getSpellingCorrections(word, maxCount);
   }
 #endif // ENABLE_SPELLINGSDB
 
   return {};
 }
-
-} // unnamed namespace
 
 const TermCollection& SuggestionDataBase::getAllSuggestionTerms() const
 {
@@ -459,7 +474,7 @@ SuggestionSearch::Results SuggestionSearch::getSpellingSuggestions(uint32_t maxC
 
   SuggestionSearch::Results r;
   if ( !queryInfo.wordBeingEdited().empty() ) {
-    const auto terms = getSpellingCorrections(*mp_internalDb, queryInfo.wordBeingEdited(), maxCount);
+    const auto terms = mp_internalDb->getSpellingCorrections(queryInfo.wordBeingEdited(), maxCount);
 
     for (const auto& t : terms) {
       const auto suggestion = queryInfo.spellingSuggestion(t);
