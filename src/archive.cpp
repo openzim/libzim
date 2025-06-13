@@ -233,6 +233,32 @@ namespace zim
     return ret;
   }
 
+  Archive::Illustrations Archive::getIllustrations() const {
+    Illustrations r;
+    for(auto e = m_impl->findx('M', "Illustration_").second; ; ++e ) {
+      try {
+        const auto path = getEntryByPath(entry_index_type(e)).getPath();
+        if (path.find("Illustration_") != 0) {
+          break;
+        }
+        try {
+          r.push_back(zim::IllustrationInfo::fromMetadataItemName(path));
+        } catch (...) {}
+      } catch (const std::out_of_range& e) {
+        break;
+      }
+    }
+    const IllustrationInfo faviconLikeIllustration{48, 48, 1.0, {}};
+    if (std::find(r.begin(), r.end(), faviconLikeIllustration) == r.end()) {
+      try {
+        // raise a exception if we cannot find the (old format) favicon.
+        findFavicon(*m_impl);
+        r.push_back(faviconLikeIllustration);
+      } catch(EntryNotFound&) {}
+    }
+    return r;
+  }
+
   bool Archive::hasIllustration(unsigned int size) const {
     try {
       getIllustrationItem(size);
