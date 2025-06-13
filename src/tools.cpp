@@ -21,6 +21,7 @@
 
 #include "tools.h"
 #include "zim/tools.h"
+#include "zim/illustration.h"
 #include "fs.h"
 #include "writer/_dirent.h"
 
@@ -113,6 +114,26 @@ unsigned int zim::parseIllustrationPathToSize(const std::string& s)
   if ( sscanf(s.c_str(), "Illustration_%n%ldx%n%ld@1%n)", &nw, &w, &nh, &h, &nEnd) == 2
      && (size_t)nEnd == s.size() && !isspace(s[nw]) && !isspace(s[nh]) && w == h && w >= 0) {
     return (unsigned int)w;
+  }
+  throw std::runtime_error("");
+}
+
+zim::IllustrationInfo zim::IllustrationInfo::fromMetadataItemName(const std::string& s)
+{
+  int nw(0), nh(0), ns(0), nEnd(0);
+  long int w(-1), h(-1);
+  float scale(0);
+
+  const char fmt[] = "Illustration_%n%ldx%n%ld@%n%f%n";
+  if ( sscanf(s.c_str(), fmt, &nw, &w, &nh, &h, &ns, &scale, &nEnd) == 3
+     && (size_t)nEnd == s.size()
+     && !isspace(s[nw])
+     && !isspace(s[nh])
+     && !isspace(s[ns])
+     && w >= 0
+     && h >= 0
+     && scale >= 0 ) {
+    return IllustrationInfo{uint32_t(w), uint32_t(h), scale, {}};
   }
   throw std::runtime_error("");
 }
