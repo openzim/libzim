@@ -200,6 +200,13 @@ TEST_F(ZimArchive, openCreatedArchive)
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
   ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
+  ASSERT_EQ(archive.getIllustrationInfos(), zim::Archive::IllustrationInfos({
+              {48, 48, 1.0, {}},
+              {96, 96, 1.0, {}},
+  }));
+  ASSERT_EQ(archive.getIllustrationInfos(48, 48, 1), zim::Archive::IllustrationInfos({
+              {48, 48, 1.0, {}},
+  }));
   ASSERT_TRUE(archive.hasMainEntry());
 
   ASSERT_EQ(archive.getMetadata("Title"), "This is a title");
@@ -612,6 +619,9 @@ TEST_F(ZimArchive, illustration)
         ASSERT_EQ(illustrationItem.getPath(), "Illustration_48x48@1") << ctx;
       }
       ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48}));
+      ASSERT_EQ(archive.getIllustrationInfos(), zim::Archive::IllustrationInfos({
+                  {48, 48, 1.0, {}},
+      }));
     }
   }
 }
