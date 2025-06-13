@@ -111,7 +111,7 @@ unsigned int zim::parseIllustrationPathToSize(const std::string& s)
 {
   int nw(0), nh(0), nEnd(0);
   long int w(-1), h(-1);
-  if ( sscanf(s.c_str(), "Illustration_%n%ldx%n%ld@1%n)", &nw, &w, &nh, &h, &nEnd) == 2
+  if ( sscanf(s.c_str(), "Illustration_%n%ldx%n%ld@1%n", &nw, &w, &nh, &h, &nEnd) == 2
      && (size_t)nEnd == s.size() && !isspace(s[nw]) && !isspace(s[nh]) && w == h && w >= 0) {
     return (unsigned int)w;
   }
