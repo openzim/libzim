@@ -5,6 +5,7 @@ install_headers(
     'archive.h',
     'blob.h',
     'error.h',
+    'illustration.h',
     'item.h',
     'entry.h',
     'uuid.h',
