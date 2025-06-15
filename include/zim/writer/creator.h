@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <zim/zim.h>
+#include <zim/illustration.h>
 #include <zim/writer/item.h>
 
 namespace zim
@@ -160,6 +161,24 @@ namespace zim
          *                 Only used to detect if the metadata must be compressed.
          */
         void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype = "text/plain;charset=utf-8");
+
+        /**
+         * Add illustration to the archive.
+         *
+         * @param ii parameters of the illustration.
+         * @param content the content of the illustration (must be a png
+         *        content)
+         */
+        void addIllustration(const IllustrationInfo& ii, const std::string& content);
+
+        /**
+         * Add illustration to the archive.
+         *
+         * @param ii parameters of the illustration.
+         * @param provider the provider of the content of the illustration
+         *        (must be a png content)
+         */
+        void addIllustration(const IllustrationInfo& ii, std::unique_ptr<ContentProvider> provider);
 
         /**
          * Add illustration to the archive.
