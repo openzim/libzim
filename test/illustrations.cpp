@@ -33,10 +33,11 @@ TEST(Illustrations, parsingOfValidInput)
 
   CHECK("Illustration_0x0@1",   ({  0,  0, 1.0, {} }) );
   CHECK("Illustration_1x1@1",   ({  1,  1, 1.0, {} }) );
-  CHECK("Illustration_01x01@1", ({  1,  1, 1.0, {} }) );
   CHECK("Illustration_64x64@1", ({ 64, 64, 1.0, {} }) );
   CHECK("Illustration_64x64@2", ({ 64, 64, 2.0, {} }) );
   CHECK("Illustration_64x48@2", ({ 64, 48, 2.0, {} }) );
+  CHECK("Illustration_64x64@1;ui=dark", ({ 64, 64, 1.0, {{"ui", "dark"}} }));
+  CHECK("Illustration_48x64@1.5;lang=fr;ui=dark", ({ 48, 64, 1.5, {{"lang", "fr"}, {"ui", "dark"}} }));
 #undef CHECK
 }
 
@@ -46,10 +47,11 @@ TEST(Illustrations, parsingOfInvalidInput)
   ASSERT_THROW(zim::IllustrationInfo::fromMetadataItemName(str), \
                std::runtime_error)
 
+  CHECK_PARSING_OF_INVALID_INPUT("Illustration_01x01@1");
+  CHECK_PARSING_OF_INVALID_INPUT("Illustration_48x48@1;");
   CHECK_PARSING_OF_INVALID_INPUT("Illstration_64x64@1");
   CHECK_PARSING_OF_INVALID_INPUT("Illstration_");
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_64x@1");
-  CHECK_PARSING_OF_INVALID_INPUT("Illustration_64x64@1;scheme=light");
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_64x");
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_64x64");
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_-32x-32@1");
@@ -57,6 +59,8 @@ TEST(Illustrations, parsingOfInvalidInput)
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_64x 64@1");
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_ 64x 64@1");
   CHECK_PARSING_OF_INVALID_INPUT("Illustration_1 28x1 28@1");
+  CHECK_PARSING_OF_INVALID_INPUT("Illustration_48x64@1.5000");
+  CHECK_PARSING_OF_INVALID_INPUT("Illustration_48x64@1.5;ui=dark;lang=fr");
 
 #undef CHECK_PARSING_OF_INVALID_INPUT
 }

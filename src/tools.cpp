@@ -128,24 +128,45 @@ std::string zim::IllustrationInfo::asMetadataItemName() const
   return oss.str();
 }
 
+zim::Attributes zim::Attributes::parse(const std::string& s)
+{
+  zim::Attributes a;
+  for (const std::string& nameAndValue : split(s, ";") ) {
+    const auto i = nameAndValue.find('=');
+    const std::string name = nameAndValue.substr(0, i);
+    const std::string value = i == std::string::npos
+                            ? ""
+                            : nameAndValue.substr(i+1);
+    a[name] = value;
+  }
+  return a;
+}
+
 zim::IllustrationInfo zim::IllustrationInfo::fromMetadataItemName(const std::string& s)
 {
   int nw(0), nh(0), ns(0), nEnd(0);
   long int w(-1), h(-1);
   float scale(0);
 
-  const char fmt[] = "Illustration_%n%ldx%n%ld@%n%f%n";
-  if ( sscanf(s.c_str(), fmt, &nw, &w, &nh, &h, &ns, &scale, &nEnd) == 3
-     && (size_t)nEnd == s.size()
-     && !isspace(s[nw])
-     && !isspace(s[nh])
-     && !isspace(s[ns])
-     && w >= 0
-     && h >= 0
-     && scale >= 0 ) {
-    return IllustrationInfo{uint32_t(w), uint32_t(h), scale, {}};
+  const char fmt[] = "Illustration_%n%ldx%n%ld@%n%f%n;";
+  if ( sscanf(s.c_str(), fmt, &nw, &w, &nh, &h, &ns, &scale, &nEnd) != 3
+     || isspace(s[nw])
+     || isspace(s[nh])
+     || isspace(s[ns])
+     || w < 0
+     || h < 0
+     || scale < 0
+     || (size_t(nEnd) != s.size() && s[nEnd] != ';') ) {
+    throw std::runtime_error("Invalid name of illustration metadata item");
   }
-  throw std::runtime_error("");
+
+  const auto attrStart = std::min(s.size(), size_t(nEnd) + 1);
+  const auto attributes = Attributes::parse(s.substr(attrStart));
+  const auto ii = IllustrationInfo{uint32_t(w), uint32_t(h), scale, attributes};
+  if ( ii.asMetadataItemName() != s ) {
+    throw std::runtime_error("Invalid name of illustration metadata item");
+  }
+  return ii;
 }
 
 uint32_t zim::randomNumber(uint32_t max)
