@@ -118,6 +118,16 @@ unsigned int zim::parseIllustrationPathToSize(const std::string& s)
   throw std::runtime_error("");
 }
 
+std::string zim::IllustrationInfo::asMetadataItemName() const
+{
+  std::ostringstream oss;
+  oss << "Illustration_" << width << "x" << height << "@" << scale;
+  for ( const auto& kv : extraAttributes ) {
+    oss << ";" << kv.first << "=" << kv.second;
+  }
+  return oss.str();
+}
+
 zim::IllustrationInfo zim::IllustrationInfo::fromMetadataItemName(const std::string& s)
 {
   int nw(0), nh(0), ns(0), nEnd(0);
