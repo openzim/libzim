@@ -179,8 +179,8 @@ TEST_F(ZimArchive, openCreatedArchive)
   item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content", IsFrontArticle::NO);
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
-  creator.addIllustration(48, "PNGBinaryContent48");
-  creator.addIllustration(96, "PNGBinaryContent96");
+  creator.addIllustration(zim::IllustrationInfo{48, 48, 1, {}}, "PNGBinaryContent48");
+  creator.addIllustration(zim::IllustrationInfo{96, 96, 1, {}}, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
