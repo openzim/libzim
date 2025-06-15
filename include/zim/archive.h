@@ -340,6 +340,18 @@ namespace zim
        */
       std::vector<std::string> getMetadataKeys() const;
 
+      /** Get the illustration item of the archive with specified parameters.
+       *
+       *  Illustration is an icon for the archive that can be used in catalog
+       *  and so to illustrate the archive.
+       *
+       *  @param ii parameters of the requested illustration.
+       *  @return The illustration item.
+       *  @exception EntryNotFound If no illustration item with specified
+       *             parameters can be found.
+       */
+      Item getIllustrationItem(const IllustrationInfo& ii) const;
+
       /** Get the illustration item of the archive.
        *
        *  Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
