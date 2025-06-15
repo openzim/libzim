@@ -38,6 +38,8 @@ public:
   Attributes(const std::initializer_list<ImplType::value_type>& x)
     : ImplType(x)
   {}
+
+  static Attributes parse(const std::string& s);
 };
 
 /**
@@ -49,8 +51,6 @@ struct LIBZIM_API IllustrationInfo
   uint32_t height; // in CSS pixels
   float    scale;  // devicePixelRatio value of the targeted display media
   Attributes extraAttributes; // additional attributes of the illustration
-                              // (not used yet but introduced beforehand in
-                              // order to avoid an ABI change later)
 
   std::string asMetadataItemName() const;
   static IllustrationInfo fromMetadataItemName(const std::string& s);
