@@ -20,6 +20,7 @@
 #define ZIM_PRIVATE
 #include <zim/zim.h>
 #include <zim/archive.h>
+#include <zim/illustration.h>
 #include <zim/item.h>
 #if defined(ENABLE_XAPIAN)
 #include <zim/search.h>
@@ -219,13 +220,13 @@ TEST_F(ZimArchive, openCreatedArchive)
 
   ASSERT_EQ(archive.getMetadata("Counter"), "text/html=2");
 
-  auto illu48 = archive.getIllustrationItem(48);
+  auto illu48 = archive.getIllustrationItem(zim::IllustrationInfo{48, 48, 1.0, {}});
   ASSERT_EQ(illu48.getPath(), "Illustration_48x48@1");
   ASSERT_EQ(std::string(illu48.getData()), "PNGBinaryContent48");
   auto illu48Meta = archive.getMetadataItem(illu48.getPath());
   ASSERT_EQ(std::string(illu48Meta.getData()), "PNGBinaryContent48");
   ASSERT_EQ(illu48Meta.getMimetype(), "image/png");
-  auto illu96 = archive.getIllustrationItem(96);
+  auto illu96 = archive.getIllustrationItem(zim::IllustrationInfo{96, 96, 1.0, {}});
   ASSERT_EQ(illu96.getPath(), "Illustration_96x96@1");
   ASSERT_EQ(std::string(illu96.getData()), "PNGBinaryContent96");
 
