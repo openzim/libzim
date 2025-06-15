@@ -24,6 +24,7 @@
 
 #include "zim.h"
 #include "entry.h"
+#include "illustration.h"
 #include "uuid.h"
 
 #include <string>
@@ -101,6 +102,7 @@ namespace zim
     public:
       template<EntryOrder order> class EntryRange;
       template<EntryOrder order> class iterator;
+      typedef std::vector<IllustrationInfo> Illustrations;
 
       /** Archive constructor.
        *
@@ -338,6 +340,18 @@ namespace zim
        */
       std::vector<std::string> getMetadataKeys() const;
 
+      /** Get the illustration item of the archive with specified parameters.
+       *
+       *  Illustration is an icon for the archive that can be used in catalog
+       *  and so to illustrate the archive.
+       *
+       *  @param ii parameters of the requested illustration.
+       *  @return The illustration item.
+       *  @exception EntryNotFound If no illustration item with specified
+       *             parameters can be found.
+       */
+      Item getIllustrationItem(const IllustrationInfo& ii) const;
+
       /** Get the illustration item of the archive.
        *
        *  Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
@@ -357,6 +371,13 @@ namespace zim
        * @return A set of size.
        */
       std::set<unsigned int> getIllustrationSizes() const;
+
+
+      /** Return the list of available illustations in the archive.
+       *
+       * @return A vector of IllustrationInfo data.
+       */
+      Illustrations getIllustrations() const;
 
 
       /** Get an entry using its "path" index.

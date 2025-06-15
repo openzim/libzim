@@ -181,24 +181,16 @@ namespace zim
   }
 
   Item Archive::getIllustrationItem(unsigned int size) const {
-    auto r = m_impl->findx('M', Formatter() << "Illustration_" << size << "x"
-                                            << size << "@" << 1);
+    return Archive::getIllustrationItem(IllustrationInfo{size, size, 1.0, {}});
+  }
+
+  Item Archive::getIllustrationItem(const IllustrationInfo& ii) const {
+    auto r = m_impl->findx('M', ii.asMetadataItemName());
     if (r.first) {
       return getEntryByPath(entry_index_type(r.second)).getItem();
     }
-    // We haven't found the exact entry. Let's "search" for a illustration and
-    // use the first one we found.
-#if 0
-    // We have decided to not implement fallback in case of wrong resolution for now.
-    // We keep this code for reference.
-    r = m_impl->findx('M', "Illustration");
-    auto entry = getEntryByPath(entry_index_type(r.second));
-    if (entry.getPath().find("Illustration") == 0) {
-      return entry.getItem();
-    }
-#endif
     // For 48x48 illustration, return favicon for older zims.
-    if (size == 48) {
+    if ( ii == IllustrationInfo{48, 48, 1.0, {}} ) {
       auto r = findFavicon(*m_impl);
       return getEntryByPath(entry_index_type(r.second)).getItem(true);
     }
@@ -231,6 +223,32 @@ namespace zim
       } catch(EntryNotFound&) {}
     }
     return ret;
+  }
+
+  Archive::Illustrations Archive::getIllustrations() const {
+    Illustrations r;
+    for(auto e = m_impl->findx('M', "Illustration_").second; ; ++e ) {
+      try {
+        const auto path = getEntryByPath(entry_index_type(e)).getPath();
+        if (path.find("Illustration_") != 0) {
+          break;
+        }
+        try {
+          r.push_back(zim::IllustrationInfo::fromMetadataItemName(path));
+        } catch (...) {}
+      } catch (const std::out_of_range& e) {
+        break;
+      }
+    }
+    const IllustrationInfo faviconLikeIllustration{48, 48, 1.0, {}};
+    if (std::find(r.begin(), r.end(), faviconLikeIllustration) == r.end()) {
+      try {
+        // raise a exception if we cannot find the (old format) favicon.
+        findFavicon(*m_impl);
+        r.push_back(faviconLikeIllustration);
+      } catch(EntryNotFound&) {}
+    }
+    return r;
   }
 
   bool Archive::hasIllustration(unsigned int size) const {

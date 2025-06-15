@@ -21,6 +21,7 @@
 
 #include "tools.h"
 #include "zim/tools.h"
+#include "zim/illustration.h"
 #include "fs.h"
 #include "writer/_dirent.h"
 
@@ -110,11 +111,62 @@ unsigned int zim::parseIllustrationPathToSize(const std::string& s)
 {
   int nw(0), nh(0), nEnd(0);
   long int w(-1), h(-1);
-  if ( sscanf(s.c_str(), "Illustration_%n%ldx%n%ld@1%n)", &nw, &w, &nh, &h, &nEnd) == 2
+  if ( sscanf(s.c_str(), "Illustration_%n%ldx%n%ld@1%n", &nw, &w, &nh, &h, &nEnd) == 2
      && (size_t)nEnd == s.size() && !isspace(s[nw]) && !isspace(s[nh]) && w == h && w >= 0) {
     return (unsigned int)w;
   }
   throw std::runtime_error("");
+}
+
+std::string zim::IllustrationInfo::asMetadataItemName() const
+{
+  std::ostringstream oss;
+  oss << "Illustration_" << width << "x" << height << "@" << scale;
+  for ( const auto& kv : extraAttributes ) {
+    oss << ";" << kv.first << "=" << kv.second;
+  }
+  return oss.str();
+}
+
+zim::Attributes zim::Attributes::parse(const std::string& s)
+{
+  zim::Attributes a;
+  for (const std::string& nameAndValue : split(s, ";") ) {
+    const auto i = nameAndValue.find('=');
+    const std::string name = nameAndValue.substr(0, i);
+    const std::string value = i == std::string::npos
+                            ? ""
+                            : nameAndValue.substr(i+1);
+    a[name] = value;
+  }
+  return a;
+}
+
+zim::IllustrationInfo zim::IllustrationInfo::fromMetadataItemName(const std::string& s)
+{
+  int nw(0), nh(0), ns(0), nEnd(0);
+  long int w(-1), h(-1);
+  float scale(0);
+
+  const char fmt[] = "Illustration_%n%ldx%n%ld@%n%f%n;";
+  if ( sscanf(s.c_str(), fmt, &nw, &w, &nh, &h, &ns, &scale, &nEnd) != 3
+     || isspace(s[nw])
+     || isspace(s[nh])
+     || isspace(s[ns])
+     || w < 0
+     || h < 0
+     || scale < 0
+     || (size_t(nEnd) != s.size() && s[nEnd] != ';') ) {
+    throw std::runtime_error("Invalid name of illustration metadata item");
+  }
+
+  const auto attrStart = std::min(s.size(), size_t(nEnd) + 1);
+  const auto attributes = Attributes::parse(s.substr(attrStart));
+  const auto ii = IllustrationInfo{uint32_t(w), uint32_t(h), scale, attributes};
+  if ( ii.asMetadataItemName() != s ) {
+    throw std::runtime_error("Invalid name of illustration metadata item");
+  }
+  return ii;
 }
 
 uint32_t zim::randomNumber(uint32_t max)
