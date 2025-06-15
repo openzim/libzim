@@ -61,4 +61,27 @@ TEST(Illustrations, parsingOfInvalidInput)
 #undef CHECK_PARSING_OF_INVALID_INPUT
 }
 
+TEST(Illustrations, asMetadataItemName)
+{
+  ASSERT_EQ(zim::IllustrationInfo({ 64, 64, 1.0, {} }).asMetadataItemName(),
+            "Illustration_64x64@1");
+
+  ASSERT_EQ(zim::IllustrationInfo({ 64, 64, 2.0, {} }).asMetadataItemName(),
+            "Illustration_64x64@2");
+
+  ASSERT_EQ(zim::IllustrationInfo({ 64, 48, 2.0, {} }).asMetadataItemName(),
+            "Illustration_64x48@2");
+
+  zim::Attributes attr;
+  attr["uischeme"] = "dark";
+
+  ASSERT_EQ(zim::IllustrationInfo({ 64, 48, 2.0, attr }).asMetadataItemName(),
+            "Illustration_64x48@2;uischeme=dark");
+
+  attr["colorscheme"] = "monochrome";
+
+  ASSERT_EQ(zim::IllustrationInfo({ 64, 48, 2.0, attr }).asMetadataItemName(),
+            "Illustration_64x48@2;colorscheme=monochrome;uischeme=dark");
+}
+
 } // unnamed namespace

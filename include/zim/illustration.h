@@ -52,6 +52,7 @@ struct LIBZIM_API IllustrationInfo
                               // (not used yet but introduced beforehand in
                               // order to avoid an ABI change later)
 
+  std::string asMetadataItemName() const;
   static IllustrationInfo fromMetadataItemName(const std::string& s);
 };
 
