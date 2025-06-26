@@ -370,7 +370,7 @@ namespace zim
        *
        * @return A set of size.
        */
-      std::set<unsigned int> getIllustrationSizes() const;
+      DEPRECATED std::set<unsigned int> getIllustrationSizes() const;
 
 
       /** Return the list of available illustrations in the archive.
