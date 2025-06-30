@@ -45,18 +45,30 @@ DirentHandler::Dirents CounterHandler::createDirents() const {
 }
 
 DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
-  ContentProviders ret;
-  Formatter fmt;
-  bool first = true;
-  for(auto pair: m_mimetypeCounter) {
-    if (! first) {
-      fmt << ";";
+    ContentProviders ret;
+    Formatter fmt;
+    bool first = true;
+
+    // Only allow well-formed mime types: type/subtype
+    std::regex validMimeRegex("^[a-zA-Z0-9._+-]+/[a-zA-Z0-9._+-]+$");
+
+    for (const auto& pair : m_mimetypeCounter) {
+        const auto& mimetype = pair.first;
+        const auto& count = pair.second;
+
+        if (!std::regex_match(mimetype, validMimeRegex)) {
+            continue; // Skip invalid format
+        }
+
+        if (!first) {
+            fmt << ";";
+        }
+        fmt << mimetype << "=" << count;
+        first = false;
     }
-    fmt << pair.first << "=" << pair.second;
-    first = false;
-  }
-  ret.push_back(std::unique_ptr<ContentProvider>(new StringProvider(fmt)));
-  return ret;
+
+    ret.push_back(std::unique_ptr<ContentProvider>(new StringProvider(fmt)));
+    return ret;
 }
 
 void CounterHandler::handle(Dirent* dirent, const Hints& hints)
@@ -65,12 +77,27 @@ void CounterHandler::handle(Dirent* dirent, const Hints& hints)
 
 void CounterHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  if (dirent->getNamespace() != NS::C) {
-    return;
-  }
-  auto mimetype = item->getMimeType();
-  if (mimetype.empty()) {
-    return;
-  }
-  m_mimetypeCounter[mimetype] += 1;
+    if (dirent->getNamespace() != NS::C) {
+        return;
+    }
+
+    auto mimetype = item->getMimeType();
+    if (mimetype.empty()) {
+        return;
+    }
+
+    // Strip parameters after semicolon
+    auto semicolonPos = mimetype.find(';');
+    if (semicolonPos != std::string::npos) {
+        mimetype = mimetype.substr(0, semicolonPos);
+    }
+
+    // Trim whitespace (optional, based on zim::tools::trim)
+    zim::tools::trim(mimetype);
+
+    if (mimetype.empty()) {
+        return;
+    }
+
+    m_mimetypeCounter[mimetype] += 1;
 }
