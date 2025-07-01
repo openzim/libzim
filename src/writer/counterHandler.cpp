@@ -19,7 +19,7 @@
 
 #include "counterHandler.h"
 #include "creatordata.h"
-
+#include <regex>
 #include <zim/writer/contentProvider.h>
 #include <zim/blob.h>
 #include <zim/tools.h>
