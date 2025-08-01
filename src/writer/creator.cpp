@@ -182,18 +182,27 @@ namespace zim
       data->handle(dirent);
     }
 
-    void Creator::addIllustration(unsigned int size, const std::string& content)
+    void Creator::addIllustration(const IllustrationInfo& ii, const std::string& content)
     {
       checkError();
       auto provider = std::unique_ptr<ContentProvider>(new StringProvider(content));
-      addIllustration(size, std::move(provider));
+      addIllustration(ii, std::move(provider));
+    }
+
+    void Creator::addIllustration(const IllustrationInfo& ii, std::unique_ptr<ContentProvider> provider)
+    {
+      checkError();
+      addMetadata(ii.asMetadataItemName(), std::move(provider), "image/png");
+    }
+
+    void Creator::addIllustration(unsigned int size, const std::string& content)
+    {
+      addIllustration(IllustrationInfo{size, size, 1, {}}, content);
     }
 
     void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider)
     {
-      checkError();
-      addMetadata(Formatter() << "Illustration_" << size << "x" << size << "@1",
-                  std::move(provider), "image/png");
+      addIllustration(IllustrationInfo{size, size, 1, {}}, std::move(provider));
     }
 
     void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)

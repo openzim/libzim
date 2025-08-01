@@ -20,6 +20,7 @@
 #define ZIM_PRIVATE
 #include <zim/zim.h>
 #include <zim/archive.h>
+#include <zim/illustration.h>
 #include <zim/item.h>
 #if defined(ENABLE_XAPIAN)
 #include <zim/search.h>
@@ -178,8 +179,8 @@ TEST_F(ZimArchive, openCreatedArchive)
   item = std::make_shared<TestItem>("foo2", "text/html", "AFoo", "Foo2Content", IsFrontArticle::NO);
   creator.addItem(item);
   creator.addMetadata("Title", "This is a title");
-  creator.addIllustration(48, "PNGBinaryContent48");
-  creator.addIllustration(96, "PNGBinaryContent96");
+  creator.addIllustration(zim::IllustrationInfo{48, 48, 1, {}}, "PNGBinaryContent48");
+  creator.addIllustration(zim::IllustrationInfo{96, 96, 1, {}}, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
@@ -199,7 +200,13 @@ TEST_F(ZimArchive, openCreatedArchive)
   ASSERT_EQ(archive.getArticleCount(), 1U);
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
-  ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48, 96}));
+  ASSERT_EQ(archive.getIllustrationInfos(), zim::Archive::IllustrationInfos({
+              {48, 48, 1.0, {}},
+              {96, 96, 1.0, {}},
+  }));
+  ASSERT_EQ(archive.getIllustrationInfos(48, 48, 1), zim::Archive::IllustrationInfos({
+              {48, 48, 1.0, {}},
+  }));
   ASSERT_TRUE(archive.hasMainEntry());
 
   ASSERT_EQ(archive.getMetadata("Title"), "This is a title");
@@ -212,13 +219,13 @@ TEST_F(ZimArchive, openCreatedArchive)
 
   ASSERT_EQ(archive.getMetadata("Counter"), "text/html=2");
 
-  auto illu48 = archive.getIllustrationItem(48);
+  auto illu48 = archive.getIllustrationItem(zim::IllustrationInfo{48, 48, 1.0, {}});
   ASSERT_EQ(illu48.getPath(), "Illustration_48x48@1");
   ASSERT_EQ(std::string(illu48.getData()), "PNGBinaryContent48");
   auto illu48Meta = archive.getMetadataItem(illu48.getPath());
   ASSERT_EQ(std::string(illu48Meta.getData()), "PNGBinaryContent48");
   ASSERT_EQ(illu48Meta.getMimetype(), "image/png");
-  auto illu96 = archive.getIllustrationItem(96);
+  auto illu96 = archive.getIllustrationItem(zim::IllustrationInfo{96, 96, 1.0, {}});
   ASSERT_EQ(illu96.getPath(), "Illustration_96x96@1");
   ASSERT_EQ(std::string(illu96.getData()), "PNGBinaryContent96");
 
@@ -611,7 +618,9 @@ TEST_F(ZimArchive, illustration)
       } else {
         ASSERT_EQ(illustrationItem.getPath(), "Illustration_48x48@1") << ctx;
       }
-      ASSERT_EQ(archive.getIllustrationSizes(), std::set<unsigned int>({48}));
+      ASSERT_EQ(archive.getIllustrationInfos(), zim::Archive::IllustrationInfos({
+                  {48, 48, 1.0, {}},
+      }));
     }
   }
 }
