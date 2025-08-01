@@ -166,13 +166,13 @@ jobs:
           - false
         include:
           - target: linux-x86_64-static
-            image_variant: focal
+            image_variant: jammy
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: linux-x86_64
             run_test: true
             coverage: true
           - target: linux-x86_64-dyn
-            image_variant: focal
+            image_variant: jammy
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: linux-x86_64
             run_test: true
@@ -184,25 +184,25 @@ jobs:
             run_test: true
             coverage: false
           - target: linux-aarch64-dyn
-            image_variant: focal
+            image_variant: jammy
             lib_postfix: '/aarch64-linux-gnu'
             arch_name: aarch64-linux-gnu
             run_test: false
             coverage: false
           - target: android-arm
-            image_variant: focal
+            image_variant: jammy
             lib_postfix: '/arm-linux-androideabi'
             arch_name: arm-linux-androideabi
             run_test: false
             coverage: false
           - target: android-arm64
-            image_variant: focal
+            image_variant: jammy
             lib_postfix: '/aarch64-linux-android'
             arch_name: aarch64-linux-android
             run_test: false
             coverage: false
           - target: wasm
-            image_variant: focal
+            image_variant: jammy
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: wasm64-emscripten
             run_test: false
@@ -211,7 +211,7 @@ jobs:
       HOME: /home/runner
     runs-on: ubuntu-22.04
     container:
-      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:2023-10-30"
+      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:2025-06-07"
 
     steps:
       - name: Harden Runner
