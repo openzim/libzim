@@ -695,13 +695,32 @@ TEST(Suggestion, CJK) {
   );
 }
 
+std::string makeLongWord(size_t n) {
+  std::ostringstream oss;
+  oss << "awordthatis" << n << "characterslong";
+  const std::string s = oss.str();
+  if ( s.size() > n )
+    throw std::runtime_error("That is not a request for a long enough word!");
+
+  return s + std::string(n - s.size(), s.back());
+}
+
 TEST(Suggestion, titleEdgeCases) {
+  const std::string w64 = makeLongWord(64);
+  const std::string w65 = makeLongWord(65);
+
   TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
      // { path     , title   }
 
         { "About"  , "About" }, // Title identical to path
         { "Trout"  , "trout" }, // Title differing from path in case only
         { "Without", ""      }, // No title
+                                //
+        // Titles containing long words
+        { "toolongword1",      "Is " + w64 + " too long?" },
+        { "toolongword2",      "Is " + w65 + " too long?" },
+        { "toolongsingleword1", w64                       },
+        { "toolongsingleword2", w65                       },
 
         // Non edge cases
         { "Stout",   "About Rex Stout" },
@@ -726,6 +745,19 @@ TEST(Suggestion, titleEdgeCases) {
 
   EXPECT_SUGGESTED_TITLES(archive, "hang"
       /* nothing */
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "long",
+      "Is " + w65 + " too long?",
+      "Is " + w64 + " too long?"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "awordthatis",
+      w65, // a very long word slips in when it is the only word of a title
+      w64,
+      "Is " + w64 + " too long?"
+      // "Is " + w65 + " too long?" isn't included because w65 has been ignored
+      //                            during indexing
   );
 }
 
