@@ -130,9 +130,12 @@ size_t getTermCount(const Xapian::Document& d)
 
 void XapianIndexer::indexTitle(const std::string& path, const std::string& title, const std::string& targetPath)
 {
+  const size_t MAX_WORD_LENGTH = 64;
+
   assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
   Xapian::TermGenerator indexer;
+  indexer.set_max_word_length(MAX_WORD_LENGTH);
   indexer.set_flags(Xapian::TermGenerator::FLAG_CJK_NGRAM);
   try {
     stemmer = Xapian::Stem(stemmer_language);
@@ -162,7 +165,9 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
       // only ANCHOR_TERM was added, hence unaccentedTitle is made solely of
       // non-word characters. Then add entire title as a single term.
       currentDocument.remove_term(*currentDocument.termlist_begin());
-      currentDocument.add_term(unaccentedTitle);
+      if ( unaccentedTitle.size() <= MAX_WORD_LENGTH ) {
+        currentDocument.add_term(unaccentedTitle);
+      }
     }
   }
 

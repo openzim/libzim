@@ -760,11 +760,10 @@ TEST(Suggestion, titleEdgeCases) {
   );
 
   EXPECT_SUGGESTION_RESULTS(archive, "awordthatis",
-      w65, // a very long word slips in when it is the only word of a title
       w64,
       "Is " + w64 + " too long?"
-      // "Is " + w65 + " too long?" isn't included because w65 has been ignored
-      //                            during indexing
+      // w65 and "Is " + w65 + " too long?" aren't included because w65 has
+      //                                    been ignored during indexing
   );
 }
 } // unnamed namespace
