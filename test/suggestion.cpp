@@ -694,6 +694,16 @@ TEST(Suggestion, CJK) {
   );
 }
 
+std::string makeLongWord(size_t n) {
+  std::ostringstream oss;
+  oss << "awordthatis" << n << "characterslong";
+  const std::string s = oss.str();
+  if ( s.size() > n )
+    throw std::runtime_error("That is not a request for a long enough word!");
+
+  return s + std::string(n - s.size(), s.back());
+}
+
 TEST(Suggestion, titleEdgeCases) {
   TempZimArchive tza("testZim");
   zim::writer::Creator creator;
@@ -708,6 +718,14 @@ TEST(Suggestion, titleEdgeCases) {
 
   // No title
   creator.addItem(makeHtmlItem("Without", ""));
+
+  // Titles containing long words
+  const std::string w64 = makeLongWord(64);
+  const std::string w65 = makeLongWord(65);
+  creator.addItem(makeHtmlItem("toolongword1", "Is " + w64 + " too long?"));
+  creator.addItem(makeHtmlItem("toolongword2", "Is " + w65 + " too long?"));
+  creator.addItem(makeHtmlItem("toolongsingleword1", w64));
+  creator.addItem(makeHtmlItem("toolongsingleword2", w65));
 
   // Non edge cases
   creator.addItem(makeHtmlItem("Stout", "About Rex Stout"));
@@ -734,6 +752,18 @@ TEST(Suggestion, titleEdgeCases) {
 
   EXPECT_SUGGESTION_RESULTS(archive, "hang"
       /* nothing */
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "long",
+      "Is " + w65 + " too long?",
+      "Is " + w64 + " too long?"
+  );
+
+  EXPECT_SUGGESTION_RESULTS(archive, "awordthatis",
+      w64,
+      "Is " + w64 + " too long?"
+      // w65 and "Is " + w65 + " too long?" aren't included because w65 has
+      //                                    been ignored during indexing
   );
 }
 } // unnamed namespace
