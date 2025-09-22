@@ -24,6 +24,7 @@
 
 #include "zim.h"
 #include "entry.h"
+#include "illustration.h"
 #include "uuid.h"
 
 #include <string>
@@ -101,6 +102,7 @@ namespace zim
     public:
       template<EntryOrder order> class EntryRange;
       template<EntryOrder order> class iterator;
+      typedef std::vector<IllustrationInfo> IllustrationInfos;
 
       /** Archive constructor.
        *
@@ -338,6 +340,18 @@ namespace zim
        */
       std::vector<std::string> getMetadataKeys() const;
 
+      /** Get the illustration item of the archive with specified parameters.
+       *
+       *  Illustration is an icon for the archive that can be used in catalog
+       *  and so to illustrate the archive.
+       *
+       *  @param ii parameters of the requested illustration.
+       *  @return The illustration item.
+       *  @exception EntryNotFound If no illustration item with specified
+       *             parameters can be found.
+       */
+      Item getIllustrationItem(const IllustrationInfo& ii) const;
+
       /** Get the illustration item of the archive.
        *
        *  Illustration is a icon for the archive that can be used in catalog and so to illustrate the archive.
@@ -348,7 +362,7 @@ namespace zim
        */
       Item getIllustrationItem(unsigned int size=48) const;
 
-      /** Return a list of available sizes (width) for the illustations in the archive.
+      /** Return a list of available sizes (width) for the illustrations in the archive.
        *
        * Illustration is an icon for the archive that can be used in catalog and elsewehere to illustrate the archive.
        * An Archive may contains several illustrations with different size.
@@ -356,7 +370,26 @@ namespace zim
        *
        * @return A set of size.
        */
-      std::set<unsigned int> getIllustrationSizes() const;
+      DEPRECATED std::set<unsigned int> getIllustrationSizes() const;
+
+
+      /** Return the list of available illustrations in the archive.
+       *
+       * @return A vector of IllustrationInfo data.
+       */
+      IllustrationInfos getIllustrationInfos() const;
+
+      /** Return the list of illustrations with the specified dimensions.
+       *
+       *  @param w width in CSS pixels
+       *  @param h height in CSS pixels
+       *  @param minScale lower limit on the devicePixelRatio value of the
+       *                  targeted display media. The result will include
+       *                  any entries with the scale value equal to or greater
+       *                  than this filter value.
+       * @return A vector of IllustrationInfo data.
+       */
+      IllustrationInfos getIllustrationInfos(uint32_t w, uint32_t h, float minScale) const;
 
 
       /** Get an entry using its "path" index.
