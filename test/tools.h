@@ -147,7 +147,7 @@ class TempZimArchive : zim::unittests::TempFile {
     explicit TempZimArchive(const char* tempPath) : zim::unittests::TempFile {tempPath} {}
     zim::Archive createZimFromTitles(std::vector<std::string> titles);
     zim::Archive createZimFromContent(std::vector<std::vector<std::string>> contents);
-    const std::string getPath();
+    const std::string getPath() const;
 };
 
 enum class IsFrontArticle {

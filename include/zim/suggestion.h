@@ -143,16 +143,19 @@ class LIBZIM_API SuggestionSearch
 };
 
 /**
- * The `SuggestionResultSet` represent a range of results corresponding to a `SuggestionSearch`.
+ * `SuggestionResultSet` represents a range of results corresponding to a
+ * `SuggestionSearch`.
  *
- * It mainly allows to get a iterator either based on an MSetIterator or a RangeIterator.
+ * Its purpose is to provide uniform interface for iterating over the suggestion
+ * results for various sources of suggestion data (Xapian title index or title
+ * ordered listing in the absence of the former).
  */
 class LIBZIM_API SuggestionResultSet
 {
-  public:
+  public: // types
     typedef SuggestionIterator iterator;
-    typedef Archive::EntryRange<EntryOrder::titleOrder> EntryRange;
 
+  public: // functions
     /** The begin iterator on the result range. */
     iterator begin() const;
 
@@ -162,12 +165,16 @@ class LIBZIM_API SuggestionResultSet
     /** The size of the SearchResult (end()-begin()) */
     int size() const;
 
-  private: // data
-    std::shared_ptr<SuggestionDataBase> mp_internalDb;
-    std::shared_ptr<EntryRange> mp_entryRange;
+  private: // types
+    typedef Archive::EntryRange<EntryOrder::titleOrder> EntryRange;
+    typedef std::shared_ptr<SuggestionDataBase> SuggestionDBPtr;
 
-  private:
-    SuggestionResultSet(EntryRange entryRange);
+  private: // functions
+    explicit SuggestionResultSet(EntryRange entryRange);
+
+  private: // data
+    SuggestionDBPtr mp_internalDb;
+    std::shared_ptr<EntryRange> mp_entryRange;
 
   friend class SuggestionSearch;
 
@@ -175,7 +182,7 @@ class LIBZIM_API SuggestionResultSet
 #if defined(LIBZIM_WITH_XAPIAN)
 
   private: // Xapian based methods
-    SuggestionResultSet(std::shared_ptr<SuggestionDataBase> p_internalDb, Xapian::MSet&& mset);
+    SuggestionResultSet(SuggestionDBPtr p_internalDb, Xapian::MSet&& mset);
 
   private: // Xapian based data
     std::shared_ptr<Xapian::MSet> mp_mset;
