@@ -34,6 +34,28 @@
 namespace zim
 {
 
+namespace suggestions
+{
+
+struct TermWithFreq
+{
+  std::string term;
+  uint32_t freq;
+
+  static bool freqPred(const TermWithFreq& t1, const TermWithFreq& t2) {
+    return t1.freq > t2.freq;
+  }
+
+  static bool dictionaryPred(const TermWithFreq& t1, const TermWithFreq& t2) {
+    return t1.term < t2.term;
+  }
+};
+
+typedef std::vector<TermWithFreq> TermCollection;
+class SpellingsDB;
+
+} // namespace suggestions
+
 /**
  * A class to encapsulate a xapian title index and it's archive and all the
  * information we can gather from it.
@@ -41,6 +63,11 @@ namespace zim
 class SuggestionDataBase {
   public: // methods
     SuggestionDataBase(const Archive& archive, bool verbose);
+    ~SuggestionDataBase();
+
+    const suggestions::TermCollection& getAllSuggestionTerms() const;
+    std::vector<std::string> getSpellingCorrections(const std::string& word,
+                                                    uint32_t maxCount) const;
 
   public: // data
     // The archive to get suggestions from.
@@ -51,6 +78,9 @@ class SuggestionDataBase {
 
   private: // data
     std::mutex m_mutex;
+
+    mutable std::mutex m_suggestionTermsMutex;
+    mutable suggestions::TermCollection m_suggestionTerms;
 
 #if defined(LIBZIM_WITH_XAPIAN)
 
@@ -77,6 +107,10 @@ class SuggestionDataBase {
 
   private:
     void initXapianDb();
+
+    mutable std::mutex m_spellingsDBMutex;
+    mutable std::unique_ptr<suggestions::SpellingsDB> m_spellingsDB;
+
 #endif  // LIBZIM_WITH_XAPIAN
 };
 

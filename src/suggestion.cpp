@@ -25,6 +25,7 @@
 #include "suggestion_internal.h"
 #include "fileimpl.h"
 #include "tools.h"
+#include "fs_unix.h"
 #include "constants.h"
 
 #if defined(ENABLE_XAPIAN)
@@ -198,9 +199,10 @@ void SuggestionSearcher::initDatabase()
   mp_internalDb = std::make_shared<SuggestionDataBase>(m_archive, m_verbose);
 }
 
-SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query)
- : mp_internalDb(p_internalDb),
-   m_query(query)
+SuggestionSearch::SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb,
+                                   const std::string& query)
+ : mp_internalDb(p_internalDb)
+ , m_query(query)
 #if defined(ENABLE_XAPIAN)
    , mp_enquire(nullptr)
 #endif  // ENABLE_XAPIAN
@@ -250,6 +252,173 @@ const SuggestionResultSet SuggestionSearch::getResults(int start, int maxResults
   auto entryRange = mp_internalDb->m_archive.findByTitle(m_query);
   entryRange = entryRange.offset(start, maxResults);
   return SuggestionResultSet(entryRange);
+}
+
+namespace
+{
+
+class QueryInfo
+{
+public:
+  explicit QueryInfo(const std::string& query)
+  {
+    // XXX: assuming that the query edit location (caret position) is at the end
+    const size_t lastSpacePos = query.find_last_of(' ');
+    const size_t startOfLastWord = lastSpacePos != std::string::npos
+                                 ? lastSpacePos + 1
+                                 : 0;
+    m_queryPrefix = query.substr(0, startOfLastWord);
+    m_wordToComplete = query.substr(startOfLastWord);
+    m_wordBeingEdited = m_wordToComplete;
+    m_querySuffix = "";
+  }
+
+  const std::string& wordBeingEdited() const { return m_wordBeingEdited; }
+
+  std::string spellingSuggestion(const std::string& correctedWord) const {
+    return m_queryPrefix + correctedWord + m_querySuffix;
+  }
+private:
+  std::string m_queryPrefix;
+  std::string m_wordToComplete;
+  std::string m_wordBeingEdited;
+  std::string m_querySuffix;
+};
+
+} // unnamed namespace
+
+namespace suggestions
+{
+
+#if defined(LIBZIM_WITH_XAPIAN) && ! defined(_WIN32)
+#define ENABLE_SPELLINGSDB
+#endif
+
+#ifdef ENABLE_SPELLINGSDB
+class SpellingsDB
+{
+public: // functions
+  explicit SpellingsDB(const TermCollection& terms);
+  ~SpellingsDB();
+
+  SpellingsDB(const SpellingsDB& ) = delete;
+  void operator=(const SpellingsDB& ) = delete;
+
+  std::vector<std::string> getSpellingCorrections(const std::string& word, uint32_t maxCount) const;
+
+private: // functions
+  static std::string createTempDir();
+
+private: // data
+  const std::string tmpDirPath_;
+  mutable Xapian::WritableDatabase impl_;
+};
+
+std::string SpellingsDB::createTempDir()
+{
+  char tmpDirPath[] = "/dev/shm/libzimspellingdb.XXXXXX";
+  if ( ! mkdtemp(tmpDirPath) ) {
+    throw std::runtime_error("SpellingsDB: mkdtemp() failed");
+  }
+  return tmpDirPath;
+}
+
+SpellingsDB::SpellingsDB(const TermCollection& terms)
+  : tmpDirPath_(createTempDir())
+  , impl_(tmpDirPath_ + "/spellingdb.xapian", Xapian::DB_BACKEND_GLASS)
+{
+  for (const auto& t : terms) {
+    impl_.add_spelling(t.term);
+  }
+}
+
+SpellingsDB::~SpellingsDB()
+{
+  unix::FS::remove(tmpDirPath_);
+}
+
+std::vector<std::string> SpellingsDB::getSpellingCorrections(const std::string& word, uint32_t maxCount) const {
+  if ( maxCount > 1 ) {
+    throw std::runtime_error("More than one spelling correction was requested");
+  }
+
+  std::vector<std::string> result;
+  const auto term = impl_.get_spelling_suggestion(word, 3);
+  if ( !term.empty() ) {
+    result.push_back(term);
+  }
+  return result;
+}
+#endif // ENABLE_SPELLINGSDB
+
+} // namespace suggestions
+
+SuggestionDataBase::~SuggestionDataBase() = default;
+
+namespace
+{
+
+using namespace suggestions;
+
+TermCollection getAllTerms(const SuggestionDataBase& db) {
+  TermCollection allTerms;
+
+#ifdef LIBZIM_WITH_XAPIAN
+  const Xapian::Database& titleDb = db.m_database;
+  for (Xapian::docid docid = 1; docid <= titleDb.get_lastdocid(); ++docid) {
+    const auto doc = titleDb.get_document(docid);
+    const auto title = doc.get_value(0);
+    allTerms.push_back(TermWithFreq{title, 1});
+  }
+#endif // LIBZIM_WITH_XAPIAN
+
+  std::sort(allTerms.begin(), allTerms.end(), TermWithFreq::dictionaryPred);
+  return allTerms;
+}
+
+} // unnamed namespace
+
+std::vector<std::string> SuggestionDataBase::getSpellingCorrections(
+                                                const std::string& word,
+                                                uint32_t maxCount) const
+{
+#ifdef ENABLE_SPELLINGSDB
+  if ( this->hasDatabase() ) {
+    std::lock_guard<std::mutex> locker(m_spellingsDBMutex);
+    if ( !m_spellingsDB ) {
+      const TermCollection& allTerms = this->getAllSuggestionTerms();
+      m_spellingsDB.reset(new SpellingsDB(allTerms));
+    }
+    return m_spellingsDB->getSpellingCorrections(word, maxCount);
+  }
+#endif // ENABLE_SPELLINGSDB
+
+  return {};
+}
+
+const TermCollection& SuggestionDataBase::getAllSuggestionTerms() const
+{
+  std::lock_guard<std::mutex> locker(m_suggestionTermsMutex);
+  if ( m_suggestionTerms.empty() ) {
+    m_suggestionTerms = getAllTerms(*this);
+  }
+  return m_suggestionTerms;
+}
+
+SuggestionSearch::Results SuggestionSearch::getSpellingSuggestions(uint32_t maxCount) const {
+  QueryInfo queryInfo(removeAccents(m_query));
+
+  SuggestionSearch::Results r;
+  if ( !queryInfo.wordBeingEdited().empty() ) {
+    const auto terms = mp_internalDb->getSpellingCorrections(queryInfo.wordBeingEdited(), maxCount);
+
+    for (const auto& t : terms) {
+      const auto suggestion = queryInfo.spellingSuggestion(t);
+      r.push_back(SuggestionItem("", "", suggestion));
+    }
+  }
+
+  return r;
 }
 
 const void SuggestionSearch::forceRangeSuggestion() {

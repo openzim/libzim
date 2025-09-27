@@ -97,12 +97,18 @@ class LIBZIM_API SuggestionSearcher
  */
 class LIBZIM_API SuggestionSearch
 {
-    public:
+    public: // types
+        typedef std::vector<SuggestionItem> Results;
+
+    public: // functions
         SuggestionSearch(SuggestionSearch&& s);
         SuggestionSearch& operator=(SuggestionSearch&& s);
         ~SuggestionSearch();
 
         /** Get a set of results for this search.
+         *
+         * Returns a subset of title suggestions for the requested range from
+         * the full set of results.
          *
          * @param start The begining of the range to get
          *              (offset of the first result).
@@ -111,14 +117,30 @@ class LIBZIM_API SuggestionSearch
          */
         const SuggestionResultSet getResults(int start, int maxResults) const;
 
-        /** Get the number of estimated results for this suggestion search.
+        /** Get spelling correction suggestions for this search.
          *
-         * As the name suggest, it is a estimation of the number of results.
+         * Returns spelling correction suggestions for the word containing the
+         * text edit location. In the current implementation, the text edit
+         * location is assumed to be at the end of the query string provided to
+         * the SuggestionSearch::suggest() method. In the future the text edit
+         * location will be indicated by a special code-point (e.g.
+         * carriage-return, form-feed or soft-hyphen) in the query string.
+         *
+         * @param maxCount The maximum number of results to return.
+         */
+        Results getSpellingSuggestions(uint32_t maxCount) const;
+
+        /** Get the estimated count of title matches for this suggestion search.
+         *
+         * As the name suggest, it is an estimation of the number of results.
+         * As a member of the initial API, the name of this method conceals
+         * the fact that only title suggestions are covered by it.
          */
         int getEstimatedMatches() const;
 
     private: // methods
-        SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb, const std::string& query);
+        SuggestionSearch(std::shared_ptr<SuggestionDataBase> p_internalDb,
+                         const std::string& query);
 
     private: // data
          std::shared_ptr<SuggestionDataBase> mp_internalDb;
