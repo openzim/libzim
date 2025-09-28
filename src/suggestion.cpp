@@ -406,7 +406,7 @@ const TermCollection& SuggestionDataBase::getAllSuggestionTerms() const
 }
 
 SuggestionSearch::Results SuggestionSearch::getSpellingSuggestions(uint32_t maxCount) const {
-  QueryInfo queryInfo(removeAccents(m_query));
+  QueryInfo queryInfo(m_query);
 
   SuggestionSearch::Results r;
   if ( !queryInfo.wordBeingEdited().empty() ) {

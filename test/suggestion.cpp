@@ -785,7 +785,7 @@ TEST(Suggestion, spellingSuggestions) {
       "Umweltstandard",
       "Unfug",
       "Wohnzimmer",
-      "Zunge"
+      "Zunge",
       "aber",
       "abonnieren",
       "amtieren",
