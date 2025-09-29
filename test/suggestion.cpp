@@ -838,7 +838,16 @@ TEST(Suggestion, spellingSuggestions) {
   EXPECT_SPELLING_CORRECTION(a, "beissen", 1, ({"beißen"}));
   EXPECT_SPELLING_CORRECTION(a, "Camera", 1, ({"Kamera"}));
   EXPECT_SPELLING_CORRECTION(a, "Kaos", 1, ({"Chaos"}));
-  EXPECT_SPELLING_CORRECTION(a, "Lax", 1, ({"Lachs"}));
+
+  // The spelling correction "Lax -> Lachs" is not returned because the max
+  // edit distance is capped at (length(query_word) - 1) which reduces our
+  // passed value of the max edit distance argument from 3 to 2. This
+  // change was brought by
+  // https://github.com/xapian/xapian/commit/0cbe35de5c392623388946e6769aa03f912fdde4
+  // and first appears in v1.4.19 release of Xapian.
+  //EXPECT_SPELLING_CORRECTION(a, "Lax", 1, ({"Lachs"}));
+  EXPECT_SPELLING_CORRECTION(a, "Lax", 1, ({}));
+
   EXPECT_SPELLING_CORRECTION(a, "Mont", 1, ({"Mond"}));
   EXPECT_SPELLING_CORRECTION(a, "Umweltstandart", 1, ({"Umweltstandard"}));
   EXPECT_SPELLING_CORRECTION(a, "seid", 1, ({"seit"}));
