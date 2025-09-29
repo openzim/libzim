@@ -23,7 +23,10 @@
 #include <zim/suggestion.h>
 #include <zim/item.h>
 
+#include <xapian.h>
+
 #include "tools.h"
+#include "../src/tools.h"
 
 #include "gtest/gtest.h"
 
@@ -33,7 +36,7 @@ using zim::unittests::TempZimArchive;
 using zim::unittests::TestItem;
 using zim::unittests::getDataFilePath;
 
-std::vector<std::string> getSuggestions(const zim::Archive archive, std::string query, int range) {
+std::vector<std::string> getSuggestedTitles(const zim::Archive archive, std::string query, int range) {
   zim::SuggestionSearcher suggestionSearcher(archive);
   suggestionSearcher.setVerbose(true);
   auto suggestionSearch = suggestionSearcher.suggest(query);
@@ -58,10 +61,10 @@ std::vector<std::string> getSnippet(const zim::Archive archive, std::string quer
   return snippets;
 }
 
-#define EXPECT_SUGGESTION_RESULTS(archive, query, ...)          \
-  ASSERT_EQ(                                                    \
-      getSuggestions(archive, query, archive.getEntryCount()),  \
-      std::vector<std::string>({__VA_ARGS__})                   \
+#define EXPECT_SUGGESTED_TITLES(archive, query, ...)               \
+  ASSERT_EQ(                                                       \
+      getSuggestedTitles(archive, query, archive.getEntryCount()), \
+      std::vector<std::string>({__VA_ARGS__})                      \
   )
 
 #define EXPECT_SNIPPET_EQ(archive, range, query, ...)           \
@@ -100,7 +103,7 @@ TEST(Suggestion, emptyQuery) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "", archive.getEntryCount());
+  std::vector<std::string> resultSet = getSuggestedTitles(archive, "", archive.getEntryCount());
   std::vector<std::string> expectedResult = {};
 
   ASSERT_EQ(resultSet, expectedResult);
@@ -119,7 +122,7 @@ TEST(Suggestion, noResult) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "none", archive.getEntryCount());
+  std::vector<std::string> resultSet = getSuggestedTitles(archive, "none", archive.getEntryCount());
   std::vector<std::string> expectedResult = {};
 
   ASSERT_EQ(resultSet, expectedResult);
@@ -138,7 +141,7 @@ TEST(Suggestion, singleTermOrder) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  EXPECT_SUGGESTION_RESULTS(archive, "berlin",
+  EXPECT_SUGGESTED_TITLES(archive, "berlin",
     "berlin",
     "berlin wall",
     "hotel berlin, berlin",
@@ -165,20 +168,20 @@ TEST(Suggestion, caseDiacriticsAndHomographsHandling) {
                                                  "uppercase BERLIN",
                                                };
 
-  ASSERT_EQ(getSuggestions(archive, "berlin", archive.getEntryCount()),
+  ASSERT_EQ(getSuggestedTitles(archive, "berlin", archive.getEntryCount()),
             expectedResult
   );
 
-  ASSERT_EQ(getSuggestions(archive, "BERLIN", archive.getEntryCount()),
+  ASSERT_EQ(getSuggestedTitles(archive, "BERLIN", archive.getEntryCount()),
             expectedResult
   );
 
-  ASSERT_EQ(getSuggestions(archive, "bêřlïñ", archive.getEntryCount()),
+  ASSERT_EQ(getSuggestedTitles(archive, "bêřlïñ", archive.getEntryCount()),
             expectedResult
   );
 
   // е in the query string "bеrlin" below is a cyrillic character
-  ASSERT_EQ(getSuggestions(archive, "bеrlin", archive.getEntryCount()),
+  ASSERT_EQ(getSuggestedTitles(archive, "bеrlin", archive.getEntryCount()),
             std::vector<std::string>{"homograph bеrlin"}
   );
 }
@@ -195,7 +198,7 @@ TEST(Suggestion, resultsGreaterThanLimit) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  std::vector<std::string> resultSet = getSuggestions(archive, "foobar", 2);
+  std::vector<std::string> resultSet = getSuggestedTitles(archive, "foobar", 2);
   std::vector<std::string> expectedResult = {
                                               "foobar a",
                                               "foobar b"
@@ -217,7 +220,7 @@ TEST(Suggestion, partialQuery) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  EXPECT_SUGGESTION_RESULTS(archive, "Wo",
+  EXPECT_SUGGESTED_TITLES(archive, "Wo",
     "Wolf",
     "Hour of the wolf",
     "The wolf of Shingashina",
@@ -238,7 +241,7 @@ TEST(Suggestion, phraseOrder) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  EXPECT_SUGGESTION_RESULTS(archive, "winter autumn summer",
+  EXPECT_SUGGESTED_TITLES(archive, "winter autumn summer",
     "winter autumn summer terma",
     "autumn summer winter",
     "summer winter autumn"
@@ -261,7 +264,7 @@ TEST(Suggestion, incrementalSearch) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  EXPECT_SUGGESTION_RESULTS(archive, "Wolf",
+  EXPECT_SUGGESTED_TITLES(archive, "Wolf",
     "Wolf",
     "Hour of the wolf",
     "The wolf among sheeps",
@@ -271,7 +274,7 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "Wolf ",
+  EXPECT_SUGGESTED_TITLES(archive, "Wolf ",
     "Wolf",
     "Hour of the wolf",
     "The wolf among sheeps",
@@ -281,7 +284,7 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the",
+  EXPECT_SUGGESTED_TITLES(archive, "the",
     "The chocolate factory",
     "The wolf among sheeps",
     "The wolf of Shingashina",
@@ -292,7 +295,7 @@ TEST(Suggestion, incrementalSearch) {
     "Are there any beasts in this country?"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the ",
+  EXPECT_SUGGESTED_TITLES(archive, "the ",
     "The chocolate factory",
     "The wolf among sheeps",
     "The wolf of Shingashina",
@@ -302,7 +305,7 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the wol",
+  EXPECT_SUGGESTED_TITLES(archive, "the wol",
     "Hour of the wolf",
     "The wolf among sheeps",
     "The wolf of Shingashina",
@@ -311,7 +314,7 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the wolf",
+  EXPECT_SUGGESTED_TITLES(archive, "the wolf",
     "The wolf among sheeps",
     "The wolf of Shingashina",
     "The wolf of Wall Street",
@@ -320,7 +323,7 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the wolf ",
+  EXPECT_SUGGESTED_TITLES(archive, "the wolf ",
     "The wolf among sheeps",
     "The wolf of Shingashina",
     "The wolf of Wall Street",
@@ -329,7 +332,7 @@ TEST(Suggestion, incrementalSearch) {
     "Terma termb the wolf of wall street termc"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the wolf of",
+  EXPECT_SUGGESTED_TITLES(archive, "the wolf of",
     "The wolf of Shingashina",
     "The wolf of Wall Street",
     "The wolf of Wall Street Book",
@@ -337,7 +340,7 @@ TEST(Suggestion, incrementalSearch) {
     "Hour of the wolf"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the wolf of wall",
+  EXPECT_SUGGESTED_TITLES(archive, "the wolf of wall",
     "The wolf of Wall Street",
     "The wolf of Wall Street Book",
     "Terma termb the wolf of wall street termc"
@@ -355,7 +358,7 @@ TEST(Suggestion, phraseOutOfWindow) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  EXPECT_SUGGESTION_RESULTS(archive, "the dummy query",
+  EXPECT_SUGGESTED_TITLES(archive, "the dummy query",
     "This is the dummy query phrase",
     "aterm the bterm dummy query cterm",
     "the aterm bterm dummy cterm query"
@@ -374,7 +377,7 @@ TEST(Suggestion, checkStopword) {
 
   // "she", "and", "the" are stopwords, If stopwords are properly handled, they
   // should be included in the result documents.
-  EXPECT_SUGGESTION_RESULTS(archive, "she and the apple",
+  EXPECT_SUGGESTED_TITLES(archive, "she and the apple",
     "she and the apple"
   );
 }
@@ -394,7 +397,7 @@ TEST(Suggestion, checkRedirectionCollapse) {
   creator.finishZimCreation();
 
   zim::Archive archive(tza.getPath());
-  std::vector<std::string> resultSet = getSuggestions(archive, "Article", archive.getEntryCount());
+  std::vector<std::string> resultSet = getSuggestedTitles(archive, "Article", archive.getEntryCount());
 
   // We should get only one result
   std::vector<std::string> expectedResult = {
@@ -423,7 +426,7 @@ TEST(Suggestion, checkRedirectionChain) {
   creator.finishZimCreation();
 
   zim::Archive archive(tza.getPath());
-  std::vector<std::string> resultSet = getSuggestions(archive, "Article", archive.getEntryCount());
+  std::vector<std::string> resultSet = getSuggestedTitles(archive, "Article", archive.getEntryCount());
 
   // We should get only one result
   std::vector<std::string> expectedResult = {
@@ -449,7 +452,7 @@ TEST(Suggestion, diffArticleSameTitle) {
   creator.finishZimCreation();
 
   zim::Archive archive(tza.getPath());
-  std::vector<std::string> resultSet = getSuggestions(archive, "Test Article", archive.getEntryCount());
+  std::vector<std::string> resultSet = getSuggestedTitles(archive, "Test Article", archive.getEntryCount());
 
   // We should get two results
   std::vector<std::string> expectedResult = {
@@ -470,35 +473,11 @@ TEST(Suggestion, anchorQueryToBeginning) {
   TempZimArchive tza("testZim");
   const zim::Archive archive = tza.createZimFromTitles(titles);
 
-  EXPECT_SUGGESTION_RESULTS(archive, "This is a title",
+  EXPECT_SUGGESTED_TITLES(archive, "This is a title",
     "this is a title aterm bterm cterm",
     "aterm bterm this is a title cterm",
     "aterm this is a title bterm cterm"
   );
-}
-
-// To secure compatibity of new zim files with older kiwixes, we need to index
-// full path of the entries as data of documents.
-TEST(Suggestion, indexFullPath) {
-  TempZimArchive tza("testZim");
-  zim::writer::Creator creator;
-  creator.configIndexing(true, "en");
-  creator.startZimCreation(tza.getPath());
-
-  auto item = std::make_shared<TestItem>("testPath", "text/html", "Test Article");
-  creator.addItem(item);
-
-  creator.addMetadata("Title", "Test zim");
-  creator.finishZimCreation();
-
-  zim::Archive archive(tza.getPath());
-
-  zim::SuggestionSearcher suggestionSearcher(archive);
-  auto suggestionSearch = suggestionSearcher.suggest("Test Article");
-  auto result = suggestionSearch.getResults(0, archive.getEntryCount());
-
-  ASSERT_EQ(result.begin()->getPath(), "testPath");
-  ASSERT_EQ(result.begin().getDbData().substr(0, 2), "C/");
 }
 
 TEST(Suggestion, nonWordCharacters) {
@@ -516,46 +495,46 @@ TEST(Suggestion, nonWordCharacters) {
 
     // this test-point has nothing to do with the purpose of this unit-test
     // however I couldn't stand the temptation of adding it.
-    EXPECT_SUGGESTION_RESULTS(archive, "Ali",
+    EXPECT_SUGGESTED_TITLES(archive, "Ali",
       "Ali Baba & the 40 thieves",
       "Alice & Bob",
       "Alice Bob",
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "Alice Bob",
+    EXPECT_SUGGESTED_TITLES(archive, "Alice Bob",
       "Alice & Bob",
       "Alice Bob"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "Alice & Bob",
+    EXPECT_SUGGESTED_TITLES(archive, "Alice & Bob",
       "Alice & Bob",
       "Alice Bob"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "Bonnie + Clyde",
+    EXPECT_SUGGESTED_TITLES(archive, "Bonnie + Clyde",
       "Bonnie + Clyde"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "Jack & Jill",
+    EXPECT_SUGGESTED_TITLES(archive, "Jack & Jill",
       "Jack & Jill, on the hill"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "4",
+    EXPECT_SUGGESTED_TITLES(archive, "4",
       "Ali Baba & the 40 thieves"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "40",
+    EXPECT_SUGGESTED_TITLES(archive, "40",
       "Ali Baba & the 40 thieves"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "&",
+    EXPECT_SUGGESTED_TITLES(archive, "&",
       "&",
       "&%#"
       // "Jack & Jill ...", "Alice & Bob" and "Ali Baba & the 40 thieves" not
       // included since inside those titles "&" is treated as noise.
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "&%#",
+    EXPECT_SUGGESTED_TITLES(archive, "&%#",
       "&%#"
     );
   }
@@ -573,16 +552,16 @@ TEST(Suggestion, TitlesMadeOfStopWordsOnly) {
       "Do not act before you have to"
     });
 
-    EXPECT_SUGGESTION_RESULTS(archive, "the",
+    EXPECT_SUGGESTED_TITLES(archive, "the",
         "The"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "not",
+    EXPECT_SUGGESTED_TITLES(archive, "not",
         "Not at all",
         "Do not act before you have to"
     );
 
-    EXPECT_SUGGESTION_RESULTS(archive, "at",
+    EXPECT_SUGGESTED_TITLES(archive, "at",
         "Not at all",
         "Are you at home?"
     );
@@ -671,69 +650,124 @@ std::shared_ptr<TestItem> makeHtmlItem(std::string path, std::string title) {
   return std::make_shared<TestItem>(path, "text/html", title);
 }
 
+class TempZimArchiveMadeOfEmptyHtmlArticles
+{
+  using PathAndTitle = std::pair<std::string, std::string>;
+
+public:
+  TempZimArchiveMadeOfEmptyHtmlArticles(std::string lang,
+                                        const std::vector<PathAndTitle>& data)
+    : tza("testZim")
+  {
+    zim::writer::Creator creator;
+    creator.configIndexing(true, lang);
+    creator.startZimCreation(tza.getPath());
+
+    for ( const auto& pathAndTile : data ) {
+      creator.addItem(makeHtmlItem(pathAndTile.first, pathAndTile.second));
+    }
+
+    creator.addMetadata("Title", "Test zim");
+    creator.finishZimCreation();
+  }
+
+  std::string getPath() const { return tza.getPath(); }
+
+private:
+  TempZimArchive tza;
+};
+
 TEST(Suggestion, CJK) {
-  TempZimArchive tza("testZim");
-  zim::writer::Creator creator;
-  creator.configIndexing(true, "zh");
-  creator.startZimCreation(tza.getPath());
-
-  creator.addItem(makeHtmlItem("testPath1", "平方"));
-  creator.addItem(makeHtmlItem("testPath2", "平方根"));
-
-  creator.addMetadata("Title", "Test zim");
-  creator.finishZimCreation();
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("zh", {
+       //  path     , title
+       { "testPath1", "平方"   },
+       { "testPath2", "平方根" },
+  });
 
   zim::Archive archive(tza.getPath());
-  EXPECT_SUGGESTION_RESULTS(archive, "平方",
+  EXPECT_SUGGESTED_TITLES(archive, "平方",
     "平方",
     "平方根"
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "平方根",
+  EXPECT_SUGGESTED_TITLES(archive, "平方根",
     "平方根"
   );
 }
 
 TEST(Suggestion, titleEdgeCases) {
-  TempZimArchive tza("testZim");
-  zim::writer::Creator creator;
-  creator.configIndexing(true, "en");
-  creator.startZimCreation(tza.getPath());
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+     // { path     , title   }
 
-  // Title identical to path
-  creator.addItem(makeHtmlItem("About", "About"));
+        { "About"  , "About" }, // Title identical to path
+        { "Trout"  , "trout" }, // Title differing from path in case only
+        { "Without", ""      }, // No title
 
-  // Title differing from path in case only
-  creator.addItem(makeHtmlItem("Trout", "trout"));
-
-  // No title
-  creator.addItem(makeHtmlItem("Without", ""));
-
-  // Non edge cases
-  creator.addItem(makeHtmlItem("Stout", "About Rex Stout"));
-  creator.addItem(makeHtmlItem("Hangout", "Without a trout"));
-
-  creator.addMetadata("Title", "Test zim");
-  creator.finishZimCreation();
+        // Non edge cases
+        { "Stout",   "About Rex Stout" },
+        { "Hangout", "Without a trout" },
+  });
 
   zim::Archive archive(tza.getPath());
-  EXPECT_SUGGESTION_RESULTS(archive, "abo",
+  EXPECT_SUGGESTED_TITLES(archive, "abo",
     "About",
     "About Rex Stout",
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "witho",
+  EXPECT_SUGGESTED_TITLES(archive, "witho",
     "Without", // this is a path rather than a title
     "Without a trout",
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "tro",
+  EXPECT_SUGGESTED_TITLES(archive, "tro",
     "trout",
     "Without a trout",
   );
 
-  EXPECT_SUGGESTION_RESULTS(archive, "hang"
+  EXPECT_SUGGESTED_TITLES(archive, "hang"
       /* nothing */
   );
 }
+
+zim::Entry getTitleIndexEntry(const zim::Archive& a)
+{
+  return a.getEntryByPathWithNamespace('X', "title/xapian");
+}
+
+// To secure compatibity of new zim files with older kiwixes, we need to index
+// full path of the entries as data of documents.
+TEST(Suggestion, indexFullPath) {
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+    //{ path               , title                      }
+      { "MainPage"         , "Table of Contents"        },
+      { "Preface"          , "Preface"                  },
+      { "Volume1/Chapter1" , "The Rise of Blefuscu"     },
+      { "Volume1/Chapter2" , "Blefuscu at its Peak"     },
+      { "Volume2/Chapter3" , "War with Lilliput"        },
+      { "Volume2/Chapter4" , "Awakening"                },
+      { "Postbutt"         , "Sadbuttrue"               },
+  });
+
+  zim::Archive archive(tza.getPath());
+  const zim::Entry titleIndexEntry = getTitleIndexEntry(archive);
+  const auto dai = titleIndexEntry.getItem().getDirectAccessInformation();
+
+  ASSERT_TRUE(dai.isValid());
+
+  Xapian::Database database;
+  ASSERT_TRUE(zim::getDbFromAccessInfo(dai, database));
+  const auto lastdocid = database.get_lastdocid();
+  ASSERT_EQ(lastdocid, 7);
+
+  // Make sure that the namespace is included in the path recorded
+  // with each indexed document
+  ASSERT_EQ(database.get_document(1).get_data(), "C/MainPage");
+  ASSERT_EQ(database.get_document(2).get_data(), "C/Preface");
+  ASSERT_EQ(database.get_document(3).get_data(), "C/Volume1/Chapter1");
+  ASSERT_EQ(database.get_document(4).get_data(), "C/Volume1/Chapter2");
+  ASSERT_EQ(database.get_document(5).get_data(), "C/Volume2/Chapter3");
+  ASSERT_EQ(database.get_document(6).get_data(), "C/Volume2/Chapter4");
+  ASSERT_EQ(database.get_document(7).get_data(), "C/Postbutt");
+}
+
 } // unnamed namespace

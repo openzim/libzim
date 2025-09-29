@@ -32,35 +32,39 @@ class SuggestionItem;
 class SearchIterator;
 
 /**
- * A interator on suggestion.
+ * An iterator on suggestions
  *
  * Be aware that the referenced/pointed SuggestionItem is generated and stored
- * in the iterator itself.
- * Once the iterator is destructed or incremented/decremented, you must NOT
- * use the SuggestionItem.
+ * in the iterator itself. Once the iterator is destructed or
+ * incremented/decremented, you must NOT use the SuggestionItem.
  */
 class LIBZIM_API SuggestionIterator
 {
     typedef Archive::iterator<EntryOrder::titleOrder> RangeIterator;
     friend class SuggestionResultSet;
-    public:
+
+    public: // types
         /* SuggestionIterator is conceptually a bidirectional iterator.
-         * But std *LegayBidirectionalIterator* is also a *LegacyForwardIterator* and
-         * it would impose us that :
+         * But std *LegacyBidirectionalIterator* is also a
+         * *LegacyForwardIterator* and it would impose on us that :
          * > Given a and b, dereferenceable iterators of type It:
-         * >  If a and b compare equal (a == b is contextually convertible to true)
-         * >  then either they are both non-dereferenceable or *a and *b are references bound to the same object.
+         * >  If a and b compare equal (a == b is contextually convertible to
+         * >  true) then either they are both non-dereferenceable or *a and *b
+         * >  are references bound to the same object.
          * and
-         * > the LegacyForwardIterator requirements requires dereference to return a reference.
-         * Which cannot be as we create the entry on demand.
+         * > The LegacyForwardIterator requirement requires the dereference
+         * > operation to return a reference.
          *
-         * So we are stick with declaring ourselves at `input_iterator`.
+         * But since we create the entry on demand we cannot satisfy those
+         * requirements and are stuck with complying only with the
+         * *LegacyInputIterator* requirement.
          */
         using iterator_category = std::input_iterator_tag;
         using value_type = SuggestionItem;
         using pointer = SuggestionItem*;
         using reference = SuggestionItem&;
 
+    public: // functions
         SuggestionIterator() = delete;
         SuggestionIterator(const SuggestionIterator& it);
         SuggestionIterator& operator=(const SuggestionIterator& it);
@@ -82,28 +86,29 @@ class LIBZIM_API SuggestionIterator
         const SuggestionItem* operator->();
 
     private: // data
-        struct SuggestionInternalData;
+        // XXX: The order of the data members is inherited from the older
+        // XXX: days when `mp_impl` (then named `mp_internalDb`) was
+        // XXX: conditionally compiled (missing when LIBZIM_WITH_XAPIAN was set
+        // XXX: to false) and is preserved for ABI compatibility.
+
+        // Fallback implementation if no title index is available or libzim
+        // is built without Xapian
         std::unique_ptr<RangeIterator> mp_rangeIterator;
+
+        // cached/memoized result of dereference
         std::unique_ptr<SuggestionItem> m_suggestionItem;
 
+        class Impl;
+
+        // Main (xapian-based) implementation; is null if no title index is
+        // available or libzim is built without Xapian
+        std::unique_ptr<Impl> mp_impl;
+
     private: // methods
-        SuggestionIterator(RangeIterator rangeIterator);
+        explicit SuggestionIterator(Impl* impl);
 
-// Xapian based methods and data
-#if defined(LIBZIM_WITH_XAPIAN)
-#ifdef ZIM_PRIVATE
-    public:
-        std::string getDbData() const;
-#endif
-    private: // xapian based data
-        std::unique_ptr<SuggestionInternalData> mp_internal;
-
-    private: // xapian based methods
-        std::string getIndexPath() const;
-        std::string getIndexTitle() const;
-        std::string getIndexSnippet() const;
-        SuggestionIterator(SuggestionInternalData* internal_data);
-#endif  // LIBZIM_WITH_XAPIAN
+        explicit SuggestionIterator(RangeIterator rangeIterator);
+        SuggestionItem* instantiateSuggestion() const;
 };
 
 class LIBZIM_API SuggestionItem
