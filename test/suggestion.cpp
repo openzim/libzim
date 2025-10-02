@@ -729,6 +729,215 @@ TEST(Suggestion, titleEdgeCases) {
   );
 }
 
+std::vector<std::string> getSpellingSuggestions(const zim::Archive& archive,
+                                                std::string query,
+                                                int maxSuggestions) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  const auto search = suggestionSearcher.suggest(query);
+  std::vector<std::string> result;
+  for (const auto& s : search.getSpellingSuggestions(maxSuggestions)) {
+    EXPECT_EQ(s.getTitle(), "");
+    EXPECT_EQ(s.getPath(), "");
+    result.push_back(s.getSnippet());
+  }
+  return result;
+}
+
+#define EXPECT_SPELLING_CORRECTION(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+  EXPECT_EQ(                                                                   \
+      getSpellingSuggestions(archive, query, maxSuggestions),                  \
+      std::vector<std::string> parenthesizedExpectedResult                     \
+  )
+
+TEST(Suggestion, spellingSuggestions) {
+  TempZimArchive tza("testZim");
+  const zim::Archive a = tza.createZimFromTitles({
+      "Abenteuer",
+      "Applaus",
+      "Assistent",
+      "Attacke",
+      "Bewandtnis",
+      "Biene",
+      "Botschafter",
+      "Chaos",
+      "Entgelt",
+      "Entzündung",
+      "Fahrradschloss",
+      "Führerschein",
+      "Gral",
+      "Hierarchie",
+      "Honig",
+      "Impfung",
+      "Kamera",
+      "Konkurrenz",
+      "Lachs",
+      "Mond",
+      "Pflaster",
+      "Phänomen",
+      "Prise",
+      "Schirmmütze",
+      "Sohn",
+      "Stuhl",
+      "Teller",
+      "Thermoskanne",
+      "Trog",
+      "Umweltstandard",
+      "Unfug",
+      "Wohnzimmer",
+      "Zunge",
+      "aber",
+      "abonnieren",
+      "amtieren",
+      "attestieren",
+      "ausleeren",
+      "beißen",
+      "ebenfalls",
+      "enttäuschen",
+      "fort",
+      "gefleckt",
+      "gefährlich",
+      "gestern",
+      "gewähren",
+      "hässlich",
+      "konkurrieren",
+      "kämmen",
+      "lustig",
+      "müssen",
+      "nämlich",
+      "runterfallen",
+      "sanft",
+      "schubsen",
+      "seit",
+      "vorgestern",
+      "wahrscheinlich",
+
+      // Entries for demonstrating shortcomings of the PoC implementation
+      "Lorem ipsum",
+      "King",
+      "Kong",
+  });
+
+  EXPECT_SPELLING_CORRECTION(a, "", 1, ({}));
+
+  EXPECT_SPELLING_CORRECTION(a, "geflekt", 1, ({"gefleckt"}));
+  EXPECT_SPELLING_CORRECTION(a, "Teler", 1, ({"Teller"}));
+  EXPECT_SPELLING_CORRECTION(a, "Teler", 1, ({"Teller"}));
+  EXPECT_SPELLING_CORRECTION(a, "kämen", 1, ({"kämmen"}));
+  EXPECT_SPELLING_CORRECTION(a, "abonieren", 1, ({"abonnieren"}));
+  EXPECT_SPELLING_CORRECTION(a, "abbonnieren", 1, ({"abonnieren"}));
+  EXPECT_SPELLING_CORRECTION(a, "abbonieren", 1, ({"abonnieren"}));
+  EXPECT_SPELLING_CORRECTION(a, "Aplaus", 1, ({"Applaus"}));
+  EXPECT_SPELLING_CORRECTION(a, "konkurieren", 1, ({"konkurrieren"}));
+  EXPECT_SPELLING_CORRECTION(a, "Asisstent", 1, ({"Assistent"}));
+  EXPECT_SPELLING_CORRECTION(a, "Assisstent", 1, ({"Assistent"}));
+  EXPECT_SPELLING_CORRECTION(a, "Atacke", 1, ({"Attacke"}));
+  EXPECT_SPELLING_CORRECTION(a, "atestieren", 1, ({"attestieren"}));
+  EXPECT_SPELLING_CORRECTION(a, "entäuschen", 1, ({"enttäuschen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Enzündung", 1, ({"Entzündung"}));
+  EXPECT_SPELLING_CORRECTION(a, "Schirmütze", 1, ({"Schirmmütze"}));
+  EXPECT_SPELLING_CORRECTION(a, "Termoskanne", 1, ({"Thermoskanne"}));
+  EXPECT_SPELLING_CORRECTION(a, "Tsunge", 1, ({"Zunge"}));
+  EXPECT_SPELLING_CORRECTION(a, "vort", 1, ({"fort"}));
+  EXPECT_SPELLING_CORRECTION(a, "Schtuhl", 1, ({"Stuhl"}));
+  EXPECT_SPELLING_CORRECTION(a, "beissen", 1, ({"beißen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Camera", 1, ({"Kamera"}));
+  EXPECT_SPELLING_CORRECTION(a, "Kaos", 1, ({"Chaos"}));
+
+  // The spelling correction "Lax -> Lachs" is not returned because the max
+  // edit distance is capped at (length(query_word) - 1) which reduces our
+  // passed value of the max edit distance argument from 3 to 2. This
+  // change was brought by
+  // https://github.com/xapian/xapian/commit/0cbe35de5c392623388946e6769aa03f912fdde4
+  // and first appears in v1.4.19 release of Xapian.
+  //EXPECT_SPELLING_CORRECTION(a, "Lax", 1, ({"Lachs"}));
+  EXPECT_SPELLING_CORRECTION(a, "Lax", 1, ({}));
+
+  EXPECT_SPELLING_CORRECTION(a, "Mont", 1, ({"Mond"}));
+  EXPECT_SPELLING_CORRECTION(a, "Umweltstandart", 1, ({"Umweltstandard"}));
+  EXPECT_SPELLING_CORRECTION(a, "seid", 1, ({"seit"}));
+  EXPECT_SPELLING_CORRECTION(a, "Trok", 1, ({"Trog"}));
+  EXPECT_SPELLING_CORRECTION(a, "Unfuk", 1, ({"Unfug"}));
+  EXPECT_SPELLING_CORRECTION(a, "schupsen", 1, ({"schubsen"}));
+  EXPECT_SPELLING_CORRECTION(a, "warscheinlich", 1, ({"wahrscheinlich"}));
+  EXPECT_SPELLING_CORRECTION(a, "gefärlich", 1, ({"gefährlich"}));
+  EXPECT_SPELLING_CORRECTION(a, "Son", 1, ({"Sohn"}));
+  EXPECT_SPELLING_CORRECTION(a, "nähmlich", 1, ({"nämlich"}));
+  EXPECT_SPELLING_CORRECTION(a, "Grahl", 1, ({"Gral"}));
+  EXPECT_SPELLING_CORRECTION(a, "Bine", 1, ({"Biene"}));
+  EXPECT_SPELLING_CORRECTION(a, "Hirarchie", 1, ({"Hierarchie"}));
+  EXPECT_SPELLING_CORRECTION(a, "Priese", 1, ({"Prise"}));
+  EXPECT_SPELLING_CORRECTION(a, "auslehren", 1, ({"ausleeren"}));
+  EXPECT_SPELLING_CORRECTION(a, "Phenomen", 1, ({"Phänomen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Phänomän", 1, ({"Phänomen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Phenomän", 1, ({"Phänomen"}));
+  EXPECT_SPELLING_CORRECTION(a, "gewehren", 1, ({"gewähren"}));
+  EXPECT_SPELLING_CORRECTION(a, "aba", 1, ({"aber"}));
+  EXPECT_SPELLING_CORRECTION(a, "gestan", 1, ({"gestern"}));
+  EXPECT_SPELLING_CORRECTION(a, "ronterfallen", 1, ({"runterfallen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Hönig", 1, ({"Honig"}));
+  EXPECT_SPELLING_CORRECTION(a, "mussen", 1, ({"müssen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Bewandnis", 1, ({"Bewandtnis"}));
+  EXPECT_SPELLING_CORRECTION(a, "hässlig", 1, ({"hässlich"}));
+  EXPECT_SPELLING_CORRECTION(a, "lustich", 1, ({"lustig"}));
+  EXPECT_SPELLING_CORRECTION(a, "Botschaftler", 1, ({"Botschafter"}));
+  EXPECT_SPELLING_CORRECTION(a, "ebemfalls", 1, ({"ebenfalls"}));
+  EXPECT_SPELLING_CORRECTION(a, "samft", 1, ({"sanft"}));
+  EXPECT_SPELLING_CORRECTION(a, "Wohenzimmer", 1, ({"Wohnzimmer"}));
+  EXPECT_SPELLING_CORRECTION(a, "Flaster", 1, ({"Pflaster"}));
+  EXPECT_SPELLING_CORRECTION(a, "Imfung", 1, ({"Impfung"}));
+  EXPECT_SPELLING_CORRECTION(a, "amptieren", 1, ({"amtieren"}));
+  EXPECT_SPELLING_CORRECTION(a, "Endgeld", 1, ({"Entgelt"}));
+  EXPECT_SPELLING_CORRECTION(a, "Abendteuer", 1, ({"Abenteuer"}));
+  EXPECT_SPELLING_CORRECTION(a, "sampft", 1, ({"sanft"}));
+  EXPECT_SPELLING_CORRECTION(a, "forgestan", 1, ({"vorgestern"}));
+  EXPECT_SPELLING_CORRECTION(a, "Füreschein", 1, ({"Führerschein"}));
+  EXPECT_SPELLING_CORRECTION(a, "ronterfalen", 1, ({"runterfallen"}));
+  EXPECT_SPELLING_CORRECTION(a, "Farradschluss", 1, ({"Fahrradschloss"}));
+  EXPECT_SPELLING_CORRECTION(a, "Konkorenz", 1, ({"Konkurrenz"}));
+  EXPECT_SPELLING_CORRECTION(a, "Hirachie", 1, ({"Hierarchie"}));
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Edge cases
+  //////////////////////////////////////////////////////////////////////////////
+
+  // Exact match is not considered a spelling correction
+  EXPECT_SPELLING_CORRECTION(a, "Führerschein", 1, ({}));
+
+  // Max edit distance is 3
+  EXPECT_SPELLING_CORRECTION(a,   "Führersch",    1, ({"Führerschein"}));
+    EXPECT_SPELLING_CORRECTION(a, "Führersc",     1, ({}));
+    // Case matters in edit distance
+    EXPECT_SPELLING_CORRECTION(a, "führersch",    1, ({}));
+    // Diacritics matters in edit distance
+    EXPECT_SPELLING_CORRECTION(a, "Fuhrersch",    1, ({}));
+    // Mismatch in diacritics counts as 1 in edit distance (this is not trivial,
+    // because from the UTF-8 perspective it is a one-byte vs two-byte encoding
+    // of a Unicode codepoint).
+    EXPECT_SPELLING_CORRECTION(a, "Führersche",   1, ({"Führerschein"}));
+
+  EXPECT_SPELLING_CORRECTION(a, "Führershine",  1, ({"Führerschein"}));
+    EXPECT_SPELLING_CORRECTION(a, "Führershyne",  1, ({}));
+    EXPECT_SPELLING_CORRECTION(a, "führershine",  1, ({}));
+
+  EXPECT_SPELLING_CORRECTION(a, "Führerschrom", 1, ({"Führerschein"}));
+  EXPECT_SPELLING_CORRECTION(a, "Führerscdrom", 1, ({}));
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Shortcomings of the proof-of-concept implementation
+  //////////////////////////////////////////////////////////////////////////////
+
+  // Multiword titles are treated as a single entity
+  EXPECT_SPELLING_CORRECTION(a, "Laurem", 1, ({}));
+  EXPECT_SPELLING_CORRECTION(a, "ibsum",  1, ({}));
+  EXPECT_SPELLING_CORRECTION(a, "Loremipsum", 1, ({"Lorem ipsum"}));
+
+  // Only one spelling correction can be requested
+  // EXPECT_SPELLING_CORRECTION(a, "Kung",  2, ({"King", "Kong"}));
+  EXPECT_THROW(getSpellingSuggestions(a, "Kung", 2), std::runtime_error);
+
+}
+
 zim::Entry getTitleIndexEntry(const zim::Archive& a)
 {
   return a.getEntryByPathWithNamespace('X', "title/xapian");
