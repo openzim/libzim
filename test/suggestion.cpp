@@ -811,6 +811,11 @@ TEST(Suggestion, spellingSuggestions) {
       "seit",
       "vorgestern",
       "wahrscheinlich",
+
+      // Entries for demonstrating shortcomings of the PoC implementation
+      "Lorem ipsum",
+      "King",
+      "Kong",
   });
 
   EXPECT_SPELLING_CORRECTION(a, "", 1, ({}));
@@ -891,6 +896,46 @@ TEST(Suggestion, spellingSuggestions) {
   EXPECT_SPELLING_CORRECTION(a, "Farradschluss", 1, ({"Fahrradschloss"}));
   EXPECT_SPELLING_CORRECTION(a, "Konkorenz", 1, ({"Konkurrenz"}));
   EXPECT_SPELLING_CORRECTION(a, "Hirachie", 1, ({"Hierarchie"}));
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Edge cases
+  //////////////////////////////////////////////////////////////////////////////
+
+  // Exact match is not considered a spelling correction
+  EXPECT_SPELLING_CORRECTION(a, "Führerschein", 1, ({}));
+
+  // Max edit distance is 3
+  EXPECT_SPELLING_CORRECTION(a,   "Führersch",    1, ({"Führerschein"}));
+    EXPECT_SPELLING_CORRECTION(a, "Führersc",     1, ({}));
+    // Case matters in edit distance
+    EXPECT_SPELLING_CORRECTION(a, "führersch",    1, ({}));
+    // Diacritics matters in edit distance
+    EXPECT_SPELLING_CORRECTION(a, "Fuhrersch",    1, ({}));
+    // Mismatch in diacritics counts as 1 in edit distance (this is not trivial,
+    // because from the UTF-8 perspective it is a one-byte vs two-byte encoding
+    // of a Unicode codepoint).
+    EXPECT_SPELLING_CORRECTION(a, "Führersche",   1, ({"Führerschein"}));
+
+  EXPECT_SPELLING_CORRECTION(a, "Führershine",  1, ({"Führerschein"}));
+    EXPECT_SPELLING_CORRECTION(a, "Führershyne",  1, ({}));
+    EXPECT_SPELLING_CORRECTION(a, "führershine",  1, ({}));
+
+  EXPECT_SPELLING_CORRECTION(a, "Führerschrom", 1, ({"Führerschein"}));
+  EXPECT_SPELLING_CORRECTION(a, "Führerscdrom", 1, ({}));
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Shortcomings of the proof-of-concept implementation
+  //////////////////////////////////////////////////////////////////////////////
+
+  // Multiword titles are treated as a single entity
+  EXPECT_SPELLING_CORRECTION(a, "Laurem", 1, ({}));
+  EXPECT_SPELLING_CORRECTION(a, "ibsum",  1, ({}));
+  EXPECT_SPELLING_CORRECTION(a, "Loremipsum", 1, ({"Lorem ipsum"}));
+
+  // Only one spelling correction can be requested
+  // EXPECT_SPELLING_CORRECTION(a, "Kung",  2, ({"King", "Kong"}));
+  EXPECT_THROW(getSpellingSuggestions(a, "Kung", 2), std::runtime_error);
+
 }
 
 zim::Entry getTitleIndexEntry(const zim::Archive& a)
