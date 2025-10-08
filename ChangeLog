@@ -8,6 +8,7 @@ libzim 9.4.0
  * New user/dev defined cache sizes (@veloman-yunkan #982)
  * Centralize cache memory usage (@veloman-yunkan #960)
  * Stop releasing for PPA Ubuntu Focal 20.04 (@kelson42 #1009)
+ * Fix build with ICU 76+ (@cho-m #1010)
 
 libzim 9.3.0
 ============
