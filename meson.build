@@ -78,8 +78,14 @@ endif
 
 if xapian_dep.found()
     icu_dep = dependency('icu-i18n', static:static_linkage)
+    if icu_dep.version().version_compare('>= 76')
+        icu_dep = [icu_dep, dependency('icu-uc', static:static_linkage)]
+    endif
 else
-    icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
+    icu_dep = dependency('icu-i18n', 'required:false', static:static_linkage)
+    if icu_dep.version().version_compare('>= 76')
+        icu_dep = [icu_dep, dependency('icu-uc', 'required:false', static:static_linkage)]
+    endif
 endif
 
 gtest_dep = dependency('gtest', version: '>=1.10.0', main:true, fallback:['gtest', 'gtest_main_dep'], required:false)
