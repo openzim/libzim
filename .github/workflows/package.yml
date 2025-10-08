@@ -21,7 +21,6 @@ jobs:
 #          - debian-bullseye
           - ubuntu-noble
           - ubuntu-jammy
-          - ubuntu-focal
 
     # Pin your dependencies with https://github.com/mheap/pin-github-action
     steps:
@@ -92,14 +91,6 @@ jobs:
         id: build-ubuntu-jammy
         with:
           args: --no-sign
-
-      - uses: legoktm/gh-action-build-deb@77900afcbdc12874b7177e0e9fca2f4da043cd05 # pin@ubuntu-focal
-        if: matrix.distro == 'ubuntu-focal'
-        name: Build package for ubuntu-focal
-        id: build-ubuntu-focal
-        with:
-          args: --no-sign
-          ppa: ${{ steps.ppa.outputs.ppa }}
 
       - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # pin@v4
         with:
