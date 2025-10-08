@@ -11,11 +11,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          # x86
-          - macos-13
-          # arm
-          - macos-14
         target:
           - macos-aarch64-dyn
           - macos-x86_64-dyn
@@ -34,10 +29,7 @@ jobs:
           - target: ios-x86_64-dyn
             arch_name: x86-apple-ios-simulator
             run_test: false
-        exclude:
-          - target: macos-x86_64-dyn
-            os: macos-14
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-15
 
     steps:
       - name: Harden Runner
