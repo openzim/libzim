@@ -722,6 +722,13 @@ TEST(Suggestion, titleEdgeCases) {
         { "toolongsingleword1", w64                       },
         { "toolongsingleword2", w65                       },
 
+        // Handling of pseudo-words consisting exclusively of punctuation
+        { "winknsmilewithouttext",          ";-)" }, // A punctuation-only title
+        { "winknsmilebothways",             ";-) wink'n'smile" },
+        { "winknsmiletheotherwayaround",    "wink'n'smile ;-)" },
+        { "smilinglongword",                ";-) " + w65 },
+        { "winknsmilewithothernonwords",    "~~ ;-) ~~" },
+
         // Non edge cases
         { "Stout",   "About Rex Stout" },
         { "Hangout", "Without a trout" },
@@ -755,8 +762,30 @@ TEST(Suggestion, titleEdgeCases) {
   EXPECT_SUGGESTED_TITLES(archive, "awordthatis",
       w64,
       "Is " + w64 + " too long?"
-      // w65 and "Is " + w65 + " too long?" aren't included because w65 has
-      //                                    been ignored during indexing
+      // The following results aren't included because w65 has been ignored
+      // during indexing:
+      // - w65
+      // - "Is " + w65 + " too long?"
+      // - ";-) " + w65
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, ";-",
+      ";-)",
+      // The following results aren't included because ";-)" isn't treated as a
+      // term in the presence of anything else:
+      // - ";-) wink'n'smile"
+      // - "wink'n'smile ;-)"
+      // - ";-) " + w65
+      // - "~~ ;-) ~~"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "win",
+      ";-) wink'n'smile",
+      "wink'n'smile ;-)"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "smile",
+      /* nothing */ // smile in "wink'n'smile" isn't a separate term
   );
 }
 
