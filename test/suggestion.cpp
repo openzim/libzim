@@ -722,6 +722,16 @@ TEST(Suggestion, titleEdgeCases) {
         { "toolongsingleword1", w64                       },
         { "toolongsingleword2", w65                       },
 
+        // Handling of pseudo-words consisting exclusively of punctuation
+        { "winknsmilewithouttext",          ";-)" }, // A punctuation-only title
+        { "winknsmilebothways",             ";-) wink'n'smile" },
+        { "winknsmiletheotherwayaround",    "wink'n'smile ;-)" },
+        { "smilinglongword",                ";-) " + w65 },
+
+        // Handling of stopwords
+        { "hasisastopword",           "Kiwix has our support" },
+        { "titlemadeofonlystopwords", "He who has nothing"    },
+
         // Non edge cases
         { "Stout",   "About Rex Stout" },
         { "Hangout", "Without a trout" },
@@ -757,6 +767,26 @@ TEST(Suggestion, titleEdgeCases) {
       "Is " + w64 + " too long?"
       // w65 and "Is " + w65 + " too long?" aren't included because w65 has
       //                                    been ignored during indexing
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, ";-",
+      ";-)",
+      // ";-) wink'n'smile" and "wink'n'smile ;-)" are not included because
+      // ";-)" isn't treated as a term in the presence of more serious text
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "win",
+      ";-) wink'n'smile",
+      "wink'n'smile ;-)"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "smile",
+      /* nothing */ // smile in "wink'n'smile" isn't a separate term
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "has",
+      "He who has nothing",    // XXX: "has" should've been ignored as a term
+      "Kiwix has our support", // XXX: "has" should've been ignored as a term
   );
 }
 
