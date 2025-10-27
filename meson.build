@@ -79,14 +79,24 @@ endif
 if xapian_dep.found()
     icu_dep = dependency('icu-i18n', static:static_linkage)
     if icu_dep.version().version_compare('>= 76')
-        icu_dep = [icu_dep, dependency('icu-uc', static:static_linkage)]
+        icu_deps = [icu_dep, dependency('icu-uc', static:static_linkage)]
+    else
+        icu_deps = [icu_dep]
     endif
 else
     icu_dep = dependency('icu-i18n', 'required:false', static:static_linkage)
     if icu_dep.version().version_compare('>= 76')
-        icu_dep = [icu_dep, dependency('icu-uc', 'required:false', static:static_linkage)]
+        icu_deps = [icu_dep, dependency('icu-uc', 'required:false', static:static_linkage)]
+    else
+        icu_deps = [icu_dep]
     endif
 endif
+
+# Dependencies as string
+all_deps = [thread_dep, xapian_dep, lzma_dep, zstd_dep, win_deps]
+
+# Dependencies as array
+all_deps += libicu_deps
 
 gtest_dep = dependency('gtest', version: '>=1.10.0', main:true, fallback:['gtest', 'gtest_main_dep'], required:false)
 
