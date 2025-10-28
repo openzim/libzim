@@ -58,7 +58,7 @@ if gtest_dep.found() and not meson.is_cross_build()
                               include_directories: [include_directory, src_directory],
                               link_with: libzim,
                               cpp_args: test_cpp_args,
-                              dependencies: deps + [gtest_dep],
+                              dependencies: all_deps + [gtest_dep],
                               build_rpath: '$ORIGIN')
         test(test_name, test_exe, timeout : 120, env: testenv)
     endforeach
