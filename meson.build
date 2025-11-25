@@ -61,7 +61,6 @@ public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
 if build_machine.system() == 'windows'
     win_deps = declare_dependency(
-        compile_args: ['-DSORTPP_PASS'],
         link_args: ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-lshlwapi']
     )
 else
