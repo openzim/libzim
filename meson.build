@@ -52,7 +52,7 @@ if host_machine.system() == 'freebsd'
 endif
 
 if get_option('with_xapian')
-    xapian_dep = dependency('xapian-core', static:static_linkage)
+    xapian_dep = dependency('xapian-core', version: '>=1.4.12', static:static_linkage)
 else
     xapian_dep = dependency('', required:false)
 endif
