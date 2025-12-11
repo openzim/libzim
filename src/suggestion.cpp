@@ -86,7 +86,7 @@ void SuggestionDataBase::initXapianDb() {
   }
   if (!language.empty()) {
       icu::Locale languageLocale(language.c_str());
-      /* Configuring language base steemming */
+      /* Configuring language base stemming */
       try {
           m_stemmer = Xapian::Stem(languageLocale.getLanguage());
           m_queryParser.set_stemmer(m_stemmer);

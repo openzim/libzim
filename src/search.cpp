@@ -62,7 +62,7 @@ XapianDbMetadata::XapianDbMetadata(const Xapian::Database& db, std::string defau
     }
     if (!m_language.empty()) {
         icu::Locale languageLocale(language.c_str());
-        /* Configuring language base steemming */
+        /* Configuring language base stemming */
         try {
             m_stemmer = Xapian::Stem(languageLocale.getLanguage());
         } catch (...) {
