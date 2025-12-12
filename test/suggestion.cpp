@@ -706,8 +706,8 @@ std::string makeLongWord(size_t n) {
 }
 
 TEST(Suggestion, titleEdgeCases) {
-  const std::string w64 = makeLongWord(64);
-  const std::string w65 = makeLongWord(65);
+  const std::string shortOfBeingTooLong = makeLongWord(240);
+  const std::string tooLong = makeLongWord(241);
 
   TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
      // { path     , title   }
@@ -717,17 +717,17 @@ TEST(Suggestion, titleEdgeCases) {
         { "Without", ""      }, // No title
                                 //
         // Titles containing long words
-        { "toolongword1",      "Is " + w64 + " too long?" },
-        { "toolongword2",      "Is " + w65 + " too long?" },
-        { "toolongsingleword1", w64                       },
-        { "toolongsingleword2", w65                       },
+        { "toolongword1",      "Is " + shortOfBeingTooLong + " too long?" },
+        { "toolongword2",      "Is " + tooLong + " too long?"             },
+        { "toolongsingleword1", shortOfBeingTooLong                       },
+        { "toolongsingleword2", tooLong                                   },
 
         // Handling of pseudo-words consisting exclusively of punctuation
         { "winknsmilewithouttext",          ";-)" }, // A punctuation-only title
         { "winknsmilebothways",             ";-) wink'n'smile" },
         { "winknsmiletheotherwayaround",    "wink'n'smile ;-)" },
-        { "smilinglongword",                ";-) " + w65 },
-        { "winknsmilewithothernonwords",    "~~ ;-) ~~" },
+        { "smilinglongword",                ";-) " + tooLong   },
+        { "winknsmilewithothernonwords",    "~~ ;-) ~~"        },
 
         // Non edge cases
         { "Stout",   "About Rex Stout" },
@@ -755,18 +755,18 @@ TEST(Suggestion, titleEdgeCases) {
   );
 
   EXPECT_SUGGESTED_TITLES(archive, "long",
-      "Is " + w65 + " too long?",
-      "Is " + w64 + " too long?"
+      "Is " + tooLong + " too long?",
+      "Is " + shortOfBeingTooLong + " too long?"
   );
 
   EXPECT_SUGGESTED_TITLES(archive, "awordthatis",
-      w64,
-      "Is " + w64 + " too long?"
-      // The following results aren't included because w65 has been ignored
+      shortOfBeingTooLong,
+      "Is " + shortOfBeingTooLong + " too long?"
+      // The following results aren't included because tooLong has been ignored
       // during indexing:
-      // - w65
-      // - "Is " + w65 + " too long?"
-      // - ";-) " + w65
+      // - tooLong
+      // - "Is " + tooLong + " too long?"
+      // - ";-) " + tooLong
   );
 
   EXPECT_SUGGESTED_TITLES(archive, ";-",
@@ -775,7 +775,7 @@ TEST(Suggestion, titleEdgeCases) {
       // term in the presence of anything else:
       // - ";-) wink'n'smile"
       // - "wink'n'smile ;-)"
-      // - ";-) " + w65
+      // - ";-) " + tooLong
       // - "~~ ;-) ~~"
   );
 
