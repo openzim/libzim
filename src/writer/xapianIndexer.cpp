@@ -119,8 +119,12 @@ size_t getTermCount(const Xapian::Document& d)
 } // unnamed namespace
 
 /*
- * For title index, index the full path with namespace as data of the document.
- * The targetPath in valuesmap will store the path without namespace.
+ * For title index, index the title with the full path (including the
+ * namespace) as data of the document. The targetPath in valuesmap will store
+ * the path without namespace.
+ *
+ * Note that terms (words) longer than 240 bytes are silently ignored.
+ *
  * TODO:
  * Currently for title index we are storing path twice (redirectPath/path in
  * valuesmap and path in index data). In the future, we want to keep only one of
@@ -130,7 +134,7 @@ size_t getTermCount(const Xapian::Document& d)
 
 void XapianIndexer::indexTitle(const std::string& path, const std::string& title, const std::string& targetPath)
 {
-  const size_t MAX_WORD_LENGTH = 64;
+  const size_t MAX_WORD_LENGTH = 240; // Xapian's hard limit is 245
 
   assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
