@@ -63,7 +63,7 @@ namespace zim
       std::string fullPath = "C/" + m_path;
       document.set_data(fullPath);
       document.add_value(0, mp_indexData->getTitle());
-      document.add_value(1, Formatter() << mp_indexData->getWordCount());
+      document.add_value(1, std::string{Formatter() << mp_indexData->getWordCount()});
 
       auto geoInfo = mp_indexData->getGeoPosition();
       if (std::get<0>(geoInfo)) {
