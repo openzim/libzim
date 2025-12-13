@@ -100,7 +100,7 @@ void SuggestionDataBase::initXapianDb() {
 
 bool SuggestionDataBase::hasDatabase() const
 {
-  return !m_database.internal.empty();
+  return m_database.size() != 0;
 }
 
 bool SuggestionDataBase::hasValuesmap() const
