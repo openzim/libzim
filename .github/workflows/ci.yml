@@ -177,8 +177,8 @@ jobs:
             coverage: false
           - target: linux-aarch64-dyn
             image_variant: jammy
-            lib_postfix: '/aarch64-linux-gnu'
-            arch_name: aarch64-linux-gnu
+            lib_postfix: '/aarch64-rpi3-linux-gnu'
+            arch_name: aarch64-rpi3-linux-gnu
             run_test: false
             coverage: false
           - target: android-arm
