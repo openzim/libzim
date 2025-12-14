@@ -116,6 +116,18 @@ size_t getTermCount(const Xapian::Document& d)
   return std::distance(d.termlist_begin(), d.termlist_end());
 }
 
+size_t sizeOfIndexedText(const Xapian::Document& d)
+{
+  size_t n = 0;
+  for (auto termIt = d.termlist_begin(); termIt != d.termlist_end(); ++termIt) {
+    const std::string& term = *termIt;
+    if ( term[0] != 'Z' ) {
+      n += termIt.get_wdf() * term.size();
+    }
+  }
+  return n;
+}
+
 } // unnamed namespace
 
 /*
@@ -123,7 +135,10 @@ size_t getTermCount(const Xapian::Document& d)
  * namespace) as data of the document. The targetPath in valuesmap will store
  * the path without namespace.
  *
- * Note that terms (words) longer than 240 bytes are silently ignored.
+ * An exception is thrown if the total size of non-indexable text in the title
+ * exceeds MAX_INDEXABLE_TITLE_WORD_SIZE (this is intended to detect omission
+ * of too long words during indexing but may be triggered by excessive
+ * whitespace and/or punctuation as well).
  *
  * TODO:
  * Currently for title index we are storing path twice (redirectPath/path in
@@ -134,7 +149,7 @@ size_t getTermCount(const Xapian::Document& d)
 
 void XapianIndexer::indexTitle(const std::string& path, const std::string& title, const std::string& targetPath)
 {
-  const size_t MAX_WORD_LENGTH = 240; // Xapian's hard limit is 245
+  const size_t MAX_WORD_LENGTH = MAX_INDEXABLE_TITLE_WORD_SIZE;
 
   assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
@@ -165,6 +180,9 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   if (!unaccentedTitle.empty()) {
     std::string anchoredTitle = ANCHOR_TERM + unaccentedTitle;
     indexer.index_text(anchoredTitle, 1);
+    if ( anchoredTitle.size() >= sizeOfIndexedText(currentDocument) + MAX_WORD_LENGTH ) {
+      throw std::runtime_error("Too much loss of data during title indexing");
+    }
     if ( getTermCount(currentDocument) == 1 ) {
       // only ANCHOR_TERM was added, hence unaccentedTitle is made solely of
       // non-word characters. Then add entire title as a single term.
