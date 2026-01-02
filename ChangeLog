@@ -1,3 +1,10 @@
+libzim 9.4.1
+============
+
+ * Remove SORTPP_PASS which breaks modern Windows SDKs (@BillyONeal #1017)
+ * Add support of future Xapian 2.0 (@ojwb #1018 #1019 #1020)
+ * Fix broken CI for linux-aarch64-dyn (@veloman-yunkan #1024)
+
 libzim 9.4.0
 ============
 
