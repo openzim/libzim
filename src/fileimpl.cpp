@@ -500,11 +500,17 @@ private: // data
     return entry_index_t(m_articleListByCluster[idx.v]);
   }
 
+  size_t FileImpl::getMaxBlobCountInCluster(cluster_index_t idx) const
+  {
+    return getCountArticles().v;
+  }
+
   ClusterHandle FileImpl::readCluster(cluster_index_t idx) const
   {
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
-    return Cluster::read(*zimReader, clusterOffset);
+    const auto maxBlobCountInCluster = getMaxBlobCountInCluster(idx);
+    return Cluster::read(*zimReader, clusterOffset, maxBlobCountInCluster);
   }
 
   ClusterHandle FileImpl::getCluster(cluster_index_t idx) const

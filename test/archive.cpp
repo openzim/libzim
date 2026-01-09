@@ -822,6 +822,11 @@ TEST_F(ZimArchive, validate)
   )
 
   TEST_BROKEN_ZIM_NAME(
+    "invalid.too_large_offset_of_first_blob_in_cluster.zim",
+     "Error parsing cluster. Offset of the first blob is too large.\n"
+  )
+
+  TEST_BROKEN_ZIM_NAME(
     "invalid.offset_in_cluster.zim",
      "Error parsing cluster. Offsets are not ordered.\n"
   )

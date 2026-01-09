@@ -73,11 +73,11 @@ namespace zim
 
 
       template<typename OFFSET_TYPE>
-      void read_header();
+      void read_header(size_t maxBlobCount);
       const Reader& getReader(blob_index_t n) const;
 
     public:
-      Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended);
+      Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended, size_t maxBlobCount);
       ~Cluster();
       Compression getCompression() const   { return compression; }
       bool isCompressed() const                { return compression != Compression::None; }
@@ -92,7 +92,7 @@ namespace zim
 
       size_t getMemorySize() const;
 
-      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset);
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount);
   };
 
   struct ClusterMemorySize {
