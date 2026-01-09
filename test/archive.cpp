@@ -807,6 +807,21 @@ TEST_F(ZimArchive, validate)
   )
 
   TEST_BROKEN_ZIM_NAME(
+    "invalid.misaligned_offset_of_first_blob_in_cluster_9.zim",
+     "Error parsing cluster. Offset of the first blob is not properly aligned.\n"
+  )
+
+  TEST_BROKEN_ZIM_NAME(
+    "invalid.misaligned_offset_of_first_blob_in_cluster_10.zim",
+     "Error parsing cluster. Offset of the first blob is not properly aligned.\n"
+  )
+
+  TEST_BROKEN_ZIM_NAME(
+    "invalid.misaligned_offset_of_first_blob_in_cluster_11.zim",
+     "Error parsing cluster. Offset of the first blob is not properly aligned.\n"
+  )
+
+  TEST_BROKEN_ZIM_NAME(
     "invalid.offset_in_cluster.zim",
      "Error parsing cluster. Offsets are not ordered.\n"
   )

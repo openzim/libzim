@@ -108,6 +108,10 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
 
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
 
+    if ( n_offset * sizeof(OFFSET_TYPE) != offset ) {
+        throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is not properly aligned.");
+    }
+
     // read offsets
     m_blobOffsets.clear();
     m_blobOffsets.reserve(n_offset);
