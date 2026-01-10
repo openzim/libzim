@@ -76,6 +76,8 @@ namespace zim
       void read_header(size_t maxBlobCount);
       const Reader& getReader(blob_index_t n) const;
 
+      void checkBlobIndex(blob_index_t n) const;
+
     public:
       Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended, size_t maxBlobCount);
       ~Cluster();
@@ -86,7 +88,8 @@ namespace zim
 
       zsize_t getBlobSize(blob_index_t n) const;
 
-      offset_t getBlobOffset(blob_index_t n) const { return offset_t(1) + m_blobOffsets[blob_index_type(n)]; }
+      offset_t getBlobOffset(blob_index_t n) const;
+
       Blob getBlob(blob_index_t n) const;
       Blob getBlob(blob_index_t n, offset_t offset, zsize_t size) const;
 

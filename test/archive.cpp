@@ -796,10 +796,12 @@ TEST_F(ZimArchive, validate)
      "Error parsing cluster. Offset of the first blob is too small.\n"
   )
 
+#if defined(ENABLE_XAPIAN)
   TEST_BROKEN_ZIM_NAME(
     "invalid.too_small_offset_of_first_blob_in_cluster_4.zim",
-     "Error parsing cluster. Offset of the first blob is too small.\n"
+     "blob index out of range\n"
   )
+#endif
 
   TEST_BROKEN_ZIM_NAME(
     "invalid.too_small_offset_of_first_blob_in_cluster_7.zim",

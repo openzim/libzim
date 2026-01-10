@@ -137,12 +137,23 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     }
   }
 
-  zsize_t Cluster::getBlobSize(blob_index_t n) const
+  void Cluster::checkBlobIndex(blob_index_t n) const
   {
       if (blob_index_type(n)+1 >= m_blobOffsets.size()) {
         throw ZimFileFormatError("blob index out of range");
       }
+  }
+
+  zsize_t Cluster::getBlobSize(blob_index_t n) const
+  {
+      checkBlobIndex(n);
       return zsize_t(m_blobOffsets[blob_index_type(n)+1].v - m_blobOffsets[blob_index_type(n)].v);
+  }
+
+  offset_t Cluster::getBlobOffset(blob_index_t n) const
+  {
+      checkBlobIndex(n);
+      return offset_t(1) + m_blobOffsets[blob_index_type(n)];
   }
 
   const Reader& Cluster::getReader(blob_index_t n) const
