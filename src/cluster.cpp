@@ -102,7 +102,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     // read first offset, which specifies, how many offsets we need to read
     OFFSET_TYPE offset = m_reader->read<OFFSET_TYPE>();
 
-    if ( offset < 2 * sizeof(OFFSET_TYPE) ) {
+    if ( offset != sizeof(OFFSET_TYPE) && offset < 2 * sizeof(OFFSET_TYPE) ) {
         throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is too small.");
     }
 
