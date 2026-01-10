@@ -92,7 +92,7 @@ namespace zim
 
       size_t getMemorySize() const;
 
-      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount);
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount = size_t(-1));
   };
 
   struct ClusterMemorySize {

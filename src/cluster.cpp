@@ -112,7 +112,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
         throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is not properly aligned.");
     }
 
-    if ( n_offset > maxBlobCount + 1 ) {
+    if ( maxBlobCount + 1 != 0 && n_offset > maxBlobCount + 1 ) {
         throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is too large.");
     }
 
