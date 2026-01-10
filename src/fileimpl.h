@@ -192,6 +192,7 @@ namespace zim
       offset_type getMimeListEndUpperLimit() const;
       void readMimeTypes();
       void quickCheckForCorruptFile();
+      size_t getMaxBlobCountInCluster(cluster_index_t idx) const;
 
       bool checkChecksum();
       bool checkDirentPtrs();

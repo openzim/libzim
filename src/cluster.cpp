@@ -73,23 +73,23 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
 
 } // unnamed namespace
 
-  std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset)
+  std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount)
   {
     Compression comp;
     bool extended;
     auto reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
-    return std::make_shared<Cluster>(std::move(reader), comp, extended);
+    return std::make_shared<Cluster>(std::move(reader), comp, extended, maxBlobCount);
   }
 
-  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, Compression comp, bool isExtended)
+  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, Compression comp, bool isExtended, size_t maxBlobCount)
     : compression(comp),
       isExtended(isExtended),
       m_reader(std::move(reader_))
   {
     if (isExtended) {
-      read_header<uint64_t>();
+      read_header<uint64_t>(maxBlobCount);
     } else {
-      read_header<uint32_t>();
+      read_header<uint32_t>(maxBlobCount);
     }
   }
 
@@ -97,12 +97,24 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
 
   /* This return the number of char read */
   template<typename OFFSET_TYPE>
-  void Cluster::read_header()
+  void Cluster::read_header(size_t maxBlobCount)
   {
     // read first offset, which specifies, how many offsets we need to read
     OFFSET_TYPE offset = m_reader->read<OFFSET_TYPE>();
 
+    if ( offset < 2 * sizeof(OFFSET_TYPE) ) {
+        throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is too small.");
+    }
+
     size_t n_offset = offset / sizeof(OFFSET_TYPE);
+
+    if ( n_offset * sizeof(OFFSET_TYPE) != offset ) {
+        throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is not properly aligned.");
+    }
+
+    if ( n_offset > maxBlobCount + 1 ) {
+        throw zim::ZimFileFormatError("Error parsing cluster. Offset of the first blob is too large.");
+    }
 
     // read offsets
     m_blobOffsets.clear();
