@@ -24,6 +24,7 @@
 #include "fs.h"
 #include "tools.h"
 #include "../constants.h"
+#include <zim/error.h>
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
@@ -116,11 +117,30 @@ size_t getTermCount(const Xapian::Document& d)
   return std::distance(d.termlist_begin(), d.termlist_end());
 }
 
+size_t sizeOfIndexedText(const Xapian::Document& d)
+{
+  size_t n = 0;
+  for (auto termIt = d.termlist_begin(); termIt != d.termlist_end(); ++termIt) {
+    const std::string& term = *termIt;
+    if ( term[0] != 'Z' ) {
+      n += termIt.get_wdf() * term.size();
+    }
+  }
+  return n;
+}
+
 } // unnamed namespace
 
 /*
- * For title index, index the full path with namespace as data of the document.
- * The targetPath in valuesmap will store the path without namespace.
+ * For title index, index the title with the full path (including the
+ * namespace) as data of the document. The targetPath in valuesmap will store
+ * the path without namespace.
+ *
+ * An exception is thrown if the total size of non-indexable text in the title
+ * exceeds MAX_INDEXABLE_TITLE_WORD_SIZE (this is intended to detect omission
+ * of too long words during indexing but may be triggered by excessive
+ * whitespace and/or punctuation as well).
+ *
  * TODO:
  * Currently for title index we are storing path twice (redirectPath/path in
  * valuesmap and path in index data). In the future, we want to keep only one of
@@ -130,9 +150,12 @@ size_t getTermCount(const Xapian::Document& d)
 
 void XapianIndexer::indexTitle(const std::string& path, const std::string& title, const std::string& targetPath)
 {
+  const size_t MAX_WORD_LENGTH = MAX_INDEXABLE_TITLE_WORD_SIZE;
+
   assert(indexingMode == IndexingMode::TITLE);
   Xapian::Stem stemmer;
   Xapian::TermGenerator indexer;
+  indexer.set_max_word_length(MAX_WORD_LENGTH);
   indexer.set_flags(Xapian::TermGenerator::FLAG_CJK_NGRAM);
   try {
     stemmer = Xapian::Stem(stemmer_language);
@@ -158,11 +181,16 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
   if (!unaccentedTitle.empty()) {
     std::string anchoredTitle = ANCHOR_TERM + unaccentedTitle;
     indexer.index_text(anchoredTitle, 1);
+    if ( anchoredTitle.size() >= sizeOfIndexedText(currentDocument) + MAX_WORD_LENGTH ) {
+      throw zim::TitleIndexingError("Too much loss of data during title indexing");
+    }
     if ( getTermCount(currentDocument) == 1 ) {
       // only ANCHOR_TERM was added, hence unaccentedTitle is made solely of
       // non-word characters. Then add entire title as a single term.
       currentDocument.remove_term(*currentDocument.termlist_begin());
-      currentDocument.add_term(unaccentedTitle);
+      if ( unaccentedTitle.size() <= MAX_WORD_LENGTH ) {
+        currentDocument.add_term(unaccentedTitle);
+      }
     }
   }
 

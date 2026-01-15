@@ -22,11 +22,13 @@
 #include <zim/archive.h>
 #include <zim/suggestion.h>
 #include <zim/item.h>
+#include <zim/error.h>
 
 #include <xapian.h>
 
 #include "tools.h"
 #include "../src/tools.h"
+#include "../src/constants.h"
 
 #include "gtest/gtest.h"
 
@@ -695,6 +697,59 @@ TEST(Suggestion, CJK) {
   );
 }
 
+std::string makeLongWord(size_t n) {
+  std::ostringstream oss;
+  oss << "awordthatis" << n << "characterslong";
+  const std::string s = oss.str();
+  if ( s.size() > n )
+    throw std::runtime_error("That is not a request for a long enough word!");
+
+  return s + std::string(n - s.size(), s.back());
+}
+
+void createASingleEntryZimArchive(const std::string& title)
+{
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {{ "path", title}});
+}
+
+const size_t MAX_WORD_LENGTH = MAX_INDEXABLE_TITLE_WORD_SIZE;
+
+TEST(Suggestion, handlingOfTooLongWords) {
+  const std::string shortOfBeingTooLong = makeLongWord(MAX_WORD_LENGTH);
+  const std::string tooLong = makeLongWord(MAX_WORD_LENGTH+1);
+
+  std::vector<std::string> titlesWithTooMuchDiscardableStuff{
+        tooLong,
+        "Is " + tooLong + " too long?",
+        ";-) " + tooLong,
+        "too much whitespace"  + std::string(MAX_WORD_LENGTH, ' '),
+        "too much punctuation" + std::string(MAX_WORD_LENGTH, '!'),
+  };
+
+  for ( const std::string& title : titlesWithTooMuchDiscardableStuff ) {
+    EXPECT_THROW(createASingleEntryZimArchive(title), zim::TitleIndexingError)
+      << "title: " << title;
+  }
+
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+     // { path                , title   }
+        { "path1", shortOfBeingTooLong                             },
+        { "path2", "Is " + shortOfBeingTooLong + " too long?"      },
+        { "path3", shortOfBeingTooLong + " " + shortOfBeingTooLong },
+  });
+
+  zim::Archive archive(tza.getPath());
+  EXPECT_SUGGESTED_TITLES(archive, "long",
+      "Is " + shortOfBeingTooLong + " too long?"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "awordthatis",
+      shortOfBeingTooLong + " " + shortOfBeingTooLong,
+      shortOfBeingTooLong,
+      "Is " + shortOfBeingTooLong + " too long?"
+  );
+}
+
 TEST(Suggestion, titleEdgeCases) {
   TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
      // { path     , title   }
@@ -702,6 +757,12 @@ TEST(Suggestion, titleEdgeCases) {
         { "About"  , "About" }, // Title identical to path
         { "Trout"  , "trout" }, // Title differing from path in case only
         { "Without", ""      }, // No title
+                                //
+        // Handling of pseudo-words consisting exclusively of punctuation
+        { "winknsmilewithouttext",          ";-)" }, // A punctuation-only title
+        { "winknsmilebothways",             ";-) wink'n'smile" },
+        { "winknsmiletheotherwayaround",    "wink'n'smile ;-)" },
+        { "winknsmilewithothernonwords",    "~~ ;-) ~~"        },
 
         // Non edge cases
         { "Stout",   "About Rex Stout" },
@@ -726,6 +787,24 @@ TEST(Suggestion, titleEdgeCases) {
 
   EXPECT_SUGGESTED_TITLES(archive, "hang"
       /* nothing */
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, ";-",
+      ";-)",
+      // The following results aren't included because ";-)" isn't treated as a
+      // term in the presence of anything else:
+      // - ";-) wink'n'smile"
+      // - "wink'n'smile ;-)"
+      // - "~~ ;-) ~~"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "win",
+      ";-) wink'n'smile",
+      "wink'n'smile ;-)"
+  );
+
+  EXPECT_SUGGESTED_TITLES(archive, "smile",
+      /* nothing */ // smile in "wink'n'smile" isn't a separate term
   );
 }
 

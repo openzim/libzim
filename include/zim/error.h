@@ -52,9 +52,10 @@ namespace zim
       {}
   };
 
-  /* Exception thrown by the Creator in case of error.
+  /**
+   * Exception thrown by the Creator in case of error.
    *
-   * Most exceptions actually thrown are inheriting this exception.
+   * Most exceptions actually thrown are subclasses of this type.
    */
   class LIBZIM_API CreatorError : public std::runtime_error
   {
@@ -64,7 +65,9 @@ namespace zim
       {}
   };
 
-   /* Exception thrown when a entry cannot be added to the Creator.*/
+  /**
+   * Exception thrown when an entry cannot be added to the ZIM archive.
+   */
   class LIBZIM_API InvalidEntry : public CreatorError
   {
     public:
@@ -73,14 +76,16 @@ namespace zim
       {}
   };
 
-  /* Exception thrown if a incoherence in the user implementation has been detected.
+  /**
+   * Exception thrown if incoherence in the user implementation has been
+   * detected.
    *
    * Users need to implement interfaces such as:
-   * - ContentProvider
-   * - IndexData
-   * - Item
+   * - zim::writer::ContentProvider
+   * - zim::writer::IndexData
+   * - zim::writer::Item
    *
-   * If a incoherence has been detected in those implementations a
+   * If incoherence has been detected in those implementations an
    * `IncoherentImplementationError` will be thrown.
    */
   class LIBZIM_API IncoherentImplementationError : public CreatorError
@@ -91,7 +96,26 @@ namespace zim
       {}
   };
 
-  /* Exception thrown in the main thread when another exception has been
+  /**
+   * Exception thrown when there are problems indexing a title.
+   *
+   * In the current implementation, the only situation deliberately targeted by
+   * this type of error is when the title appears to contain a word that
+   * exceeds the limit on the longest indexable word (as defined by
+   * `MAX_INDEXABLE_TITLE_WORD_SIZE` in `src/constants.h`) but - due to hacky
+   * implementation - titles containing too much whitespace and/or punctuation
+   * may also trigger this error.
+   */
+  class LIBZIM_API TitleIndexingError : public CreatorError
+  {
+    public:
+      explicit TitleIndexingError(const std::string& message)
+       : CreatorError(message)
+      {}
+  };
+
+  /**
+   * Exception thrown in the main thread when another exception has been
    * thrown in another worker thread.
    *
    * Creator uses different worker threads to do background work.
@@ -144,10 +168,12 @@ namespace zim
       }
   };
 
-  /* Exception thrown when the creator is in error state.
+  /**
+   * Exception thrown when the creator is in error state.
    *
-   * If the creator is in error state (mostly because a AsyncError has already
-   * being thrown), any call to any method on it will thrown a `CreatorStateError`.
+   * If the creator is in error state (mostly because an AsyncError has already
+   * been thrown), any call to any method on it will throw a
+   * `CreatorStateError`.
    */
   class LIBZIM_API CreatorStateError : public CreatorError
   {

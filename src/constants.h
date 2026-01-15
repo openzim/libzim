@@ -20,3 +20,11 @@
 #define ANCHOR_TERM "0posanchor "
 
 #define DEFAULT_CLUSTER_SIZE 2*1024*1024
+
+// The size in bytes of the longest word that is indexable in a title.
+// Xapian's default value is 64 while the hard limit is 245, however crashes
+// have been observed with values as low as 150 (demonstrated by the unit test
+// Suggestion.handlingOfTooLongWords in test/suggestion.cpp).
+// Note that a similar limit applies to full-text indexing but we don't
+// provide a way to control it (so it is at Xapian's default value of 64)
+#define MAX_INDEXABLE_TITLE_WORD_SIZE 64
