@@ -57,6 +57,11 @@ namespace zim
      *   path has already been added) a `zim::InvalidEntry` will be thrown. The
      *   creator will still be in a valid state and the creation can continue.
      *
+     * - When there are problems indexing the title a `zim::TitleIndexingError`
+     *   is thrown. The creator will remain in a valid state, however it is not
+     *   clear whether continuing the creation will result in a perfectly valid
+     *   ZIM archive.
+     *
      * - An exception has been thrown in a worker thread. This exception will
      *   be caught and rethrown via a `zim::AsyncError`. The creator will
      *   be put in an invalid state and creation cannot continue.

@@ -24,6 +24,7 @@
 #include "fs.h"
 #include "tools.h"
 #include "../constants.h"
+#include <zim/error.h>
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
@@ -181,7 +182,7 @@ void XapianIndexer::indexTitle(const std::string& path, const std::string& title
     std::string anchoredTitle = ANCHOR_TERM + unaccentedTitle;
     indexer.index_text(anchoredTitle, 1);
     if ( anchoredTitle.size() >= sizeOfIndexedText(currentDocument) + MAX_WORD_LENGTH ) {
-      throw std::runtime_error("Too much loss of data during title indexing");
+      throw zim::TitleIndexingError("Too much loss of data during title indexing");
     }
     if ( getTermCount(currentDocument) == 1 ) {
       // only ANCHOR_TERM was added, hence unaccentedTitle is made solely of

@@ -22,6 +22,7 @@
 #include <zim/archive.h>
 #include <zim/suggestion.h>
 #include <zim/item.h>
+#include <zim/error.h>
 
 #include <xapian.h>
 
@@ -726,7 +727,7 @@ TEST(Suggestion, handlingOfTooLongWords) {
   };
 
   for ( const std::string& title : titlesWithTooMuchDiscardableStuff ) {
-    EXPECT_THROW(createASingleEntryZimArchive(title), std::runtime_error)
+    EXPECT_THROW(createASingleEntryZimArchive(title), zim::TitleIndexingError)
       << "title: " << title;
   }
 

@@ -97,6 +97,24 @@ namespace zim
   };
 
   /**
+   * Exception thrown when there are problems indexing a title.
+   *
+   * In the current implementation, the only situation deliberately targeted by
+   * this type of error is when the title appears to contain a word that
+   * exceeds the limit on the longest indexable word (as defined by
+   * `MAX_INDEXABLE_TITLE_WORD_SIZE` in `src/constants.h`) but - due to hacky
+   * implementation - titles containing too much whitespace and/or punctuation
+   * may also trigger this error.
+   */
+  class LIBZIM_API TitleIndexingError : public CreatorError
+  {
+    public:
+      explicit TitleIndexingError(const std::string& message)
+       : CreatorError(message)
+      {}
+  };
+
+  /**
    * Exception thrown in the main thread when another exception has been
    * thrown in another worker thread.
    *
