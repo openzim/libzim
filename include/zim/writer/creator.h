@@ -43,24 +43,35 @@ namespace zim
      * Elements of the zim file can be added using the `add*` methods.
      * The final steps is to call `finishZimCreation`.
      *
-     * During the creation of the zim file (and before the call to `finishZimCreation`),
-     * some values must be set using the `set*` methods.
+     * During the creation of the zim file (and before the call to
+     * `finishZimCreation`), some values must be set using the `set*` methods.
      *
-     * All `add*` methods and `finishZimCreation` can throw a exception.
-     * (most of the time zim::CreatorError child but not limited to)
-     * It is up to the user to catch this exception and handle the error.
-     * The current (documented) conditions when a exception is thrown are:
-     * - When a entry cannot be added (mainly because a entry with the same path has already been added)
-     *    A `zim::InvalidEntry` will be thrown. The creator will still be in a valid state and the creation can continue.
-     * - An exception has been thrown in a worker thread.
-     *    This exception will be catch and rethrown through a `zim::AsyncError`.
-     *    The creator will be set in a invalid state and creation cannot continue.
-     * - The creator is in error state.
-     *    A `zim::CreatorStateError` will be thrown.
-     * - Any exception thrown by user implementation itself.
-     *    Note that this exception may be thrown in a worker thread and so being "catch" by a AsyncError.
+     * All `add*` methods and `finishZimCreation` can throw an exception.
+     * (most of the time - though not necessarily - a subclass of
+     * zim::CreatorError). It is up to the user to catch this exception and
+     * handle the error.
+     *
+     * The current (documented) conditions when an exception is thrown are:
+     *
+     * - When an entry cannot be added (mainly because an entry with the same
+     *   path has already been added) a `zim::InvalidEntry` will be thrown. The
+     *   creator will still be in a valid state and the creation can continue.
+     *
+     * - An exception has been thrown in a worker thread. This exception will
+     *   be caught and rethrown via a `zim::AsyncError`. The creator will
+     *   be put in an invalid state and creation cannot continue.
+     *
+     * - The creator is in error state.  A `zim::CreatorStateError` will be
+     *   thrown.
+     *
+     * - Any exception thrown by the user implementation itself. Note that if
+     *   this exception is thrown in a worker thread it will be exposed via an
+     *   AsyncError.
+     *
      * - Any other exception thrown for unknown reason.
-     * By default, creator status is not changed by thrown exception and creation should stop.
+     *
+     * By default, creator status is not changed by thrown exception and
+     * creation should stop.
      */
     class LIBZIM_API Creator
     {
