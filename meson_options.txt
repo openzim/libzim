@@ -22,7 +22,5 @@ option('tests', type : 'boolean', value : true,
   description : 'Build the tests.')
 option('with_xapian', type : 'boolean', value: true,
   description: 'Build libzim with xapian support')
-option('with_xapian_fuller', type: 'boolean', value: true,
-  description: 'Create xapian archive using "FULLER" compaction.\nThis is a workaround for a compilation issue on Windows. This will be removed soon')
 option('test_data_dir', type : 'string', value: '',
   description: 'Where the test data are. If not set, meson will use a internal directory in  the build dir. If you want to download the data in the specified directory you can use `meson download_test_data`. As a special value, you can pass `none` to deactivate test using external test data.')
