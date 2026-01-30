@@ -533,6 +533,19 @@ TEST_F(ZimArchive, MultiZimCache)
   EXPECT_EQ(zim::getClusterCacheCurrentSize(), 0);
 }
 
+TEST_F(ZimArchive, lazyVsEagerClusterDecompression)
+{
+  for (auto& testfile: getDataFilePath("wikipedia_en_climate_change_mini_2024-06.zim")) {
+    zim::Archive lazyArchive(testfile.path);
+    lazyArchive.decompressClustersLazily(true);
+
+    zim::Archive eagerArchive(testfile.path);
+    eagerArchive.decompressClustersLazily(false);
+
+    RefArchiveContent(lazyArchive).test_is_equal(eagerArchive);
+  }
+}
+
 TEST_F(ZimArchive, openDontFallbackOnNonSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02.zim";
