@@ -1,5 +1,5 @@
-option('CLUSTER_CACHE_SIZE', type : 'integer', min: 0, max: 1000000000000, value : 536870912,
-  description : 'set default cluster cache size in bytes (default:512MB)')
+option('CLUSTER_CACHE_SIZE', type : 'integer', min: 0, max: 1000000000000, value : 16777216,
+  description : 'set default cluster cache size in bytes (default:16MiB)')
 option('DIRENT_CACHE_SIZE', type : 'string', value : '512',
   description : 'set dirent cache size to number (default:512)')
 option('DIRENT_LOOKUP_CACHE_SIZE', type : 'string', value : '1024',
