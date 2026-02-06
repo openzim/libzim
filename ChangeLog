@@ -1,3 +1,10 @@
+libzim 9.5.0
+============
+
+ * Handling Protection against too long words in titles (@veloman-yunkan #1004 #1034)
+ * Quick detection of corruption of 1st blob offset in cluster( @veloman-yunkan #1029 #1031)
+ * Use zim-testing-suite version 0.9.0 (@veloman-yunkan #1030)
+
 libzim 9.4.1
 ============
 
