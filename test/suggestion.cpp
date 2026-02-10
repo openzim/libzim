@@ -808,6 +808,332 @@ TEST(Suggestion, titleEdgeCases) {
   );
 }
 
+using SuggestionTuple = std::tuple<std::string, std::string, std::string>;
+
+std::vector<std::string> getCompletionSuggestions(const zim::Archive& archive,
+                                                  std::string query,
+                                                  int maxSuggestions) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  const auto search = suggestionSearcher.suggest(query);
+  std::vector<std::string> result;
+  for (const auto& s : search.getAutocompletionSuggestions(maxSuggestions)) {
+    EXPECT_EQ(s.getTitle(), "");
+    EXPECT_EQ(s.getPath(), "");
+    result.push_back(s.getSnippet());
+  }
+  return result;
+}
+
+#define EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+  ASSERT_EQ(                                                                   \
+      getCompletionSuggestions(archive, query, maxSuggestions),                \
+      std::vector<std::string> parenthesizedExpectedResult                     \
+  )
+
+TEST(Suggestion, autocompletionSuggestions) {
+  TempZimArchive tza("testZim");
+  const zim::Archive archive = tza.createZimFromTitles({
+      "Hebrew for zebras in 24 hours",
+      "Ebook formats",
+      "Selling on EBay for mummies",
+      "Patient Zero: the horrible story of ebola",
+      "Bank erosion in Zimbabwe",
+      "Error correcting codes",
+      "Zimbabwe patent #19539",
+      "All the king's horses",
+      "Martin Luther King Jr.",
+      "King Kong (1933 film)",
+      "King-fu Panda",
+      "Forrest Gump",
+      "Ebay, Alibaba & the Forty Thieves",
+      "Crazy Horse (disambiguation)"
+  });
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "", 10, ({
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "asdf ", 10, ({
+  }));
+
+  // no completions for a single letter
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "k", 10, ({
+  }));
+
+  // no completions for a single letter
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "asdf k", 10, ({
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ki", 10, ({
+    "<b>king</b>",
+    "<b>king's</b>", // XXX: possesive form
+    /*"<b>king-fu</b>", */ // missing
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ki", 10, ({
+    "<b>king</b>",
+    "<b>king's</b>", // XXX: possesive form
+    /*"<b>king-fu</b>", */ // missing
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "pa", 10, ({
+    "<b>panda</b>",
+    "<b>patent</b>",
+    "<b>patient</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "pâ", 10, ({
+    "<b>panda</b>",   // XXX: diacritics in the query are ignored
+    "<b>patent</b>",  // XXX: diacritics in the query are ignored
+    "<b>patient</b>", // XXX: diacritics in the query are ignored
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "patient", 10, ({
+    "<b>patient</b>", // XXX: useless completion
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "19", 10, ({
+    "<b>1933</b>",  // XXX: non word
+    "<b>19539</b>", // XXX: non word
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ze", 10, ({
+    "<b>zebras</b>", // XXX: plural form
+    "<b>zero</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "Ze", 10, ({
+    "<b>zebras</b>", // XXX: plural form
+    "<b>zero</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "fo", 10, ({
+    "<b>for</b>",     // XXX: stop word
+    "<b>formats</b>", // XXX: plural form
+    "<b>forrest</b>",
+    "<b>forty</b>",
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "ho", 10, ({
+    "<b>horrible</b>",
+    "<b>horse</b>",
+    "<b>horses</b>", // XXX: plural form in addition to singular form above
+    "<b>hours</b>",  // XXX: plural form
+  }));
+
+  EXPECT_COMPLETION_SUGGESTION_RESULTS(archive, "asdf pa", 10, ({
+    "asdf <b>panda</b>",
+    "asdf <b>patent</b>",
+    "asdf <b>patient</b>",
+  }));
+}
+
+std::vector<std::string> getSpellingSuggestions(const zim::Archive& archive,
+                                                std::string query,
+                                                int maxSuggestions) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  const auto search = suggestionSearcher.suggest(query);
+  std::vector<std::string> result;
+  for (const auto& s : search.getSpellingSuggestions(maxSuggestions)) {
+    EXPECT_EQ(s.getTitle(), "");
+    EXPECT_EQ(s.getPath(), "");
+    result.push_back(s.getSnippet());
+  }
+  return result;
+}
+
+#define EXPECT_SPELLING_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+  ASSERT_EQ(                                                                   \
+      getSpellingSuggestions(archive, query, maxSuggestions),                  \
+      std::vector<std::string> parenthesizedExpectedResult                     \
+  )
+
+TEST(Suggestion, spellingSuggestions) {
+  TempZimArchive tza("testZim");
+  const zim::Archive archive = tza.createZimFromTitles({
+      "Hebrew for zebras in 24 hours",
+      "Patient Zero: the horrible story of ebola",
+      "Zimbabwe patent #15539",
+      "All the king's horses",
+      "Martin Luther King Jr.",
+      "King Kong (1933 film)",
+      "King-fu Panda",
+  });
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "", 10, ({
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "kung", 10, ({
+    "<b>king</b>",
+    "<b>kong</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "song", 10, ({
+    "<b>kong</b>",
+    "<b>king</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "wing", 10, ({
+    "<b>king</b>",
+    "<b>kong</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "hourse", 10, ({
+    "<b>hours</b>",
+    "<b>horses</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "hebras", 10, ({
+    "<b>zebras</b>",
+    "<b>hebrew</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "paient", 10, ({
+    "<b>patent</b>",
+    "<b>patient</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "patent", 10, ({
+    "<b>patient</b>",
+  }));
+
+  EXPECT_SPELLING_SUGGESTION_RESULTS(archive, "lorem ipsum hebras", 10, ({
+    "lorem ipsum <b>zebras</b>",
+    "lorem ipsum <b>hebrew</b>",
+  }));
+}
+
+std::vector<SuggestionTuple> getSmartSuggestions(const zim::Archive& archive,
+                                                 std::string query,
+                                                 int maxSuggestions) {
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  auto suggestionSearch = suggestionSearcher.suggest(query);
+  std::vector<SuggestionTuple> result;
+  for (const auto& s : suggestionSearch.getSmartSuggestions(maxSuggestions)) {
+    const SuggestionTuple sTuple{s.getTitle(), s.getPath(), s.getSnippet()};
+    result.push_back(sTuple);
+  }
+  return result;
+}
+
+#define EXPECT_SMART_SUGGESTION_RESULTS(archive, query, maxSuggestions, parenthesizedExpectedResult) \
+  ASSERT_EQ(                                                                   \
+      getSmartSuggestions(archive, query, maxSuggestions),                     \
+      std::vector<SuggestionTuple> parenthesizedExpectedResult                 \
+  )
+
+TEST(Suggestion, smartSuggestions) {
+  TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {
+    //{ path         , title                      }
+      { "2001/01/15" , "Wikipedia Day"            },
+      { "1966/08/07" , "J. Wales' birth date"     },
+      { "-1/12/25"   , "Birth date of J. Christ"  },
+      { "*/06/29"    , "The Little Prince Day"    },
+      { "1970+/04/22", "Earth Day"                },
+      { "*/11/0[12]" , "Day of the Dead"          },
+      { "-14e9/11/11", "Big Bang"                 },
+      { "7/2025/59"  , "invalid date"             },
+      { "/etc/passwd", "User account data"        },
+      { "Date_palm"  , "Date palm"                },
+      { "Date_(city)", "Date, Fukushima"          },
+      { "xx/xx/xx"   , "Birth date of John Smith" },
+      { "^B"         , "Daily birth control"      },
+      { "USbirthdata", "US birth data"            },
+      { "long_ago"   , "Date of my birth"         },
+  });
+
+  zim::Archive archive(tza.getPath());
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "bi", 10, ({
+    {"Big Bang", "-14e9/11/11", "<b>Big</b> Bang"},
+    {"Daily birth control", "^B", "Daily <b>birth</b> control"},
+    {"US birth data", "USbirthdata", "US <b>birth</b> data"},
+    {"Date of my birth", "long_ago", "Date of my <b>birth</b>"},
+    {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> date"},
+    {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> date of J. Christ"},
+    {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> date of John Smith"},
+  }));
+
+  // Since the count of title suggestions will exceed the specified limit,
+  // autocompletion suggestions should be returned instead
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "bi", 4, ({
+    {"", "", "<b>big</b>" },
+    {"", "", "<b>birth</b>" },
+    {"", "", "<b>big</b>" }, // XXX: duplicated result due to spelling correction
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "date bi", 10, ({
+    {"Date of my birth", "long_ago", "<b>Date</b> of my <b>birth</b>"},
+    {"J. Wales' birth date",   "1966/08/07", "J. Wales' <b>birth</b> <b>date</b>"},
+    {"Birth date of J. Christ", "-1/12/25" , "<b>Birth</b> <b>date</b> of J. Christ"},
+    {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> <b>date</b> of John Smith"},
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "date bi", 3, ({
+    {"", "", "date <b>big</b>" },
+    {"", "", "date <b>birth</b>" },
+    {"", "", "date <b>big</b>" }, // XXX: duplicated result due to spelling correction
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 20, ({
+    {"Date palm"              , "Date_palm"  , "<b>Date</b> palm"             },
+    {"Date, Fukushima"        , "Date_(city)", "<b>Date</b>, Fukushima"       },
+    {"Earth Day"              , "1970+/04/22", "Earth <b>Day</b>"             },
+    {"Wikipedia Day"          , "2001/01/15" , "Wikipedia <b>Day</b>"         },
+    {"invalid date"           , "7/2025/59"  , "invalid <b>date</b>"          },
+    {"Daily birth control"    , "^B"         , "<b>Daily</b> birth control"   },
+    {"US birth data"          , "USbirthdata", "US birth <b>data</b>"         },
+    {"User account data"      , "/etc/passwd", "User account <b>data</b>"     },
+    {"Date of my birth"       , "long_ago"   , "<b>Date</b> of my birth"      },
+    {"Day of the Dead"        , "*/11/0[12]" , "<b>Day</b> of the Dead"       },
+    {"J. Wales' birth date"   , "1966/08/07" , "J. Wales' birth <b>date</b>"  },
+    {"The Little Prince Day"  , "*/06/29"    , "The Little Prince <b>Day</b>" },
+    {"Birth date of J. Christ", "-1/12/25", "Birth <b>date</b> of J. Christ"  },
+    {"Birth date of John Smith", "xx/xx/xx", "Birth <b>date</b> of John Smith"},
+  }));
+
+  // Since the count of title suggestions will exceed the specified limit,
+  // autocompletion suggestions should be returned instead
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 5, ({
+    {"", "", "<b>daily</b>" },
+    {"", "", "<b>data</b>" },
+    {"", "", "<b>date</b>" },
+    {"", "", "<b>day</b>"  },
+    {"", "", "<b>day</b>"  }, // XXX: duplicated result due to spelling correction
+  }));
+
+  // Autocompletion results are selected based on frequency ("daily" and "data"
+  // are dropped as the least popular terms in the titles)
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "da", 2, ({
+    {"", "", "<b>date</b>" },
+    {"", "", "<b>day</b>"  },
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "birth da", 10, ({
+    {"Daily birth control", "^B", "<b>Daily</b> <b>birth</b> control"},
+    {"US birth data", "USbirthdata", "US <b>birth</b> <b>data</b>"},
+    {"Date of my birth", "long_ago", "<b>Date</b> of my <b>birth</b>"},
+    {"J. Wales' birth date", "1966/08/07", "J. Wales' <b>birth</b> <b>date</b>"},
+    {"Birth date of J. Christ", "-1/12/25", "<b>Birth</b> <b>date</b> of J. Christ"},
+    {"Birth date of John Smith", "xx/xx/xx", "<b>Birth</b> <b>date</b> of John Smith"},
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "birth da", 5, ({
+    {"", "", "birth <b>daily</b>" },
+    {"", "", "birth <b>data</b>" },
+    {"", "", "birth <b>date</b>" },
+    {"", "", "birth <b>day</b>"  },
+    {"", "", "birth <b>day</b>"  }, // XXX: duplicated result due to spelling correction
+  }));
+
+  EXPECT_SMART_SUGGESTION_RESULTS(archive, "barth", 5, ({
+    {"", "", "<b>birth</b>" },
+    {"", "", "<b>earth</b>" },
+  }));
+}
+
 zim::Entry getTitleIndexEntry(const zim::Archive& a)
 {
   return a.getEntryByPathWithNamespace('X', "title/xapian");
