@@ -520,7 +520,7 @@ private: // data
 
     auto cluster_index_type = idx.v;
     auto key = std::make_tuple(this, cluster_index_type);
-    auto cluster = getClusterCache().getOrPut(key, [=](){ return readCluster(idx); });
+    auto cluster = getClusterCache().getOrPut(key, [=, this](){ return readCluster(idx); });
 #if ENV32BIT
     // There was a bug in the way we create the zim files using ZSTD compression.
     // We were using a too hight compression level and so a window of 128Mb.
