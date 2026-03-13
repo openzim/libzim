@@ -227,10 +227,12 @@ template<typename INFO>
 class Compressor
 {
   public:
-    Compressor(size_t initial_size=1024*1024) :
+    explicit Compressor(size_t initial_size=1024*1024) :
       ret_data(new char[initial_size]),
       ret_size(initial_size)
-    {}
+    {
+      ASSERT(initial_size, >, 0u);
+    }
 
     ~Compressor() = default;
 
@@ -244,32 +246,25 @@ class Compressor
       stream.next_in = (unsigned char*)data;
       stream.avail_in = size;
       while (true) {
+        if (stream.avail_out == 0) {
+          ret_size *= 2;
+          std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
+          memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
+          stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
+          stream.avail_out = ret_size - stream.total_out;
+          ret_data = std::move(new_ret_data);
+        }
         auto errcode = INFO::stream_run_encode(&stream, step);
         switch (errcode) {
           case CompStatus::OK:
-            if (stream.avail_out == 0) {
-              // lzma return a OK return status the first time it runs out of output memory.
-              // The BUF_ERROR is returned only the second time we call a lzma_code.
-              continue;
-            } else {
-              return RunnerStatus::NEED_MORE;
-            }
+            return RunnerStatus::NEED_MORE;
           case CompStatus::STREAM_END:
             return RunnerStatus::NEED_MORE;
           case CompStatus::BUF_ERROR:
-            if (stream.avail_out == 0) {
-              //Not enought output size
-              ret_size *= 2;
-              std::unique_ptr<char[]> new_ret_data(new char[ret_size]);
-              memcpy(new_ret_data.get(), ret_data.get(), stream.total_out);
-              stream.next_out = (unsigned char*)(new_ret_data.get() + stream.total_out);
-              stream.avail_out = ret_size - stream.total_out;
-              ret_data = std::move(new_ret_data);
-              continue;
-            } else {
+            if (stream.avail_out != 0) {
               return RunnerStatus::ERROR;
             }
-          break;
+            break;
           default:
             // unreachable
             return RunnerStatus::ERROR;
