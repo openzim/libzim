@@ -99,5 +99,32 @@ TYPED_TEST(CompressionTest, compress) {
   }
 }
 
+TEST(CompressionTest, zstdCompressionOutputExactlyFillsTheBuffer) {
+  const size_t DATA_SIZE = 10000000;
+  std::vector<char> data(DATA_SIZE, '\0');
+  for (size_t i = 0; i < DATA_SIZE; ++i ) {
+    data[i] = 1 + (char)(i%255);
+  }
+  std::vector<unsigned char> outputDataBuffer(DATA_SIZE, '\0');
+
+  ZSTD_INFO::stream_t zstdStream;
+  ZSTD_INFO::init_stream_encoder(&zstdStream, &data[0]);
+  zstdStream.next_in   = (const unsigned char*)&data[0];
+  zstdStream.avail_in  = DATA_SIZE;
+  zstdStream.next_out  = &outputDataBuffer[0];
+  zstdStream.avail_out = DATA_SIZE;
+  ZSTD_INFO::stream_run_encode(&zstdStream, CompStep::STEP);
+  const size_t sizeOfIntermediateOutput = DATA_SIZE - zstdStream.avail_out;
+  ASSERT_GT(sizeOfIntermediateOutput, 0);
+  ASSERT_LT(sizeOfIntermediateOutput, DATA_SIZE);
+
+  // Setup the initial size of the output data buffer to exactly match the size
+  // of output data from feeding in the first chunk of input data
+  zim::Compressor<ZSTD_INFO> compressor(sizeOfIntermediateOutput);
+  compressor.init(&data[0]);
+  compressor.feed(&data[0], DATA_SIZE);
+  zim::zsize_t compressedDataSize2;
+  const auto out2 = compressor.get_data(&compressedDataSize2);
+}
 
 }  // namespace
