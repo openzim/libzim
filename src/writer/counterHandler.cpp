@@ -59,6 +59,30 @@ DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
   return ret;
 }
 
+std::string CounterHandler::stripMimeParameters(const std::string& rawMimeType) {
+  size_t pos = rawMimeType.find(';');
+
+  // string is clean if no semicolon found
+  if (pos == std::string::npos){
+    return rawMimeType;
+  }
+
+  std::string cleanMime = rawMimeType.substr(0, pos);
+
+  // removing whitespaces, might be optional
+  size_t end = cleanMime.find_last_not_of(" \t");
+  if (end != std::string::npos){
+    cleanMime = cleanMime.substr(0, end+1);
+  }
+  else {
+    // fallback if string is just empty space before the semicolon, really not sure about this
+    cleanMime = "";
+  }
+
+  return cleanMime;
+}
+
+
 void CounterHandler::handle(Dirent* dirent, const Hints& hints)
 {
 }
@@ -72,5 +96,13 @@ void CounterHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   if (mimetype.empty()) {
     return;
   }
-  m_mimetypeCounter[mimetype] += 1;
+
+  // Strip mimetype before passing it as map key
+  auto cleanMimetype = stripMimeParameters(mimetype);
+
+  if (cleanMimetype.empty()){
+    return;
+  }
+
+  m_mimetypeCounter[cleanMimetype] += 1;
 }
