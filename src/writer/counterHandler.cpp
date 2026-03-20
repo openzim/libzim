@@ -19,6 +19,7 @@
 
 #include "counterHandler.h"
 #include "creatordata.h"
+#include "../tools.h"
 
 #include <zim/writer/contentProvider.h>
 #include <zim/blob.h>
@@ -59,6 +60,7 @@ DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
   return ret;
 }
 
+
 void CounterHandler::handle(Dirent* dirent, const Hints& hints)
 {
 }
@@ -72,5 +74,12 @@ void CounterHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   if (mimetype.empty()) {
     return;
   }
-  m_mimetypeCounter[mimetype] += 1;
+
+  auto cleanMimetype = zim::stripMimeParameters(mimetype);
+
+  if (cleanMimetype.empty()){
+    return;
+  }
+
+  m_mimetypeCounter[cleanMimetype] += 1;
 }

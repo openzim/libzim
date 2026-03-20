@@ -210,6 +210,29 @@ std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
     return result;
 }
 
+std::string zim::stripMimeParameters(const std::string& rawMimeType) {
+  size_t pos = rawMimeType.find(';');
+
+  // string is clean if no semicolon found
+  if (pos == std::string::npos){
+    return rawMimeType;
+  }
+
+  std::string cleanMime = rawMimeType.substr(0, pos);
+
+  // removing trailing whitespaces before the semicolon
+  size_t end = cleanMime.find_last_not_of(" \t");
+  if (end != std::string::npos){
+    cleanMime = cleanMime.substr(0, end+1);
+  }
+  else {
+    // fallback if string is just empty space before the semicolon
+    cleanMime = "";
+  }
+
+  return cleanMime;
+}
+
 namespace
 {
 // The counter metadata format is a list of item separated by a `;` :

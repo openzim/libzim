@@ -60,6 +60,39 @@ namespace {
     ASSERT_THROW(zim::parseIllustrationPathToSize("Illustration_1 28x1 28@1"), std::runtime_error);
   }
 
+  TEST(Tools, stripMimeParameters) {
+    // Basic MIME types without parameters - should be unchanged
+    ASSERT_EQ(zim::stripMimeParameters("text/html"), "text/html");
+    ASSERT_EQ(zim::stripMimeParameters("application/json"), "application/json");
+    ASSERT_EQ(zim::stripMimeParameters("image/png"), "image/png");
+
+    // Empty string
+    ASSERT_EQ(zim::stripMimeParameters(""), "");
+
+    // MIME types with simple parameters - should strip parameter
+    ASSERT_EQ(zim::stripMimeParameters("text/html;charset=utf-8"), "text/html");
+    ASSERT_EQ(zim::stripMimeParameters("text/plain;charset=us-ascii"), "text/plain");
+
+    // MIME types with space before semicolon - should trim trailing whitespace
+    ASSERT_EQ(zim::stripMimeParameters("text/html ;charset=utf-8"), "text/html");
+    ASSERT_EQ(zim::stripMimeParameters("text/html  ;charset=utf-8"), "text/html");
+    ASSERT_EQ(zim::stripMimeParameters("text/html\t;charset=utf-8"), "text/html");
+
+    // Multiple parameters
+    ASSERT_EQ(zim::stripMimeParameters("text/html;charset=utf-8;boundary=something"), "text/html");
+
+    // Edge case: only whitespace before semicolon
+    ASSERT_EQ(zim::stripMimeParameters(" ;charset=utf-8"), "");
+    ASSERT_EQ(zim::stripMimeParameters("  ;charset=utf-8"), "");
+    ASSERT_EQ(zim::stripMimeParameters("\t;charset=utf-8"), "");
+
+    // Edge case: semicolon at start
+    ASSERT_EQ(zim::stripMimeParameters(";charset=utf-8"), "");
+
+    // Edge case: just a semicolon
+    ASSERT_EQ(zim::stripMimeParameters(";"), "");
+  }
+
 #if defined(ENABLE_XAPIAN)
   TEST(Tools, removeAccents) {
     ASSERT_EQ(zim::removeAccents("bépoàǹ"), "bepoan");
