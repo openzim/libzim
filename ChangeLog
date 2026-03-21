@@ -1,3 +1,9 @@
+libzim 9.5.1
+============
+
+ * Eliminated zim::Compressor trapped in an infinite loop scenario (@veloman-yunkan #1047)
+ * Use windows-2025 CI runner (@kelson42 #1041)
+
 libzim 9.5.0
 ============
 
