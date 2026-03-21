@@ -23,6 +23,7 @@
 #include "handler.h"
 
 #include <map>
+#include <string>
 
 namespace zim {
 namespace writer {
@@ -43,6 +44,9 @@ class CounterHandler : public DirentHandler {
     void handle(Dirent* dirent, const Hints& hints) override;
 
   private:
+  // helper to strip MIME params
+    static std::string stripMimeParameters(const std::string& rawMimeType);
+
     Dirents createDirents() const override;
     CreatorData* mp_creatorData;
     Counter m_mimetypeCounter;
