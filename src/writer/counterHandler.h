@@ -23,6 +23,7 @@
 #include "handler.h"
 
 #include <map>
+#include <string>
 
 namespace zim {
 namespace writer {
