@@ -214,7 +214,7 @@ std::string zim::stripMimeParameters(const std::string& rawMimeType) {
   size_t pos = rawMimeType.find(';');
 
   // string is clean if no semicolon found
-  if (pos == std::string::npos){
+  if (pos == std::string::npos) {
     return rawMimeType;
   }
 
@@ -222,7 +222,7 @@ std::string zim::stripMimeParameters(const std::string& rawMimeType) {
 
   // removing trailing whitespaces before the semicolon
   size_t end = cleanMime.find_last_not_of(" \t");
-  if (end != std::string::npos){
+  if (end != std::string::npos) {
     cleanMime = cleanMime.substr(0, end+1);
   }
   else {

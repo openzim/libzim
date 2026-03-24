@@ -77,7 +77,7 @@ void CounterHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 
   auto cleanMimetype = zim::stripMimeParameters(mimetype);
 
-  if (cleanMimetype.empty()){
+  if (cleanMimetype.empty()) {
     return;
   }
 
