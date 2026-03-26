@@ -46,7 +46,9 @@ zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
   auto current_offset = offset.v;
   errno = 0;
   while (size_to_read > 0) {
-    auto size_read = PREAD(m_fd, dest, size_to_read, current_offset);
+    // Clamp per-call size to 1 GB — macOS pread() returns EINVAL above INT32_MAX
+    auto chunk = size_to_read > (1ULL << 30) ? (size_t)(1ULL << 30) : size_to_read;
+    auto size_read = PREAD(m_fd, dest, chunk, current_offset);
     if (size_read == 0) {
       throw std::runtime_error("Cannot read past the end of the file");
     }
