@@ -544,7 +544,6 @@ namespace zim
       if (!ret.second) {
         Dirent* existing = *ret.first;
         if (existing->isRedirect() && !dirent->isRedirect()) {
-          unresolvedRedirectDirents.erase(existing);
           dirents.erase(ret.first);
           existing->markRemoved();
           dirents.insert(dirent);
@@ -558,7 +557,6 @@ namespace zim
       };
 
       if (dirent->isRedirect()) {
-        unresolvedRedirectDirents.insert(dirent);
         nbRedirectItems++;
       }
     }
@@ -669,8 +667,14 @@ namespace zim
     {
       // translate redirect aid to index
       INFO("Resolve redirect");
-      for (auto dirent: unresolvedRedirectDirents)
+      for (auto it = dirents.begin(); it != dirents.end(); )
       {
+        Dirent* dirent = *it;
+        if ( !dirent->isRedirect() ) {
+          ++it;
+          continue;
+        }
+
         Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
@@ -678,13 +682,14 @@ namespace zim
               << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
               << " redirecting to (missing) "
               << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
-          dirents.erase(dirent);
+          it = dirents.erase(it);
           dirent->markRemoved();
           if (dirent == mainPageDirent) {
             mainPageDirent = nullptr;
           }
         } else  {
           dirent->setRedirect(*target_pos);
+          ++it;
         }
       }
     }

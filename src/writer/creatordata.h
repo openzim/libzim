@@ -91,7 +91,6 @@ namespace zim
         DirentPool  pool;
 
         UrlSortedDirents   dirents;
-        UrlSortedDirents   unresolvedRedirectDirents;
         Dirent*            mainPageDirent;
 
         MimeTypesMap mimeTypesMap;
