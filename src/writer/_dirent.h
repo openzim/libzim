@@ -157,7 +157,6 @@ namespace zim
         uint16_t mimeType;
         entry_index_t idx = entry_index_t(0);
         DirentInfo info;
-        offset_t offset;
         uint8_t _ns : 2;
         bool removed : 1;
 
@@ -230,9 +229,6 @@ namespace zim
         {
           return (isRedirect() ? 12 : 16) + pathTitle.size() + 1;
         }
-
-        offset_t getOffset() const { return offset; }
-        void setOffset(offset_t o) { offset = o; }
 
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }
