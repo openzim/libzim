@@ -61,6 +61,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <ctime>
+#include <deque>
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"
@@ -348,22 +349,32 @@ namespace zim
 
       ASSERT(lseek(out_fd, 0, SEEK_CUR), <, CLUSTER_BASE_OFFSET);
 
+      { // writing dirents
+
+      // TODO: Memory usage by direntOffsets can be reduced by replacing
+      // TODO: the offset values with dirent size values and reconstructing
+      // TODO: the offsets as a running sum starting from the offset of the
+      // TODO: first dirent
+      std::deque<offset_t> direntOffsets;
+
       TINFO(" write directory entries");
       lseek(out_fd, 0, SEEK_END);
       for (Dirent* dirent: data->dirents)
       {
-        dirent->setOffset(offset_t(lseek(out_fd, 0, SEEK_CUR)));
+        direntOffsets.push_back(offset_t(lseek(out_fd, 0, SEEK_CUR)));
         dirent->write(out_fd);
       }
 
-      TINFO(" write path prt list");
+      TINFO(" write path ptr list");
       header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
-      for (auto& dirent: data->dirents)
+      for (auto offset : direntOffsets)
       {
         char tmp_buff[sizeof(offset_type)];
-        toLittleEndian(dirent->getOffset(), tmp_buff);
+        toLittleEndian(offset, tmp_buff);
         _write(out_fd, tmp_buff, sizeof(offset_type));
       }
+
+      } // writing dirents
 
       TINFO(" write cluster offset list");
       header.setClusterPtrPos(lseek(out_fd, 0, SEEK_CUR));
@@ -533,7 +544,6 @@ namespace zim
       if (!ret.second) {
         Dirent* existing = *ret.first;
         if (existing->isRedirect() && !dirent->isRedirect()) {
-          unresolvedRedirectDirents.erase(existing);
           dirents.erase(ret.first);
           existing->markRemoved();
           dirents.insert(dirent);
@@ -547,7 +557,6 @@ namespace zim
       };
 
       if (dirent->isRedirect()) {
-        unresolvedRedirectDirents.insert(dirent);
         nbRedirectItems++;
       }
     }
@@ -658,8 +667,14 @@ namespace zim
     {
       // translate redirect aid to index
       INFO("Resolve redirect");
-      for (auto dirent: unresolvedRedirectDirents)
+      for (auto it = dirents.begin(); it != dirents.end(); )
       {
+        Dirent* dirent = *it;
+        if ( !dirent->isRedirect() ) {
+          ++it;
+          continue;
+        }
+
         Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
         auto target_pos = dirents.find(&tmpDirent);
         if(target_pos == dirents.end()) {
@@ -667,13 +682,14 @@ namespace zim
               << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
               << " redirecting to (missing) "
               << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
-          dirents.erase(dirent);
+          it = dirents.erase(it);
           dirent->markRemoved();
           if (dirent == mainPageDirent) {
             mainPageDirent = nullptr;
           }
         } else  {
           dirent->setRedirect(*target_pos);
+          ++it;
         }
       }
     }

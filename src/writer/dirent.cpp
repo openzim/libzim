@@ -54,7 +54,6 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
     mimeType(mimetype),
     idx(0),
     info(DirentInfo::Direct()),
-    offset(0),
     _ns(static_cast<uint8_t>(ns)),
     removed(false)
 {}
@@ -65,7 +64,6 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
     mimeType(redirectMimeType),
     idx(0),
     info(DirentInfo::Redirect(targetNs, targetPath)),
-    offset(0),
     _ns(static_cast<uint8_t>(ns)),
     removed(false)
 {}
@@ -75,7 +73,6 @@ Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& 
     mimeType(target.mimeType),
     idx(0),
     info(target.info),
-    offset(0),
     _ns(target._ns),
     removed(false)
 {}
