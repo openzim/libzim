@@ -42,6 +42,15 @@ namespace
 
 using namespace zim;
 
+#define ASSERT_REDIRECT_ENTRY(archive, path, targetPath) \
+{\
+  ASSERT_NO_THROW(archive.getEntryByPath(path)); \
+  const auto entry = archive.getEntryByPath(path); \
+  ASSERT_TRUE(entry.isRedirect()); \
+  ASSERT_EQ(entry.getRedirectEntry().getPath(), targetPath); \
+}
+
+
 struct NoneType {};
 const NoneType None;
 
@@ -352,5 +361,27 @@ TEST(ZimCreator, interruptedZimCreation)
   );
 }
 
+
+TEST(ZimCreator, handlingOfRedirectionLoops)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addRedirection("redirectA", "A -> B", "redirectB");
+  creator.addRedirection("redirectB", "B -> C", "redirectC");
+  creator.addRedirection("redirectC", "C -> A", "redirectA");
+
+  creator.finishZimCreation();
+
+  const zim::Archive archive(tempPath);
+
+  ASSERT_REDIRECT_ENTRY(archive, "redirectA", "redirectB");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectB", "redirectC");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectC", "redirectA");
+}
 
 } // unnamed namespace
