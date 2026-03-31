@@ -363,7 +363,7 @@ TEST(ZimCreator, interruptedZimCreation)
   );
 }
 
-TEST(ZimCreator, handlingOfBlindChainsOfRedirections)
+TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
 {
   unittests::TempFile temp("zimfile");
   const auto tempPath = temp.path();
@@ -377,52 +377,68 @@ TEST(ZimCreator, handlingOfBlindChainsOfRedirections)
   // Create a blind ascending chain of redirects, i.e. a chain
   // of redirects where the last entry of the chain is an invalid redirect
   // and the rest are of the form (path1 -> path2) where path1 < path2
-  creator.addRedirection("ascendingChain/redirectA",
+  creator.addRedirection("redirectA",
                          "First redirect in an ascending blind chain",
-                         "ascendingChain/redirectB");
+                         "redirectB");
 
-  creator.addRedirection("ascendingChain/redirectB",
+  creator.addRedirection("redirectB",
                          "Middle redirect in an ascending blind chain",
-                         "ascendingChain/redirectC");
+                         "redirectC");
 
-  creator.addRedirection("ascendingChain/redirectC",
+  creator.addRedirection("redirectC",
                          "Last redirect in an ascending blind chain",
-                         "ascendingChain/missingTarget");
-
-  // Create a blind descending chain of redirects, i.e. a chain
-  // of redirects where the last entry of the chain is an invalid redirect
-  // and the rest are of the form (path1 -> path2) where path1 > path2
-  creator.addRedirection("descendingChain/redirectC",
-                         "First redirect in a descending blind chain",
-                         "descendingChain/redirectB");
-
-  creator.addRedirection("descendingChain/redirectB",
-                         "Middle redirect in a descending blind chain",
-                         "descendingChain/redirectA");
-
-  creator.addRedirection("descendingChain/redirectA",
-                         "Last redirect in a descending blind chain",
-                         "descendingChain/missingTarget");
+                         "missingTarget");
 
   creator.finishZimCreation();
 
   const zim::Archive archive(tempPath);
 
-  EXPECT_MISSING_ENTRY(archive, "ascendingChain/missingTarget");
+  EXPECT_MISSING_ENTRY(archive, "missingTarget");
 
   // XXX: The unit test now reflects the bug rather than imposes
   // XXX: the desired behavior.
-  //EXPECT_MISSING_ENTRY(archive, "ascendingChain/redirectA");
-  //EXPECT_MISSING_ENTRY(archive, "ascendingChain/redirectB");
-  ASSERT_REDIRECT_ENTRY(archive, "ascendingChain/redirectA", "ascendingChain/redirectB");
-  ASSERT_REDIRECT_ENTRY(archive, "ascendingChain/redirectB", "1st");
+  //EXPECT_MISSING_ENTRY(archive, "redirectA");
+  //EXPECT_MISSING_ENTRY(archive, "redirectB");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectA", "redirectB");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectB", "1st");
 
-  EXPECT_MISSING_ENTRY(archive, "ascendingChain/redirectC");
+  EXPECT_MISSING_ENTRY(archive, "redirectC");
+}
 
-  EXPECT_MISSING_ENTRY(archive, "descendingChain/missingTarget");
-  EXPECT_MISSING_ENTRY(archive, "descendingChain/redirectA");
-  EXPECT_MISSING_ENTRY(archive, "descendingChain/redirectB");
-  EXPECT_MISSING_ENTRY(archive, "descendingChain/redirectC");
+TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  // Create a blind descending chain of redirects, i.e. a chain
+  // of redirects where the last entry of the chain is an invalid redirect
+  // and the rest are of the form (path1 -> path2) where path1 > path2
+  creator.addRedirection("redirectC",
+                         "First redirect in a descending blind chain",
+                         "redirectB");
+
+  creator.addRedirection("redirectB",
+                         "Middle redirect in a descending blind chain",
+                         "redirectA");
+
+  creator.addRedirection("redirectA",
+                         "Last redirect in a descending blind chain",
+                         "missingTarget");
+
+  creator.finishZimCreation();
+
+  const zim::Archive archive(tempPath);
+
+  EXPECT_MISSING_ENTRY(archive, "missingTarget");
+  EXPECT_MISSING_ENTRY(archive, "redirectA");
+  EXPECT_MISSING_ENTRY(archive, "redirectB");
+  EXPECT_MISSING_ENTRY(archive, "redirectC");
 }
 
 TEST(ZimCreator, handlingOfRedirectionLoops)
