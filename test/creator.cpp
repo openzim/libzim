@@ -389,20 +389,7 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
                          "Last redirect in an ascending blind chain",
                          "missingTarget");
 
-  creator.finishZimCreation();
-
-  const zim::Archive archive(tempPath);
-
-  EXPECT_MISSING_ENTRY(archive, "missingTarget");
-
-  // XXX: The unit test now reflects the bug rather than imposes
-  // XXX: the desired behavior.
-  //EXPECT_MISSING_ENTRY(archive, "redirectA");
-  //EXPECT_MISSING_ENTRY(archive, "redirectB");
-  ASSERT_REDIRECT_ENTRY(archive, "redirectA", "redirectB");
-  ASSERT_REDIRECT_ENTRY(archive, "redirectB", "1st");
-
-  EXPECT_MISSING_ENTRY(archive, "redirectC");
+  EXPECT_THROW(creator.finishZimCreation(), zim::CreatorError);
 }
 
 TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)

@@ -20,6 +20,7 @@
 
 #include "_dirent.h"
 #include <zim/zim.h>
+#include <zim/error.h>
 #include "buffer.h"
 #include "endian_tools.h"
 #include "log.h"
@@ -83,6 +84,16 @@ NS Dirent::getRedirectNs() const {
 
 std::string Dirent::getRedirectPath() const {
   return info.getRedirect().targetPath;
+}
+
+entry_index_t Dirent::getRedirectIndex() const      {
+  const auto targetDirent = info.getResolved().targetDirent;
+  if ( targetDirent->isRemoved() ) {
+    std::ostringstream oss;
+    oss << NsAsChar(getNamespace()) << "/" << getPath();
+    throw CreatorError("Dangling redirect remains at " + oss.str());
+  }
+  return targetDirent->getIdx();
 }
 
 void Dirent::write(int out_fd) const

@@ -190,9 +190,7 @@ namespace zim
           info.~DirentInfo();
           new(&info) DirentInfo(DirentInfo::Resolved(target));
         }
-        entry_index_t getRedirectIndex() const      {
-          return info.getResolved().targetDirent->getIdx();
-        }
+        entry_index_t getRedirectIndex() const;
 
         void setIdx(entry_index_t idx_)      { idx = idx_; }
         entry_index_t getIdx() const         { return idx; }
