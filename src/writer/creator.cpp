@@ -105,6 +105,20 @@ namespace zim
 namespace writer
 {
 
+namespace
+{
+
+InvalidEntry direntConflictError(const Dirent& existingDirent, const Dirent& newDirent)
+{
+  Formatter fmt;
+  fmt << "Impossible to add " << NsAsChar(newDirent.getNamespace()) << "/" << newDirent.getPath() << "\n"
+      << "  dirent's title to add is : " << newDirent.getTitle() << "\n"
+      << "  existing dirent's title is : " << existingDirent.getTitle() << "\n";
+  return InvalidEntry(fmt);
+}
+
+} // unnamed namespace
+
 Creator::Creator()
   : m_clusterSize(DEFAULT_CLUSTER_SIZE)
 {}
@@ -560,11 +574,7 @@ void CreatorData::addDirent(Dirent* dirent)
       removeDirent(ret.first);
       dirents.insert(dirent);
     } else {
-      Formatter fmt;
-      fmt << "Impossible to add " << NsAsChar(dirent->getNamespace()) << "/" << dirent->getPath() << std::endl;
-      fmt << "  dirent's title to add is : " << dirent->getTitle() << std::endl;
-      fmt << "  existing dirent's title is : " << existing->getTitle() << std::endl;
-      throw InvalidEntry(fmt);
+      throw direntConflictError(*existing, *dirent);
     }
   };
 
