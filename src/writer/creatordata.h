@@ -54,6 +54,7 @@ namespace zim
     {
       public:
         typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
+        typedef UrlSortedDirents::iterator DirentIterator;
         typedef std::map<std::string, uint16_t> MimeTypesMap;
         typedef std::map<uint16_t, std::string> RMimeTypesMap;
         typedef std::vector<std::string> MimeTypesList;
@@ -87,6 +88,8 @@ namespace zim
         void addError(const std::exception_ptr error);
         bool isErrored() const;
         void quitAllThreads();
+
+        DirentIterator removeDirent(DirentIterator it);
 
         DirentPool  pool;
 

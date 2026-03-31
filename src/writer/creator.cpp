@@ -541,14 +541,23 @@ void CreatorData::quitAllThreads() {
   }
 }
 
+CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
+{
+  Dirent* const dirent = *it;
+  dirent->markRemoved();
+  if (dirent == mainPageDirent) {
+    mainPageDirent = nullptr;
+  }
+  return dirents.erase(it);
+}
+
 void CreatorData::addDirent(Dirent* dirent)
 {
   auto ret = dirents.insert(dirent);
   if (!ret.second) {
     Dirent* existing = *ret.first;
     if (existing->isRedirect() && !dirent->isRedirect()) {
-      dirents.erase(ret.first);
-      existing->markRemoved();
+      removeDirent(ret.first);
       dirents.insert(dirent);
     } else {
       Formatter fmt;
@@ -685,11 +694,7 @@ void CreatorData::resolveRedirectIndexes()
           << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
           << " redirecting to (missing) "
           << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
-      it = dirents.erase(it);
-      dirent->markRemoved();
-      if (dirent == mainPageDirent) {
-        mainPageDirent = nullptr;
-      }
+      it = removeDirent(it);
     } else  {
       dirent->setRedirect(*target_pos);
       ++it;
