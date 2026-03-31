@@ -203,11 +203,6 @@ namespace zim
           direct.blobNumber = _cluster->count();
         }
 
-        zim::writer::Cluster* getCluster()
-        {
-          return info.getDirect().cluster;
-        }
-
         cluster_index_t getClusterNumber() const {
           auto& direct = info.getDirect();
           return direct.cluster ? direct.cluster->getClusterIndex() : cluster_index_t(0);
