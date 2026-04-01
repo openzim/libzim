@@ -686,6 +686,22 @@ namespace zim
        */
       void setDirentCacheMaxSize(size_t nbDirents);
 
+      /** Enable/disable lazy decompression of compressed clusters
+       *
+       * In lazy decompession mode, data in compressed clusters is decompressed
+       * on-demand, i.e. only as much data is decompressed as is needed to
+       * serve item accesses within the cluster. It leads to faster first-time
+       * access to items occurring early in the cluster, but comes at the cost
+       * of increased memory usage since the decompressor's state (whose memory
+       * consumption can exceed the data size of the cluster) is kept around
+       * while the cluster is still loaded.
+       *
+       * Lazy decompression is enabled by default.
+       *
+       * @param enable tells whether lazy decompression should be enabled
+       */
+      void decompressClustersLazily(bool enable);
+
 #ifdef ZIM_PRIVATE
       cluster_index_type getClusterCount() const;
       offset_type getClusterOffset(cluster_index_type idx) const;
