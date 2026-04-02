@@ -90,6 +90,7 @@ namespace zim
         void quitAllThreads();
 
         DirentIterator removeDirent(DirentIterator it);
+        void removeDirent(Dirent* dirent);
 
         DirentPool  pool;
 

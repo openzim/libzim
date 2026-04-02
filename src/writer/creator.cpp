@@ -176,8 +176,14 @@ void Creator::addItem(std::shared_ptr<Item> item)
   checkError();
   bool compressContent = item->getAmendedHints()[COMPRESS];
   auto dirent = data->createItemDirent(item.get());
-  data->addItemData(dirent, item->getContentProvider(), compressContent);
-  data->handle(dirent, item);
+
+  try {
+    data->addItemData(dirent, item->getContentProvider(), compressContent);
+    data->handle(dirent, item);
+  } catch (...) {
+    data->removeDirent(dirent);
+    throw;
+  }
 
   if (data->dirents.size()%1000 == 0) {
     TPROGRESS();
@@ -565,6 +571,13 @@ CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
   return dirents.erase(it);
 }
 
+void CreatorData::removeDirent(Dirent* dirent)
+{
+  const auto it = dirents.find(dirent);
+  ASSERT(it != dirents.end(), ==, true);
+  removeDirent(it);
+}
+
 void CreatorData::addDirent(Dirent* dirent)
 {
   auto ret = dirents.insert(dirent);
@@ -628,10 +641,10 @@ Dirent* CreatorData::createItemDirent(const Item* item)
   auto path = item->getPath();
   auto mimetype = item->getMimeType();
   if (mimetype.empty()) {
-    std::cerr << "Warning, " << item->getPath() << " have empty mimetype." << std::endl;
+    std::cerr << "Warning, " << path << " have empty mimetype." << std::endl;
     mimetype = "application/octet-stream";
   }
-  return createDirent(NS::C, item->getPath(), mimetype, item->getTitle());
+  return createDirent(NS::C, path, mimetype, item->getTitle());
 }
 
 Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
