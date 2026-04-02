@@ -31,6 +31,9 @@
 namespace
 {
 
+#define EXPECT_MISSING_ENTRY(archive, path)  \
+  EXPECT_THROW(archive.getEntryByPath(path), zim::EntryNotFound)
+
 using namespace zim;
 
 enum class ERRORKIND {
@@ -180,6 +183,10 @@ TEST_P(FaultyItemErrorTest, faultyItem)
   EXPECT_THROW(creator.addItem(item), SimulatedFaultError);
   // As the error is directly reported, finishZimCreation report nothing.
   EXPECT_NO_THROW(creator.finishZimCreation());
+
+  const zim::Archive archive(tempPath);
+
+  EXPECT_MISSING_ENTRY(archive, "foo");
 }
 
 const auto errorKinds = {
