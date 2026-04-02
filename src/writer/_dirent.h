@@ -205,8 +205,10 @@ namespace zim
 
         cluster_index_t getClusterNumber() const {
           auto& direct = info.getDirect();
-          return direct.cluster ? direct.cluster->getClusterIndex() : cluster_index_t(0);
+          ASSERT(direct.cluster, !=, nullptr);
+          return direct.cluster->getClusterIndex();
         }
+
         blob_index_t  getBlobNumber() const {
           return info.getDirect().blobNumber;
         }
