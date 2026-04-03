@@ -57,6 +57,8 @@ namespace zim {
 
   std::map<std::string, int> read_valuesmap(const std::string& s);
 
+  std::string LIBZIM_PRIVATE_API stripMimeParameters(const std::string& rawMimeType);
+
   using MimeCounterType = std::map<const std::string, zim::entry_index_type>;
   MimeCounterType LIBZIM_PRIVATE_API parseMimetypeCounter(const std::string& counterData);
 

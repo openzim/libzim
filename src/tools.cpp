@@ -210,6 +210,10 @@ std::map<std::string, int> zim::read_valuesmap(const std::string &s) {
     return result;
 }
 
+std::string zim::stripMimeParameters(const std::string& rawMimeType) {
+  return rawMimeType.substr(0, rawMimeType.find_first_of("; \t"));
+}
+
 namespace
 {
 // The counter metadata format is a list of item separated by a `;` :
