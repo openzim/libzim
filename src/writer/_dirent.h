@@ -157,7 +157,6 @@ namespace zim
         uint16_t mimeType;
         entry_index_t idx = entry_index_t(0);
         DirentInfo info;
-        offset_t offset;
         uint8_t _ns : 2;
         bool removed : 1;
 
@@ -191,9 +190,7 @@ namespace zim
           info.~DirentInfo();
           new(&info) DirentInfo(DirentInfo::Resolved(target));
         }
-        entry_index_t getRedirectIndex() const      {
-          return info.getResolved().targetDirent->getIdx();
-        }
+        entry_index_t getRedirectIndex() const;
 
         void setIdx(entry_index_t idx_)      { idx = idx_; }
         entry_index_t getIdx() const         { return idx; }
@@ -206,15 +203,12 @@ namespace zim
           direct.blobNumber = _cluster->count();
         }
 
-        zim::writer::Cluster* getCluster()
-        {
-          return info.getDirect().cluster;
-        }
-
         cluster_index_t getClusterNumber() const {
           auto& direct = info.getDirect();
-          return direct.cluster ? direct.cluster->getClusterIndex() : cluster_index_t(0);
+          ASSERT(direct.cluster, !=, nullptr);
+          return direct.cluster->getClusterIndex();
         }
+
         blob_index_t  getBlobNumber() const {
           return info.getDirect().blobNumber;
         }
@@ -230,9 +224,6 @@ namespace zim
         {
           return (isRedirect() ? 12 : 16) + pathTitle.size() + 1;
         }
-
-        offset_t getOffset() const { return offset; }
-        void setOffset(offset_t o) { offset = o; }
 
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }

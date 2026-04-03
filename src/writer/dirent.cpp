@@ -20,6 +20,7 @@
 
 #include "_dirent.h"
 #include <zim/zim.h>
+#include <zim/error.h>
 #include "buffer.h"
 #include "endian_tools.h"
 #include "log.h"
@@ -54,7 +55,6 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
     mimeType(mimetype),
     idx(0),
     info(DirentInfo::Direct()),
-    offset(0),
     _ns(static_cast<uint8_t>(ns)),
     removed(false)
 {}
@@ -65,7 +65,6 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
     mimeType(redirectMimeType),
     idx(0),
     info(DirentInfo::Redirect(targetNs, targetPath)),
-    offset(0),
     _ns(static_cast<uint8_t>(ns)),
     removed(false)
 {}
@@ -75,7 +74,6 @@ Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& 
     mimeType(target.mimeType),
     idx(0),
     info(target.info),
-    offset(0),
     _ns(target._ns),
     removed(false)
 {}
@@ -86,6 +84,16 @@ NS Dirent::getRedirectNs() const {
 
 std::string Dirent::getRedirectPath() const {
   return info.getRedirect().targetPath;
+}
+
+entry_index_t Dirent::getRedirectIndex() const      {
+  const auto targetDirent = info.getResolved().targetDirent;
+  if ( targetDirent->isRemoved() ) {
+    std::ostringstream oss;
+    oss << NsAsChar(getNamespace()) << "/" << getPath();
+    throw CreatorError("Dangling redirect remains at " + oss.str());
+  }
+  return targetDirent->getIdx();
 }
 
 void Dirent::write(int out_fd) const

@@ -42,8 +42,27 @@ namespace
 
 using namespace zim;
 
+#define ASSERT_REDIRECT_ENTRY(archive, path, targetPath) \
+{\
+  ASSERT_NO_THROW(archive.getEntryByPath(path)); \
+  const auto entry = archive.getEntryByPath(path); \
+  ASSERT_TRUE(entry.isRedirect()); \
+  ASSERT_EQ(entry.getRedirectEntry().getPath(), targetPath); \
+}
+
+#define EXPECT_MISSING_ENTRY(archive, path)  \
+  EXPECT_THROW(archive.getEntryByPath(path), zim::EntryNotFound)
+
 struct NoneType {};
 const NoneType None;
+
+zim::Uuid makeSafeUuid() {
+  zim::Uuid uuid;
+  // Force special char in the uuid to be sure they are not handled particularly
+  uuid.data[5] = '\n';
+  uuid.data[10] = '\0';
+  return uuid;
+}
 
 template<typename T>
 struct Optional{
@@ -106,13 +125,9 @@ TEST(ZimCreator, createEmptyZim)
 {
   unittests::TempFile temp("emptyzimfile");
   auto tempPath = temp.path();
-  zim::Uuid uuid;
-  // Force special char in the uuid to be sure they are not handled particularly.
-  uuid.data[5] = '\n';
-  uuid.data[10] = '\0';
 
   writer::Creator creator;
-  creator.setUuid(uuid);
+  creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
   creator.finishZimCreation();
 
@@ -171,13 +186,9 @@ TEST(ZimCreator, createZim)
 {
   unittests::TempFile temp("zimfile");
   auto tempPath = temp.path();
-  zim::Uuid uuid;
-  // Force special char in the uuid to be sure they are not handled particularly.
-  uuid.data[5] = '\n';
-  uuid.data[10] = '\0';
 
   writer::Creator creator;
-  creator.setUuid(uuid);
+  creator.setUuid(makeSafeUuid());
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
   creator.addRedirection("foo", "WrongRedirection", "foobar", {{zim::writer::FRONT_ARTICLE, true}}); // Will be replaced by item
@@ -352,5 +363,91 @@ TEST(ZimCreator, interruptedZimCreation)
   );
 }
 
+TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  // Create a blind ascending chain of redirects, i.e. a chain
+  // of redirects where the last entry of the chain is an invalid redirect
+  // and the rest are of the form (path1 -> path2) where path1 < path2
+  creator.addRedirection("redirectA",
+                         "First redirect in an ascending blind chain",
+                         "redirectB");
+
+  creator.addRedirection("redirectB",
+                         "Middle redirect in an ascending blind chain",
+                         "redirectC");
+
+  creator.addRedirection("redirectC",
+                         "Last redirect in an ascending blind chain",
+                         "missingTarget");
+
+  EXPECT_THROW(creator.finishZimCreation(), zim::CreatorError);
+}
+
+TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  // Create a blind descending chain of redirects, i.e. a chain
+  // of redirects where the last entry of the chain is an invalid redirect
+  // and the rest are of the form (path1 -> path2) where path1 > path2
+  creator.addRedirection("redirectC",
+                         "First redirect in a descending blind chain",
+                         "redirectB");
+
+  creator.addRedirection("redirectB",
+                         "Middle redirect in a descending blind chain",
+                         "redirectA");
+
+  creator.addRedirection("redirectA",
+                         "Last redirect in a descending blind chain",
+                         "missingTarget");
+
+  creator.finishZimCreation();
+
+  const zim::Archive archive(tempPath);
+
+  EXPECT_MISSING_ENTRY(archive, "missingTarget");
+  EXPECT_MISSING_ENTRY(archive, "redirectA");
+  EXPECT_MISSING_ENTRY(archive, "redirectB");
+  EXPECT_MISSING_ENTRY(archive, "redirectC");
+}
+
+TEST(ZimCreator, handlingOfRedirectionLoops)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addRedirection("redirectA", "A -> B", "redirectB");
+  creator.addRedirection("redirectB", "B -> C", "redirectC");
+  creator.addRedirection("redirectC", "C -> A", "redirectA");
+
+  creator.finishZimCreation();
+
+  const zim::Archive archive(tempPath);
+
+  ASSERT_REDIRECT_ENTRY(archive, "redirectA", "redirectB");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectB", "redirectC");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectC", "redirectA");
+}
 
 } // unnamed namespace

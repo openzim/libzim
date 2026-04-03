@@ -55,7 +55,7 @@ zim::Dirent read_from_buffer(const zim::Buffer& buf)
   return *direntReader.readDirent(zim::offset_t(0));
 }
 
-size_t writenDirentSize(const zim::writer::Dirent& dirent)
+size_t writtenDirentSize(const zim::writer::Dirent& dirent)
 {
   TempFile tmpFile("test_dirent");
   const auto tmp_fd = tmpFile.fd();
@@ -67,16 +67,16 @@ size_t writenDirentSize(const zim::writer::Dirent& dirent)
 TEST(DirentTest, size)
 {
 #ifdef _WIN32
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 72U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 64U);
 #else
-  // Dirent's size is important for us as we are creating huge zim files on linux
-  // and we need to store a lot of dirents.
+  // Dirent's size is important for us as we are creating huge zim files on
+  // Linux and we need to store a lot of dirents.
   // Be sure that dirent's size is not increased by any change.
 #if ENV32BIT
   // On 32 bits, Dirent is smaller.
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 30U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 22U);
 #else
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 38U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 30U);
 #endif
 #endif
 }
@@ -184,13 +184,21 @@ TEST(DirentTest, read_write_redirect_dirent)
 
 TEST(DirentTest, dirent_size)
 {
+  // Needed so that writtenDirentSize() can be called on the test dirents
+  zim::writer::Cluster cluster(zim::Compression::None);
+  cluster.setClusterIndex(zim::cluster_index_t(0));
+
   // case path set, title empty, extralen empty
   zim::writer::Dirent dirent(NS::C, "Bar", "", 17);
-  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
+  dirent.setCluster(&cluster); // otherwise writtenDirentSize will crash
+
+  ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
 
   // case path set, title set, extralen empty
   zim::writer::Dirent dirent2(NS::C, "Bar", "Foo", 17);
-  ASSERT_EQ(dirent2.getDirentSize(), writenDirentSize(dirent2));
+  dirent2.setCluster(&cluster); // otherwise writtenDirentSize will crash
+
+  ASSERT_EQ(dirent2.getDirentSize(), writtenDirentSize(dirent2));
 }
 
 TEST(DirentTest, redirect_dirent_size)
@@ -200,7 +208,7 @@ TEST(DirentTest, redirect_dirent_size)
   zim::writer::Dirent dirent(NS::C, "Bar", "", NS::C, "Foo");
   dirent.setRedirect(&targetDirent);
 
-  ASSERT_EQ(dirent.getDirentSize(), writenDirentSize(dirent));
+  ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
 }
 
 }  // namespace
