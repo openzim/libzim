@@ -1,3 +1,10 @@
+libzim 9.6.0
+============
+
+ * Optimization of memory usage by dirents during ZIM creation (@veloman-yunkan #1055)
+ * Allows to open ZIM with more than ~268M entries on macOS (@jasontitus #1053)
+ * Fix ZIM metadata 'Counter' parser by properly ignoring mime-types paramters (@Pranavjeet-Naidu #1050)
+
 libzim 9.5.1
 ============
 
