@@ -392,6 +392,17 @@ TEST(ZimCreator, defaultHandlingOfDanglingRedirects)
   testAutoEliminationOfDanglingRedirects(creator, temp.path());
 }
 
+TEST(ZimCreator, autoEliminationOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+
+  writer::Creator creator;
+
+  creator.configDanglingRedirectHandling(zim::writer::ELIMINATE);
+
+  testAutoEliminationOfDanglingRedirects(creator, temp.path());
+}
+
 TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
 {
   unittests::TempFile temp("zimfile");

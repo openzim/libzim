@@ -156,6 +156,12 @@ Creator& Creator::configNbWorkers(unsigned nbWorkers)
   return *this;
 }
 
+Creator& Creator::configDanglingRedirectHandling(ProblemHandlingMode mode)
+{
+  m_danglingRedirectHandlingMode = mode;
+  return *this;
+}
+
 void Creator::startZimCreation(const std::string& filepath)
 {
   data = std::unique_ptr<CreatorData>(

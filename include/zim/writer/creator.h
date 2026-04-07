@@ -35,6 +35,20 @@ namespace zim
     class CreatorData;
 
     /**
+     * During ZIM file creation certain problematic situations may arise
+     * (for example, dangling redirects may remain). The `ProblemHandlingMode`
+     * enum type is intended to tell the `Creator` how to deal with such
+     * situations.
+     */
+    enum ProblemHandlingMode
+    {
+      /**
+       * The source of the problematic situation must be eliminated.
+       */
+      ELIMINATE
+    };
+
+    /**
      * The `Creator` is responsible to create a zim file.
      *
      * Once the `Creator` is instantiated, it can be configured with the
@@ -141,6 +155,17 @@ namespace zim
          * @return a reference to itself.
          */
         Creator& configNbWorkers(unsigned nbWorkers);
+
+        /**
+         * Define what to do about dangling redirects.
+         *
+         * - `ELIMINATE`: eliminate any dangling redirects remaining by the end
+         *   of ZIM creation.
+         *
+         * @param mode the mode to use with regard to dangling redirects
+         * @return a reference to itself.
+         */
+        Creator& configDanglingRedirectHandling(ProblemHandlingMode mode);
 
         /**
          * Start the zim creation.
@@ -289,6 +314,7 @@ namespace zim
         size_t m_clusterSize;
         std::string m_indexingLanguage;
         unsigned m_nbWorkers = 4;
+        ProblemHandlingMode m_danglingRedirectHandlingMode = ELIMINATE;
 
         // zim data
         std::string m_mainPath;
