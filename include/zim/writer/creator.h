@@ -35,6 +35,31 @@ namespace zim
     class CreatorData;
 
     /**
+     * During ZIM file creation certain problematic situations may arise
+     * (for example, dangling redirects may remain). The `ProblemHandlingMode`
+     * enum type is intended to tell the `Creator` how to deal with such
+     * situations.
+     */
+    enum ProblemHandlingMode
+    {
+      /**
+       * The problematic situation must be prevented from being introduced even
+       * if it can be corrected by subsequent operations.
+       */
+      PREVENT,
+
+      /**
+       * The problematic situation must be deferred until the finalization step.
+       */
+      DEFER,
+
+      /**
+       * The source of the problematic situation must be eliminated.
+       */
+      ELIMINATE
+    };
+
+    /**
      * The `Creator` is responsible to create a zim file.
      *
      * Once the `Creator` is instantiated, it can be configured with the
@@ -143,6 +168,23 @@ namespace zim
         Creator& configNbWorkers(unsigned nbWorkers);
 
         /**
+         * Define what to do about dangling redirects.
+         *
+         * - `PREVENT`: an attempt to add a redirect with a non-existent target
+         *   is rejected right away.
+         *
+         * - `DEFER`: dangling redirects must be checked and reported (via an
+         *   exception) by `finishZimCreation()`.
+         *
+         * - `ELIMINATE`: eliminate any dangling redirects remaining by the end
+         *   of ZIM creation.
+         *
+         * @param mode the mode to use with regard to dangling redirects
+         * @return a reference to itself.
+         */
+        Creator& configDanglingRedirectHandling(ProblemHandlingMode mode);
+
+        /**
          * Start the zim creation.
          *
          * The creator must have been configured before calling this method.
@@ -219,6 +261,11 @@ namespace zim
          * in the front articles list.
          * By default, redirections are not front article.
          *
+         * If the [mode](@ref configDanglingRedirectHandling()) of handling of
+         * dangling redirects is set to `PREVENT`, an attempt to add a
+         * redirection to a non-existent target will throw a
+         * `zim::InvalidEntry` exception.
+         *
          * @param path the path of the redirection.
          * @param title the title of the redirection.
          * @param targetpath the path of the target of the redirection.
@@ -289,6 +336,7 @@ namespace zim
         size_t m_clusterSize;
         std::string m_indexingLanguage;
         unsigned m_nbWorkers = 4;
+        ProblemHandlingMode m_danglingRedirectHandlingMode = DEFER;
 
         // zim data
         std::string m_mainPath;

@@ -156,6 +156,12 @@ Creator& Creator::configNbWorkers(unsigned nbWorkers)
   return *this;
 }
 
+Creator& Creator::configDanglingRedirectHandling(ProblemHandlingMode mode)
+{
+  m_danglingRedirectHandlingMode = mode;
+  return *this;
+}
+
 void Creator::startZimCreation(const std::string& filepath)
 {
   data = std::unique_ptr<CreatorData>(
@@ -232,6 +238,13 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
+  if ( m_danglingRedirectHandlingMode == PREVENT ) {
+    Dirent tmpDirent(NS::C, targetPath);
+    if ( data->dirents.find(&tmpDirent) == data->dirents.end() ) {
+      throw zim::InvalidEntry("C/" + targetPath + " doesn't exist");
+    }
+  }
+
   auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
   if (data->dirents.size()%1000 == 0){
     TPROGRESS();
@@ -279,7 +292,7 @@ void Creator::finishZimCreation()
   // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
   // before we ask data to the handlers
   TINFO("ResolveRedirectIndexes");
-  data->resolveRedirectIndexes();
+  data->resolveRedirectIndexes(m_danglingRedirectHandlingMode == ELIMINATE);
 
   TINFO("Set entry indexes");
   data->setEntryIndexes();
@@ -698,7 +711,7 @@ void CreatorData::setEntryIndexes()
   }
 }
 
-void CreatorData::resolveRedirectIndexes()
+void CreatorData::resolveRedirectIndexes(bool dropDanglingRedirects)
 {
   // translate redirect aid to index
   INFO("Resolve redirect");
@@ -713,11 +726,17 @@ void CreatorData::resolveRedirectIndexes()
     Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
     auto target_pos = dirents.find(&tmpDirent);
     if(target_pos == dirents.end()) {
-      INFO("Invalid redirection "
+      Formatter fmt;
+      fmt << "Invalid redirection "
           << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
           << " redirecting to (missing) "
-          << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
-      it = removeDirent(it);
+          << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath();
+      if ( dropDanglingRedirects ) {
+        INFO(fmt);
+        it = removeDirent(it);
+      } else {
+        throw zim::InvalidEntry(fmt);
+      }
     } else  {
       dirent->setRedirect(*target_pos);
       ++it;

@@ -79,7 +79,7 @@ namespace zim
         Cluster* closeCluster(bool compressed);
 
         void setEntryIndexes();
-        void resolveRedirectIndexes();
+        void resolveRedirectIndexes(bool dropDanglingRedirects);
         void resolveMimeTypes();
 
         uint16_t getMimeTypeIdx(const std::string& mimeType);

@@ -183,7 +183,6 @@ TEST_F(ZimArchive, openCreatedArchive)
   creator.addIllustration(zim::IllustrationInfo{96, 96, 1, {}}, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
-  creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);

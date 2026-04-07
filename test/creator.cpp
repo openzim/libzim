@@ -205,7 +205,6 @@ TEST(ZimCreator, createZim)
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // Not a front article.
   creator.addAlias("foo_ter", "The same redirection", "foo3", {{ zim::writer::FRONT_ARTICLE, true}}); // a clone of the previous redirect, but as a front article.
-  creator.addRedirection("foo4", "FooRedirection", "NoExistant", {{zim::writer::FRONT_ARTICLE, true}}); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
   // Do not use the high level Archive to test that zim file is correctly created but lower structure.
@@ -363,12 +362,108 @@ TEST(ZimCreator, interruptedZimCreation)
   );
 }
 
+void testAutoEliminationOfDanglingRedirects(zim::writer::Creator& creator, const std::string& zimPath)
+{
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(zimPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  EXPECT_NO_THROW(creator.addRedirection("good_redirect", "title", "1st"));
+
+  EXPECT_NO_THROW(
+      creator.addRedirection("bad_redirect", "title", "nonexistent/target/path")
+  );
+
+  EXPECT_NO_THROW(creator.finishZimCreation());
+
+  const zim::Archive archive(zimPath);
+
+  ASSERT_REDIRECT_ENTRY(archive, "good_redirect", "1st");
+  EXPECT_MISSING_ENTRY(archive, "bad_redirect");
+}
+
+void testDelayedRejectionOfDanglingRedirects(zim::writer::Creator& creator, const std::string& zimPath)
+{
+  creator.setUuid(makeSafeUuid());
+
+  creator.startZimCreation(zimPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  EXPECT_NO_THROW(creator.addRedirection("good_redirect", "title", "1st"));
+
+  EXPECT_NO_THROW(
+      creator.addRedirection("bad_redirect", "title", "nonexistent/target/path")
+  );
+
+  EXPECT_THROW(creator.finishZimCreation(), zim::InvalidEntry);
+}
+
+TEST(ZimCreator, delayedRejectionOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+
+  writer::Creator creator;
+
+  creator.configDanglingRedirectHandling(zim::writer::DEFER);
+
+  testDelayedRejectionOfDanglingRedirects(creator, temp.path());
+}
+
+TEST(ZimCreator, defaultHandlingOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+
+  writer::Creator creator;
+  testDelayedRejectionOfDanglingRedirects(creator, temp.path());
+}
+
+TEST(ZimCreator, autoEliminationOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+
+  writer::Creator creator;
+
+  creator.configDanglingRedirectHandling(zim::writer::ELIMINATE);
+
+  testAutoEliminationOfDanglingRedirects(creator, temp.path());
+}
+
+TEST(ZimCreator, immediateRejectionOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+
+  creator.configDanglingRedirectHandling(zim::writer::PREVENT);
+
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  EXPECT_THROW(
+      creator.addRedirection("path", "title", "nonexistent/target/path"),
+      zim::InvalidEntry
+  );
+
+  EXPECT_NO_THROW(creator.addRedirection("path", "title", "1st"));
+
+  EXPECT_NO_THROW(creator.finishZimCreation());
+
+  const zim::Archive archive(tempPath);
+  ASSERT_REDIRECT_ENTRY(archive, "path", "1st");
+}
+
 TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
 {
   unittests::TempFile temp("zimfile");
   const auto tempPath = temp.path();
 
   writer::Creator creator;
+  creator.configDanglingRedirectHandling(zim::writer::ELIMINATE);
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
 
@@ -398,6 +493,7 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
   const auto tempPath = temp.path();
 
   writer::Creator creator;
+  creator.configDanglingRedirectHandling(zim::writer::ELIMINATE);
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
 
