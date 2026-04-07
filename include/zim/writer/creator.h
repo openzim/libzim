@@ -336,7 +336,7 @@ namespace zim
         size_t m_clusterSize;
         std::string m_indexingLanguage;
         unsigned m_nbWorkers = 4;
-        ProblemHandlingMode m_danglingRedirectHandlingMode = ELIMINATE;
+        ProblemHandlingMode m_danglingRedirectHandlingMode = DEFER;
 
         // zim data
         std::string m_mainPath;

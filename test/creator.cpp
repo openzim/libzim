@@ -205,7 +205,6 @@ TEST(ZimCreator, createZim)
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // Not a front article.
   creator.addAlias("foo_ter", "The same redirection", "foo3", {{ zim::writer::FRONT_ARTICLE, true}}); // a clone of the previous redirect, but as a front article.
-  creator.addRedirection("foo4", "FooRedirection", "NoExistant", {{zim::writer::FRONT_ARTICLE, true}}); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
   // Do not use the high level Archive to test that zim file is correctly created but lower structure.
@@ -417,7 +416,7 @@ TEST(ZimCreator, defaultHandlingOfDanglingRedirects)
   unittests::TempFile temp("zimfile");
 
   writer::Creator creator;
-  testAutoEliminationOfDanglingRedirects(creator, temp.path());
+  testDelayedRejectionOfDanglingRedirects(creator, temp.path());
 }
 
 TEST(ZimCreator, autoEliminationOfDanglingRedirects)
@@ -464,6 +463,7 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
   const auto tempPath = temp.path();
 
   writer::Creator creator;
+  creator.configDanglingRedirectHandling(zim::writer::ELIMINATE);
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
 
@@ -493,6 +493,7 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
   const auto tempPath = temp.path();
 
   writer::Creator creator;
+  creator.configDanglingRedirectHandling(zim::writer::ELIMINATE);
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
 
