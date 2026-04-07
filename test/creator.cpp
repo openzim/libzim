@@ -384,6 +384,34 @@ void testAutoEliminationOfDanglingRedirects(zim::writer::Creator& creator, const
   EXPECT_MISSING_ENTRY(archive, "bad_redirect");
 }
 
+void testDelayedRejectionOfDanglingRedirects(zim::writer::Creator& creator, const std::string& zimPath)
+{
+  creator.setUuid(makeSafeUuid());
+
+  creator.startZimCreation(zimPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  EXPECT_NO_THROW(creator.addRedirection("good_redirect", "title", "1st"));
+
+  EXPECT_NO_THROW(
+      creator.addRedirection("bad_redirect", "title", "nonexistent/target/path")
+  );
+
+  EXPECT_THROW(creator.finishZimCreation(), zim::InvalidEntry);
+}
+
+TEST(ZimCreator, delayedRejectionOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+
+  writer::Creator creator;
+
+  creator.configDanglingRedirectHandling(zim::writer::DEFER);
+
+  testDelayedRejectionOfDanglingRedirects(creator, temp.path());
+}
+
 TEST(ZimCreator, defaultHandlingOfDanglingRedirects)
 {
   unittests::TempFile temp("zimfile");

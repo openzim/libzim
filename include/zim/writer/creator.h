@@ -49,6 +49,11 @@ namespace zim
       PREVENT,
 
       /**
+       * The problematic situation must be deferred until the finalization step.
+       */
+      DEFER,
+
+      /**
        * The source of the problematic situation must be eliminated.
        */
       ELIMINATE
@@ -167,6 +172,9 @@ namespace zim
          *
          * - `PREVENT`: an attempt to add a redirect with a non-existent target
          *   is rejected right away.
+         *
+         * - `DEFER`: dangling redirects must be checked and reported (via an
+         *   exception) by `finishZimCreation()`.
          *
          * - `ELIMINATE`: eliminate any dangling redirects remaining by the end
          *   of ZIM creation.
