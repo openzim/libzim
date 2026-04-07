@@ -43,6 +43,12 @@ namespace zim
     enum ProblemHandlingMode
     {
       /**
+       * The problematic situation must be prevented from being introduced even
+       * if it can be corrected by subsequent operations.
+       */
+      PREVENT,
+
+      /**
        * The source of the problematic situation must be eliminated.
        */
       ELIMINATE
@@ -159,6 +165,9 @@ namespace zim
         /**
          * Define what to do about dangling redirects.
          *
+         * - `PREVENT`: an attempt to add a redirect with a non-existent target
+         *   is rejected right away.
+         *
          * - `ELIMINATE`: eliminate any dangling redirects remaining by the end
          *   of ZIM creation.
          *
@@ -243,6 +252,11 @@ namespace zim
          * Hints (especially FRONT_ARTICLE) can be used to put the redirection
          * in the front articles list.
          * By default, redirections are not front article.
+         *
+         * If the [mode](@ref configDanglingRedirectHandling()) of handling of
+         * dangling redirects is set to `PREVENT`, an attempt to add a
+         * redirection to a non-existent target will throw a
+         * `zim::InvalidEntry` exception.
          *
          * @param path the path of the redirection.
          * @param title the title of the redirection.

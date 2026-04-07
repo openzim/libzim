@@ -403,6 +403,33 @@ TEST(ZimCreator, autoEliminationOfDanglingRedirects)
   testAutoEliminationOfDanglingRedirects(creator, temp.path());
 }
 
+TEST(ZimCreator, immediateRejectionOfDanglingRedirects)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+
+  creator.configDanglingRedirectHandling(zim::writer::PREVENT);
+
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+
+  EXPECT_THROW(
+      creator.addRedirection("path", "title", "nonexistent/target/path"),
+      zim::InvalidEntry
+  );
+
+  EXPECT_NO_THROW(creator.addRedirection("path", "title", "1st"));
+
+  EXPECT_NO_THROW(creator.finishZimCreation());
+
+  const zim::Archive archive(tempPath);
+  ASSERT_REDIRECT_ENTRY(archive, "path", "1st");
+}
+
 TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
 {
   unittests::TempFile temp("zimfile");

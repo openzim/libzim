@@ -238,6 +238,13 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
+  if ( m_danglingRedirectHandlingMode == PREVENT ) {
+    Dirent tmpDirent(NS::C, targetPath);
+    if ( data->dirents.find(&tmpDirent) == data->dirents.end() ) {
+      throw zim::InvalidEntry("C/" + targetPath + " doesn't exist");
+    }
+  }
+
   auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
   if (data->dirents.size()%1000 == 0){
     TPROGRESS();
