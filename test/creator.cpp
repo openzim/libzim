@@ -389,7 +389,14 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
                          "Last redirect in an ascending blind chain",
                          "missingTarget");
 
-  EXPECT_THROW(creator.finishZimCreation(), zim::CreatorError);
+  EXPECT_NO_THROW(creator.finishZimCreation());
+
+  const zim::Archive archive(tempPath);
+
+  EXPECT_MISSING_ENTRY(archive, "missingTarget");
+  EXPECT_MISSING_ENTRY(archive, "redirectA");
+  EXPECT_MISSING_ENTRY(archive, "redirectB");
+  EXPECT_MISSING_ENTRY(archive, "redirectC");
 }
 
 TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
@@ -418,7 +425,7 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
                          "Last redirect in a descending blind chain",
                          "missingTarget");
 
-  creator.finishZimCreation();
+  EXPECT_NO_THROW(creator.finishZimCreation());
 
   const zim::Archive archive(tempPath);
 
@@ -445,9 +452,9 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
 
   const zim::Archive archive(tempPath);
 
-  ASSERT_REDIRECT_ENTRY(archive, "redirectA", "redirectB");
-  ASSERT_REDIRECT_ENTRY(archive, "redirectB", "redirectC");
-  ASSERT_REDIRECT_ENTRY(archive, "redirectC", "redirectA");
+  EXPECT_MISSING_ENTRY(archive, "redirectA");
+  EXPECT_MISSING_ENTRY(archive, "redirectB");
+  EXPECT_MISSING_ENTRY(archive, "redirectC");
 }
 
 } // unnamed namespace

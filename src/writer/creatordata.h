@@ -80,6 +80,8 @@ namespace zim
 
         void setEntryIndexes();
         void resolveRedirectIndexes();
+        // XXX: This procedure uses the Dirent::idx field
+        void removeLoopsAndBlindChainsOfRedirects();
         void dropRemovedRedirects();
         void resolveMimeTypes();
 
