@@ -80,6 +80,7 @@ namespace zim
 
         void setEntryIndexes();
         void resolveRedirectIndexes();
+        void dropRemovedRedirects();
         void resolveMimeTypes();
 
         uint16_t getMimeTypeIdx(const std::string& mimeType);
