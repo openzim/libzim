@@ -110,7 +110,7 @@ namespace
 
 void reportInvalidRedirect(const Dirent& dirent)
 {
-  INFO("Invalid redirection "
+  INFO("Removing invalid redirection "
       << NsAsChar(dirent.getNamespace()) << '/' << dirent.getPath()
       << " redirecting to (missing) "
       << NsAsChar(dirent.getRedirectNs()) << '/' << dirent.getRedirectPath()
@@ -124,6 +124,37 @@ InvalidEntry direntConflictError(const Dirent& existingDirent, const Dirent& new
       << "  dirent's title to add is : " << newDirent.getTitle() << "\n"
       << "  existing dirent's title is : " << existingDirent.getTitle() << "\n";
   return InvalidEntry(fmt);
+}
+
+entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
+{
+  ASSERT(d->isRemoved(), ==, false);
+
+  const entry_index_type startingIndex = i;
+  while ( !d->isItem() ) {
+    d->setIdx(entry_index_t(i++));
+    d = d->getRedirectTargetDirent();
+    if ( d->isRemoved() || d->getIdx().v >= startingIndex ) {
+      // hit a dead end or detected being caught in a loop
+      return startingIndex;
+    }
+  }
+
+  return i;
+}
+
+void markBlindRedirectChainForRemoval(Dirent* d)
+{
+  for ( ; !d->isRemoved() ; d = d->getRedirectTargetDirent() ) {
+    const Dirent* const t = d->getRedirectTargetDirent();
+    INFO("Redirection "
+        << NsAsChar(d->getNamespace()) << '/' << d->getPath()
+        << " -> "
+        << NsAsChar(t->getNamespace()) << '/' << t->getPath()
+        << " belongs to a blind chain or loop. Removing..."
+    );
+    d->markRemoved();
+  }
 }
 
 } // unnamed namespace
@@ -289,6 +320,7 @@ void Creator::finishZimCreation()
   // before we ask data to the handlers
   TINFO("ResolveRedirectIndexes");
   data->resolveRedirectIndexes();
+  data->removeLoopsAndBlindChainsOfRedirects();
   data->dropRemovedRedirects();
 
   TINFO("Set entry indexes");
@@ -717,13 +749,38 @@ void CreatorData::resolveRedirectIndexes()
     if ( dirent->isRedirect() ) {
       Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
       const auto targetDirentIt = dirents.find(&tmpDirent);
-      if ( targetDirentIt == dirents.end() || (*targetDirentIt)->isRemoved() ) {
+      if ( targetDirentIt == dirents.end()) {
         reportInvalidRedirect(*dirent);
         dirent->markRemoved();
       } else  {
         dirent->setRedirect(*targetDirentIt);
       }
     }
+  }
+}
+
+// XXX: This procedure uses the 'idx' field of Dirent and is therefore
+// XXX: implemented under the assumption that Dirent::setIdx() has not yet been
+// XXX: called
+void CreatorData::removeLoopsAndBlindChainsOfRedirects()
+{
+  INFO("Detect loops and/or blind chains of redirects");
+  entry_index_type index = 1;
+  for (Dirent* const d : dirents)
+  {
+    if ( !d->isRemoved() && d->isRedirect() && d->getIdx().v == 0 ) {
+      const entry_index_type newIndex = markRedirectChain(d, index);
+      if ( newIndex == index ) {
+        markBlindRedirectChainForRemoval(d);
+      }
+      index = newIndex;
+    }
+  }
+
+  // Restore/reset Dirent::idx to 0
+  for (Dirent* const d : dirents)
+  {
+    d->setIdx(entry_index_t(0));
   }
 }
 
