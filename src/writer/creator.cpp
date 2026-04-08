@@ -108,6 +108,15 @@ namespace writer
 namespace
 {
 
+void reportInvalidRedirect(const Dirent& dirent)
+{
+  INFO("Invalid redirection "
+      << NsAsChar(dirent.getNamespace()) << '/' << dirent.getPath()
+      << " redirecting to (missing) "
+      << NsAsChar(dirent.getRedirectNs()) << '/' << dirent.getRedirectPath()
+  );
+}
+
 InvalidEntry direntConflictError(const Dirent& existingDirent, const Dirent& newDirent)
 {
   Formatter fmt;
@@ -280,6 +289,7 @@ void Creator::finishZimCreation()
   // before we ask data to the handlers
   TINFO("ResolveRedirectIndexes");
   data->resolveRedirectIndexes();
+  data->dropRemovedRedirects();
 
   TINFO("Set entry indexes");
   data->setEntryIndexes();
@@ -702,24 +712,28 @@ void CreatorData::resolveRedirectIndexes()
 {
   // translate redirect aid to index
   INFO("Resolve redirect");
+  for (Dirent* const dirent : dirents)
+  {
+    if ( dirent->isRedirect() ) {
+      Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
+      const auto targetDirentIt = dirents.find(&tmpDirent);
+      if ( targetDirentIt == dirents.end() || (*targetDirentIt)->isRemoved() ) {
+        reportInvalidRedirect(*dirent);
+        dirent->markRemoved();
+      } else  {
+        dirent->setRedirect(*targetDirentIt);
+      }
+    }
+  }
+}
+
+void CreatorData::dropRemovedRedirects()
+{
   for (auto it = dirents.begin(); it != dirents.end(); )
   {
-    Dirent* dirent = *it;
-    if ( !dirent->isRedirect() ) {
-      ++it;
-      continue;
-    }
-
-    Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
-    auto target_pos = dirents.find(&tmpDirent);
-    if(target_pos == dirents.end()) {
-      INFO("Invalid redirection "
-          << NsAsChar(dirent->getNamespace()) << '/' << dirent->getPath()
-          << " redirecting to (missing) "
-          << NsAsChar(dirent->getRedirectNs()) << '/' << dirent->getRedirectPath());
+    if ( (*it)->isRemoved() ) {
       it = removeDirent(it);
     } else  {
-      dirent->setRedirect(*target_pos);
       ++it;
     }
   }
