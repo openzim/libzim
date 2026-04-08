@@ -446,8 +446,15 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
 
   creator.addRedirection("redirectA", "A -> B", "redirectB");
   creator.addRedirection("redirectB", "B -> C", "redirectC");
-  creator.addRedirection("redirectC", "C -> A", "redirectA");
+  creator.addRedirection("redirectC", "C -> D", "redirectD");
+  creator.addRedirection("redirectD", "D -> B", "redirectB");
 
+  creator.addRedirection("redirectS", "S -> S", "redirectS");
+
+  creator.addRedirection("redirectZ", "Z -> Y", "redirectY");
+  creator.addRedirection("redirectY", "Y -> X", "redirectX");
+  creator.addRedirection("redirectX", "X -> W", "redirectW");
+  creator.addRedirection("redirectW", "W -> Y", "redirectY");
   creator.finishZimCreation();
 
   const zim::Archive archive(tempPath);
@@ -455,6 +462,14 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
   EXPECT_MISSING_ENTRY(archive, "redirectA");
   EXPECT_MISSING_ENTRY(archive, "redirectB");
   EXPECT_MISSING_ENTRY(archive, "redirectC");
+  EXPECT_MISSING_ENTRY(archive, "redirectD");
+
+  EXPECT_MISSING_ENTRY(archive, "redirectS");
+
+  EXPECT_MISSING_ENTRY(archive, "redirectW");
+  EXPECT_MISSING_ENTRY(archive, "redirectX");
+  EXPECT_MISSING_ENTRY(archive, "redirectY");
+  EXPECT_MISSING_ENTRY(archive, "redirectZ");
 }
 
 } // unnamed namespace
