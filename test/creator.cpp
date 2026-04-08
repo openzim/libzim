@@ -472,4 +472,89 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
   EXPECT_MISSING_ENTRY(archive, "redirectZ");
 }
 
+TEST(ZimCreator, pruningOfARedirectionForest)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  // Create redirections according to the following diagram (for convenience
+  // uppercase letters and digits participate only in invalid redirection
+  // components, while the valid redirection tree is built exclusively of
+  // lowercase letters):
+  //
+  //      T    P <- O
+  //      |    |    ^
+  //      v    v    |       // A tree leading into a redirection loop
+  // M -> N -> L -> 0
+  //
+  // A -> B
+  //        \                   //
+  // J -> K ---> Q -> (MISSING) // A tree ending with a dangling redirect
+  //        /                   //
+  // Z -> Y
+  //
+  // a -> b
+  //        \               // This one is the only healthy redirection tree
+  // j -> k ---> q -> root  // in this diagram. Only redirections from this
+  //        /               // component should survive.
+  // z -> y
+  //
+
+  creator.addItem(std::make_shared<TestItem>("root", "The only item", ""));
+
+  // A tree leading into a redirection loop
+  creator.addRedirection("T", "T -> N", "N");
+  creator.addRedirection("M", "M -> N", "N");
+  creator.addRedirection("N", "N -> L", "L");
+  creator.addRedirection("L", "L -> 0", "0");
+  creator.addRedirection("0", "0 -> O", "O");
+  creator.addRedirection("O", "O -> P", "P");
+  creator.addRedirection("P", "P -> L", "L");
+
+  // A redirection tree ending with a dangling redirect
+  creator.addRedirection("A", "A -> B", "B");
+  creator.addRedirection("B", "B -> Q", "Q");
+  creator.addRedirection("J", "J -> K", "K");
+  creator.addRedirection("K", "K -> Q", "Q");
+  creator.addRedirection("Z", "Z -> Y", "Y");
+  creator.addRedirection("Y", "Y -> Q", "Q");
+  creator.addRedirection("Q", "Q -> (MISSING)", "(MISSING)");
+
+  // A redirection tree rooted at an item entry
+  creator.addRedirection("a", "a -> b", "b");
+  creator.addRedirection("b", "b -> q", "q");
+  creator.addRedirection("j", "j -> k", "k");
+  creator.addRedirection("k", "k -> q", "q");
+  creator.addRedirection("z", "z -> y", "y");
+  creator.addRedirection("y", "y -> q", "q");
+  creator.addRedirection("q", "q -> root", "root");
+
+  creator.finishZimCreation();
+
+  const zim::Archive archive(tempPath);
+
+  EXPECT_MISSING_ENTRY(archive, "(MISSING)");
+  EXPECT_MISSING_ENTRY(archive, "0");
+  for ( char c = 'A'; c <= 'Z'; ++c ) {
+    // The constructor of std::string taking a character and a count
+    // is prone to the mistake of supplying the arguments in the wrong order
+    // (which doesn't lead to a compilation error).
+    // Hence using this more explicit way of converting a char to a string.
+    std::string path; path.push_back(c);
+    EXPECT_MISSING_ENTRY(archive, path);
+  }
+
+  ASSERT_REDIRECT_ENTRY(archive, "a", "b");
+  ASSERT_REDIRECT_ENTRY(archive, "b", "q");
+  ASSERT_REDIRECT_ENTRY(archive, "j", "k");
+  ASSERT_REDIRECT_ENTRY(archive, "k", "q");
+  ASSERT_REDIRECT_ENTRY(archive, "z", "y");
+  ASSERT_REDIRECT_ENTRY(archive, "y", "q");
+  ASSERT_REDIRECT_ENTRY(archive, "q", "root");
+}
+
 } // unnamed namespace
