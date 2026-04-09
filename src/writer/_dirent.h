@@ -65,10 +65,10 @@ namespace zim
         } PACKED;
 
         struct Resolved {
-          Resolved(const Dirent* target) :
+          Resolved(Dirent* target) :
             targetDirent(target)
           {};
-          const Dirent* targetDirent;
+          Dirent* targetDirent;
         } PACKED;
 
       public: // functions
@@ -185,10 +185,13 @@ namespace zim
 
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
-        void setRedirect(const Dirent* target) {
+        void setRedirect(Dirent* target) {
           ASSERT(info.tag, ==, DirentInfo::REDIRECT);
           info.~DirentInfo();
           new(&info) DirentInfo(DirentInfo::Resolved(target));
+        }
+        Dirent* getRedirectTargetDirent() const {
+          return info.getResolved().targetDirent;
         }
         entry_index_t getRedirectIndex() const;
 
