@@ -41,6 +41,7 @@ namespace
 {
 
 using namespace zim;
+using zim::unittests::CapturedStdout;
 
 #define ASSERT_REDIRECT_ENTRY(archive, path, targetPath) \
 {\
@@ -368,6 +369,8 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
   unittests::TempFile temp("zimfile");
   const auto tempPath = temp.path();
 
+  CapturedStdout stdOut;
+
   writer::Creator creator;
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
@@ -391,6 +394,15 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
 
   EXPECT_NO_THROW(creator.finishZimCreation());
 
+  EXPECT_EQ(stdOut.str(),
+    "Resolve redirect\n"
+    "Removing invalid redirection C/redirectC redirecting to (missing) C/missingTarget\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectB -> C/redirectC belongs to a blind chain or loop. Removing...\n"
+    "set index\n"
+  );
+
   const zim::Archive archive(tempPath);
 
   EXPECT_MISSING_ENTRY(archive, "missingTarget");
@@ -403,6 +415,8 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
 {
   unittests::TempFile temp("zimfile");
   const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
 
   writer::Creator creator;
   creator.setUuid(makeSafeUuid());
@@ -427,6 +441,15 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
 
   EXPECT_NO_THROW(creator.finishZimCreation());
 
+  EXPECT_EQ(stdOut.str(),
+    "Resolve redirect\n"
+    "Removing invalid redirection C/redirectA redirecting to (missing) C/missingTarget\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "Redirection C/redirectB -> C/redirectA belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectC -> C/redirectB belongs to a blind chain or loop. Removing...\n"
+    "set index\n"
+  );
+
   const zim::Archive archive(tempPath);
 
   EXPECT_MISSING_ENTRY(archive, "missingTarget");
@@ -439,6 +462,8 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
 {
   unittests::TempFile temp("zimfile");
   const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
 
   writer::Creator creator;
   creator.setUuid(makeSafeUuid());
@@ -456,6 +481,21 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
   creator.addRedirection("redirectX", "X -> W", "redirectW");
   creator.addRedirection("redirectW", "W -> Y", "redirectY");
   creator.finishZimCreation();
+
+  EXPECT_EQ(stdOut.str(),
+    "Resolve redirect\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectB -> C/redirectC belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectC -> C/redirectD belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectD -> C/redirectB belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectS -> C/redirectS belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectW -> C/redirectY belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectY -> C/redirectX belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectX -> C/redirectW belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/redirectZ -> C/redirectY belongs to a blind chain or loop. Removing...\n"
+    "set index\n"
+  );
 
   const zim::Archive archive(tempPath);
 
@@ -476,6 +516,8 @@ TEST(ZimCreator, pruningOfARedirectionForest)
 {
   unittests::TempFile temp("zimfile");
   const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
 
   writer::Creator creator;
   creator.setUuid(makeSafeUuid());
@@ -534,6 +576,26 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   creator.addRedirection("q", "q -> root", "root");
 
   creator.finishZimCreation();
+
+  EXPECT_EQ(stdOut.str(),
+    "Resolve redirect\n"
+    "Removing invalid redirection C/Q redirecting to (missing) C/(MISSING)\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "Redirection C/0 -> C/O belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/O -> C/P belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/P -> C/L belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/L -> C/0 belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/A -> C/B belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/B -> C/Q belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/J -> C/K belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/K -> C/Q belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/M -> C/N belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/N -> C/L belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/T -> C/N belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/Y -> C/Q belongs to a blind chain or loop. Removing...\n"
+    "Redirection C/Z -> C/Y belongs to a blind chain or loop. Removing...\n"
+    "set index\n"
+  );
 
   const zim::Archive archive(tempPath);
 
