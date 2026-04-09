@@ -51,25 +51,39 @@ namespace zim
 namespace unittests
 {
 
-class CapturedStderr
+class CapturedStdOstream
 {
+  std::ostream* const ostream;
+  std::streambuf* const origbuf;
   std::ostringstream buffer;
-  std::streambuf* const sbuf;
+
 public:
-  CapturedStderr()
-    : sbuf(std::cerr.rdbuf())
+  explicit CapturedStdOstream(std::ostream* os)
+    : ostream(os)
+    , origbuf(os->rdbuf())
   {
-    std::cerr.rdbuf(buffer.rdbuf());
+    ostream->rdbuf(buffer.rdbuf());
   }
 
-  CapturedStderr(const CapturedStderr&) = delete;
+  CapturedStdOstream(const CapturedStdOstream&) = delete;
 
-  ~CapturedStderr()
+  ~CapturedStdOstream()
   {
-    std::cerr.rdbuf(sbuf);
+    ostream->rdbuf(origbuf);
   }
 
-  operator std::string() const { return buffer.str(); }
+  std::string str() const { return buffer.str(); }
+  operator std::string() const { return str(); }
+};
+
+struct CapturedStderr : CapturedStdOstream
+{
+  CapturedStderr() : CapturedStdOstream(&std::cerr) {}
+};
+
+struct CapturedStdout : CapturedStdOstream
+{
+  CapturedStdout() : CapturedStdOstream(&std::cout) {}
 };
 
 // TempFile is a utility class for working with temporary files in RAII fashion:
