@@ -57,6 +57,7 @@ zsize_t FD::readAt(char* dest, zsize_t size, offset_t offset) const
     }
     size_to_read -= size_read;
     current_offset += size_read;
+    dest += size_read;
     full_size_read += size_read;
   }
   return zsize_t(full_size_read);
