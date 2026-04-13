@@ -38,6 +38,7 @@
 namespace
 {
 
+using zim::unittests::CapturedStderr;
 using zim::unittests::makeTempFile;
 using zim::unittests::getDataFilePath;
 using zim::unittests::TempFile;
@@ -676,27 +677,6 @@ TEST_F(ZimArchive, articleNumber)
   }
 }
 #endif
-
-class CapturedStderr
-{
-  std::ostringstream buffer;
-  std::streambuf* const sbuf;
-public:
-  CapturedStderr()
-    : sbuf(std::cerr.rdbuf())
-  {
-    std::cerr.rdbuf(buffer.rdbuf());
-  }
-
-  CapturedStderr(const CapturedStderr&) = delete;
-
-  ~CapturedStderr()
-  {
-    std::cerr.rdbuf(sbuf);
-  }
-
-  operator std::string() const { return buffer.str(); }
-};
 
 #define EXPECT_BROKEN_ZIMFILE(ZIMPATH, EXPECTED_STDERROR_TEXT) \
   CapturedStderr stderror;                                     \
