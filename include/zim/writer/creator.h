@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2017-2021 Matthieu Gautier <mgautier@kymeria.fr>
- * Copyright (C) 2020 Veloman Yunkan
+ * Copyright (C) 2020, 2026 Veloman Yunkan
  * Copyright (C) 2009 Tommi Maekitalo
  *
  * This program is free software; you can redistribute it and/or
@@ -35,18 +35,17 @@ namespace zim
     class CreatorData;
 
     /**
-     * The `Creator` is responsible to create a zim file.
+     * A ZIM file should be created via `Creator` as follows:
      *
-     * Once the `Creator` is instantiated, it can be configured with the
-     * `config*` methods.
-     * Then the creation process must be started with `startZimCreation`.
-     * Elements of the zim file can be added using the `add*` methods.
-     * The final steps is to call `finishZimCreation`.
+     * 1. Instantiate the `Creator` object.
+     * 2. Configure it via the `config*()` methods as needed.
+     * 3. Start ZIM creation with `startZimCreation()`.
+     * 4. Add data to the ZIM file using the `add*()` methods.
+     * 5. Set special data records in the ZIM file with the `set*()` methods
+     *    (these are optional and may precede the data addition step).
+     * 6. Finish ZIM creation with `finishZimCreation()`.
      *
-     * During the creation of the zim file (and before the call to
-     * `finishZimCreation`), some values must be set using the `set*` methods.
-     *
-     * All `add*` methods and `finishZimCreation` can throw an exception.
+     * All `add*()` methods and `finishZimCreation()` can throw an exception
      * (most of the time - though not necessarily - a subclass of
      * zim::CreatorError). It is up to the user to catch this exception and
      * handle the error.
@@ -75,7 +74,7 @@ namespace zim
      *
      * - Any other exception thrown for unknown reason.
      *
-     * By default, creator status is not changed by thrown exception and
+     * By default, the creator status is not changed by the thrown exception and
      * creation should stop.
      */
     class LIBZIM_API Creator
@@ -83,9 +82,6 @@ namespace zim
       public:
         /**
          * Creator constructor.
-         *
-         * @param verbose If the creator print verbose information.
-         * @param comptype The compression algorithm to use.
          */
         Creator();
         virtual ~Creator();
@@ -93,7 +89,7 @@ namespace zim
         /**
          * Configure the verbosity of the creator
          *
-         * @param verbose if the creator print verbose information.
+         * @param verbose whether the creator should print verbose information.
          * @return a reference to itself.
          */
         Creator& configVerbose(bool verbose);
@@ -109,18 +105,21 @@ namespace zim
         /**
          * Set the size of the created clusters.
          *
-         * The creator will try to create cluster with (uncompressed) size
-         * as close as possible to targetSize without exceeding that limit.
-         * If not possible, the only such case being an item larger than targetSize,
-         * a separated cluster will be allocated for that oversized item.
+         * The creator will try to create clusters with (uncompressed) size as
+         * close as possible to `targetSize` without exceeding that limit.  If
+         * not possible (the only such case being an item larger than
+         * `targetSize`) a separate cluster will be allocated for that
+         * oversized item.
          *
-         * Be carefull with this value.
-         * Bigger value means more content put together, so a better compression ratio.
-         * But it means also that more decompression has to be made when reading a blob.
-         * If you don't know which value to put, don't use this method and let libzim
+         * Be careful with this value!
+         *
+         * Bigger value means more content put together, so a better
+         * compression ratio. But it means also that more decompression has to
+         * be done when reading a single item from a cluster. If you don't know
+         * what value to use, don't configure the cluster size and let libzim
          * use the default value.
          *
-         * @param targetSize The target size of a cluster (in byte).
+         * @param targetSize The target size of a cluster (in bytes).
          * @return a reference to itself.
          */
         Creator& configClusterSize(zim::size_type targetSize);
@@ -143,16 +142,16 @@ namespace zim
         Creator& configNbWorkers(unsigned nbWorkers);
 
         /**
-         * Start the zim creation.
+         * Start ZIM file creation.
          *
          * The creator must have been configured before calling this method.
          *
-         * @param filepath the path of the zim file to create.
+         * @param filepath the path of the ZIM file to create.
          */
         void startZimCreation(const std::string& filepath);
 
         /**
-         * Add a item to the archive.
+         * Add an item to the archive.
          *
          * @param item The item to add.
          */
@@ -163,20 +162,25 @@ namespace zim
          *
          * @param name the name of the metadata
          * @param content the content of the metadata
-         * @param mimetype the mimetype of the metadata.
-         *                 Only used to detect if the metadata must be compressed or not.
+         * @param mimetype the mimetype of the metadata. Only used to detect if
+         *        the metadata must be compressed or not.
          */
-        void addMetadata(const std::string& name, const std::string& content, const std::string& mimetype = "text/plain;charset=utf-8");
+        void addMetadata(const std::string& name,
+                         const std::string& content,
+                         const std::string& mimetype = "text/plain;charset=utf-8");
 
         /**
-         * Add a metadata to the archive using a contentProvider instead of plain string.
+         * Add a metadata to the archive using a contentProvider instead of a
+         * plain string.
          *
          * @param name the name of the metadata.
          * @param provider the provider of the content of the metadata.
-         * @param mimetype the mimetype of the metadata.
-         *                 Only used to detect if the metadata must be compressed.
+         * @param mimetype the mimetype of the metadata. Only used to detect if
+         *        the metadata must be compressed.
          */
-        void addMetadata(const std::string& name, std::unique_ptr<ContentProvider> provider, const std::string& mimetype = "text/plain;charset=utf-8");
+        void addMetadata(const std::string& name,
+                         std::unique_ptr<ContentProvider> provider,
+                         const std::string& mimetype = "text/plain;charset=utf-8");
 
         /**
          * Add illustration to the archive.
@@ -185,7 +189,8 @@ namespace zim
          * @param content the content of the illustration (must be a png
          *        content)
          */
-        void addIllustration(const IllustrationInfo& ii, const std::string& content);
+        void addIllustration(const IllustrationInfo& ii,
+                             const std::string& content);
 
         /**
          * Add illustration to the archive.
@@ -194,13 +199,15 @@ namespace zim
          * @param provider the provider of the content of the illustration
          *        (must be a png content)
          */
-        void addIllustration(const IllustrationInfo& ii, std::unique_ptr<ContentProvider> provider);
+        void addIllustration(const IllustrationInfo& ii,
+                             std::unique_ptr<ContentProvider> provider);
 
         /**
          * Add illustration to the archive.
          *
          * @param size the size (width and height) of the illustration.
-         * @param content the content of the illustration (must be a png content)
+         * @param content the content of the illustration (must be a png
+         *        content)
          */
         void addIllustration(unsigned int size, const std::string& content);
 
@@ -208,21 +215,32 @@ namespace zim
          * Add illustration to the archive.
          *
          * @param size the size (width and height) of the illustration.
-         * @param provider the provider of the content of the illustration (must be a png content)
+         * @param provider the provider of the content of the illustration
+         *        (must be a png content)
          */
-        void addIllustration(unsigned int size, std::unique_ptr<ContentProvider> provider);
+        void addIllustration(unsigned int size,
+                             std::unique_ptr<ContentProvider> provider);
 
         /**
-         * Add a redirection to the archive.
+         * Add a redirection entry to the archive.
+         *
+         * A redirection is an entry pointing to another entry (it is an analog
+         * of a symbolic link in a file system).
+         *
+         * `addRedirection()` allows creating a redirection to a
+         * not-yet-existent target entry, subject to the condition that the
+         * target entry is present when `finishZimCreation()` is called (see
+         * its documentation for additional information on the handling of
+         * invalid redirections).
          *
          * Hints (especially FRONT_ARTICLE) can be used to put the redirection
          * in the front articles list.
          * By default, redirections are not front article.
          *
-         * @param path the path of the redirection.
-         * @param title the title of the redirection.
+         * @param path the path of the redirection entry.
+         * @param title the title of the redirection entry.
          * @param targetpath the path of the target of the redirection.
-         * @param hints hints associated to the redirection.
+         * @param hints hints associated with the redirection.
          */
         void addRedirection(
             const std::string& path,
@@ -231,37 +249,46 @@ namespace zim
             const Hints& hints = Hints());
 
 
-        /**
-         * Add a alias of a existing entry.
+        /** Add an alias of an existing entry.
          *
-         * The existing entry pointed by `targetPath` is cloned and updated with
-         * `path` and `title`.
+         * An alias is an entry sharing data with another entry (it is an
+         * analog of a hard link in a file system).
          *
-         * The alias entry will shared the same type (redirection or item)
-         * and namespace than `targetPath`.
+         * `addAlias()` clones the existing entry found at `targetPath`, sets
+         * its title to `title` and stores the result under `path`.
          *
-         * If the `targetPath` is a item, the new entry will be item pointing
-         * to the same data than `targetPath` item. (Not a redirection to `targetPath`).
-         * However, the alias entry is not counted in the media type counter
-         * and it is not fulltext indexed (only title indexed).
+         * The alias entry will have the same type (redirection or item) as the
+         * source entry.
          *
-         * Hints can be given to influence creator handling (front article, ...)
-         * as it is done for redirection.
+         * If the source entry is an item, the new entry will be an item
+         * sharing the same MIME type and data with the existing item. (This is
+         * different from the creation of a [redirection](@ref addRedirection())
+         * to `targetPath`). However, the alias entry is not counted in the
+         * media type counter and it is not fulltext indexed (only title
+         * indexed).
          *
-         * @param path the path of the alias
-         * @param title the title of the alias
-         * @param targetPath the path of the aliased entry.
-         * @param hints hints associated to the alias.
+         * Hints can be given to influence creator handling (front article,
+         * ...) as it is done for redirections.
+         *
+         * @param path the path of the alias (new) entry.  @param title the
+         * title of the alias (new) entry.  @param targetPath the path of the
+         * aliased (existing) entry.  @param hints hints associated with the
+         * alias.
          */
         void addAlias(
             const std::string& path,
             const std::string& title,
             const std::string& targetPath,
-            const Hints& hints = Hints()
-        );
+            const Hints& hints = Hints());
 
         /**
-         * Finalize the zim creation.
+         * Finalize ZIM file creation.
+         *
+         * During this stage invalid redirections and/or redirection chains
+         * are detected and removed. A redirection is invalid if its target
+         * path is missing from the ZIM file. A redirection chain is invalid
+         * if it leads to an invalid redirection or ends with a loop. For
+         * each redirection removed a message is printed on standard output.
          */
         void finishZimCreation();
 

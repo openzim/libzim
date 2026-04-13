@@ -18,7 +18,7 @@ import os
 # -- Project information -----------------------------------------------------
 
 project = 'libzim'
-copyright = '2020, libzim-team'
+copyright = '2026, libzim-team'
 author = 'libzim-team'
 
 
