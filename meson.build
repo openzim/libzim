@@ -8,7 +8,7 @@ if build_machine.system() != 'windows'
 endif
 
 cpp = meson.get_compiler('cpp')
-sizeof_off_t = cpp.sizeof('off_t')
+sizeof_off_t = cpp.sizeof('off_t', prefix: '#include <sys/types.h>')
 sizeof_size_t = cpp.sizeof('size_t')
 
 private_conf = configuration_data()
