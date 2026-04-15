@@ -287,7 +287,10 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
+  const auto targetDirentIt = data->findDirent(NS::C, targetPath);
+  auto dirent = targetDirentIt == data->dirents.end()
+              ? data->createRedirectDirent(NS::C, path, title, NS::C, targetPath)
+              : data->createRedirectDirent(NS::C, path, title, *targetDirentIt);
   setFrontArticle(*dirent, hints);
 
   if (data->dirents.size()%1000 == 0){
@@ -649,6 +652,8 @@ void CreatorData::addDirent(Dirent* dirent)
   if (!ret.second) {
     Dirent* existing = *ret.first;
     if (existing->isRedirect() && !dirent->isRedirect()) {
+      // XXX: If <existing> is a target of another redirect the binding
+      // XXX: must be updated to point to <dirent> instead.
       removeDirent(ret.first);
       dirents.insert(dirent);
     } else {
@@ -732,6 +737,13 @@ Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const 
   return dirent;
 }
 
+Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, Dirent* target)
+{
+  auto dirent = pool.getRedirectDirent(ns, path, title, target);
+  addDirent(dirent);
+  return dirent;
+}
+
 Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
 {
   auto dirent = pool.getAliasDirent(path, title, target);
@@ -782,7 +794,7 @@ void CreatorData::resolveRedirectIndexes()
   INFO("Resolve redirect");
   for (Dirent* const dirent : dirents)
   {
-    if ( dirent->isRedirect() ) {
+    if ( dirent->isUnresolvedRedirect() ) {
       const auto targetDirentIt = findDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
       if ( targetDirentIt == dirents.end()) {
         reportInvalidRedirect(*dirent);

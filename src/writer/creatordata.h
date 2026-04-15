@@ -75,6 +75,7 @@ namespace zim
         Dirent* createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title);
         Dirent* createItemDirent(const Item* item);
         Dirent* createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
+        Dirent* createRedirectDirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
         Dirent* createAliasDirent(const std::string& path, const std::string& title, const Dirent& target);
         Cluster* closeCluster(bool compressed);
 

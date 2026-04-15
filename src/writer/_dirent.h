@@ -168,6 +168,9 @@ namespace zim
         // Creator for a "redirection" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
 
+        // Creator for a resolved "redirection" dirent
+        Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
+
         // Creator for a "alias" dirent. Reuse the namespace of the targeted Dirent.
         Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
@@ -175,7 +178,7 @@ namespace zim
         // We use them in path ordered container so we only need to set the namespace and the path.
         // Other value are irrelevant.
         Dirent(NS ns, const std::string& path)
-          : Dirent(ns, path, "", 0)
+          : Dirent(ns, path, "", uint16_t(0))
           { }
 
         NS getNamespace() const           { return static_cast<NS>(_ns); }
@@ -244,6 +247,11 @@ namespace zim
 
         bool isFrontArticle() const { return _isFrontArticle; }
         void markFrontArticle() { _isFrontArticle = true; }
+
+        bool isUnresolvedRedirect() const
+        {
+          return info.tag == DirentInfo::REDIRECT;
+        }
 
         void write(int out_fd) const;
 
