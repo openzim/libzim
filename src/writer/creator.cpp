@@ -283,8 +283,7 @@ void Creator::addRedirection(const std::string& path, const std::string& title, 
 void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  Dirent tmpDirent(NS::C, targetPath);
-  auto existing_dirent_it = data->dirents.find(&tmpDirent);
+  const auto existing_dirent_it = data->findDirent(NS::C, targetPath);
 
   if (existing_dirent_it == data->dirents.end()) {
     Formatter fmt;
@@ -603,6 +602,12 @@ void CreatorData::quitAllThreads() {
   }
 }
 
+CreatorData::DirentIterator CreatorData::findDirent(NS ns, const std::string& path)
+{
+  Dirent tmpDirent(ns, path);
+  return dirents.find(&tmpDirent);
+}
+
 CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
 {
   Dirent* const dirent = *it;
@@ -747,8 +752,7 @@ void CreatorData::resolveRedirectIndexes()
   for (Dirent* const dirent : dirents)
   {
     if ( dirent->isRedirect() ) {
-      Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
-      const auto targetDirentIt = dirents.find(&tmpDirent);
+      const auto targetDirentIt = findDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
       if ( targetDirentIt == dirents.end()) {
         reportInvalidRedirect(*dirent);
         dirent->markRemoved();
