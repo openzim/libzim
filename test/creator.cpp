@@ -23,6 +23,7 @@
 #include <zim/writer/contentProvider.h>
 #include <zim/archive.h>
 #include <zim/error.h>
+#include <zim/item.h>
 #include <zim/tools.h>
 
 #include "tools.h"
@@ -49,6 +50,17 @@ using zim::unittests::CapturedStdout;
   const auto entry = archive.getEntryByPath(path); \
   ASSERT_TRUE(entry.isRedirect()); \
   ASSERT_EQ(entry.getRedirectEntry().getPath(), targetPath); \
+}
+
+#define ASSERT_ITEM_ENTRY(archive, path, title, mimetype, content) \
+{\
+  ASSERT_NO_THROW(archive.getEntryByPath(path));   \
+  const auto entry = archive.getEntryByPath(path); \
+  ASSERT_FALSE(entry.isRedirect());                \
+  const auto item = entry.getItem();               \
+  ASSERT_EQ(item.getTitle(), title);               \
+  ASSERT_EQ(item.getMimetype(), mimetype);         \
+  ASSERT_EQ(std::string(item.getData()), content); \
 }
 
 #define EXPECT_MISSING_ENTRY(archive, path)  \
@@ -546,7 +558,7 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   // z -> y
   //
 
-  creator.addItem(std::make_shared<TestItem>("root", "The only item", ""));
+  creator.addItem(std::make_shared<TestItem>("root", "The only item", "ROOT"));
 
   // A tree leading into a redirection loop
   creator.addRedirection("T", "T -> N", "N");
@@ -610,6 +622,7 @@ TEST(ZimCreator, pruningOfARedirectionForest)
     EXPECT_MISSING_ENTRY(archive, path);
   }
 
+  ASSERT_ITEM_ENTRY(archive, "root", "The only item", "text/html", "ROOT");
   ASSERT_REDIRECT_ENTRY(archive, "a", "b");
   ASSERT_REDIRECT_ENTRY(archive, "b", "q");
   ASSERT_REDIRECT_ENTRY(archive, "j", "k");
