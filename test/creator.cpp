@@ -384,6 +384,119 @@ TEST(ZimCreator, interruptedZimCreation)
   );
 }
 
+// Output produced by ZIM creation when no invalid redirects are left behind
+const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
+    "Resolve redirect\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "set index\n";
+
+TEST(ZimCreator, attemptingToOverwriteAnItemWithAnotherItem)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("path", "An item", "I tempt you"));
+  EXPECT_THROW(
+      creator.addItem(makeTestItem("path", "Another item", "It embodies me")),
+      InvalidEntry
+  );
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive archive(tempPath);
+  ASSERT_ITEM_ENTRY(archive, "path", "An item", "text/html", "I tempt you");
+}
+
+TEST(ZimCreator, attemptingToOverwriteARedirectWithAnotherRedirect)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("itempath", "An item", "I tempt you"));
+  creator.addRedirection("redirectpath", "A redirect", "itempath");
+  EXPECT_THROW(
+      creator.addRedirection("redirectpath", "Another redirect", "itempath"),
+      InvalidEntry
+  );
+  EXPECT_THROW(
+      creator.addRedirection("redirectpath", "A redirect", "anotherpath"),
+      InvalidEntry
+  );
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive archive(tempPath);
+  ASSERT_ITEM_ENTRY(archive, "itempath", "An item", "text/html", "I tempt you");
+  ASSERT_REDIRECT_ENTRY(archive, "redirectpath", "A redirect", "itempath");
+}
+
+TEST(ZimCreator, attemptingToOverwriteARedirectWithAnItem)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("path1", "Item#1", "I tempt you"));
+
+  creator.addRedirection("path2", "A redirect", "path1");
+  creator.addRedirection("path3", "Second level redirect", "path2");
+
+  EXPECT_NO_THROW(
+    creator.addItem(makeTestItem("path2", "Item#2", "I tempt you too"))
+  );
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive archive(tempPath);
+  ASSERT_ITEM_ENTRY(archive, "path1", "Item#1", "text/html", "I tempt you");
+  ASSERT_ITEM_ENTRY(archive, "path2", "Item#2", "text/html", "I tempt you too");
+  ASSERT_REDIRECT_ENTRY(archive, "path3", "Second level redirect", "path2");
+}
+
+TEST(ZimCreator, attemptingToOverwriteAnItemWithARedirect)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("path", "An item", "I tempt you"));
+  EXPECT_THROW(
+      creator.addRedirection("path", "A redirect", "anotherpath"),
+      InvalidEntry
+  );
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive archive(tempPath);
+  ASSERT_ITEM_ENTRY(archive, "path", "An item", "text/html", "I tempt you");
+}
+
 TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
 {
   unittests::TempFile temp("zimfile");
