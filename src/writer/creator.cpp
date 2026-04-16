@@ -242,8 +242,13 @@ void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvid
   checkError();
   auto compressContent = isCompressibleMimetype(mimetype);
   auto dirent = data->createDirent(NS::M, name, mimetype, "");
-  data->addItemData(dirent, std::move(provider), compressContent);
-  data->handle(dirent);
+  try {
+    data->addItemData(dirent, std::move(provider), compressContent);
+    data->handle(dirent);
+  } catch (...) {
+    data->removeDirent(dirent);
+    throw;
+  }
 }
 
 void Creator::addIllustration(const IllustrationInfo& ii, const std::string& content)
