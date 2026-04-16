@@ -140,4 +140,5 @@ TEST(PathTitleTinyString, equal_path_title)
   ASSERT_EQ(s.getPath(), "FOO");
   ASSERT_EQ(s.getTitle(), "FOO");
 }
+
 }  // namespace

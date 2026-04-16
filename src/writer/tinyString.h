@@ -61,6 +61,9 @@ namespace zim
             m_data = nullptr;
           }
         }
+
+        void operator=(const TinyString& ) = delete;
+
         operator std::string() const { return std::string(m_data, m_size); }
         bool empty() const { return m_size == 0; }
         size_t size() const { return m_size; }
@@ -97,12 +100,16 @@ namespace zim
           }
           return result;
         }
+
+        void operator=(const PathTitleTinyString& ) = delete;
+
         std::string getPath() const {
           if (m_size == 0) {
             return std::string();
           }
           return std::string(m_data);
         }
+
         std::string getTitle() const {
           if (m_size == 0) {
             return std::string();
