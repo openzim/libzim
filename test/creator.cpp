@@ -44,11 +44,12 @@ namespace
 using namespace zim;
 using zim::unittests::CapturedStdout;
 
-#define ASSERT_REDIRECT_ENTRY(archive, path, targetPath) \
+#define ASSERT_REDIRECT_ENTRY(archive, path, title, targetPath) \
 {\
   ASSERT_NO_THROW(archive.getEntryByPath(path)); \
   const auto entry = archive.getEntryByPath(path); \
   ASSERT_TRUE(entry.isRedirect()); \
+  ASSERT_EQ(entry.getTitle(), title); \
   ASSERT_EQ(entry.getRedirectEntry().getPath(), targetPath); \
 }
 
@@ -630,13 +631,13 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   }
 
   ASSERT_ITEM_ENTRY(archive, "root", "The only item", "text/html", "ROOT");
-  ASSERT_REDIRECT_ENTRY(archive, "a", "b");
-  ASSERT_REDIRECT_ENTRY(archive, "b", "q");
-  ASSERT_REDIRECT_ENTRY(archive, "j", "k");
-  ASSERT_REDIRECT_ENTRY(archive, "k", "q");
-  ASSERT_REDIRECT_ENTRY(archive, "z", "y");
-  ASSERT_REDIRECT_ENTRY(archive, "y", "q");
-  ASSERT_REDIRECT_ENTRY(archive, "q", "root");
+  ASSERT_REDIRECT_ENTRY(archive, "a", "a -> b", "b");
+  ASSERT_REDIRECT_ENTRY(archive, "b", "b -> q", "q");
+  ASSERT_REDIRECT_ENTRY(archive, "j", "j -> k", "k");
+  ASSERT_REDIRECT_ENTRY(archive, "k", "k -> q", "q");
+  ASSERT_REDIRECT_ENTRY(archive, "z", "z -> y", "y");
+  ASSERT_REDIRECT_ENTRY(archive, "y", "y -> q", "q");
+  ASSERT_REDIRECT_ENTRY(archive, "q", "q -> root", "root");
 }
 
 } // unnamed namespace
