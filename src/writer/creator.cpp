@@ -696,8 +696,21 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
 
 Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
 {
-  auto dirent = pool.getClassicDirent(ns, path, title, getMimeTypeIdx(mimetype));
-  addDirent(dirent);
+  const auto mimeTypeIdx = getMimeTypeIdx(mimetype);
+  const auto existingDirentIt = findDirent(ns, path);
+  if ( existingDirentIt != dirents.end() ) {
+    Dirent* const dirent = *existingDirentIt;
+    if ( dirent->isRedirect() ) {
+      dirent->convertToDirect(title, mimeTypeIdx);
+      return dirent;
+    } else {
+      const Dirent newDirent(ns, path, title, mimeTypeIdx);
+      throw direntConflictError(*dirent, newDirent);
+    }
+  }
+
+  auto dirent = pool.getClassicDirent(ns, path, title, mimeTypeIdx);
+  dirents.insert(dirent);
   return dirent;
 }
 
