@@ -195,6 +195,13 @@ class TestItem : public writer::Item
   std::string content;
 };
 
+std::shared_ptr<zim::writer::Item> makeTestItem(const std::string& path,
+                                                const std::string& title,
+                                                const std::string& content)
+{
+  return std::make_shared<TestItem>(path, title, content);
+}
+
 TEST(ZimCreator, createZim)
 {
   unittests::TempFile temp("zimfile");
@@ -205,11 +212,11 @@ TEST(ZimCreator, createZim)
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
   creator.addRedirection("foo", "WrongRedirection", "foobar", {{zim::writer::FRONT_ARTICLE, true}}); // Will be replaced by item
-  auto item = std::make_shared<TestItem>("foo", "Foo", "FooContent");
+  auto item = makeTestItem("foo", "Foo", "FooContent");
   EXPECT_NO_THROW(creator.addItem(item));
   EXPECT_THROW(creator.addItem(item), std::runtime_error);
   // Be sure that title order is not the same that path order
-  item = std::make_shared<TestItem>("foo2", "AFoo", "Foo2Content");
+  item = makeTestItem("foo2", "AFoo", "Foo2Content");
   creator.addItem(item);
   creator.addAlias("foo_bis", "The same Foo", "foo2");
   creator.addMetadata("Title", "This is a title");
@@ -363,7 +370,7 @@ TEST(ZimCreator, interruptedZimCreation)
     const std::string content(fmt);
     for ( char c = 'a'; c <= 'z'; ++c ) {
       const std::string path(1, c);
-      creator.addItem(std::make_shared<TestItem>(path, path, content));
+      creator.addItem(makeTestItem(path, path, content));
     }
     // creator.finishZimCreation() is not called
   }
@@ -387,7 +394,7 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
 
-  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+  creator.addItem(makeTestItem("1st", "1st entry in ZIM", ""));
 
   // Create a blind ascending chain of redirects, i.e. a chain
   // of redirects where the last entry of the chain is an invalid redirect
@@ -434,7 +441,7 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
   creator.setUuid(makeSafeUuid());
   creator.startZimCreation(tempPath);
 
-  creator.addItem(std::make_shared<TestItem>("1st", "1st entry in ZIM", ""));
+  creator.addItem(makeTestItem("1st", "1st entry in ZIM", ""));
 
   // Create a blind descending chain of redirects, i.e. a chain
   // of redirects where the last entry of the chain is an invalid redirect
@@ -558,7 +565,7 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   // z -> y
   //
 
-  creator.addItem(std::make_shared<TestItem>("root", "The only item", "ROOT"));
+  creator.addItem(makeTestItem("root", "The only item", "ROOT"));
 
   // A tree leading into a redirection loop
   creator.addRedirection("T", "T -> N", "N");
