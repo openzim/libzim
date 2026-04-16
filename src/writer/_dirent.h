@@ -186,6 +186,7 @@ namespace zim
 
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
+
         void setRedirect(Dirent* target) {
           ASSERT(info.tag, ==, DirentInfo::REDIRECT);
           info.~DirentInfo();
@@ -199,6 +200,15 @@ namespace zim
         void setIdx(entry_index_t idx_)      { idx = idx_; }
         entry_index_t getIdx() const         { return idx; }
 
+        void convertToDirect(const std::string& title, uint16_t mimetype) {
+          ASSERT(info.tag, !=, DirentInfo::DIRECT);
+          const std::string path = pathTitle.getPath();
+          PathTitleTinyString newPathTitle(path, title);
+          pathTitle.swap(newPathTitle);
+          this->mimeType = mimetype;
+          info.~DirentInfo();
+          new(&info) DirentInfo(DirentInfo::Direct());
+        }
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
