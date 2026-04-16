@@ -205,6 +205,35 @@ CreatorError,
 FaultyItemErrorTest,
 ::testing::ValuesIn(errorKinds));
 
+TEST(FaultyMetadataErrorTest, faultyContentProviderSize)
+{
+  unittests::TempFile temp("zimfile");
+  auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.configIndexing(true, "eng");
+  creator.startZimCreation(tempPath);
+
+  auto foodProvider = std::make_unique<FaultyContentProvider>("", ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE);
+  EXPECT_THROW(
+    creator.addMetadata("Food", std::move(foodProvider), "text/plain"),
+    SimulatedFaultError
+  );
+
+  auto moodProvider = std::make_unique<FaultyContentProvider>("", ERRORKIND::EXCEPTION_CONTENTPROVIDER_SIZE);
+  EXPECT_THROW(
+    creator.addMetadata("Mood", std::move(moodProvider), "text/plain"),
+    SimulatedFaultError
+  );
+  EXPECT_NO_THROW(creator.addMetadata("Mood", "Good", "text/plain"));
+
+  EXPECT_NO_THROW(creator.finishZimCreation());
+
+  const zim::Archive archive(tempPath);
+  EXPECT_THROW(archive.getMetadata("Food"), zim::EntryNotFound);
+  EXPECT_EQ(archive.getMetadata("Mood"), "Good");
+}
+
 double getWaitTimeFactor() {
   char* str_time_factor = std::getenv("WAIT_TIME_FACTOR_TEST");
   if (str_time_factor) {
