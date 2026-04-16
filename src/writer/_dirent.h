@@ -187,6 +187,13 @@ namespace zim
 
         uint32_t getVersion() const            { return version; }
 
+        void setTitle(const std::string& title)
+        {
+          const std::string path = getPath();
+          pathTitle.~PathTitleTinyString();
+          new(&pathTitle) PathTitleTinyString(path, title);
+        }
+
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
 
@@ -194,6 +201,9 @@ namespace zim
           ASSERT(info.tag, ==, DirentInfo::REDIRECT);
           info.~DirentInfo();
           new(&info) DirentInfo(DirentInfo::Resolved(target));
+        }
+        void setRedirectTargetDirent(Dirent* t) {
+          info.getResolved().targetDirent = t;
         }
         Dirent* getRedirectTargetDirent() const {
           return info.getResolved().targetDirent;
@@ -250,7 +260,10 @@ namespace zim
 
         bool isUnresolvedRedirect() const
         {
-          return info.tag == DirentInfo::REDIRECT;
+          return info.tag == DirentInfo::RESOLVED
+              && getRedirectTargetDirent() != nullptr
+              && getRedirectTargetDirent()->info.tag == DirentInfo::RESOLVED
+              && getRedirectTargetDirent()->getRedirectTargetDirent() == nullptr;
         }
 
         void write(int out_fd) const;

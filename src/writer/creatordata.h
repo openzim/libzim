@@ -94,6 +94,7 @@ namespace zim
         void quitAllThreads();
 
         DirentIterator findDirent(NS ns, const std::string& path);
+        Dirent* getDirent(NS ns, const std::string& path);
         DirentIterator removeDirent(DirentIterator it);
         void removeDirent(Dirent* dirent);
 

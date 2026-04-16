@@ -110,10 +110,11 @@ namespace
 
 void reportInvalidRedirect(const Dirent& dirent)
 {
+  const Dirent& targetDirent = *dirent.getRedirectTargetDirent();
   INFO("Removing invalid redirection "
       << NsAsChar(dirent.getNamespace()) << '/' << dirent.getPath()
       << " redirecting to (missing) "
-      << NsAsChar(dirent.getRedirectNs()) << '/' << dirent.getRedirectPath()
+      << NsAsChar(targetDirent.getNamespace()) << '/' << targetDirent.getPath()
   );
 }
 
@@ -134,7 +135,7 @@ entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
   while ( !d->isItem() ) {
     d->setIdx(entry_index_t(i++));
     d = d->getRedirectTargetDirent();
-    if ( d->isRemoved() || d->getIdx().v >= startingIndex ) {
+    if ( d == nullptr || d->isRemoved() || d->getIdx().v >= startingIndex ) {
       // hit a dead end or detected being caught in a loop
       return startingIndex;
     }
@@ -145,15 +146,19 @@ entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
 
 void markBlindRedirectChainForRemoval(Dirent* d)
 {
-  for ( ; !d->isRemoved() ; d = d->getRedirectTargetDirent() ) {
-    const Dirent* const t = d->getRedirectTargetDirent();
+  while ( !d->isRemoved() ) {
+    Dirent* const t = d->getRedirectTargetDirent();
+    d->markRemoved();
+    if ( t == nullptr )
+      break;
+
     INFO("Redirection "
         << NsAsChar(d->getNamespace()) << '/' << d->getPath()
         << " -> "
         << NsAsChar(t->getNamespace()) << '/' << t->getPath()
         << " belongs to a blind chain or loop. Removing..."
     );
-    d->markRemoved();
+    d = t;
   }
 }
 
@@ -287,17 +292,22 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  const auto targetDirentIt = data->findDirent(NS::C, targetPath);
-  auto dirent = targetDirentIt == data->dirents.end()
-              ? data->createRedirectDirent(NS::C, path, title, NS::C, targetPath)
-              : data->createRedirectDirent(NS::C, path, title, *targetDirentIt);
-  setFrontArticle(*dirent, hints);
+  const auto targetDirent = data->getDirent(NS::C, targetPath);
+  const auto sourceDirent = data->getDirent(NS::C, path);
+  if ( !sourceDirent->isRedirect() ||
+       sourceDirent->getRedirectTargetDirent() != nullptr ) {
+    const Dirent newDirent(NS::C, path, title, targetDirent);
+    throw direntConflictError(*sourceDirent, newDirent);
+  }
+  setFrontArticle(*sourceDirent, hints);
+  sourceDirent->setTitle(title);
+  sourceDirent->setRedirectTargetDirent(targetDirent);
 
   if (data->dirents.size()%1000 == 0){
     TPROGRESS();
   }
 
-  data->handle(dirent);
+  data->handle(sourceDirent);
 }
 
 void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
@@ -324,7 +334,8 @@ void Creator::finishZimCreation()
   // We need to keep the created dirent to set the fileheader.
   // Dirent doesn't have to be deleted.
   if (!m_mainPath.empty()) {
-    data->mainPageDirent = data->createRedirectDirent(NS::W, "mainPage", "", NS::C, m_mainPath);
+    Dirent* const mainPageDirent = data->getDirent(NS::C, m_mainPath);
+    data->mainPageDirent = data->createRedirectDirent(NS::W, "mainPage", "", mainPageDirent);
     data->handle(data->mainPageDirent);
   }
 
@@ -629,6 +640,15 @@ CreatorData::DirentIterator CreatorData::findDirent(NS ns, const std::string& pa
   return dirents.find(&tmpDirent);
 }
 
+Dirent* CreatorData::getDirent(NS ns, const std::string& path)
+{
+  const auto it = findDirent(ns, path);
+  if ( it != dirents.end() )
+    return *it;
+
+  return createRedirectDirent(ns, path, "", nullptr);
+}
+
 CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
 {
   Dirent* const dirent = *it;
@@ -795,13 +815,9 @@ void CreatorData::resolveRedirectIndexes()
   for (Dirent* const dirent : dirents)
   {
     if ( dirent->isUnresolvedRedirect() ) {
-      const auto targetDirentIt = findDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
-      if ( targetDirentIt == dirents.end()) {
-        reportInvalidRedirect(*dirent);
-        dirent->markRemoved();
-      } else  {
-        dirent->setRedirect(*targetDirentIt);
-      }
+      reportInvalidRedirect(*dirent);
+      dirent->getRedirectTargetDirent()->markRemoved();
+      dirent->markRemoved();
     }
   }
 }
