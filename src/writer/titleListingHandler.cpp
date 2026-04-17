@@ -94,7 +94,7 @@ void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 
 void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  if (isFrontArticle(dirent, hints)) {
+  if (dirent->isFrontArticle()) {
     m_handledDirents.push_back(dirent);
   }
 }

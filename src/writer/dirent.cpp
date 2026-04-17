@@ -56,7 +56,8 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
     idx(0),
     info(DirentInfo::Direct()),
     _ns(static_cast<uint8_t>(ns)),
-    removed(false)
+    removed(false),
+    _isFrontArticle(false)
 {}
 
 // Creator for a "redirection" dirent
@@ -66,7 +67,8 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targ
     idx(0),
     info(DirentInfo::Redirect(targetNs, targetPath)),
     _ns(static_cast<uint8_t>(ns)),
-    removed(false)
+    removed(false),
+    _isFrontArticle(false)
 {}
 
 Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& target)
@@ -75,7 +77,8 @@ Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& 
     idx(0),
     info(target.info),
     _ns(target._ns),
-    removed(false)
+    removed(false),
+    _isFrontArticle(false)
 {}
 
 NS Dirent::getRedirectNs() const {

@@ -157,6 +157,13 @@ void markBlindRedirectChainForRemoval(Dirent* d)
   }
 }
 
+void setFrontArticle(Dirent& dirent, const Hints& hints)
+{
+  const auto it = hints.find(FRONT_ARTICLE);
+  if ( it != hints.end() && it->second != 0 )
+    dirent.markFrontArticle();
+}
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -216,6 +223,7 @@ void Creator::addItem(std::shared_ptr<Item> item)
   checkError();
   bool compressContent = item->getAmendedHints()[COMPRESS];
   auto dirent = data->createItemDirent(item.get());
+  setFrontArticle(*dirent, item->getAmendedHints());
 
   try {
     data->addItemData(dirent, item->getContentProvider(), compressContent);
@@ -278,6 +286,8 @@ void Creator::addRedirection(const std::string& path, const std::string& title, 
 {
   checkError();
   auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
+  setFrontArticle(*dirent, hints);
+
   if (data->dirents.size()%1000 == 0){
     TPROGRESS();
   }
@@ -298,6 +308,7 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
   }
 
   auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
+  setFrontArticle(*dirent, hints);
   data->handle(dirent, hints);
 }
 

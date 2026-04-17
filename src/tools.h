@@ -73,11 +73,6 @@ namespace zim {
     return count;
   }
 
-  namespace writer {
-    class Dirent;
-    bool isFrontArticle(const Dirent* dirent, const Hints& hints);
-  }
-
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
   std::string LIBZIM_PRIVATE_API removeAccents(const std::string& text);

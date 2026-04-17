@@ -100,7 +100,7 @@ void XapianHandler::indexTitle(Dirent* dirent) {
 
 void XapianHandler::handle(Dirent* dirent, const Hints& hints)
 {
-  if (isFrontArticle(dirent, hints)) {
+  if (dirent->isFrontArticle()) {
       indexTitle(dirent);
   }
 }
