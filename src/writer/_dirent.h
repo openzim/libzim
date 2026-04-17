@@ -159,6 +159,7 @@ namespace zim
         DirentInfo info;
         uint8_t _ns : 2;
         bool removed : 1;
+        bool _isFrontArticle : 1;
 
       public:
         // Creator for a "classic" dirent
@@ -230,6 +231,9 @@ namespace zim
 
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }
+
+        bool isFrontArticle() const { return _isFrontArticle; }
+        void markFrontArticle() { _isFrontArticle = true; }
 
         void write(int out_fd) const;
 
