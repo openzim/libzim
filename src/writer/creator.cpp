@@ -164,6 +164,12 @@ void setFrontArticle(Dirent& dirent, const Hints& hints)
     dirent.markFrontArticle();
 }
 
+bool getCompressionHint(const Hints& hints)
+{
+  const auto it = hints.find(COMPRESS);
+  return it != hints.end() && it->second != 0;
+}
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -221,9 +227,10 @@ void Creator::startZimCreation(const std::string& filepath)
 void Creator::addItem(std::shared_ptr<Item> item)
 {
   checkError();
-  bool compressContent = item->getAmendedHints()[COMPRESS];
+  const Hints& itemHints = item->getAmendedHints();
+  const bool compressContent = getCompressionHint(itemHints);
   auto dirent = data->createItemDirent(item.get());
-  setFrontArticle(*dirent, item->getAmendedHints());
+  setFrontArticle(*dirent, itemHints);
 
   try {
     data->addItemData(dirent, item->getContentProvider(), compressContent);
@@ -292,7 +299,7 @@ void Creator::addRedirection(const std::string& path, const std::string& title, 
     TPROGRESS();
   }
 
-  data->handle(dirent, hints);
+  data->handle(dirent);
 }
 
 void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
@@ -309,7 +316,7 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
 
   auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
   setFrontArticle(*dirent, hints);
-  data->handle(dirent, hints);
+  data->handle(dirent);
 }
 
 void Creator::finishZimCreation()

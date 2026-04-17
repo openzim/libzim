@@ -40,7 +40,7 @@ class CounterHandler : public DirentHandler {
     bool isCompressible() override { return true; }
     ContentProviders getContentProviders() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
-    void handle(Dirent* dirent, const Hints& hints) override;
+    void handle(Dirent* dirent) override;
 
   private:
     Dirents createDirents() const override;

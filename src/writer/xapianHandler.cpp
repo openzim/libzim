@@ -98,7 +98,7 @@ void XapianHandler::indexTitle(Dirent* dirent) {
   }
 }
 
-void XapianHandler::handle(Dirent* dirent, const Hints& hints)
+void XapianHandler::handle(Dirent* dirent)
 {
   if (dirent->isFrontArticle()) {
       indexTitle(dirent);
@@ -112,7 +112,7 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
   }
 
   // Title index.
-  handle(dirent, item->getAmendedHints());
+  handle(dirent);
 
   // FullText index
   if (mp_fulltextIndexer) {
