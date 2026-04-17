@@ -61,6 +61,17 @@ namespace zim
             m_data = nullptr;
           }
         }
+
+        void operator=(const TinyString& ) = delete;
+
+        void swap(TinyString& other) {
+          // std::swap doesn't work on packed fields with gcc
+          // std::swap(m_data, other.m_data);
+          // std::swap(m_size, other.m_size);
+          const auto d = m_data; m_data = other.m_data; other.m_data = d;
+          const auto s = m_size; m_size = other.m_size; other.m_size = s;
+        }
+
         operator std::string() const { return std::string(m_data, m_size); }
         bool empty() const { return m_size == 0; }
         size_t size() const { return m_size; }
@@ -97,12 +108,20 @@ namespace zim
           }
           return result;
         }
+
+        void operator=(const PathTitleTinyString& ) = delete;
+
+        void swap(PathTitleTinyString& other) {
+          TinyString::swap(other);
+        }
+
         std::string getPath() const {
           if (m_size == 0) {
             return std::string();
           }
           return std::string(m_data);
         }
+
         std::string getTitle() const {
           if (m_size == 0) {
             return std::string();

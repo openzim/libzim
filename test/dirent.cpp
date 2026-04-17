@@ -211,4 +211,21 @@ TEST(DirentTest, redirect_dirent_size)
   ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
 }
 
+TEST(DirentTest, reset_writer_dirent)
+{
+  zim::writer::Dirent dirent(NS::C, "path", "title", NS::C, "anotherpath");
+  ASSERT_TRUE(dirent.isRedirect());
+  ASSERT_EQ(dirent.getPath(), "path");
+  ASSERT_EQ(dirent.getTitle(), "title");
+  ASSERT_EQ(dirent.getRedirectNs(), NS::C);
+  ASSERT_EQ(dirent.getRedirectPath(), "anotherpath");
+
+  dirent.convertToDirect("newTitle", 1234);
+
+  ASSERT_FALSE(dirent.isRedirect());
+  ASSERT_EQ(dirent.getPath(), "path");
+  ASSERT_EQ(dirent.getTitle(), "newTitle");
+  ASSERT_EQ(dirent.getBlobNumber().v, 0);
+}
+
 }  // namespace

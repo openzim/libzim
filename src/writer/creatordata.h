@@ -75,6 +75,7 @@ namespace zim
         Dirent* createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title);
         Dirent* createItemDirent(const Item* item);
         Dirent* createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
+        Dirent* createRedirectDirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
         Dirent* createAliasDirent(const std::string& path, const std::string& title, const Dirent& target);
         Cluster* closeCluster(bool compressed);
 
@@ -92,6 +93,8 @@ namespace zim
         bool isErrored() const;
         void quitAllThreads();
 
+        DirentIterator findDirent(NS ns, const std::string& path);
+        Dirent* getDirent(NS ns, const std::string& path);
         DirentIterator removeDirent(DirentIterator it);
         void removeDirent(Dirent* dirent);
 
@@ -126,9 +129,9 @@ namespace zim
         std::string indexingLanguage;
 
         std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
-        void handle(Dirent* dirent, const Hints& hints = Hints()) {
+        void handle(Dirent* dirent) {
           for(auto& handler: m_direntHandlers) {
-            handler->handle(dirent, hints);
+            handler->handle(dirent);
           }
         }
         void handle(Dirent* dirent, std::shared_ptr<Item> item) {

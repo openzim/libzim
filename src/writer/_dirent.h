@@ -159,6 +159,7 @@ namespace zim
         DirentInfo info;
         uint8_t _ns : 2;
         bool removed : 1;
+        bool _isFrontArticle : 1;
 
       public:
         // Creator for a "classic" dirent
@@ -167,6 +168,9 @@ namespace zim
         // Creator for a "redirection" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
 
+        // Creator for a resolved "redirection" dirent
+        Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
+
         // Creator for a "alias" dirent. Reuse the namespace of the targeted Dirent.
         Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
@@ -174,7 +178,7 @@ namespace zim
         // We use them in path ordered container so we only need to set the namespace and the path.
         // Other value are irrelevant.
         Dirent(NS ns, const std::string& path)
-          : Dirent(ns, path, "", 0)
+          : Dirent(ns, path, "", uint16_t(0))
           { }
 
         NS getNamespace() const           { return static_cast<NS>(_ns); }
@@ -183,12 +187,23 @@ namespace zim
 
         uint32_t getVersion() const            { return version; }
 
+        void setTitle(const std::string& title)
+        {
+          const std::string path = getPath();
+          pathTitle.~PathTitleTinyString();
+          new(&pathTitle) PathTitleTinyString(path, title);
+        }
+
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
+
         void setRedirect(Dirent* target) {
           ASSERT(info.tag, ==, DirentInfo::REDIRECT);
           info.~DirentInfo();
           new(&info) DirentInfo(DirentInfo::Resolved(target));
+        }
+        void setRedirectTargetDirent(Dirent* t) {
+          info.getResolved().targetDirent = t;
         }
         Dirent* getRedirectTargetDirent() const {
           return info.getResolved().targetDirent;
@@ -198,6 +213,15 @@ namespace zim
         void setIdx(entry_index_t idx_)      { idx = idx_; }
         entry_index_t getIdx() const         { return idx; }
 
+        void convertToDirect(const std::string& title, uint16_t mimetype) {
+          ASSERT(info.tag, !=, DirentInfo::DIRECT);
+          const std::string path = pathTitle.getPath();
+          PathTitleTinyString newPathTitle(path, title);
+          pathTitle.swap(newPathTitle);
+          this->mimeType = mimetype;
+          info.~DirentInfo();
+          new(&info) DirentInfo(DirentInfo::Direct());
+        }
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
@@ -230,6 +254,17 @@ namespace zim
 
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }
+
+        bool isFrontArticle() const { return _isFrontArticle; }
+        void markFrontArticle() { _isFrontArticle = true; }
+
+        bool isUnresolvedRedirect() const
+        {
+          return info.tag == DirentInfo::RESOLVED
+              && getRedirectTargetDirent() != nullptr
+              && getRedirectTargetDirent()->info.tag == DirentInfo::RESOLVED
+              && getRedirectTargetDirent()->getRedirectTargetDirent() == nullptr;
+        }
 
         void write(int out_fd) const;
 

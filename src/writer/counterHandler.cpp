@@ -60,7 +60,7 @@ DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
   return ret;
 }
 
-void CounterHandler::handle(Dirent* dirent, const Hints& hints)
+void CounterHandler::handle(Dirent* dirent)
 {
 }
 

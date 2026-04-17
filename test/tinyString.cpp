@@ -75,6 +75,18 @@ TEST(TinyStringTest, chars)
   ASSERT_FALSE(s < s);
 }
 
+TEST(TinyStringTest, swap)
+{
+  TinyString a("abcdef");
+  TinyString x("xyz");
+
+  a.swap(x);
+
+  ASSERT_EQ(std::string(a), "xyz");
+  ASSERT_EQ(std::string(x), "abcdef");
+}
+
+
 TEST(PathTitleTinyString, none)
 {
   PathTitleTinyString s;
@@ -140,4 +152,18 @@ TEST(PathTitleTinyString, equal_path_title)
   ASSERT_EQ(s.getPath(), "FOO");
   ASSERT_EQ(s.getTitle(), "FOO");
 }
+
+TEST(PathTitleTinyString, swap)
+{
+  PathTitleTinyString a("path", "title");
+  PathTitleTinyString b("superpath", "subtitle");
+
+  a.swap(b);
+
+  ASSERT_EQ(a.getPath(),  "superpath");
+  ASSERT_EQ(a.getTitle(), "subtitle");
+  ASSERT_EQ(b.getPath(),  "path");
+  ASSERT_EQ(b.getTitle(), "title");
+}
+
 }  // namespace

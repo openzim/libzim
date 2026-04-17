@@ -88,13 +88,13 @@ DirentHandler::ContentProviders TitleListingHandler::getContentProviders() const
 
 void TitleListingHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
 {
-  handle(dirent, item->getAmendedHints());
+  handle(dirent);
 }
 
 
-void TitleListingHandler::handle(Dirent* dirent, const Hints& hints)
+void TitleListingHandler::handle(Dirent* dirent)
 {
-  if (isFrontArticle(dirent, hints)) {
+  if (dirent->isFrontArticle()) {
     m_handledDirents.push_back(dirent);
   }
 }

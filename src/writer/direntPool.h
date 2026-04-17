@@ -84,6 +84,12 @@ namespace zim
           return dirent;
         }
 
+        Dirent* getRedirectDirent(NS ns, const std::string& path, const std::string& title, Dirent* target) {
+          auto dirent = getDirentSlot();
+          new (dirent) Dirent(ns, path, title, target);
+          return dirent;
+        }
+
         Dirent* getAliasDirent(const std::string& path, const std::string& title, const Dirent& target) {
           auto dirent = getDirentSlot();
           new (dirent) Dirent(path, title, target);
