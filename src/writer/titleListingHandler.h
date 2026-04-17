@@ -47,7 +47,7 @@ class TitleListingHandler : public DirentHandler {
     bool isCompressible() override { return false; }
     ContentProviders getContentProviders() const override;
     void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
-    void handle(Dirent* dirent, const Hints& hints) override;
+    void handle(Dirent* dirent) override;
 
   protected:
     Dirents createDirents() const override;
