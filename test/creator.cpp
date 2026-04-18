@@ -390,6 +390,43 @@ const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
     "Detect loops and/or blind chains of redirects\n"
     "set index\n";
 
+TEST(ZimCreator, aliases)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("item", "An item", "<html/>"));
+  creator.addRedirection("redirect", "A redirect", "item");
+
+  creator.addAlias("item_alias",     "An item alias",    "item");
+  creator.addAlias("redirect_alias", "A redirect alias", "redirect");
+
+  EXPECT_THROW(
+    creator.addAlias("a_dangling_alias", "A dangling alias", "no_such_entry"),
+    InvalidEntry
+  );
+
+  EXPECT_THROW(
+    creator.addAlias("self_alias", "A self-referencing alias", "self_alias"),
+    InvalidEntry
+  );
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive a(tempPath);
+  ASSERT_ITEM_ENTRY(a, "item",  "An item",  "text/html", "<html/>");
+  ASSERT_ITEM_ENTRY(a, "item_alias", "An item alias", "text/html", "<html/>");
+  ASSERT_REDIRECT_ENTRY(a, "redirect", "A redirect", "item");
+  ASSERT_REDIRECT_ENTRY(a, "redirect_alias", "A redirect alias", "item");
+}
+
 TEST(ZimCreator, attemptingToOverwriteAnItemWithAnotherItem)
 {
   unittests::TempFile temp("zimfile");
