@@ -212,7 +212,6 @@ TEST(ZimCreator, createZim)
   creator.setUuid(makeSafeUuid());
   creator.configIndexing(true, "eng");
   creator.startZimCreation(tempPath);
-  creator.addRedirection("foo", "WrongRedirection", "foobar", {{zim::writer::FRONT_ARTICLE, true}}); // Will be replaced by item
   auto item = makeTestItem("foo", "Foo", "FooContent");
   EXPECT_NO_THROW(creator.addItem(item));
   EXPECT_THROW(creator.addItem(item), std::runtime_error);
@@ -497,8 +496,9 @@ TEST(ZimCreator, attemptingToOverwriteARedirectWithAnItem)
   creator.addRedirection("path2", "A redirect", "path1");
   creator.addRedirection("path3", "Second level redirect", "path2");
 
-  EXPECT_NO_THROW(
-    creator.addItem(makeTestItem("path2", "Item#2", "I tempt you too"))
+  ASSERT_THROW(
+    creator.addItem(makeTestItem("path2", "Item#2", "I tempt you too")),
+    InvalidEntry
   );
 
   creator.finishZimCreation();
@@ -506,7 +506,7 @@ TEST(ZimCreator, attemptingToOverwriteARedirectWithAnItem)
 
   const zim::Archive archive(tempPath);
   ASSERT_ITEM_ENTRY(archive, "path1", "Item#1", "text/html", "I tempt you");
-  ASSERT_ITEM_ENTRY(archive, "path2", "Item#2", "text/html", "I tempt you too");
+  ASSERT_REDIRECT_ENTRY(archive, "path2", "A redirect", "path1");
   ASSERT_REDIRECT_ENTRY(archive, "path3", "Second level redirect", "path2");
 }
 
@@ -575,8 +575,9 @@ TEST(ZimCreator, attemptingToOverwriteAnExistingEntryWithAnAlias)
     InvalidEntry
   );
 
-  ASSERT_NO_THROW( // try to overwrite a redirect with an alias of an item
-    creator.addAlias("redir2", "Make redir2 an alias of item1", "item1")
+  ASSERT_THROW( // try to overwrite a redirect with an alias of an item
+    creator.addAlias("redir2", "Make redir2 an alias of item1", "item1"),
+    InvalidEntry
   );
 
   creator.finishZimCreation();
@@ -586,7 +587,7 @@ TEST(ZimCreator, attemptingToOverwriteAnExistingEntryWithAnAlias)
   ASSERT_ITEM_ENTRY(a, "item1", "Item#1", "text/html", "It empowers everyone");
   ASSERT_ITEM_ENTRY(a, "item2", "Item#2", "text/html", "It embarrasses us");
   ASSERT_REDIRECT_ENTRY(a, "redir1", "Redirect#1", "item1");
-  ASSERT_ITEM_ENTRY(a, "redir2", "Make redir2 an alias of item1", "text/html", "It empowers everyone");
+  ASSERT_REDIRECT_ENTRY(a, "redir2", "Redirect#2", "item2");
 }
 
 TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)

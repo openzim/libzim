@@ -624,13 +624,7 @@ void CreatorData::addDirent(Dirent* dirent)
 {
   auto ret = dirents.insert(dirent);
   if (!ret.second) {
-    Dirent* existing = *ret.first;
-    if (existing->isRedirect() && !dirent->isRedirect()) {
-      removeDirent(ret.first);
-      dirents.insert(dirent);
-    } else {
-      throw direntConflictError(*existing, *dirent);
-    }
+    throw direntConflictError(**ret.first, *dirent);
   };
 
   if (dirent->isRedirect()) {
