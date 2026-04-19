@@ -162,10 +162,9 @@ TEST(DirentTest, read_write_redirect_dirent)
 {
   zim::writer::Dirent targetDirent(NS::C, "Foo", "", 17);
   targetDirent.setIdx(zim::entry_index_t(321));
-  zim::writer::Dirent dirent(NS::C, "Bar", "", NS::C, "Foo");
+  zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
   ASSERT_EQ(dirent.getRedirectNs(), NS::C);
   ASSERT_EQ(dirent.getRedirectPath(), "Foo");
-  dirent.setRedirect(&targetDirent);
 
   ASSERT_TRUE(dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), NS::C);
@@ -205,8 +204,7 @@ TEST(DirentTest, redirect_dirent_size)
 {
   zim::writer::Dirent targetDirent(NS::C, "Foo", "", 17);
   targetDirent.setIdx(zim::entry_index_t(321));
-  zim::writer::Dirent dirent(NS::C, "Bar", "", NS::C, "Foo");
-  dirent.setRedirect(&targetDirent);
+  zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
 
   ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
 }

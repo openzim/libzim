@@ -60,17 +60,6 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
     _isFrontArticle(false)
 {}
 
-// Creator for a "redirection" dirent
-Dirent::Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
-  : pathTitle(path, title),
-    mimeType(redirectMimeType),
-    idx(0),
-    info(DirentInfo::Redirect(targetNs, targetPath)),
-    _ns(static_cast<uint8_t>(ns)),
-    removed(false),
-    _isFrontArticle(false)
-{}
-
 // Creator for a resolved "redirection" dirent
 Dirent::Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target)
   : pathTitle(path, title),
@@ -93,15 +82,11 @@ Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& 
 {}
 
 NS Dirent::getRedirectNs() const {
-  return info.tag == DirentInfo::REDIRECT
-       ? info.getRedirect().ns
-       : info.getResolved().targetDirent->getNamespace();
+  return info.getResolved().targetDirent->getNamespace();
 }
 
 std::string Dirent::getRedirectPath() const {
-  return info.tag == DirentInfo::REDIRECT
-       ? std::string(info.getRedirect().targetPath)
-       : info.getResolved().targetDirent->getPath();
+  return info.getResolved().targetDirent->getPath();
 }
 
 entry_index_t Dirent::getRedirectIndex() const      {

@@ -52,18 +52,6 @@ namespace zim
           blob_index_t     blobNumber;
         } PACKED;
 
-        struct Redirect {
-          Redirect(NS ns, const std::string& target) :
-            targetPath(target),
-            ns(ns)
-          {};
-          Redirect(Redirect&& r) = default;
-          Redirect(const Redirect& r) = default;
-          ~Redirect() {};
-          TinyString targetPath;
-          NS ns;
-        } PACKED;
-
         struct Resolved {
           Resolved(Dirent* target) :
             targetDirent(target)
@@ -77,9 +65,6 @@ namespace zim
             case DIRECT:
              direct.~Direct();
               break;
-            case REDIRECT:
-              redirect.~Redirect();
-              break;
             case RESOLVED:
               resolved.~Resolved();
               break;
@@ -88,10 +73,6 @@ namespace zim
         DirentInfo(Direct&& d):
           direct(std::move(d)),
           tag(DirentInfo::DIRECT)
-        {}
-        DirentInfo(Redirect&& r):
-          redirect(std::move(r)),
-          tag(DirentInfo::REDIRECT)
         {}
         DirentInfo(Resolved&& r):
           resolved(std::move(r)),
@@ -104,9 +85,6 @@ namespace zim
             case DIRECT:
               new(&direct) Direct(other.direct);
               break;
-            case REDIRECT:
-              new(&redirect) Redirect(other.redirect);
-              break;
             case RESOLVED:
               new(&resolved) Resolved(other.resolved);
               break;
@@ -116,10 +94,6 @@ namespace zim
           ASSERT(tag, ==, DIRECT);
           return direct;
         }
-        DirentInfo::Redirect& getRedirect() {
-          ASSERT(tag, ==, REDIRECT);
-          return redirect;
-        }
         DirentInfo::Resolved& getResolved() {
           ASSERT(tag, ==, RESOLVED);
           return resolved;
@@ -127,10 +101,6 @@ namespace zim
         const DirentInfo::Direct& getDirect() const {
           ASSERT(tag, ==, DIRECT);
           return direct;
-        }
-        const DirentInfo::Redirect& getRedirect() const {
-          ASSERT(tag, ==, REDIRECT);
-          return redirect;
         }
         const DirentInfo::Resolved& getResolved() const {
           ASSERT(tag, ==, RESOLVED);
@@ -140,12 +110,11 @@ namespace zim
       private: // members
         union {
           Direct direct;
-          Redirect redirect;
           Resolved resolved;
         } PACKED;
 
       public: // members
-        enum : char {DIRECT, REDIRECT, RESOLVED} tag;
+        enum : char {DIRECT, RESOLVED} tag;
     } PACKED;
 
     class LIBZIM_PRIVATE_API Dirent
@@ -164,9 +133,6 @@ namespace zim
       public:
         // Creator for a "classic" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, uint16_t mimetype);
-
-        // Creator for a "redirection" dirent
-        Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
 
         // Creator for a resolved "redirection" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
@@ -189,11 +155,6 @@ namespace zim
 
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
-        void setRedirect(Dirent* target) {
-          ASSERT(info.tag, ==, DirentInfo::REDIRECT);
-          info.~DirentInfo();
-          new(&info) DirentInfo(DirentInfo::Resolved(target));
-        }
         Dirent* getRedirectTargetDirent() const {
           return info.getResolved().targetDirent;
         }
