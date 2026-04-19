@@ -389,6 +389,67 @@ const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
     "Detect loops and/or blind chains of redirects\n"
     "set index\n";
 
+TEST(ZimCreator, redirectAddedAfterItsTargetIsCreated)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("item", "An item", "<html/>"));
+  creator.addRedirection("redirect", "A redirect", "item");
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive a(tempPath);
+  ASSERT_ITEM_ENTRY(a, "item",  "An item",  "text/html", "<html/>");
+  ASSERT_REDIRECT_ENTRY(a, "redirect", "A redirect", "item");
+}
+
+TEST(ZimCreator, redirectAddedBeforeItsTargetIsCreated)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator c;
+  c.setUuid(makeSafeUuid());
+  c.startZimCreation(tempPath);
+
+  // Add redirects with targets not yet created
+  c.addRedirection("r1", "Redirect to an item",          "item");
+  c.addRedirection("r2", "Redirect to an item alias",    "item_alias");
+  c.addRedirection("r3", "Redirect to another redirect", "redirect");
+  c.addRedirection("r4", "Redirect to a redirect alias", "redir_alias");
+
+  // Add entries serving as targets for the redirects from the previous block
+  c.addItem(makeTestItem("item", "An item", ""));
+  c.addAlias("item_alias", "An alias of an item", "item");
+  c.addRedirection("redirect", "Safe redirect to an item", "item");
+  c.addAlias("redir_alias", "An alias of a redirect", "redirect");
+
+  c.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive a(tempPath);
+  ASSERT_ITEM_ENTRY(a, "item",  "An item",  "text/html", "");
+  ASSERT_ITEM_ENTRY(a, "item_alias",  "An alias of an item",  "text/html", "");
+  ASSERT_REDIRECT_ENTRY(a, "redirect", "Safe redirect to an item", "item");
+  ASSERT_REDIRECT_ENTRY(a, "redir_alias", "An alias of a redirect", "item");
+
+  ASSERT_REDIRECT_ENTRY(a, "r1", "Redirect to an item",          "item");
+  ASSERT_REDIRECT_ENTRY(a, "r2", "Redirect to an item alias",    "item_alias");
+  ASSERT_REDIRECT_ENTRY(a, "r3", "Redirect to another redirect", "redirect");
+  ASSERT_REDIRECT_ENTRY(a, "r4", "Redirect to a redirect alias", "redir_alias");
+}
+
+
 TEST(ZimCreator, aliases)
 {
   unittests::TempFile temp("zimfile");
