@@ -732,7 +732,7 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
 
 Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
 {
-  auto dirent = pool.getClassicDirent(ns, path, title, getMimeTypeIdx(mimetype));
+  auto dirent = pool.add(Dirent(ns, path, title, getMimeTypeIdx(mimetype)));
   addDirent(dirent);
   return dirent;
 }
@@ -750,14 +750,14 @@ Dirent* CreatorData::createItemDirent(const Item* item)
 
 Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
 {
-  auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
+  auto dirent = pool.add(Dirent(ns, path, title, targetNs, targetPath));
   addDirent(dirent);
   return dirent;
 }
 
 Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
 {
-  auto dirent = pool.getAliasDirent(path, title, target);
+  auto dirent = pool.add(Dirent(path, title, target));
   addDirent(dirent);
   return dirent;
 }
