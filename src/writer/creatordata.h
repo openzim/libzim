@@ -68,6 +68,7 @@ namespace zim
                        size_t clusterSize);
         virtual ~CreatorData();
 
+        Dirent* add(Dirent&& dirent);
         void addDirent(Dirent* dirent);
         void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
 

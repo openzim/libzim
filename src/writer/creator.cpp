@@ -685,6 +685,13 @@ void CreatorData::removeDirent(Dirent* dirent)
   removeDirent(it);
 }
 
+Dirent* CreatorData::add(Dirent&& d)
+{
+  auto dirent = pool.add(std::move(d));
+  addDirent(dirent);
+  return dirent;
+}
+
 void CreatorData::addDirent(Dirent* dirent)
 {
   auto ret = dirents.insert(dirent);
@@ -732,9 +739,7 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
 
 Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
 {
-  auto dirent = pool.add(Dirent(ns, path, title, getMimeTypeIdx(mimetype)));
-  addDirent(dirent);
-  return dirent;
+  return add(Dirent(ns, path, title, getMimeTypeIdx(mimetype)));
 }
 
 Dirent* CreatorData::createItemDirent(const Item* item)
@@ -750,16 +755,12 @@ Dirent* CreatorData::createItemDirent(const Item* item)
 
 Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
 {
-  auto dirent = pool.add(Dirent(ns, path, title, targetNs, targetPath));
-  addDirent(dirent);
-  return dirent;
+  return add(Dirent(ns, path, title, targetNs, targetPath));
 }
 
 Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
 {
-  auto dirent = pool.add(Dirent(path, title, target));
-  addDirent(dirent);
-  return dirent;
+  return add(Dirent(path, title, target));
 }
 
 Cluster* CreatorData::closeCluster(bool compressed)
