@@ -347,7 +347,7 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
     throw InvalidEntry(fmt);
   }
 
-  auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
+  auto dirent = data->add(Dirent(path, title, **existing_dirent_it));
   setFrontArticle(*dirent, hints);
   data->handle(dirent);
 }
@@ -746,11 +746,6 @@ Dirent* CreatorData::createItemDirent(const Item* item)
     mimetype = "application/octet-stream";
   }
   return createDirent(NS::C, path, mimetype, item->getTitle());
-}
-
-Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
-{
-  return add(Dirent(path, title, target));
 }
 
 Cluster* CreatorData::closeCluster(bool compressed)
