@@ -325,7 +325,7 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
+  auto dirent = data->add(Dirent(NS::C, path, title, NS::C, targetPath));
   setFrontArticle(*dirent, hints);
 
   if (data->dirents.size()%1000 == 0){
@@ -362,7 +362,7 @@ void Creator::finishZimCreation()
   // We need to keep the created dirent to set the fileheader.
   // Dirent doesn't have to be deleted.
   if (!m_mainPath.empty()) {
-    data->mainPageDirent = data->createRedirectDirent(NS::W, "mainPage", "", NS::C, m_mainPath);
+    data->mainPageDirent = data->add(Dirent(NS::W, "mainPage", "", NS::C, m_mainPath));
     data->handle(data->mainPageDirent);
   }
 
@@ -746,11 +746,6 @@ Dirent* CreatorData::createItemDirent(const Item* item)
     mimetype = "application/octet-stream";
   }
   return createDirent(NS::C, path, mimetype, item->getTitle());
-}
-
-Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
-{
-  return add(Dirent(ns, path, title, targetNs, targetPath));
 }
 
 Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
