@@ -69,7 +69,6 @@ namespace zim
         virtual ~CreatorData();
 
         Dirent* add(Dirent&& dirent);
-        void addDirent(Dirent* dirent);
         void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
 
         Dirent* createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title);

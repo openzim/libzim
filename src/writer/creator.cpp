@@ -688,12 +688,6 @@ void CreatorData::removeDirent(Dirent* dirent)
 Dirent* CreatorData::add(Dirent&& d)
 {
   auto dirent = pool.add(std::move(d));
-  addDirent(dirent);
-  return dirent;
-}
-
-void CreatorData::addDirent(Dirent* dirent)
-{
   auto ret = dirents.insert(dirent);
   if (!ret.second) {
     throw direntConflictError(**ret.first, *dirent);
@@ -702,6 +696,7 @@ void CreatorData::addDirent(Dirent* dirent)
   if (dirent->isRedirect()) {
     nbRedirectItems++;
   }
+  return dirent;
 }
 
 void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
