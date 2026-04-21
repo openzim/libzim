@@ -262,7 +262,13 @@ void Creator::addItem(std::shared_ptr<Item> item)
   checkError();
   const Hints& itemHints = item->getAmendedHints();
   const bool compressContent = getCompressionHint(itemHints);
-  auto dirent = data->createItemDirent(item.get());
+  const auto path = item->getPath();
+  auto mimetype = item->getMimeType();
+  if (mimetype.empty()) {
+    std::cerr << "WARNING: mimetype missing for " << path << std::endl;
+    mimetype = "application/octet-stream";
+  }
+  auto dirent = data->createDirent(NS::C, path, mimetype, item->getTitle());
   setFrontArticle(*dirent, itemHints);
 
   try {
@@ -735,17 +741,6 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
 Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
 {
   return add(Dirent(ns, path, title, getMimeTypeIdx(mimetype)));
-}
-
-Dirent* CreatorData::createItemDirent(const Item* item)
-{
-  auto path = item->getPath();
-  auto mimetype = item->getMimeType();
-  if (mimetype.empty()) {
-    std::cerr << "Warning, " << path << " have empty mimetype." << std::endl;
-    mimetype = "application/octet-stream";
-  }
-  return createDirent(NS::C, path, mimetype, item->getTitle());
 }
 
 Cluster* CreatorData::closeCluster(bool compressed)
