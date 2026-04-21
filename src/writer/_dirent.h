@@ -238,9 +238,17 @@ namespace zim
         bool isFrontArticle() const { return _isFrontArticle; }
         void markFrontArticle() { _isFrontArticle = true; }
 
+        bool isPlaceholder() const
+        {
+          return info.tag == DirentInfo::RESOLVED
+              && getRedirectTargetDirent() == nullptr;
+        }
+
         bool isUnresolvedRedirect() const
         {
-          return info.tag == DirentInfo::REDIRECT;
+          return info.tag == DirentInfo::RESOLVED
+              && getRedirectTargetDirent() != nullptr
+              && getRedirectTargetDirent()->isPlaceholder();
         }
 
         void write(int out_fd) const;

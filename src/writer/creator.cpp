@@ -110,10 +110,11 @@ namespace
 
 void reportInvalidRedirect(const Dirent& dirent)
 {
+  const Dirent& targetDirent = *dirent.getRedirectTargetDirent();
   INFO("Removing invalid redirection "
       << NsAsChar(dirent.getNamespace()) << '/' << dirent.getPath()
       << " redirecting to (missing) "
-      << NsAsChar(dirent.getRedirectNs()) << '/' << dirent.getRedirectPath()
+      << NsAsChar(targetDirent.getNamespace()) << '/' << targetDirent.getPath()
   );
 }
 
@@ -134,7 +135,7 @@ entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
   while ( !d->isItem() ) {
     d->setIdx(entry_index_t(i++));
     d = d->getRedirectTargetDirent();
-    if ( d->isRemoved() || d->getIdx().v >= startingIndex ) {
+    if ( d == nullptr || d->isRemoved() || d->getIdx().v >= startingIndex ) {
       // hit a dead end or detected being caught in a loop
       return startingIndex;
     }
@@ -145,15 +146,19 @@ entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
 
 void markBlindRedirectChainForRemoval(Dirent* d)
 {
-  for ( ; !d->isRemoved() ; d = d->getRedirectTargetDirent() ) {
-    const Dirent* const t = d->getRedirectTargetDirent();
+  while ( !d->isRemoved() ) {
+    Dirent* const t = d->getRedirectTargetDirent();
+    d->markRemoved();
+    if ( t == nullptr )
+      break;
+
     INFO("Redirection "
         << NsAsChar(d->getNamespace()) << '/' << d->getPath()
         << " -> "
         << NsAsChar(t->getNamespace()) << '/' << t->getPath()
         << " belongs to a blind chain or loop. Removing..."
     );
-    d->markRemoved();
+    d = t;
   }
 }
 
@@ -275,7 +280,7 @@ void Creator::addItem(std::shared_ptr<Item> item)
   setFrontArticle(direntToAdd, itemHints);
   data->addItemData(direntToAdd, item->getContentProvider(), compressContent);
   data->handle(direntToAdd, item);
-  data->add(std::move(direntToAdd));
+  data->addOrUpdate(std::move(direntToAdd));
 
   if (data->dirents.size()%1000 == 0) {
     TPROGRESS();
@@ -298,7 +303,7 @@ void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvid
   data->ensureDirentCanBeAdded(direntToAdd);
   data->addItemData(direntToAdd, std::move(provider), compressContent);
   data->handle(direntToAdd);
-  data->add(std::move(direntToAdd));
+  data->addOrUpdate(std::move(direntToAdd));
 }
 
 void Creator::addIllustration(const IllustrationInfo& ii, const std::string& content)
@@ -327,10 +332,8 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  const auto targetDirentIt = data->findDirent(NS::C, targetPath);
-  auto dirent = targetDirentIt == data->dirents.end()
-              ? data->add(Dirent(NS::C, path, title, NS::C, targetPath))
-              : data->add(Dirent(NS::C, path, title, *targetDirentIt));
+  const auto targetDirent = data->addOrUpdate(Dirent(NS::C, targetPath));
+  const auto dirent = data->addOrUpdate(Dirent(NS::C, path, title, targetDirent));
   setFrontArticle(*dirent, hints);
 
   if (data->dirents.size()%1000 == 0){
@@ -356,7 +359,7 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
   data->ensureDirentCanBeAdded(direntToAdd);
   setFrontArticle(direntToAdd, hints);
   data->handle(direntToAdd);
-  data->add(std::move(direntToAdd));
+  data->addOrUpdate(std::move(direntToAdd));
 }
 
 void Creator::finishZimCreation()
@@ -369,8 +372,11 @@ void Creator::finishZimCreation()
   // We need to keep the created dirent to set the fileheader.
   // Dirent doesn't have to be deleted.
   if (!m_mainPath.empty()) {
-    data->mainPageDirent = data->add(Dirent(NS::W, "mainPage", "", NS::C, m_mainPath));
-    data->handle(*data->mainPageDirent);
+    const auto mainPageDirentIt = data->findDirent(NS::C, m_mainPath);
+    if ( mainPageDirentIt != data->dirents.end() ) {
+      data->mainPageDirent = data->addOrUpdate(Dirent(NS::W, "mainPage", "", *mainPageDirentIt));
+      data->handle(*data->mainPageDirent);
+    }
   }
 
   TPROGRESS();
@@ -675,12 +681,40 @@ CreatorData::DirentIterator CreatorData::findDirent(NS ns, const std::string& pa
   return dirents.find(&tmpDirent);
 }
 
-void CreatorData::ensureDirentCanBeAdded(Dirent& d)
+// Returns the dirent with the namespace and path of that passed as the
+// argument. Throws an exception if overwriting the returned dirent with the
+// query one would mean that there has been a dirent conflict.
+Dirent* CreatorData::getMatchingDirent(Dirent& d)
 {
   const auto it = dirents.find(&d);
-  if ( it != dirents.end()) {
-    throw direntConflictError(**it, d);
+  if ( it != dirents.end() ) {
+    Dirent* const existingDirent = *it;
+    if ( !d.isPlaceholder() ) {
+      if ( !existingDirent->isPlaceholder() ) {
+        throw direntConflictError(*existingDirent, d);
+      }
+    }
+    return existingDirent;
   }
+  return nullptr;
+}
+
+void CreatorData::ensureDirentCanBeAdded(Dirent& d)
+{
+  getMatchingDirent(d);
+}
+
+Dirent* CreatorData::addOrUpdate(Dirent&& d)
+{
+  if ( Dirent* const existingDirent = getMatchingDirent(d) ) {
+    if ( !d.isPlaceholder() ) {
+      existingDirent->~Dirent();
+      new(existingDirent) Dirent(std::move(d));
+    }
+    return existingDirent;
+  }
+
+  return add(std::move(d));
 }
 
 CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
@@ -796,13 +830,9 @@ void CreatorData::resolveRedirectIndexes()
   for (Dirent* const dirent : dirents)
   {
     if ( dirent->isUnresolvedRedirect() ) {
-      const auto targetDirentIt = findDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
-      if ( targetDirentIt == dirents.end()) {
-        reportInvalidRedirect(*dirent);
-        dirent->markRemoved();
-      } else  {
-        dirent->setRedirect(*targetDirentIt);
-      }
+      reportInvalidRedirect(*dirent);
+      dirent->getRedirectTargetDirent()->markRemoved();
+      dirent->markRemoved();
     }
   }
 }

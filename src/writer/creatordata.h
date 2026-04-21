@@ -68,6 +68,7 @@ namespace zim
                        size_t clusterSize);
         virtual ~CreatorData();
 
+        Dirent* addOrUpdate(Dirent&& dirent);
         Dirent* add(Dirent&& dirent);
         void addItemData(Dirent& dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
 
@@ -88,6 +89,7 @@ namespace zim
         bool isErrored() const;
         void quitAllThreads();
 
+        Dirent* getMatchingDirent(Dirent& d);
         void ensureDirentCanBeAdded(Dirent& d);
         DirentIterator findDirent(NS ns, const std::string& path);
         DirentIterator removeDirent(DirentIterator it);
