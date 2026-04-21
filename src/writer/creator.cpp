@@ -327,7 +327,10 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  auto dirent = data->add(Dirent(NS::C, path, title, NS::C, targetPath));
+  const auto targetDirentIt = data->findDirent(NS::C, targetPath);
+  auto dirent = targetDirentIt == data->dirents.end()
+              ? data->add(Dirent(NS::C, path, title, NS::C, targetPath))
+              : data->add(Dirent(NS::C, path, title, *targetDirentIt));
   setFrontArticle(*dirent, hints);
 
   if (data->dirents.size()%1000 == 0){
@@ -792,7 +795,7 @@ void CreatorData::resolveRedirectIndexes()
   INFO("Resolve redirect");
   for (Dirent* const dirent : dirents)
   {
-    if ( dirent->isRedirect() ) {
+    if ( dirent->isUnresolvedRedirect() ) {
       const auto targetDirentIt = findDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
       if ( targetDirentIt == dirents.end()) {
         reportInvalidRedirect(*dirent);
