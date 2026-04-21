@@ -125,12 +125,12 @@ namespace zim
         std::string indexingLanguage;
 
         std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
-        void handle(Dirent* dirent) {
+        void handle(const Dirent& dirent) {
           for(auto& handler: m_direntHandlers) {
             handler->handle(dirent);
           }
         }
-        void handle(Dirent* dirent, std::shared_ptr<Item> item) {
+        void handle(const Dirent& dirent, std::shared_ptr<Item> item) {
           for(auto& handler: m_direntHandlers) {
             handler->handle(dirent, item);
           }

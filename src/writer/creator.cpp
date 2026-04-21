@@ -273,7 +273,7 @@ void Creator::addItem(std::shared_ptr<Item> item)
 
   try {
     data->addItemData(dirent, item->getContentProvider(), compressContent);
-    data->handle(dirent, item);
+    data->handle(*dirent, item);
   } catch (...) {
     data->removeDirent(dirent);
     throw;
@@ -298,7 +298,7 @@ void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvid
   auto dirent = data->createDirent(NS::M, name, mimetype, "");
   try {
     data->addItemData(dirent, std::move(provider), compressContent);
-    data->handle(dirent);
+    data->handle(*dirent);
   } catch (...) {
     data->removeDirent(dirent);
     throw;
@@ -338,7 +338,7 @@ void Creator::addRedirection(const std::string& path, const std::string& title, 
     TPROGRESS();
   }
 
-  data->handle(dirent);
+  data->handle(*dirent);
 }
 
 void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
@@ -355,7 +355,7 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
 
   auto dirent = data->add(Dirent(path, title, **existing_dirent_it));
   setFrontArticle(*dirent, hints);
-  data->handle(dirent);
+  data->handle(*dirent);
 }
 
 void Creator::finishZimCreation()
@@ -369,7 +369,7 @@ void Creator::finishZimCreation()
   // Dirent doesn't have to be deleted.
   if (!m_mainPath.empty()) {
     data->mainPageDirent = data->add(Dirent(NS::W, "mainPage", "", NS::C, m_mainPath));
-    data->handle(data->mainPageDirent);
+    data->handle(*data->mainPageDirent);
   }
 
   TPROGRESS();
