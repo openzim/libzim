@@ -41,90 +41,45 @@ namespace zim
 
     char NsAsChar(NS ns);
 
-    class DirentInfo {
-      public: // structures
+    class LIBZIM_PRIVATE_API Dirent
+    {
         struct Direct {
-          Direct() :
-            cluster(nullptr),
-            blobNumber(0)
-          {};
           Cluster*         cluster;
           blob_index_t     blobNumber;
         } PACKED;
 
-        struct Resolved {
-          Resolved(Dirent* target) :
-            targetDirent(target)
-          {};
+        struct Redirect {
           Dirent* targetDirent;
         } PACKED;
 
-      public: // functions
-        ~DirentInfo() {
-          switch(tag) {
-            case DIRECT:
-             direct.~Direct();
-              break;
-            case RESOLVED:
-              resolved.~Resolved();
-              break;
-          }
-        };
-        DirentInfo(Direct&& d):
-          direct(std::move(d)),
-          tag(DirentInfo::DIRECT)
-        {}
-        DirentInfo(Resolved&& r):
-          resolved(std::move(r)),
-          tag(DirentInfo::RESOLVED)
-        {}
-        DirentInfo(const DirentInfo& other):
-          tag(other.tag)
-        {
-          switch (tag) {
-            case DIRECT:
-              new(&direct) Direct(other.direct);
-              break;
-            case RESOLVED:
-              new(&resolved) Resolved(other.resolved);
-              break;
-          }
-        }
-        DirentInfo::Direct& getDirect() {
-          ASSERT(tag, ==, DIRECT);
-          return direct;
-        }
-        const DirentInfo::Direct& getDirect() const {
-          ASSERT(tag, ==, DIRECT);
-          return direct;
-        }
-        const DirentInfo::Resolved& getResolved() const {
-          ASSERT(tag, ==, RESOLVED);
-          return resolved;
-        }
-
-      private: // members
-        union {
-          Direct direct;
-          Resolved resolved;
-        } PACKED;
-
-      public: // members
-        enum : char {DIRECT, RESOLVED} tag;
-    } PACKED;
-
-    class LIBZIM_PRIVATE_API Dirent
-    {
         static const uint16_t redirectMimeType = 0xffff;
         static const uint32_t version = 0;
 
         PathTitleTinyString pathTitle;
         uint16_t mimeType;
         entry_index_t idx = entry_index_t(0);
-        DirentInfo info;
+
+        union {
+          Direct   direct;
+          Redirect redirect;
+        } PACKED;
+
         uint8_t _ns : 2;
         bool removed : 1;
         bool _isFrontArticle : 1;
+
+      private:
+        Direct& getDirect()
+        {
+          ASSERT(isItem(), ==, true);
+          return direct;
+        }
+
+        const Direct& getDirect() const
+        {
+          ASSERT(isItem(), ==, true);
+          return direct;
+        }
 
       public:
         // Creator for a "classic" dirent
@@ -154,7 +109,8 @@ namespace zim
         std::string getRedirectPath() const;
 
         Dirent* getRedirectTargetDirent() const {
-          return info.getResolved().targetDirent;
+          ASSERT(isRedirect(), ==, true);
+          return redirect.targetDirent;
         }
 
         entry_index_t getRedirectIndex() const;
@@ -165,19 +121,19 @@ namespace zim
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
-          auto& direct = info.getDirect();
+          auto& direct = getDirect();
           direct.cluster = _cluster;
           direct.blobNumber = _cluster->count();
         }
 
         cluster_index_t getClusterNumber() const {
-          auto& direct = info.getDirect();
+          auto& direct = getDirect();
           ASSERT(direct.cluster, !=, nullptr);
           return direct.cluster->getClusterIndex();
         }
 
         blob_index_t  getBlobNumber() const {
-          return info.getDirect().blobNumber;
+          return getDirect().blobNumber;
         }
 
         bool isRedirect() const      { return mimeType == redirectMimeType; }
@@ -186,7 +142,7 @@ namespace zim
         uint16_t getMimeType() const { return mimeType; }
 
         void setMimeType(uint16_t m) {
-          ASSERT(info.tag, ==, DirentInfo::DIRECT);
+          ASSERT(isItem(), ==, true);
           mimeType = m;
         }
 
@@ -203,13 +159,13 @@ namespace zim
 
         bool isPlaceholder() const
         {
-          return info.tag == DirentInfo::RESOLVED
+          return isRedirect()
               && getRedirectTargetDirent() == nullptr;
         }
 
         bool isUnresolvedRedirect() const
         {
-          return info.tag == DirentInfo::RESOLVED
+          return isRedirect()
               && getRedirectTargetDirent() != nullptr
               && getRedirectTargetDirent()->isPlaceholder();
         }

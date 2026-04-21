@@ -55,32 +55,40 @@ Dirent::Dirent(NS ns, const std::string& path, const std::string& title, uint16_
   : pathTitle(path, title),
     mimeType(mimetype),
     idx(0),
-    info(DirentInfo::Direct()),
     _ns(static_cast<uint8_t>(ns)),
     removed(false),
     _isFrontArticle(false)
-{}
+{
+  getDirect().cluster = nullptr;
+  getDirect().blobNumber = blob_index_t(0);
+}
 
 // Creator for a resolved "redirection" dirent
 Dirent::Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target)
   : pathTitle(path, title),
     mimeType(redirectMimeType),
     idx(0),
-    info(DirentInfo::Resolved(target)),
     _ns(static_cast<uint8_t>(ns)),
     removed(false),
     _isFrontArticle(false)
-{}
+{
+  redirect.targetDirent = target;
+}
 
 Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& target)
   : pathTitle(path, title),
     mimeType(target.mimeType),
     idx(0),
-    info(target.info),
     _ns(target._ns),
     removed(false),
     _isFrontArticle(false)
-{}
+{
+  if ( target.isRedirect() ) {
+    this->redirect = target.redirect;
+  } else {
+    this->direct = target.direct;
+  }
+}
 
 NS Dirent::getRedirectNs() const {
   return getRedirectTargetDirent()->getNamespace();
