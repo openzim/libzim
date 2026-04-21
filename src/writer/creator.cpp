@@ -260,24 +260,22 @@ void Creator::startZimCreation(const std::string& filepath)
 void Creator::addItem(std::shared_ptr<Item> item)
 {
   checkError();
-  const Hints& itemHints = item->getAmendedHints();
-  const bool compressContent = getCompressionHint(itemHints);
   const auto path = item->getPath();
   auto mimetype = item->getMimeType();
   if (mimetype.empty()) {
     std::cerr << "WARNING: mimetype missing for " << path << std::endl;
     mimetype = "application/octet-stream";
   }
-  auto dirent = data->createDirent(NS::C, path, mimetype, item->getTitle());
-  setFrontArticle(*dirent, itemHints);
+  const auto mimeTypeIdx = data->getMimeTypeIdx(mimetype);
+  const Hints& itemHints = item->getAmendedHints();
+  const bool compressContent = getCompressionHint(itemHints);
 
-  try {
-    data->addItemData(dirent, item->getContentProvider(), compressContent);
-    data->handle(*dirent, item);
-  } catch (...) {
-    data->removeDirent(dirent);
-    throw;
-  }
+  Dirent direntToAdd(NS::C, path, item->getTitle(), mimeTypeIdx);
+  data->ensureDirentCanBeAdded(direntToAdd);
+  setFrontArticle(direntToAdd, itemHints);
+  data->addItemData(direntToAdd, item->getContentProvider(), compressContent);
+  data->handle(direntToAdd, item);
+  data->add(std::move(direntToAdd));
 
   if (data->dirents.size()%1000 == 0) {
     TPROGRESS();
@@ -295,14 +293,12 @@ void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvid
 {
   checkError();
   auto compressContent = isCompressibleMimetype(mimetype);
-  auto dirent = data->createDirent(NS::M, name, mimetype, "");
-  try {
-    data->addItemData(dirent, std::move(provider), compressContent);
-    data->handle(*dirent);
-  } catch (...) {
-    data->removeDirent(dirent);
-    throw;
-  }
+  const auto mimeTypeIdx = data->getMimeTypeIdx(mimetype);
+  Dirent direntToAdd(NS::M, name, "", mimeTypeIdx);
+  data->ensureDirentCanBeAdded(direntToAdd);
+  data->addItemData(direntToAdd, std::move(provider), compressContent);
+  data->handle(direntToAdd);
+  data->add(std::move(direntToAdd));
 }
 
 void Creator::addIllustration(const IllustrationInfo& ii, const std::string& content)
@@ -353,9 +349,11 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
     throw InvalidEntry(fmt);
   }
 
-  auto dirent = data->add(Dirent(path, title, **existing_dirent_it));
-  setFrontArticle(*dirent, hints);
-  data->handle(*dirent);
+  Dirent direntToAdd(path, title, **existing_dirent_it);
+  data->ensureDirentCanBeAdded(direntToAdd);
+  setFrontArticle(direntToAdd, hints);
+  data->handle(direntToAdd);
+  data->add(std::move(direntToAdd));
 }
 
 void Creator::finishZimCreation()
@@ -406,7 +404,7 @@ void Creator::finishZimCreation()
     for(auto& dirent:dirents) {
       // As we use a "handler level" isCompressible, all content of the same handler
       // must have the same compression.
-      data->addItemData(dirent, std::move(*provider_it), handler->isCompressible());
+      data->addItemData(*dirent, std::move(*provider_it), handler->isCompressible());
       provider_it++;
     }
   }
@@ -674,6 +672,14 @@ CreatorData::DirentIterator CreatorData::findDirent(NS ns, const std::string& pa
   return dirents.find(&tmpDirent);
 }
 
+void CreatorData::ensureDirentCanBeAdded(Dirent& d)
+{
+  const auto it = dirents.find(&d);
+  if ( it != dirents.end()) {
+    throw direntConflictError(**it, d);
+  }
+}
+
 CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
 {
   Dirent* const dirent = *it;
@@ -705,7 +711,7 @@ Dirent* CreatorData::add(Dirent&& d)
   return dirent;
 }
 
-void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
+void CreatorData::addItemData(Dirent& dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
 {
   // Add blob data to compressed or uncompressed cluster.
   auto itemSize = provider->getSize();
@@ -724,11 +730,11 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
   {
     log_info("cluster with " << cluster->count() << " items, " <<
              cluster->size() << " bytes; current title \"" <<
-             dirent->getTitle() << '\"');
+             dirent.getTitle() << '\"');
     cluster = closeCluster(compressContent);
   }
 
-  dirent->setCluster(cluster);
+  dirent.setCluster(cluster);
   cluster->addContent(std::move(provider));
 
   if (compressContent) {
@@ -892,7 +898,7 @@ void CreatorData::addTitleListingData()
 {
   Dirent* const d = *findDirent(NS::X, "listing/titleOrdered/v1");
   auto listingProvider = std::make_unique<TitleListingProvider>(this->dirents);
-  addItemData(d, std::move(listingProvider), false);
+  addItemData(*d, std::move(listingProvider), false);
 }
 
 } // namespace writer
