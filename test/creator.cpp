@@ -907,4 +907,58 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   ASSERT_REDIRECT_ENTRY(archive, "q", "q -> root", "root");
 }
 
+struct SimulatedError : std::exception
+{
+};
+
+std::shared_ptr<zim::writer::Item> makeUnaddableItem(const std::string& path)
+{
+  struct UnaddableItem : TestItem
+  {
+    UnaddableItem(const std::string& path) : TestItem(path, "", "") {}
+    virtual std::unique_ptr<writer::ContentProvider> getContentProvider() const
+    {
+      throw SimulatedError();
+    }
+  };
+
+  return std::make_shared<UnaddableItem>(path);
+}
+
+TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
+{
+  unittests::TempFile temp("zimfile");
+  auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+  writer::Creator c;
+  c.setUuid(makeSafeUuid());
+  c.startZimCreation(tempPath);
+
+  c.addRedirection("R1", "Redirect to a discardable item", "Discardable");
+  c.addRedirection("R2", "Redirect to an important item", "Important");
+
+  // Adding this item fails and is not retried
+  EXPECT_THROW(c.addItem(makeUnaddableItem("Discardable")), SimulatedError);
+
+  // Adding this item fails but is retried with a success
+  EXPECT_THROW(c.addItem(makeUnaddableItem("Important")), SimulatedError);
+  EXPECT_NO_THROW(c.addItem(makeTestItem("Important", "", "")));
+
+  EXPECT_NO_THROW(c.finishZimCreation());
+
+  ASSERT_EQ(stdOut.str(),
+    "Resolve redirect\n"
+    "Removing invalid redirection C/R1 redirecting to (missing) C/Discardable\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "set index\n"
+  );
+
+  const zim::Archive a(tempPath);
+
+  EXPECT_MISSING_ENTRY(a, "R1");
+  EXPECT_MISSING_ENTRY(a, "Discardable");
+  ASSERT_REDIRECT_ENTRY(a, "R2", "Redirect to an important item", "Important");
+}
+
 } // unnamed namespace
