@@ -36,7 +36,6 @@
 
 #include "../fileheader.h"
 #include "direntPool.h"
-#include "titleListingHandler.h"
 
 namespace zim
 {
@@ -95,6 +94,8 @@ namespace zim
         DirentIterator findDirent(NS ns, const std::string& path);
         DirentIterator removeDirent(DirentIterator it);
         void removeDirent(Dirent* dirent);
+
+        void addTitleListingData();
 
         DirentPool  pool;
 

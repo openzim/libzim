@@ -170,6 +170,39 @@ bool getCompressionHint(const Hints& hints)
   return it != hints.end() && it->second != 0;
 }
 
+class TitleListingProvider : public ContentProvider {
+  public:
+    explicit TitleListingProvider(const CreatorData::UrlSortedDirents& dirents) {
+      for ( Dirent* const d : dirents ) {
+        if ( d->isFrontArticle() ) {
+          m_dirents.push_back(d);
+        }
+      }
+
+      std::sort(m_dirents.begin(), m_dirents.end(), compareTitle);
+      m_it = m_dirents.begin();
+    }
+
+    zim::size_type getSize() const override {
+        return m_dirents.size() * sizeof(zim::entry_index_type);
+    }
+
+    zim::Blob feed() override {
+      if (m_it == m_dirents.end()) {
+        return zim::Blob(nullptr, 0);
+      }
+      zim::toLittleEndian((*m_it)->getIdx().v, buffer);
+      m_it++;
+      return zim::Blob(buffer, sizeof(zim::entry_index_type));
+    }
+
+  private:
+    typedef std::deque<const Dirent*> DirentPtrs;
+    DirentPtrs m_dirents;
+    char buffer[sizeof(zim::entry_index_type)];
+    DirentPtrs::const_iterator m_it;
+};
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -322,6 +355,9 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
 void Creator::finishZimCreation()
 {
   checkError();
+
+  data->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
+
   // Create a redirection for the mainPage.
   // We need to keep the created dirent to set the fileheader.
   // Dirent doesn't have to be deleted.
@@ -368,6 +404,8 @@ void Creator::finishZimCreation()
       provider_it++;
     }
   }
+
+  data->addTitleListingData();
 
   // All the data has been added, we can now close all clusters
   if (data->compCluster->count())
@@ -562,7 +600,6 @@ CreatorData::CreatorData(const std::string& fname,
   m_direntHandlers.push_back(xapianIndexer);
 #endif
 
-  m_direntHandlers.push_back(std::make_shared<TitleListingHandler>(this));
   m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
   for(auto& handler:m_direntHandlers) {
@@ -868,6 +905,13 @@ const std::string& CreatorData::getMimeType(uint16_t mimeTypeIdx) const
   if (it == rmimeTypesMap.end())
     throw CreatorError("mime type index not found");
   return it->second;
+}
+
+void CreatorData::addTitleListingData()
+{
+  Dirent* const d = *findDirent(NS::X, "listing/titleOrdered/v1");
+  auto listingProvider = std::make_unique<TitleListingProvider>(this->dirents);
+  addItemData(d, std::move(listingProvider), false);
 }
 
 } // namespace writer
