@@ -381,14 +381,15 @@ void Creator::finishZimCreation()
 
   TPROGRESS();
 
-  // We need to create all dirents before resolving redirects and setting entry indexes.
+  // We need to create all dirents before resolving redirects and setting entry
+  // indexes.
   for(auto& handler:data->m_direntHandlers) {
     // This silently create all the needed dirents.
     handler->getDirents();
   }
 
-  // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
-  // before we ask data to the handlers
+  // Now we have all the dirents (but not the data), we must correctly set/fix
+  // the dirents before we ask data to the handlers
   TINFO("ResolveRedirectIndexes");
   data->detectDanglingRedirects();
   data->removeLoopsAndBlindChainsOfRedirects();
@@ -411,8 +412,8 @@ void Creator::finishZimCreation()
     ASSERT(dirents.size(), ==, providers.size());
     auto provider_it = providers.begin();
     for(auto& dirent:dirents) {
-      // As we use a "handler level" isCompressible, all content of the same handler
-      // must have the same compression.
+      // As we use a "handler level" isCompressible, all content of the same
+      // handler must have the same compression.
       data->addItemData(*dirent, std::move(*provider_it), handler->isCompressible());
       provider_it++;
     }

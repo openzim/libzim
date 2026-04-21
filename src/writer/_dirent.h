@@ -94,10 +94,6 @@ namespace zim
           ASSERT(tag, ==, DIRECT);
           return direct;
         }
-        DirentInfo::Resolved& getResolved() {
-          ASSERT(tag, ==, RESOLVED);
-          return resolved;
-        }
         const DirentInfo::Direct& getDirect() const {
           ASSERT(tag, ==, DIRECT);
           return direct;
@@ -137,12 +133,13 @@ namespace zim
         // Creator for a resolved "redirection" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
 
-        // Creator for a "alias" dirent. Reuse the namespace of the targeted Dirent.
+        // Creator for a "alias" dirent. Reuse the namespace of the targeted
+        // Dirent.
         Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
-        // Creator for "temporary" dirent, used to search for dirent in container.
-        // We use them in path ordered container so we only need to set the namespace and the path.
-        // Other value are irrelevant.
+        // Creator for "temporary" dirent, used to search for dirent in
+        // container. We use them in path ordered container so we only need to
+        // set the namespace and the path.  Other value are irrelevant.
         Dirent(NS ns, const std::string& path)
           : Dirent(ns, path, "", nullptr)
           { }
@@ -155,9 +152,11 @@ namespace zim
 
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
+
         Dirent* getRedirectTargetDirent() const {
           return info.getResolved().targetDirent;
         }
+
         entry_index_t getRedirectIndex() const;
 
         void setIdx(entry_index_t idx_)      { idx = idx_; }
@@ -181,13 +180,16 @@ namespace zim
           return info.getDirect().blobNumber;
         }
 
-        bool isRedirect() const                 { return mimeType == redirectMimeType; }
-        bool isItem() const                     { return !isRedirect(); }
-        uint16_t getMimeType() const            { return mimeType; }
+        bool isRedirect() const      { return mimeType == redirectMimeType; }
+        bool isItem() const          { return !isRedirect(); }
+
+        uint16_t getMimeType() const { return mimeType; }
+
         void setMimeType(uint16_t m) {
           ASSERT(info.tag, ==, DirentInfo::DIRECT);
           mimeType = m;
         }
+
         size_t getDirentSize() const
         {
           return (isRedirect() ? 12 : 16) + pathTitle.size() + 1;
@@ -223,6 +225,7 @@ namespace zim
       return d1->getNamespace() < d2->getNamespace()
         || (d1->getNamespace() == d2->getNamespace() && d1->getPath() < d2->getPath());
     }
+
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
       return d1->getNamespace() < d2->getNamespace()

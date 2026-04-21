@@ -37,6 +37,7 @@
 log_define("zim.dirent")
 
 namespace zim {
+
 namespace writer {
 
 char NsAsChar(NS ns) {
@@ -82,15 +83,15 @@ Dirent::Dirent(const std::string& path, const std::string& title, const Dirent& 
 {}
 
 NS Dirent::getRedirectNs() const {
-  return info.getResolved().targetDirent->getNamespace();
+  return getRedirectTargetDirent()->getNamespace();
 }
 
 std::string Dirent::getRedirectPath() const {
-  return info.getResolved().targetDirent->getPath();
+  return getRedirectTargetDirent()->getPath();
 }
 
 entry_index_t Dirent::getRedirectIndex() const      {
-  const auto targetDirent = info.getResolved().targetDirent;
+  const auto targetDirent = getRedirectTargetDirent();
   if ( targetDirent->isRemoved() ) {
     std::ostringstream oss;
     oss << NsAsChar(getNamespace()) << "/" << getPath();
@@ -131,5 +132,6 @@ void Dirent::write(int out_fd) const
   _write(out_fd, &zero, 1);
 }
 
-}
-}
+} // namespace writer
+
+} // namespace zim
