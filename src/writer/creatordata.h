@@ -76,7 +76,7 @@ namespace zim
         Cluster* closeCluster(bool compressed);
 
         void setEntryIndexes();
-        void resolveRedirectIndexes();
+        void detectDanglingRedirects();
         // XXX: This procedure uses the Dirent::idx field
         void removeLoopsAndBlindChainsOfRedirects();
         void dropRemovedRedirects();

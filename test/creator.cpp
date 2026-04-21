@@ -385,7 +385,7 @@ TEST(ZimCreator, interruptedZimCreation)
 
 // Output produced by ZIM creation when no invalid redirects are left behind
 const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Detect loops and/or blind chains of redirects\n"
     "set index\n";
 
@@ -682,7 +682,7 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
   EXPECT_NO_THROW(creator.finishZimCreation());
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/redirectC redirecting to (missing) C/missingTarget\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
@@ -729,7 +729,7 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
   EXPECT_NO_THROW(creator.finishZimCreation());
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/redirectA redirecting to (missing) C/missingTarget\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectB -> C/redirectA belongs to a blind chain or loop. Removing...\n"
@@ -770,7 +770,7 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
   creator.finishZimCreation();
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
     "Redirection C/redirectB -> C/redirectC belongs to a blind chain or loop. Removing...\n"
@@ -865,7 +865,7 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   creator.finishZimCreation();
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/Q redirecting to (missing) C/(MISSING)\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/0 -> C/O belongs to a blind chain or loop. Removing...\n"
@@ -948,7 +948,7 @@ TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
   EXPECT_NO_THROW(c.finishZimCreation());
 
   ASSERT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/R1 redirecting to (missing) C/Discardable\n"
     "Detect loops and/or blind chains of redirects\n"
     "set index\n"

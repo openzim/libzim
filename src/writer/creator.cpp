@@ -390,7 +390,7 @@ void Creator::finishZimCreation()
   // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
   // before we ask data to the handlers
   TINFO("ResolveRedirectIndexes");
-  data->resolveRedirectIndexes();
+  data->detectDanglingRedirects();
   data->removeLoopsAndBlindChainsOfRedirects();
   data->dropRemovedRedirects();
 
@@ -823,10 +823,9 @@ void CreatorData::setEntryIndexes()
   }
 }
 
-void CreatorData::resolveRedirectIndexes()
+void CreatorData::detectDanglingRedirects()
 {
-  // translate redirect aid to index
-  INFO("Resolve redirect");
+  INFO("Detect dangling redirects");
   for (Dirent* const dirent : dirents)
   {
     if ( dirent->isUnresolvedRedirect() ) {
