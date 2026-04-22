@@ -172,14 +172,15 @@ namespace zim
 
         void write(int out_fd) const;
 
-        friend bool comparePath(const Dirent* d1, const Dirent* d2);
-        friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
+        bool comparePath(const Dirent& other) const {
+          return pathTitle.comparePath(other.pathTitle);
+        }
     } PACKED;
 
-    inline bool comparePath(const Dirent* d1, const Dirent* d2)
+    inline bool comparePath(const Dirent& d1, const Dirent& d2)
     {
-      return d1->getNamespace() < d2->getNamespace()
-        || (d1->getNamespace() == d2->getNamespace() && d1->getPath() < d2->getPath());
+      return d1.getNamespace() < d2.getNamespace()
+        || (d1.getNamespace() == d2.getNamespace() && d1.comparePath(d2));
     }
 
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)

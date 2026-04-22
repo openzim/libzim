@@ -141,4 +141,19 @@ TEST(PathTitleTinyString, equal_path_title)
   ASSERT_EQ(s.getTitle(), "FOO");
 }
 
+TEST(PathTitleTinyString, comparePath)
+{
+  typedef PathTitleTinyString PTTS;
+  ASSERT_FALSE(PTTS("", "").comparePath(PTTS("", "")));
+  ASSERT_FALSE(PTTS("", "abc").comparePath(PTTS("", "xyz")));
+  ASSERT_FALSE(PTTS("", "xyz").comparePath(PTTS("", "abc")));
+  ASSERT_TRUE(PTTS("", "").comparePath(PTTS("abcd", "")));
+  ASSERT_FALSE(PTTS("abcd", "").comparePath(PTTS("", "")));
+  ASSERT_FALSE(PTTS("abcd", "").comparePath(PTTS("abcd", "")));
+
+  ASSERT_TRUE(PTTS("", "123").comparePath(PTTS("qwerty", "456")));
+  ASSERT_FALSE(PTTS("qwerty", "123").comparePath(PTTS("", "456")));
+  ASSERT_FALSE(PTTS("qwerty", "123").comparePath(PTTS("qwerty", "456")));
+}
+
 }  // namespace

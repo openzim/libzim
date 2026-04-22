@@ -121,6 +121,14 @@ namespace zim
             return std::string(m_data+title_start, m_size-title_start);
           }
         }
+
+        bool comparePath(const PathTitleTinyString& other) const {
+          if ( m_size == 0 || other.m_size == 0 ) {
+            return m_size < other.m_size;
+          }
+
+          return strcmp(m_data, other.m_data) < 0;
+        }
     } PACKED;
   }
 }
