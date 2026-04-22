@@ -110,16 +110,23 @@ namespace zim
           return std::string(m_data);
         }
 
-        std::string getTitle() const {
+      private:
+        std::string_view getTitleAsStringView() const {
           if (m_size == 0) {
-            return std::string();
+            return std::string_view();
           }
           auto title_start = std::strlen(m_data) + 1;
           if (title_start == m_size) {
-            return std::string(m_data); // return the path as a title
+            // return the path as a title
+            return std::string_view(m_data, m_size-1);
           } else {
-            return std::string(m_data+title_start, m_size-title_start);
+            return std::string_view(m_data+title_start, m_size-title_start);
           }
+        }
+
+      public:
+        std::string getTitle() const {
+          return std::string(getTitleAsStringView());
         }
 
         bool comparePath(const PathTitleTinyString& other) const {
@@ -128,6 +135,10 @@ namespace zim
           }
 
           return strcmp(m_data, other.m_data) < 0;
+        }
+
+        bool compareTitle(const PathTitleTinyString& other) const {
+          return getTitleAsStringView() < other.getTitleAsStringView();
         }
     } PACKED;
   }

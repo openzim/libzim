@@ -175,6 +175,10 @@ namespace zim
         bool comparePath(const Dirent& other) const {
           return pathTitle.comparePath(other.pathTitle);
         }
+
+        bool compareTitle(const Dirent& other) const {
+          return pathTitle.compareTitle(other.pathTitle);
+        }
     } PACKED;
 
     inline bool comparePath(const Dirent& d1, const Dirent& d2)
@@ -185,8 +189,7 @@ namespace zim
 
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1->getNamespace() < d2->getNamespace()
-        || (d1->getNamespace() == d2->getNamespace() && d1->getTitle() < d2->getTitle());
+      return d1->compareTitle(*d2);
     }
   }
 }
