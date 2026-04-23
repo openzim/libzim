@@ -25,6 +25,7 @@
 #include <zim/error.h>
 #include <zim/item.h>
 #include <zim/tools.h>
+#include <zim/suggestion.h>
 
 #include "tools.h"
 #include "../src/file_compound.h"
@@ -911,18 +912,22 @@ struct SimulatedError : std::exception
 {
 };
 
-std::shared_ptr<zim::writer::Item> makeUnaddableItem(const std::string& path)
+std::shared_ptr<zim::writer::Item> makeUnaddableItem(const std::string& path,
+                                                     const std::string& title)
 {
   struct UnaddableItem : TestItem
   {
-    UnaddableItem(const std::string& path) : TestItem(path, "", "") {}
+    UnaddableItem(const std::string& path, const std::string& title)
+      : TestItem(path, title, "")
+    {}
+
     virtual std::unique_ptr<writer::ContentProvider> getContentProvider() const
     {
       throw SimulatedError();
     }
   };
 
-  return std::make_shared<UnaddableItem>(path);
+  return std::make_shared<UnaddableItem>(path, title);
 }
 
 TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
@@ -939,10 +944,10 @@ TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
   c.addRedirection("R2", "Redirect to an important item", "Important");
 
   // Adding this item fails and is not retried
-  EXPECT_THROW(c.addItem(makeUnaddableItem("Discardable")), SimulatedError);
+  EXPECT_THROW(c.addItem(makeUnaddableItem("Discardable", "")), SimulatedError);
 
   // Adding this item fails but is retried with a success
-  EXPECT_THROW(c.addItem(makeUnaddableItem("Important")), SimulatedError);
+  EXPECT_THROW(c.addItem(makeUnaddableItem("Important", "")), SimulatedError);
   EXPECT_NO_THROW(c.addItem(makeTestItem("Important", "", "")));
 
   EXPECT_NO_THROW(c.finishZimCreation());
@@ -960,5 +965,92 @@ TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
   EXPECT_MISSING_ENTRY(a, "Discardable");
   ASSERT_REDIRECT_ENTRY(a, "R2", "Redirect to an important item", "Important");
 }
+
+#if defined(ENABLE_XAPIAN)
+typedef std::vector<std::pair<std::string, std::string>> PathAndTitles;
+
+PathAndTitles getAllSuggestions(const zim::Archive archive, std::string query)
+{
+  zim::SuggestionSearcher suggestionSearcher(archive);
+  suggestionSearcher.setVerbose(true);
+  auto suggestionSearch = suggestionSearcher.suggest(query);
+  const auto entryCount = archive.getEntryCount();
+  auto suggestionResult = suggestionSearch.getResults(0, entryCount);
+
+  PathAndTitles result;
+  for (auto entry : suggestionResult) {
+    result.push_back({entry.getPath(), entry.getTitle()});
+  }
+  return result;
+}
+
+#define EXPECT_SUGGESTIONS(archive, query, ...)     \
+  ASSERT_EQ(                                        \
+      getAllSuggestions(archive, query),            \
+      PathAndTitles({__VA_ARGS__})                  \
+  )
+
+TEST(ZimCreator, titleIndexingOfDroppedEntries)
+{
+  unittests::TempFile temp("zimfile");
+  auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+  writer::Creator c;
+  c.setUuid(makeSafeUuid());
+  c.startZimCreation(tempPath);
+  c.configIndexing(false, "eng");
+
+  const zim::writer::Hints FRONT_ARTICLE{{zim::writer::FRONT_ARTICLE, 1}};
+
+  c.addItem(makeTestItem("home", "Home, Sweet Home", ""));
+
+  EXPECT_THROW(
+    c.addItem(makeUnaddableItem("street", "Street, Sour Street")),
+    SimulatedError
+  );
+
+  c.addRedirection("welcome", "Welcome Page", "home", FRONT_ARTICLE);
+
+  // A dangling redirection
+  c.addRedirection("farewell", "Farewell Page", "goodbye", FRONT_ARTICLE);
+
+  // A redirection on a blind chain
+  c.addRedirection("adios", "Advertizing iOS", "farewell", FRONT_ARTICLE);
+
+  EXPECT_NO_THROW(c.finishZimCreation());
+
+  ASSERT_EQ(stdOut.str(),
+    "Detect dangling redirects\n"
+    "Removing invalid redirection C/farewell redirecting to (missing) C/goodbye\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "Redirection C/adios -> C/farewell belongs to a blind chain or loop. Removing...\n"
+    "set index\n"
+  );
+
+  const zim::Archive a(tempPath);
+
+  EXPECT_SUGGESTIONS(a, "home",
+      {"home", "Home, Sweet Home"}
+  );
+
+  EXPECT_SUGGESTIONS(a, "street",
+      // Adding the "street" entry failed, so it was not indexed. Good!
+  );
+
+  EXPECT_SUGGESTIONS(a, "fare",
+      {"farewell", ""             }  // Oops! An eliminated entry shows up
+  );
+
+  EXPECT_SUGGESTIONS(a, "adver",
+      {"adios",    ""             }  // Oops! An eliminated entry shows up
+  );
+
+  EXPECT_SUGGESTIONS(a, "page",
+      {"farewell", ""             }, // Oops! An eliminated entry shows up
+      {"welcome",  "Welcome Page" }
+  );
+}
+#endif // defined(ENABLE_XAPIAN)
 
 } // unnamed namespace
