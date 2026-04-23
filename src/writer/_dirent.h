@@ -41,140 +41,62 @@ namespace zim
 
     char NsAsChar(NS ns);
 
-    class DirentInfo {
-      public: // structures
+    class LIBZIM_PRIVATE_API Dirent
+    {
         struct Direct {
-          Direct() :
-            cluster(nullptr),
-            blobNumber(0)
-          {};
           Cluster*         cluster;
           blob_index_t     blobNumber;
         } PACKED;
 
         struct Redirect {
-          Redirect(NS ns, const std::string& target) :
-            targetPath(target),
-            ns(ns)
-          {};
-          Redirect(Redirect&& r) = default;
-          Redirect(const Redirect& r) = default;
-          ~Redirect() {};
-          TinyString targetPath;
-          NS ns;
-        } PACKED;
-
-        struct Resolved {
-          Resolved(Dirent* target) :
-            targetDirent(target)
-          {};
           Dirent* targetDirent;
         } PACKED;
 
-      public: // functions
-        ~DirentInfo() {
-          switch(tag) {
-            case DIRECT:
-             direct.~Direct();
-              break;
-            case REDIRECT:
-              redirect.~Redirect();
-              break;
-            case RESOLVED:
-              resolved.~Resolved();
-              break;
-          }
-        };
-        DirentInfo(Direct&& d):
-          direct(std::move(d)),
-          tag(DirentInfo::DIRECT)
-        {}
-        DirentInfo(Redirect&& r):
-          redirect(std::move(r)),
-          tag(DirentInfo::REDIRECT)
-        {}
-        DirentInfo(Resolved&& r):
-          resolved(std::move(r)),
-          tag(DirentInfo::RESOLVED)
-        {}
-        DirentInfo(const DirentInfo& other):
-          tag(other.tag)
-        {
-          switch (tag) {
-            case DIRECT:
-              new(&direct) Direct(other.direct);
-              break;
-            case REDIRECT:
-              new(&redirect) Redirect(other.redirect);
-              break;
-            case RESOLVED:
-              new(&resolved) Resolved(other.resolved);
-              break;
-          }
-        }
-        DirentInfo::Direct& getDirect() {
-          ASSERT(tag, ==, DIRECT);
-          return direct;
-        }
-        DirentInfo::Redirect& getRedirect() {
-          ASSERT(tag, ==, REDIRECT);
-          return redirect;
-        }
-        DirentInfo::Resolved& getResolved() {
-          ASSERT(tag, ==, RESOLVED);
-          return resolved;
-        }
-        const DirentInfo::Direct& getDirect() const {
-          ASSERT(tag, ==, DIRECT);
-          return direct;
-        }
-        const DirentInfo::Redirect& getRedirect() const {
-          ASSERT(tag, ==, REDIRECT);
-          return redirect;
-        }
-        const DirentInfo::Resolved& getResolved() const {
-          ASSERT(tag, ==, RESOLVED);
-          return resolved;
-        }
-
-      private: // members
-        union {
-          Direct direct;
-          Redirect redirect;
-          Resolved resolved;
-        } PACKED;
-
-      public: // members
-        enum : char {DIRECT, REDIRECT, RESOLVED} tag;
-    } PACKED;
-
-    class LIBZIM_PRIVATE_API Dirent
-    {
         static const uint16_t redirectMimeType = 0xffff;
         static const uint32_t version = 0;
 
         PathTitleTinyString pathTitle;
         uint16_t mimeType;
         entry_index_t idx = entry_index_t(0);
-        DirentInfo info;
+
+        union {
+          Direct   direct;
+          Redirect redirect;
+        } PACKED;
+
         uint8_t _ns : 2;
         bool removed : 1;
+        bool _isFrontArticle : 1;
+
+      private:
+        Direct& getDirect()
+        {
+          ASSERT(isItem(), ==, true);
+          return direct;
+        }
+
+        const Direct& getDirect() const
+        {
+          ASSERT(isItem(), ==, true);
+          return direct;
+        }
 
       public:
         // Creator for a "classic" dirent
         Dirent(NS ns, const std::string& path, const std::string& title, uint16_t mimetype);
 
-        // Creator for a "redirection" dirent
-        Dirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
+        // Creator for a resolved "redirection" dirent
+        Dirent(NS ns, const std::string& path, const std::string& title, Dirent* target);
 
-        // Creator for a "alias" dirent. Reuse the namespace of the targeted Dirent.
+        // Creator for a "alias" dirent. Reuse the namespace of the targeted
+        // Dirent.
         Dirent(const std::string& path, const std::string& title, const Dirent& target);
 
-        // Creator for "temporary" dirent, used to search for dirent in container.
-        // We use them in path ordered container so we only need to set the namespace and the path.
-        // Other value are irrelevant.
+        // Creator for "temporary" dirent, used to search for dirent in
+        // container. We use them in path ordered container so we only need to
+        // set the namespace and the path.  Other value are irrelevant.
         Dirent(NS ns, const std::string& path)
-          : Dirent(ns, path, "", 0)
+          : Dirent(ns, path, "", nullptr)
           { }
 
         NS getNamespace() const           { return static_cast<NS>(_ns); }
@@ -185,14 +107,12 @@ namespace zim
 
         NS getRedirectNs() const;
         std::string getRedirectPath() const;
-        void setRedirect(Dirent* target) {
-          ASSERT(info.tag, ==, DirentInfo::REDIRECT);
-          info.~DirentInfo();
-          new(&info) DirentInfo(DirentInfo::Resolved(target));
-        }
+
         Dirent* getRedirectTargetDirent() const {
-          return info.getResolved().targetDirent;
+          ASSERT(isRedirect(), ==, true);
+          return redirect.targetDirent;
         }
+
         entry_index_t getRedirectIndex() const;
 
         void setIdx(entry_index_t idx_)      { idx = idx_; }
@@ -201,28 +121,31 @@ namespace zim
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
-          auto& direct = info.getDirect();
+          auto& direct = getDirect();
           direct.cluster = _cluster;
           direct.blobNumber = _cluster->count();
         }
 
         cluster_index_t getClusterNumber() const {
-          auto& direct = info.getDirect();
+          auto& direct = getDirect();
           ASSERT(direct.cluster, !=, nullptr);
           return direct.cluster->getClusterIndex();
         }
 
         blob_index_t  getBlobNumber() const {
-          return info.getDirect().blobNumber;
+          return getDirect().blobNumber;
         }
 
-        bool isRedirect() const                 { return mimeType == redirectMimeType; }
-        bool isItem() const                     { return !isRedirect(); }
-        uint16_t getMimeType() const            { return mimeType; }
+        bool isRedirect() const      { return mimeType == redirectMimeType; }
+        bool isItem() const          { return !isRedirect(); }
+
+        uint16_t getMimeType() const { return mimeType; }
+
         void setMimeType(uint16_t m) {
-          ASSERT(info.tag, ==, DirentInfo::DIRECT);
+          ASSERT(isItem(), ==, true);
           mimeType = m;
         }
+
         size_t getDirentSize() const
         {
           return (isRedirect() ? 12 : 16) + pathTitle.size() + 1;
@@ -231,21 +154,42 @@ namespace zim
         bool isRemoved() const { return removed; }
         void markRemoved() { removed = true; }
 
+        bool isFrontArticle() const { return _isFrontArticle; }
+        void markFrontArticle() { _isFrontArticle = true; }
+
+        bool isPlaceholder() const
+        {
+          return isRedirect()
+              && getRedirectTargetDirent() == nullptr;
+        }
+
+        bool isUnresolvedRedirect() const
+        {
+          return isRedirect()
+              && getRedirectTargetDirent() != nullptr
+              && getRedirectTargetDirent()->isPlaceholder();
+        }
+
         void write(int out_fd) const;
 
-        friend bool comparePath(const Dirent* d1, const Dirent* d2);
-        friend inline bool compareTitle(const Dirent* d1, const Dirent* d2);
+        bool comparePath(const Dirent& other) const {
+          return pathTitle.comparePath(other.pathTitle);
+        }
+
+        bool compareTitle(const Dirent& other) const {
+          return pathTitle.compareTitle(other.pathTitle);
+        }
     } PACKED;
 
-    inline bool comparePath(const Dirent* d1, const Dirent* d2)
+    inline bool comparePath(const Dirent& d1, const Dirent& d2)
     {
-      return d1->getNamespace() < d2->getNamespace()
-        || (d1->getNamespace() == d2->getNamespace() && d1->getPath() < d2->getPath());
+      return d1.getNamespace() < d2.getNamespace()
+        || (d1.getNamespace() == d2.getNamespace() && d1.comparePath(d2));
     }
+
     inline bool compareTitle(const Dirent* d1, const Dirent* d2)
     {
-      return d1->getNamespace() < d2->getNamespace()
-        || (d1->getNamespace() == d2->getNamespace() && d1->getTitle() < d2->getTitle());
+      return d1->compareTitle(*d2);
     }
   }
 }

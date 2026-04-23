@@ -67,16 +67,16 @@ size_t writtenDirentSize(const zim::writer::Dirent& dirent)
 TEST(DirentTest, size)
 {
 #ifdef _WIN32
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 64U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 48U);
 #else
   // Dirent's size is important for us as we are creating huge zim files on
   // Linux and we need to store a lot of dirents.
   // Be sure that dirent's size is not increased by any change.
 #if ENV32BIT
   // On 32 bits, Dirent is smaller.
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 22U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 21U);
 #else
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 30U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 29U);
 #endif
 #endif
 }
@@ -162,10 +162,9 @@ TEST(DirentTest, read_write_redirect_dirent)
 {
   zim::writer::Dirent targetDirent(NS::C, "Foo", "", 17);
   targetDirent.setIdx(zim::entry_index_t(321));
-  zim::writer::Dirent dirent(NS::C, "Bar", "", NS::C, "Foo");
+  zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
   ASSERT_EQ(dirent.getRedirectNs(), NS::C);
   ASSERT_EQ(dirent.getRedirectPath(), "Foo");
-  dirent.setRedirect(&targetDirent);
 
   ASSERT_TRUE(dirent.isRedirect());
   ASSERT_EQ(dirent.getNamespace(), NS::C);
@@ -205,8 +204,7 @@ TEST(DirentTest, redirect_dirent_size)
 {
   zim::writer::Dirent targetDirent(NS::C, "Foo", "", 17);
   targetDirent.setIdx(zim::entry_index_t(321));
-  zim::writer::Dirent dirent(NS::C, "Bar", "", NS::C, "Foo");
-  dirent.setRedirect(&targetDirent);
+  zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
 
   ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
 }

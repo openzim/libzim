@@ -84,35 +84,35 @@ DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
   return ret;
 }
 
-void XapianHandler::indexTitle(Dirent* dirent) {
-  auto title = dirent->getTitle();
+void XapianHandler::indexTitle(const Dirent& dirent) {
+  auto title = dirent.getTitle();
   if (title.empty()) {
     return;
   }
-  auto path = dirent->getPath();
-  if (dirent->isRedirect()) {
-    auto redirectPath = dirent->getRedirectPath();
+  auto path = dirent.getPath();
+  if (dirent.isRedirect()) {
+    auto redirectPath = dirent.getRedirectPath();
     mp_titleIndexer->indexTitle(path, title, redirectPath);
   } else {
     mp_titleIndexer->indexTitle(path, title);
   }
 }
 
-void XapianHandler::handle(Dirent* dirent, const Hints& hints)
+void XapianHandler::handle(const Dirent& dirent)
 {
-  if (isFrontArticle(dirent, hints)) {
+  if (dirent.isFrontArticle()) {
       indexTitle(dirent);
   }
 }
 
-void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+void XapianHandler::handle(const Dirent& dirent, std::shared_ptr<Item> item)
 {
-  if (dirent->getNamespace() != NS::C) {
+  if (dirent.getNamespace() != NS::C) {
     return;
   }
 
   // Title index.
-  handle(dirent, item->getAmendedHints());
+  handle(dirent);
 
   // FullText index
   if (mp_fulltextIndexer) {
@@ -120,7 +120,7 @@ void XapianHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
     if (!indexData) {
       return;
     }
-    auto path = dirent->getPath();
+    auto path = dirent.getPath();
     mp_creatorData->taskList.pushToQueue(std::make_shared<IndexTask>(indexData, path, mp_fulltextIndexer.get()));
   }
 }

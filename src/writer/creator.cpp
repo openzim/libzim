@@ -110,10 +110,11 @@ namespace
 
 void reportInvalidRedirect(const Dirent& dirent)
 {
+  const Dirent& targetDirent = *dirent.getRedirectTargetDirent();
   INFO("Removing invalid redirection "
       << NsAsChar(dirent.getNamespace()) << '/' << dirent.getPath()
       << " redirecting to (missing) "
-      << NsAsChar(dirent.getRedirectNs()) << '/' << dirent.getRedirectPath()
+      << NsAsChar(targetDirent.getNamespace()) << '/' << targetDirent.getPath()
   );
 }
 
@@ -134,7 +135,7 @@ entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
   while ( !d->isItem() ) {
     d->setIdx(entry_index_t(i++));
     d = d->getRedirectTargetDirent();
-    if ( d->isRemoved() || d->getIdx().v >= startingIndex ) {
+    if ( d == nullptr || d->isRemoved() || d->getIdx().v >= startingIndex ) {
       // hit a dead end or detected being caught in a loop
       return startingIndex;
     }
@@ -145,17 +146,67 @@ entry_index_type markRedirectChain(Dirent* d, entry_index_type i)
 
 void markBlindRedirectChainForRemoval(Dirent* d)
 {
-  for ( ; !d->isRemoved() ; d = d->getRedirectTargetDirent() ) {
-    const Dirent* const t = d->getRedirectTargetDirent();
+  while ( !d->isRemoved() ) {
+    Dirent* const t = d->getRedirectTargetDirent();
+    d->markRemoved();
+    if ( t == nullptr )
+      break;
+
     INFO("Redirection "
         << NsAsChar(d->getNamespace()) << '/' << d->getPath()
         << " -> "
         << NsAsChar(t->getNamespace()) << '/' << t->getPath()
         << " belongs to a blind chain or loop. Removing..."
     );
-    d->markRemoved();
+    d = t;
   }
 }
+
+void setFrontArticle(Dirent& dirent, const Hints& hints)
+{
+  const auto it = hints.find(FRONT_ARTICLE);
+  if ( it != hints.end() && it->second != 0 )
+    dirent.markFrontArticle();
+}
+
+bool getCompressionHint(const Hints& hints)
+{
+  const auto it = hints.find(COMPRESS);
+  return it != hints.end() && it->second != 0;
+}
+
+class TitleListingProvider : public ContentProvider {
+  public:
+    explicit TitleListingProvider(const CreatorData::UrlSortedDirents& dirents) {
+      for ( Dirent* const d : dirents ) {
+        if ( d->isFrontArticle() ) {
+          m_dirents.push_back(d);
+        }
+      }
+
+      std::sort(m_dirents.begin(), m_dirents.end(), compareTitle);
+      m_it = m_dirents.begin();
+    }
+
+    zim::size_type getSize() const override {
+        return m_dirents.size() * sizeof(zim::entry_index_type);
+    }
+
+    zim::Blob feed() override {
+      if (m_it == m_dirents.end()) {
+        return zim::Blob(nullptr, 0);
+      }
+      zim::toLittleEndian((*m_it)->getIdx().v, buffer);
+      m_it++;
+      return zim::Blob(buffer, sizeof(zim::entry_index_type));
+    }
+
+  private:
+    typedef std::deque<const Dirent*> DirentPtrs;
+    DirentPtrs m_dirents;
+    char buffer[sizeof(zim::entry_index_type)];
+    DirentPtrs::const_iterator m_it;
+};
 
 } // unnamed namespace
 
@@ -214,16 +265,22 @@ void Creator::startZimCreation(const std::string& filepath)
 void Creator::addItem(std::shared_ptr<Item> item)
 {
   checkError();
-  bool compressContent = item->getAmendedHints()[COMPRESS];
-  auto dirent = data->createItemDirent(item.get());
-
-  try {
-    data->addItemData(dirent, item->getContentProvider(), compressContent);
-    data->handle(dirent, item);
-  } catch (...) {
-    data->removeDirent(dirent);
-    throw;
+  const auto path = item->getPath();
+  auto mimetype = item->getMimeType();
+  if (mimetype.empty()) {
+    std::cerr << "WARNING: mimetype missing for " << path << std::endl;
+    mimetype = "application/octet-stream";
   }
+  const auto mimeTypeIdx = data->getMimeTypeIdx(mimetype);
+  const Hints& itemHints = item->getAmendedHints();
+  const bool compressContent = getCompressionHint(itemHints);
+
+  Dirent direntToAdd(NS::C, path, item->getTitle(), mimeTypeIdx);
+  data->ensureDirentCanBeAdded(direntToAdd);
+  setFrontArticle(direntToAdd, itemHints);
+  data->addItemData(direntToAdd, item->getContentProvider(), compressContent);
+  data->handle(direntToAdd, item);
+  data->addOrUpdate(std::move(direntToAdd));
 
   if (data->dirents.size()%1000 == 0) {
     TPROGRESS();
@@ -241,14 +298,12 @@ void Creator::addMetadata(const std::string& name, std::unique_ptr<ContentProvid
 {
   checkError();
   auto compressContent = isCompressibleMimetype(mimetype);
-  auto dirent = data->createDirent(NS::M, name, mimetype, "");
-  try {
-    data->addItemData(dirent, std::move(provider), compressContent);
-    data->handle(dirent);
-  } catch (...) {
-    data->removeDirent(dirent);
-    throw;
-  }
+  const auto mimeTypeIdx = data->getMimeTypeIdx(mimetype);
+  Dirent direntToAdd(NS::M, name, "", mimeTypeIdx);
+  data->ensureDirentCanBeAdded(direntToAdd);
+  data->addItemData(direntToAdd, std::move(provider), compressContent);
+  data->handle(direntToAdd);
+  data->addOrUpdate(std::move(direntToAdd));
 }
 
 void Creator::addIllustration(const IllustrationInfo& ii, const std::string& content)
@@ -277,19 +332,21 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
 void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  auto dirent = data->createRedirectDirent(NS::C, path, title, NS::C, targetPath);
+  const auto targetDirent = data->addOrUpdate(Dirent(NS::C, targetPath));
+  const auto dirent = data->addOrUpdate(Dirent(NS::C, path, title, targetDirent));
+  setFrontArticle(*dirent, hints);
+
   if (data->dirents.size()%1000 == 0){
     TPROGRESS();
   }
 
-  data->handle(dirent, hints);
+  data->handle(*dirent);
 }
 
 void Creator::addAlias(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
 {
   checkError();
-  Dirent tmpDirent(NS::C, targetPath);
-  auto existing_dirent_it = data->dirents.find(&tmpDirent);
+  const auto existing_dirent_it = data->findDirent(NS::C, targetPath);
 
   if (existing_dirent_it == data->dirents.end()) {
     Formatter fmt;
@@ -298,33 +355,43 @@ void Creator::addAlias(const std::string& path, const std::string& title, const 
     throw InvalidEntry(fmt);
   }
 
-  auto dirent = data->createAliasDirent(path, title, **existing_dirent_it);
-  data->handle(dirent, hints);
+  Dirent direntToAdd(path, title, **existing_dirent_it);
+  data->ensureDirentCanBeAdded(direntToAdd);
+  setFrontArticle(direntToAdd, hints);
+  data->handle(direntToAdd);
+  data->addOrUpdate(std::move(direntToAdd));
 }
 
 void Creator::finishZimCreation()
 {
   checkError();
+
+  data->createDirent(NS::X, "listing/titleOrdered/v1", "application/octet-stream+zimlisting", "");
+
   // Create a redirection for the mainPage.
   // We need to keep the created dirent to set the fileheader.
   // Dirent doesn't have to be deleted.
   if (!m_mainPath.empty()) {
-    data->mainPageDirent = data->createRedirectDirent(NS::W, "mainPage", "", NS::C, m_mainPath);
-    data->handle(data->mainPageDirent);
+    const auto mainPageDirentIt = data->findDirent(NS::C, m_mainPath);
+    if ( mainPageDirentIt != data->dirents.end() ) {
+      data->mainPageDirent = data->addOrUpdate(Dirent(NS::W, "mainPage", "", *mainPageDirentIt));
+      data->handle(*data->mainPageDirent);
+    }
   }
 
   TPROGRESS();
 
-  // We need to create all dirents before resolving redirects and setting entry indexes.
+  // We need to create all dirents before resolving redirects and setting entry
+  // indexes.
   for(auto& handler:data->m_direntHandlers) {
     // This silently create all the needed dirents.
     handler->getDirents();
   }
 
-  // Now we have all the dirents (but not the data), we must correctly set/fix the dirents
-  // before we ask data to the handlers
+  // Now we have all the dirents (but not the data), we must correctly set/fix
+  // the dirents before we ask data to the handlers
   TINFO("ResolveRedirectIndexes");
-  data->resolveRedirectIndexes();
+  data->detectDanglingRedirects();
   data->removeLoopsAndBlindChainsOfRedirects();
   data->dropRemovedRedirects();
 
@@ -345,12 +412,14 @@ void Creator::finishZimCreation()
     ASSERT(dirents.size(), ==, providers.size());
     auto provider_it = providers.begin();
     for(auto& dirent:dirents) {
-      // As we use a "handler level" isCompressible, all content of the same handler
-      // must have the same compression.
-      data->addItemData(dirent, std::move(*provider_it), handler->isCompressible());
+      // As we use a "handler level" isCompressible, all content of the same
+      // handler must have the same compression.
+      data->addItemData(*dirent, std::move(*provider_it), handler->isCompressible());
       provider_it++;
     }
   }
+
+  data->addTitleListingData();
 
   // All the data has been added, we can now close all clusters
   if (data->compCluster->count())
@@ -545,7 +614,6 @@ CreatorData::CreatorData(const std::string& fname,
   m_direntHandlers.push_back(xapianIndexer);
 #endif
 
-  m_direntHandlers.push_back(std::make_shared<TitleListingHandler>(this));
   m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
 
   for(auto& handler:m_direntHandlers) {
@@ -608,6 +676,48 @@ void CreatorData::quitAllThreads() {
   }
 }
 
+CreatorData::DirentIterator CreatorData::findDirent(NS ns, const std::string& path)
+{
+  Dirent tmpDirent(ns, path);
+  return dirents.find(&tmpDirent);
+}
+
+// Returns the dirent with the namespace and path of that passed as the
+// argument. Throws an exception if overwriting the returned dirent with the
+// query one would mean that there has been a dirent conflict.
+Dirent* CreatorData::getMatchingDirent(Dirent& d)
+{
+  const auto it = dirents.find(&d);
+  if ( it != dirents.end() ) {
+    Dirent* const existingDirent = *it;
+    if ( !d.isPlaceholder() ) {
+      if ( !existingDirent->isPlaceholder() ) {
+        throw direntConflictError(*existingDirent, d);
+      }
+    }
+    return existingDirent;
+  }
+  return nullptr;
+}
+
+void CreatorData::ensureDirentCanBeAdded(Dirent& d)
+{
+  getMatchingDirent(d);
+}
+
+Dirent* CreatorData::addOrUpdate(Dirent&& d)
+{
+  if ( Dirent* const existingDirent = getMatchingDirent(d) ) {
+    if ( !d.isPlaceholder() ) {
+      existingDirent->~Dirent();
+      new(existingDirent) Dirent(std::move(d));
+    }
+    return existingDirent;
+  }
+
+  return add(std::move(d));
+}
+
 CreatorData::DirentIterator CreatorData::removeDirent(DirentIterator it)
 {
   Dirent* const dirent = *it;
@@ -625,8 +735,9 @@ void CreatorData::removeDirent(Dirent* dirent)
   removeDirent(it);
 }
 
-void CreatorData::addDirent(Dirent* dirent)
+Dirent* CreatorData::add(Dirent&& d)
 {
+  auto dirent = pool.add(std::move(d));
   auto ret = dirents.insert(dirent);
   if (!ret.second) {
     throw direntConflictError(**ret.first, *dirent);
@@ -635,9 +746,10 @@ void CreatorData::addDirent(Dirent* dirent)
   if (dirent->isRedirect()) {
     nbRedirectItems++;
   }
+  return dirent;
 }
 
-void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
+void CreatorData::addItemData(Dirent& dirent, std::unique_ptr<ContentProvider> provider, bool compressContent)
 {
   // Add blob data to compressed or uncompressed cluster.
   auto itemSize = provider->getSize();
@@ -656,11 +768,11 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
   {
     log_info("cluster with " << cluster->count() << " items, " <<
              cluster->size() << " bytes; current title \"" <<
-             dirent->getTitle() << '\"');
+             dirent.getTitle() << '\"');
     cluster = closeCluster(compressContent);
   }
 
-  dirent->setCluster(cluster);
+  dirent.setCluster(cluster);
   cluster->addContent(std::move(provider));
 
   if (compressContent) {
@@ -672,34 +784,7 @@ void CreatorData::addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> p
 
 Dirent* CreatorData::createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title)
 {
-  auto dirent = pool.getClassicDirent(ns, path, title, getMimeTypeIdx(mimetype));
-  addDirent(dirent);
-  return dirent;
-}
-
-Dirent* CreatorData::createItemDirent(const Item* item)
-{
-  auto path = item->getPath();
-  auto mimetype = item->getMimeType();
-  if (mimetype.empty()) {
-    std::cerr << "Warning, " << path << " have empty mimetype." << std::endl;
-    mimetype = "application/octet-stream";
-  }
-  return createDirent(NS::C, path, mimetype, item->getTitle());
-}
-
-Dirent* CreatorData::createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath)
-{
-  auto dirent = pool.getRedirectDirent(ns, path, title, targetNs, targetPath);
-  addDirent(dirent);
-  return dirent;
-}
-
-Dirent* CreatorData::createAliasDirent(const std::string& path, const std::string& title, const Dirent& target)
-{
-  auto dirent = pool.getAliasDirent(path, title, target);
-  addDirent(dirent);
-  return dirent;
+  return add(Dirent(ns, path, title, getMimeTypeIdx(mimetype)));
 }
 
 Cluster* CreatorData::closeCluster(bool compressed)
@@ -739,21 +824,15 @@ void CreatorData::setEntryIndexes()
   }
 }
 
-void CreatorData::resolveRedirectIndexes()
+void CreatorData::detectDanglingRedirects()
 {
-  // translate redirect aid to index
-  INFO("Resolve redirect");
+  INFO("Detect dangling redirects");
   for (Dirent* const dirent : dirents)
   {
-    if ( dirent->isRedirect() ) {
-      Dirent tmpDirent(dirent->getRedirectNs(), dirent->getRedirectPath());
-      const auto targetDirentIt = dirents.find(&tmpDirent);
-      if ( targetDirentIt == dirents.end()) {
-        reportInvalidRedirect(*dirent);
-        dirent->markRemoved();
-      } else  {
-        dirent->setRedirect(*targetDirentIt);
-      }
+    if ( dirent->isUnresolvedRedirect() ) {
+      reportInvalidRedirect(*dirent);
+      dirent->getRedirectTargetDirent()->markRemoved();
+      dirent->markRemoved();
     }
   }
 }
@@ -846,6 +925,13 @@ const std::string& CreatorData::getMimeType(uint16_t mimeTypeIdx) const
   if (it == rmimeTypesMap.end())
     throw CreatorError("mime type index not found");
   return it->second;
+}
+
+void CreatorData::addTitleListingData()
+{
+  Dirent* const d = *findDirent(NS::X, "listing/titleOrdered/v1");
+  auto listingProvider = std::make_unique<TitleListingProvider>(this->dirents);
+  addItemData(*d, std::move(listingProvider), false);
 }
 
 } // namespace writer

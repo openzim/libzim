@@ -385,9 +385,70 @@ TEST(ZimCreator, interruptedZimCreation)
 
 // Output produced by ZIM creation when no invalid redirects are left behind
 const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Detect loops and/or blind chains of redirects\n"
     "set index\n";
+
+TEST(ZimCreator, redirectAddedAfterItsTargetIsCreated)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+
+  creator.addItem(makeTestItem("item", "An item", "<html/>"));
+  creator.addRedirection("redirect", "A redirect", "item");
+
+  creator.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive a(tempPath);
+  ASSERT_ITEM_ENTRY(a, "item",  "An item",  "text/html", "<html/>");
+  ASSERT_REDIRECT_ENTRY(a, "redirect", "A redirect", "item");
+}
+
+TEST(ZimCreator, redirectAddedBeforeItsTargetIsCreated)
+{
+  unittests::TempFile temp("zimfile");
+  const auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+
+  writer::Creator c;
+  c.setUuid(makeSafeUuid());
+  c.startZimCreation(tempPath);
+
+  // Add redirects with targets not yet created
+  c.addRedirection("r1", "Redirect to an item",          "item");
+  c.addRedirection("r2", "Redirect to an item alias",    "item_alias");
+  c.addRedirection("r3", "Redirect to another redirect", "redirect");
+  c.addRedirection("r4", "Redirect to a redirect alias", "redir_alias");
+
+  // Add entries serving as targets for the redirects from the previous block
+  c.addItem(makeTestItem("item", "An item", ""));
+  c.addAlias("item_alias", "An alias of an item", "item");
+  c.addRedirection("redirect", "Safe redirect to an item", "item");
+  c.addAlias("redir_alias", "An alias of a redirect", "redirect");
+
+  c.finishZimCreation();
+  EXPECT_EQ(stdOut.str(), OUTPUT_FROM_TIDY_ZIM_CREATION);
+
+  const zim::Archive a(tempPath);
+  ASSERT_ITEM_ENTRY(a, "item",  "An item",  "text/html", "");
+  ASSERT_ITEM_ENTRY(a, "item_alias",  "An alias of an item",  "text/html", "");
+  ASSERT_REDIRECT_ENTRY(a, "redirect", "Safe redirect to an item", "item");
+  ASSERT_REDIRECT_ENTRY(a, "redir_alias", "An alias of a redirect", "item");
+
+  ASSERT_REDIRECT_ENTRY(a, "r1", "Redirect to an item",          "item");
+  ASSERT_REDIRECT_ENTRY(a, "r2", "Redirect to an item alias",    "item_alias");
+  ASSERT_REDIRECT_ENTRY(a, "r3", "Redirect to another redirect", "redirect");
+  ASSERT_REDIRECT_ENTRY(a, "r4", "Redirect to a redirect alias", "redir_alias");
+}
+
 
 TEST(ZimCreator, aliases)
 {
@@ -621,7 +682,7 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
   EXPECT_NO_THROW(creator.finishZimCreation());
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/redirectC redirecting to (missing) C/missingTarget\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
@@ -668,7 +729,7 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
   EXPECT_NO_THROW(creator.finishZimCreation());
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/redirectA redirecting to (missing) C/missingTarget\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectB -> C/redirectA belongs to a blind chain or loop. Removing...\n"
@@ -709,7 +770,7 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
   creator.finishZimCreation();
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
     "Redirection C/redirectB -> C/redirectC belongs to a blind chain or loop. Removing...\n"
@@ -804,7 +865,7 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   creator.finishZimCreation();
 
   EXPECT_EQ(stdOut.str(),
-    "Resolve redirect\n"
+    "Detect dangling redirects\n"
     "Removing invalid redirection C/Q redirecting to (missing) C/(MISSING)\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/0 -> C/O belongs to a blind chain or loop. Removing...\n"
@@ -844,6 +905,60 @@ TEST(ZimCreator, pruningOfARedirectionForest)
   ASSERT_REDIRECT_ENTRY(archive, "z", "z -> y", "y");
   ASSERT_REDIRECT_ENTRY(archive, "y", "y -> q", "q");
   ASSERT_REDIRECT_ENTRY(archive, "q", "q -> root", "root");
+}
+
+struct SimulatedError : std::exception
+{
+};
+
+std::shared_ptr<zim::writer::Item> makeUnaddableItem(const std::string& path)
+{
+  struct UnaddableItem : TestItem
+  {
+    UnaddableItem(const std::string& path) : TestItem(path, "", "") {}
+    virtual std::unique_ptr<writer::ContentProvider> getContentProvider() const
+    {
+      throw SimulatedError();
+    }
+  };
+
+  return std::make_shared<UnaddableItem>(path);
+}
+
+TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
+{
+  unittests::TempFile temp("zimfile");
+  auto tempPath = temp.path();
+
+  CapturedStdout stdOut;
+  writer::Creator c;
+  c.setUuid(makeSafeUuid());
+  c.startZimCreation(tempPath);
+
+  c.addRedirection("R1", "Redirect to a discardable item", "Discardable");
+  c.addRedirection("R2", "Redirect to an important item", "Important");
+
+  // Adding this item fails and is not retried
+  EXPECT_THROW(c.addItem(makeUnaddableItem("Discardable")), SimulatedError);
+
+  // Adding this item fails but is retried with a success
+  EXPECT_THROW(c.addItem(makeUnaddableItem("Important")), SimulatedError);
+  EXPECT_NO_THROW(c.addItem(makeTestItem("Important", "", "")));
+
+  EXPECT_NO_THROW(c.finishZimCreation());
+
+  ASSERT_EQ(stdOut.str(),
+    "Detect dangling redirects\n"
+    "Removing invalid redirection C/R1 redirecting to (missing) C/Discardable\n"
+    "Detect loops and/or blind chains of redirects\n"
+    "set index\n"
+  );
+
+  const zim::Archive a(tempPath);
+
+  EXPECT_MISSING_ENTRY(a, "R1");
+  EXPECT_MISSING_ENTRY(a, "Discardable");
+  ASSERT_REDIRECT_ENTRY(a, "R2", "Redirect to an important item", "Important");
 }
 
 } // unnamed namespace

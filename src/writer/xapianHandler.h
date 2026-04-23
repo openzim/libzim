@@ -36,14 +36,14 @@ class XapianHandler : public DirentHandler {
     void stop() override;
     bool isCompressible() override { return false; }
     ContentProviders getContentProviders() const override;
-    void handle(Dirent* dirent, std::shared_ptr<Item> item) override;
-    void handle(Dirent* dirent, const Hints& hints) override;
+    void handle(const Dirent& dirent, std::shared_ptr<Item> item) override;
+    void handle(const Dirent& dirent) override;
 
   protected:
     Dirents createDirents() const override;
 
   private: // methods
-    void indexTitle(Dirent* dirent);
+    void indexTitle(const Dirent& dirent);
     void waitNoMoreTask() const;
 
   private: // data

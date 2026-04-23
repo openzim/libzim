@@ -87,8 +87,8 @@ class DirentHandler {
      *
      * item may be nullptr (dirent is a redirect or in special case)
      */
-    virtual void handle(Dirent* dirent, std::shared_ptr<Item> item) = 0;
-    virtual void handle(Dirent* dirent, const Hints& hints) = 0;
+    virtual void handle(const Dirent& dirent, std::shared_ptr<Item> item) = 0;
+    virtual void handle(const Dirent& dirent) = 0;
 
   protected:
     virtual Dirents createDirents() const = 0;

@@ -60,13 +60,13 @@ DirentHandler::ContentProviders CounterHandler::getContentProviders() const {
   return ret;
 }
 
-void CounterHandler::handle(Dirent* dirent, const Hints& hints)
+void CounterHandler::handle(const Dirent& dirent)
 {
 }
 
-void CounterHandler::handle(Dirent* dirent, std::shared_ptr<Item> item)
+void CounterHandler::handle(const Dirent& dirent, std::shared_ptr<Item> item)
 {
-  if (dirent->getNamespace() != NS::C) {
+  if (dirent.getNamespace() != NS::C) {
     return;
   }
   auto mimetype = item->getMimeType();

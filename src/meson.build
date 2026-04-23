@@ -34,7 +34,6 @@ common_sources = [
     'writer/dirent.cpp',
     'writer/workers.cpp',
     'writer/clusterWorker.cpp',
-    'writer/titleListingHandler.cpp',
     'writer/counterHandler.cpp',
     'suggestion.cpp',
     'suggestion_iterator.cpp',

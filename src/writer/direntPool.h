@@ -72,22 +72,10 @@ namespace zim
           destroyPoolBlock(pools[nbPools-1], direntIndex);
         }
 
-        Dirent* getClassicDirent(NS ns, const std::string& path, const std::string& title, uint16_t mimetype) {
-          auto dirent = getDirentSlot();
-          new (dirent) Dirent(ns, path, title, mimetype);
-          return dirent;
-        }
-
-        Dirent* getRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath) {
-          auto dirent = getDirentSlot();
-          new (dirent) Dirent(ns, path, title, targetNs, targetPath);
-          return dirent;
-        }
-
-        Dirent* getAliasDirent(const std::string& path, const std::string& title, const Dirent& target) {
-          auto dirent = getDirentSlot();
-          new (dirent) Dirent(path, title, target);
-          return dirent;
+        Dirent* add(Dirent&& d) {
+          const auto direntSlot = getDirentSlot();
+          new (direntSlot) Dirent(d);
+          return direntSlot;
         }
     };
   }

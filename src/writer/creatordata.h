@@ -36,7 +36,6 @@
 
 #include "../fileheader.h"
 #include "direntPool.h"
-#include "titleListingHandler.h"
 
 namespace zim
 {
@@ -44,7 +43,7 @@ namespace zim
   {
     struct UrlCompare {
       bool operator() (const Dirent* d1, const Dirent* d2) const {
-        return comparePath(d1, d2);
+        return comparePath(*d1, *d2);
       }
     };
 
@@ -69,17 +68,15 @@ namespace zim
                        size_t clusterSize);
         virtual ~CreatorData();
 
-        void addDirent(Dirent* dirent);
-        void addItemData(Dirent* dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
+        Dirent* addOrUpdate(Dirent&& dirent);
+        Dirent* add(Dirent&& dirent);
+        void addItemData(Dirent& dirent, std::unique_ptr<ContentProvider> provider, bool compressContent);
 
         Dirent* createDirent(NS ns, const std::string& path, const std::string& mimetype, const std::string& title);
-        Dirent* createItemDirent(const Item* item);
-        Dirent* createRedirectDirent(NS ns, const std::string& path, const std::string& title, NS targetNs, const std::string& targetPath);
-        Dirent* createAliasDirent(const std::string& path, const std::string& title, const Dirent& target);
         Cluster* closeCluster(bool compressed);
 
         void setEntryIndexes();
-        void resolveRedirectIndexes();
+        void detectDanglingRedirects();
         // XXX: This procedure uses the Dirent::idx field
         void removeLoopsAndBlindChainsOfRedirects();
         void dropRemovedRedirects();
@@ -92,8 +89,13 @@ namespace zim
         bool isErrored() const;
         void quitAllThreads();
 
+        Dirent* getMatchingDirent(Dirent& d);
+        void ensureDirentCanBeAdded(Dirent& d);
+        DirentIterator findDirent(NS ns, const std::string& path);
         DirentIterator removeDirent(DirentIterator it);
         void removeDirent(Dirent* dirent);
+
+        void addTitleListingData();
 
         DirentPool  pool;
 
@@ -126,12 +128,12 @@ namespace zim
         std::string indexingLanguage;
 
         std::vector<std::shared_ptr<DirentHandler>> m_direntHandlers;
-        void handle(Dirent* dirent, const Hints& hints = Hints()) {
+        void handle(const Dirent& dirent) {
           for(auto& handler: m_direntHandlers) {
-            handler->handle(dirent, hints);
+            handler->handle(dirent);
           }
         }
-        void handle(Dirent* dirent, std::shared_ptr<Item> item) {
+        void handle(const Dirent& dirent, std::shared_ptr<Item> item) {
           for(auto& handler: m_direntHandlers) {
             handler->handle(dirent, item);
           }
