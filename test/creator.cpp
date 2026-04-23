@@ -1039,16 +1039,16 @@ TEST(ZimCreator, titleIndexingOfDroppedEntries)
   );
 
   EXPECT_SUGGESTIONS(a, "fare",
-      {"farewell", ""             }  // Oops! An eliminated entry shows up
+      // The "farewell" redirect was removed, so it was not indexed. Good!
   );
 
   EXPECT_SUGGESTIONS(a, "adver",
-      {"adios",    ""             }  // Oops! An eliminated entry shows up
+      // The "adios" redirect was removed, so it was not indexed. Good!
   );
 
   EXPECT_SUGGESTIONS(a, "page",
-      {"farewell", ""             }, // Oops! An eliminated entry shows up
       {"welcome",  "Welcome Page" }
+      // The "farewell" redirect was removed, so it was not indexed. Good!
   );
 }
 #endif // defined(ENABLE_XAPIAN)

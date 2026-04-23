@@ -30,7 +30,6 @@ using namespace zim::writer;
 
 XapianHandler::XapianHandler(CreatorData* data, bool withFulltextIndex)
   : mp_fulltextIndexer(withFulltextIndex ? new XapianIndexer(data->zimName+"_fulltext.idx", data->indexingLanguage, IndexingMode::FULL, true) : nullptr),
-    mp_titleIndexer(new XapianIndexer(data->zimName+"_title.idx", data->indexingLanguage, IndexingMode::TITLE, true)),
     mp_creatorData(data)
 {}
 
@@ -45,7 +44,6 @@ void XapianHandler::start() {
   if (mp_fulltextIndexer) {
     mp_fulltextIndexer->indexingPrelude();
   }
-  mp_titleIndexer->indexingPrelude();
 }
 
 void XapianHandler::stop() {
@@ -55,7 +53,6 @@ void XapianHandler::stop() {
     waitNoMoreTask();
     mp_fulltextIndexer->indexingPostlude();
   }
-  mp_titleIndexer->indexingPostlude();
 }
 
 DirentHandler::Dirents XapianHandler::createDirents() const {
@@ -67,9 +64,6 @@ DirentHandler::Dirents XapianHandler::createDirents() const {
       ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
     }
   }
-  if (!mp_titleIndexer->is_empty()) {
-    ret.push_back(mp_creatorData->createDirent(NS::X, "title/xapian", "application/octet-stream+xapian", ""));
-  }
   return ret;
 }
 
@@ -78,31 +72,11 @@ DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
   if (mp_fulltextIndexer && !mp_fulltextIndexer->is_empty()) {
     ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_fulltextIndexer->getIndexPath())));
   }
-  if (!mp_titleIndexer->is_empty()) {
-    ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_titleIndexer->getIndexPath())));
-  }
   return ret;
 }
 
-void XapianHandler::indexTitle(const Dirent& dirent) {
-  auto title = dirent.getTitle();
-  if (title.empty()) {
-    return;
-  }
-  auto path = dirent.getPath();
-  if (dirent.isRedirect()) {
-    auto redirectPath = dirent.getRedirectPath();
-    mp_titleIndexer->indexTitle(path, title, redirectPath);
-  } else {
-    mp_titleIndexer->indexTitle(path, title);
-  }
-}
-
-void XapianHandler::handle(const Dirent& dirent)
+void XapianHandler::handle(const Dirent&)
 {
-  if (dirent.isFrontArticle()) {
-      indexTitle(dirent);
-  }
 }
 
 void XapianHandler::handle(const Dirent& dirent, std::shared_ptr<Item> item)
