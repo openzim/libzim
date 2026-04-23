@@ -59,7 +59,7 @@ namespace zim
       /** Get the item associated to the target entry.
        *
        * If there is a chain of redirection, the whole chain is resolved
-       * and the item associted to the last entry is returned.
+      * and the item associated to the last entry is returned.
        *
        * @return the Item associated with the targeted entry.
        * @exception InvalidType if the entry is not a redirection.

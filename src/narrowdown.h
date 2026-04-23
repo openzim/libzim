@@ -36,7 +36,7 @@ namespace zim
 // narrow down the range in which the query key should belong.
 //
 // The target usage of this class is as a partial in-memory index for a sorted
-// list residing in external storage with high access cost to inidividual items.
+// list residing in external storage with high access cost to individual items.
 //
 // Illustration:
 //
@@ -109,8 +109,8 @@ public: // functions
   {
     // It would be better to have `key >= nextKey`, but pretty old zim file were not enforce to
     // have unique path, just that entries were sorted by path, but two entries could have the same path.
-    // It is somehow a bug and have been fixed then, but we still have to be tolerent here and accept that
-    // two concecutive keys can be equal.
+    // It is somehow a bug and have been fixed then, but we still have to be tolerant here and accept that
+    // two consecutive keys can be equal.
     if (key > nextKey) {
       Formatter fmt;
       fmt << "Dirent table is not properly sorted:\n";

@@ -309,7 +309,7 @@ private: // data
     auto cluster = getCluster(dirent->getClusterNumber());
     if (cluster->isCompressed()) {
       // This is a ZimFileFormatError.
-      // Let's be tolerent and skip the entry
+      // Let's be tolerant and skip the entry
       return nullptr;
     }
     auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + cluster->getBlobOffset(dirent->getBlobNumber());
@@ -523,15 +523,15 @@ private: // data
     auto cluster = getClusterCache().getOrPut(key, [=](){ return readCluster(idx); });
 #if ENV32BIT
     // There was a bug in the way we create the zim files using ZSTD compression.
-    // We were using a too hight compression level and so a window of 128Mb.
+    // We were using a too high compression level and so a window of 128Mb.
     // So at decompression, zstd reserve a 128Mb buffer.
     // While this memory is not really used (thanks to lazy allocation of OS),
     // we are still consumming address space. On 32bits this start to be a rare
-    // ressource when we reserved 128Mb at once.
+    // resource when we reserved 128Mb at once.
     // So we drop the cluster from the cache to avoid future memory allocation error.
     if (cluster->getCompression() == Cluster::Compression::Zstd) {
       // ZSTD compression starts to be used on version 5.0 of zim format.
-      // Recently after, we switch to 5.1 and itegrate the fix in zstd creation.
+      // Recently after, we switch to 5.1 and integrate the fix in zstd creation.
       // 5.0 is not a perfect way to detect faulty zim file (it will generate false
       // positives) but it should be enough.
       if (header.getMajorVersion() == 5 && header.getMinorVersion() == 0) {

@@ -47,7 +47,7 @@ namespace zim
        *
        * Get the data of the item, starting at offset.
        *
-       * @param offset The number of byte to skip at begining of the data.
+      * @param offset The number of byte to skip at beginning of the data.
        * @return A blob corresponding to the data.
        */
       Blob getData(offset_type offset=0) const;
@@ -56,7 +56,7 @@ namespace zim
        *
        * Get the `size` bytes of data of the item, starting at offset.
        *
-       * @param offset The number of byte to skip at begining of the data.
+      * @param offset The number of byte to skip at beginning of the data.
        * @param size The number of byte to read.
        * @return A blob corresponding to the data.
        */
@@ -74,7 +74,7 @@ namespace zim
        * If possible, this function give information about which file
        * and at which to read to get the data.
        *
-       * It can be usefull as an optimisation when interacting with other system
+      * It can be useful as an optimisation when interacting with other system
        * by reopeing the file and reading the content bypassing the libzim.
        *
        * @return A pair of filename/offset specifying where read the content.

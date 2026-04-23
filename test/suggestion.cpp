@@ -813,7 +813,7 @@ zim::Entry getTitleIndexEntry(const zim::Archive& a)
   return a.getEntryByPathWithNamespace('X', "title/xapian");
 }
 
-// To secure compatibity of new zim files with older kiwixes, we need to index
+// To secure compatibility of new zim files with older kiwixes, we need to index
 // full path of the entries as data of documents.
 TEST(Suggestion, indexFullPath) {
   TempZimArchiveMadeOfEmptyHtmlArticles tza("en", {

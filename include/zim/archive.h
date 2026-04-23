@@ -85,7 +85,7 @@ namespace zim
    * When using new namespace scheme:
    * - User entries are always stored without namespace.
    *   (For information, they are stored in the same namespace `C`. Still consider there is no namespace as all API masks it)
-   *   As there is no namespace, paths don't contain it: `foo.hmtl`, `image.png`, ...
+  *   As there is no namespace, paths don't contain it: `foo.html`, `image.png`, ...
    * - All API taking or returning a path expect/will return a path without namespace.
    *
    * This difference may seem complex to handle, but not so much.
@@ -374,7 +374,7 @@ namespace zim
 
       /** Return a list of available sizes (width) for the illustrations in the archive.
        *
-       * Illustration is an icon for the archive that can be used in catalog and elsewehere to illustrate the archive.
+      * Illustration is an icon for the archive that can be used in catalog and elsewhere to illustrate the archive.
        * An Archive may contains several illustrations with different size.
        * This method allows to know which illustration are in the archive (by size: width)
        *
@@ -456,9 +456,9 @@ namespace zim
        *
        *  Use the index of the entry to get the idx'th entry
        *  The actual order of the entry is not really specified.
-       *  It is infered from the internal way the entry are stored.
+      *  It is inferred from the internal way the entry are stored.
        *
-       *  This method is probably not relevent and is provided for completeness.
+      *  This method is probably not relevant and is provided for completeness.
        *  You should probably use a iterator using the `efficientOrder`.
        *
        *  @param idx The index of the entry.
@@ -476,7 +476,7 @@ namespace zim
 
       /** Get a random entry.
        *
-       * The entry is picked randomly from the front artice list.
+      * The entry is picked randomly from the front article list.
        *
        * @return A random entry.
        * @exception EntryNotFound If no valid random entry can be found.

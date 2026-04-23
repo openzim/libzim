@@ -45,7 +45,7 @@ class SearchResultSet;
  * A Searcher is a object fulltext searching a set of Archives
  *
  * A Searcher is mainly used to create new `Search`
- * Internaly, this is mainly a wrapper around a Xapian database.
+ * Internally, this is mainly a wrapper around a Xapian database.
  *
  * All search (at exception of SearchIterator) operation are thread safe.
  * You can freely create several Search from one Searcher and use them in different threads.
@@ -132,7 +132,7 @@ class LIBZIM_API Query
      * Some article may be geo positioned.
      * You can search for articles in a certain distance of a point.
      *
-     * @param latitude The latitute of the point.
+    * @param latitude The latitude of the point.
      * @param longitude The longitude of the point.
      * @param distance The maximal distance from the point.
      */
@@ -162,7 +162,7 @@ class LIBZIM_API Search
 
         /** Get a set of results for this search.
          *
-         * @param start The begining of the range to get
+         * @param start The beginning of the range to get
          *              (offset of the first result).
          * @param maxResults The maximum number of results to return
          *                   (offset of last result from the start of range).

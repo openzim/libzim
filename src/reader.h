@@ -47,7 +47,7 @@ class LIBZIM_PRIVATE_API Reader {
     void read(char* dest, offset_t offset, zsize_t size) const {
       if (can_read(offset, size)) {
         if (size) {
-          // Do the actuall read only if we have a size to read
+          // Do the actual read only if we have a size to read
           readImpl(dest, offset, size);
         }
         return;

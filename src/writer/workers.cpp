@@ -66,7 +66,7 @@ namespace zim
           wait += 100;
           if(creatorData->clusterToWrite.getHead(cluster)) {
             if (cluster == nullptr) {
-              // All cluster writen, we can quit
+              // All cluster written, we can quit
               return nullptr;
             }
             if (not cluster->isClosed()) {

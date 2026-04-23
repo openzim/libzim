@@ -105,7 +105,7 @@ class InternalDataBase {
     std::vector<Archive> m_archives;
 
     // If the database is open for suggestion.
-    // True even if the dabase has no newSuggestionformat.
+    // True even if the database has no newSuggestionformat.
     bool m_suggestionMode;
 
     // The query parser corresponding to the database.

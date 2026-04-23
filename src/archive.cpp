@@ -466,7 +466,7 @@ namespace zim
     // So the end index will always be just after the prefix range. If there is no prefix range, both
     // begin and end will be just after where it would be.
     //
-    // Suposing a list of title :
+    // Supposing a list of title :
     // 0. aaaaaa
     // 1. aaaaab
     // 2. aabbaa
