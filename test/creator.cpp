@@ -388,7 +388,8 @@ TEST(ZimCreator, interruptedZimCreation)
 const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
     "Detect dangling redirects\n"
     "Detect loops and/or blind chains of redirects\n"
-    "set index\n";
+    "Index titles\n"
+    "Set entry indices\n";
 
 TEST(ZimCreator, redirectAddedAfterItsTargetIsCreated)
 {
@@ -688,7 +689,8 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectA -> C/redirectB belongs to a blind chain or loop. Removing...\n"
     "Redirection C/redirectB -> C/redirectC belongs to a blind chain or loop. Removing...\n"
-    "set index\n"
+    "Index titles\n"
+    "Set entry indices\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -735,7 +737,8 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/redirectB -> C/redirectA belongs to a blind chain or loop. Removing...\n"
     "Redirection C/redirectC -> C/redirectB belongs to a blind chain or loop. Removing...\n"
-    "set index\n"
+    "Index titles\n"
+    "Set entry indices\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -782,7 +785,8 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
     "Redirection C/redirectY -> C/redirectX belongs to a blind chain or loop. Removing...\n"
     "Redirection C/redirectX -> C/redirectW belongs to a blind chain or loop. Removing...\n"
     "Redirection C/redirectZ -> C/redirectY belongs to a blind chain or loop. Removing...\n"
-    "set index\n"
+    "Index titles\n"
+    "Set entry indices\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -882,7 +886,8 @@ TEST(ZimCreator, pruningOfARedirectionForest)
     "Redirection C/T -> C/N belongs to a blind chain or loop. Removing...\n"
     "Redirection C/Y -> C/Q belongs to a blind chain or loop. Removing...\n"
     "Redirection C/Z -> C/Y belongs to a blind chain or loop. Removing...\n"
-    "set index\n"
+    "Index titles\n"
+    "Set entry indices\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -956,7 +961,8 @@ TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
     "Detect dangling redirects\n"
     "Removing invalid redirection C/R1 redirecting to (missing) C/Discardable\n"
     "Detect loops and/or blind chains of redirects\n"
-    "set index\n"
+    "Index titles\n"
+    "Set entry indices\n"
   );
 
   const zim::Archive a(tempPath);
@@ -1025,7 +1031,8 @@ TEST(ZimCreator, titleIndexingOfDroppedEntries)
     "Removing invalid redirection C/farewell redirecting to (missing) C/goodbye\n"
     "Detect loops and/or blind chains of redirects\n"
     "Redirection C/adios -> C/farewell belongs to a blind chain or loop. Removing...\n"
-    "set index\n"
+    "Index titles\n"
+    "Set entry indices\n"
   );
 
   const zim::Archive a(tempPath);

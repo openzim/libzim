@@ -398,7 +398,7 @@ void Creator::finishZimCreation()
 
   data->indexTitles();
 
-  TINFO("Set entry indexes");
+  TINFO("Set entry indices");
   data->setEntryIndexes();
 
   TINFO("Resolve mimetype");
@@ -819,8 +819,7 @@ Cluster* CreatorData::closeCluster(bool compressed)
 
 void CreatorData::setEntryIndexes()
 {
-  // set index
-  INFO("set index");
+  INFO("Set entry indices");
   entry_index_t idx(0);
   for (auto& dirent: dirents) {
     dirent->setIdx(idx);
@@ -961,6 +960,7 @@ void indexTitle(XapianIndexer& indexer, const Dirent& dirent)
 
 void CreatorData::indexTitles()
 {
+  INFO("Index titles");
 #if defined(ENABLE_XAPIAN)
   const std::string tmpFilePath = zimName + "_title.idx";
   XapianIndexer xi(tmpFilePath, indexingLanguage, IndexingMode::TITLE, true);
