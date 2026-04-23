@@ -277,7 +277,7 @@ Xapian::Enquire& SuggestionSearch::getEnquire() const
    /*
     * In suggestion mode, we are searching over a separate title index. Default BM25 is not
     * adapted for this case. WDF factor(k1) controls the effect of within document frequency.
-    * k1 = 0.001 reduces the effect of word repitition in document. In BM25, smaller documents
+    * k1 = 0.001 reduces the effect of word repetition in document. In BM25, smaller documents
     * get larger weights, so normalising the length of documents is necessary using b = 1.
     * The document set is first sorted by their relevance score then by value so that suggestion
     * results are closer to search string.
