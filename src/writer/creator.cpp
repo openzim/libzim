@@ -613,8 +613,9 @@ CreatorData::CreatorData(const std::string& fname,
   uncompCluster = new Cluster(Compression::None);
 
 #if defined(ENABLE_XAPIAN)
-  auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
-  m_direntHandlers.push_back(xapianIndexer);
+  if ( withIndex ) {
+    m_direntHandlers.push_back(std::make_shared<XapianHandler>(this));
+  }
 #endif
 
   m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));

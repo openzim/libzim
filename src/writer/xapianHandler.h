@@ -29,7 +29,7 @@ class XapianIndexer;
 
 class XapianHandler : public DirentHandler {
   public:
-    XapianHandler(CreatorData* data, bool withFullTextIndex);
+    explicit XapianHandler(CreatorData* data);
     virtual ~XapianHandler();
 
     void start() override;

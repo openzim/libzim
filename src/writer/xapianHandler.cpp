@@ -28,8 +28,8 @@
 
 using namespace zim::writer;
 
-XapianHandler::XapianHandler(CreatorData* data, bool withFulltextIndex)
-  : mp_fulltextIndexer(withFulltextIndex ? new XapianIndexer(data->zimName+"_fulltext.idx", data->indexingLanguage, IndexingMode::FULL, true) : nullptr),
+XapianHandler::XapianHandler(CreatorData* data)
+  : mp_fulltextIndexer(new XapianIndexer(data->zimName+"_fulltext.idx", data->indexingLanguage, IndexingMode::FULL, true)),
     mp_creatorData(data)
 {}
 
@@ -41,35 +41,29 @@ void XapianHandler::waitNoMoreTask() const {
 }
 
 void XapianHandler::start() {
-  if (mp_fulltextIndexer) {
-    mp_fulltextIndexer->indexingPrelude();
-  }
+  mp_fulltextIndexer->indexingPrelude();
 }
 
 void XapianHandler::stop() {
   // We need to wait that all indexation tasks have been done before closing the
   // xapian database.
-  if (mp_fulltextIndexer) {
-    waitNoMoreTask();
-    mp_fulltextIndexer->indexingPostlude();
-  }
+  waitNoMoreTask();
+  mp_fulltextIndexer->indexingPostlude();
 }
 
 DirentHandler::Dirents XapianHandler::createDirents() const {
   // Wait for all task to be done before checking if we are empty.
   Dirents ret;
-  if (mp_fulltextIndexer) {
-    waitNoMoreTask();
-    if (!mp_fulltextIndexer->is_empty()) {
-      ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
-    }
+  waitNoMoreTask();
+  if (!mp_fulltextIndexer->is_empty()) {
+    ret.push_back(mp_creatorData->createDirent(NS::X, "fulltext/xapian", "application/octet-stream+xapian", ""));
   }
   return ret;
 }
 
 DirentHandler::ContentProviders XapianHandler::getContentProviders() const {
   ContentProviders ret;
-  if (mp_fulltextIndexer && !mp_fulltextIndexer->is_empty()) {
+  if (!mp_fulltextIndexer->is_empty()) {
     ret.push_back(std::unique_ptr<ContentProvider>(new FileProvider(mp_fulltextIndexer->getIndexPath())));
   }
   return ret;
@@ -89,13 +83,11 @@ void XapianHandler::handle(const Dirent& dirent, std::shared_ptr<Item> item)
   handle(dirent);
 
   // FullText index
-  if (mp_fulltextIndexer) {
-    auto indexData = item->getIndexData();
-    if (!indexData) {
-      return;
-    }
-    auto path = dirent.getPath();
-    mp_creatorData->taskList.pushToQueue(std::make_shared<IndexTask>(indexData, path, mp_fulltextIndexer.get()));
+  auto indexData = item->getIndexData();
+  if (!indexData) {
+    return;
   }
+  auto path = dirent.getPath();
+  mp_creatorData->taskList.pushToQueue(std::make_shared<IndexTask>(indexData, path, mp_fulltextIndexer.get()));
 }
 
