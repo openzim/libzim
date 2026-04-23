@@ -184,7 +184,7 @@ TEST_F(ZimArchive, openCreatedArchive)
   creator.addIllustration(zim::IllustrationInfo{96, 96, 1, {}}, "PNGBinaryContent96");
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
-  creator.addRedirection("foo4", "FooRedirection", "NoExistant"); // Invalid redirection, must be removed by creator
+  creator.addRedirection("foo4", "FooRedirection", "NoExistent"); // Invalid redirection, must be removed by creator
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);
@@ -258,10 +258,10 @@ TEST_F(ZimArchive, openCreatedArchive)
   ASSERT_EQ(main.getRedirectEntryIndex(), foo.getIndex());
   ASSERT_EQ(archive.getMainEntryIndex(), main.getIndex());
 
-  // NO existant entries
-  ASSERT_THROW(archive.getEntryByPath("non/existant/path"), zim::EntryNotFound);
-  ASSERT_THROW(archive.getEntryByPath("C/non/existant/path"), zim::EntryNotFound);
-  ASSERT_THROW(archive.getEntryByPathWithNamespace('C', "non/existant/path"), zim::EntryNotFound);
+  // NO existent entries
+  ASSERT_THROW(archive.getEntryByPath("non/existent/path"), zim::EntryNotFound);
+  ASSERT_THROW(archive.getEntryByPath("C/non/existent/path"), zim::EntryNotFound);
+  ASSERT_THROW(archive.getEntryByPathWithNamespace('C', "non/existent/path"), zim::EntryNotFound);
 }
 
 #if WITH_TEST_DATA

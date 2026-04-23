@@ -42,12 +42,12 @@ namespace zim
 
     public: // functions
       /**
-       * Constuct a empty `Blob`
+       * Construct an empty `Blob`
        */
       Blob();
 
       /**
-       * Constuct `Blob` pointing to `data`.
+       * Construct `Blob` pointing to `data`.
        *
        * The created blob only point to the data and doesn't own it.
        * User must care that data is not freed before using the blob.
@@ -55,7 +55,7 @@ namespace zim
       Blob(const char* data, size_type size);
 
       /**
-       * Constuct `Blob` pointing to `data`.
+       * Construct `Blob` pointing to `data`.
        *
        * The created blob shares the ownership on data.
        */

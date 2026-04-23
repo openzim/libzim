@@ -60,7 +60,7 @@ namespace zim
           }
           std::lock_guard<std::mutex> lock(m_initLock);
           // We have to do a double check to be sure that two call on a un-initialized object
-          // will not be initiialized twice.
+          // will not be initialized twice.
           if (m_initialized) {
             return;
           }

@@ -53,7 +53,7 @@ std::vector<std::string> getSnippet(const zim::Archive archive, std::string quer
     std::vector<std::string>({__VA_ARGS__})                     \
   )
 
-// To secure compatibity of new zim files with older kiwixes, we need to index
+// To secure compatibility of new zim files with older kiwixes, we need to index
 // full path of the entries as data of documents.
 TEST(Search, indexFullPath)
 {

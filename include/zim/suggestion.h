@@ -44,7 +44,7 @@ class SuggestionDataBase;
  * A SuggestionSearcher is a object suggesting over titles of an Archive
  *
  * A SuggestionSearcher is mainly used to create new `SuggestionSearch`
- * Internaly, this is a wrapper around a SuggestionDataBase with may or may not
+ * Internally, this is a wrapper around a SuggestionDataBase with may or may not
  * include a Xapian index.
  *
  * You should consider that all search operations are NOT threadsafe.
@@ -104,7 +104,7 @@ class LIBZIM_API SuggestionSearch
 
         /** Get a set of results for this search.
          *
-         * @param start The begining of the range to get
+         * @param start The beginning of the range to get
          *              (offset of the first result).
          * @param maxResults The maximum number of results to return
          *                   (offset of last result from the start of range).

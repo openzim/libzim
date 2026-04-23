@@ -169,7 +169,7 @@ TEST(FindTests, ByTitleWithDuplicate)
   creator.finishZimCreation();
 
   zim::Archive archive(tza.getPath());
-  // First binary seach step will look for index 3 (0+6/2) which is a BBB,
+  // First binary search step will look for index 3 (0+6/2) which is a BBB,
   // but we want to be sure it returns article2 which is the start of the range "BBB*"
   CHECK_FIND_TITLE_COUNT("BBB", 3)
   CHECK_FIND_TITLE_COUNT("BB", 4)

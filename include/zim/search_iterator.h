@@ -32,12 +32,12 @@ namespace zim
 class SearchResultSet;
 
 /**
- * A interator on search result (an Entry)
+ * An iterator on search result (an Entry)
  *
  * SearchIterator are mostly thread safe:
  * - Manipulating the iterator itself (increment it, ...) is not thread safe.
  *   You should not share an iterator between different thread (and you probably don't have use case for that)
- * - Reading from two iterators (getPath, ...) from two differents thread is ok.
+ * - Reading from two iterators (getPath, ...) from two different threads is ok.
  *   (ie: You can pass iterator from one thread to the other one)
  *
  * Be aware that the referenced/pointed Entry is generated and stored

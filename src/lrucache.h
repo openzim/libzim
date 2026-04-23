@@ -1,5 +1,5 @@
 /*
- * Copyrigth (c) 2021, Matthieu Gautier <mgautier@kymeria.fr>
+ * Copyright (c) 2021, Matthieu Gautier <mgautier@kymeria.fr>
  * Copyright (c) 2020, Veloman Yunkan
  * Copyright (c) 2014, lamerman
  * All rights reserved.
@@ -73,7 +73,7 @@ struct UnitCostEstimation {
  *   consideration is used to select which item to drop.
  *
  * This lru cache is parametrized by a CostEstimation type. The type must have a
- * static method `cost` taking a reference to a `value_t` and returing its
+ * static method `cost` taking a reference to a `value_t` and returning its
  * "cost". As already said, this method must always return the same cost for
  * the same value.
  */

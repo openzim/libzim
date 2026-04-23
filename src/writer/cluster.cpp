@@ -168,7 +168,7 @@ void Cluster::write(int out_fd) const
     throw std::runtime_error("Error writing");
   }
 
-  // Open a comprestion stream if needed
+  // Open a compression stream if needed
   switch(getCompression())
   {
     case Compression::None:
@@ -177,7 +177,7 @@ void Cluster::write(int out_fd) const
         // Ideally we would simply have to do :
         // ::write(tmp_fd, data.c_str(), data.size());
         // However, the data can be pretty big (> 4Gb), especially with test,
-        // And ::write fails to write data > 4Gb. So we have to chunck the write.
+        // And ::write fails to write data > 4Gb. So we have to chunk the write.
         size_type to_write = data.size();
         const char* src = data.data();
         while (to_write) {
