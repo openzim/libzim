@@ -34,6 +34,17 @@
 
 namespace zim {
 
+namespace
+{
+
+bool endsWith(const std::string& str, const std::string& suffix)
+{
+  const size_t n = str.size();
+  return n > suffix.size() && str.substr(n-suffix.size()) == suffix;
+}
+
+} // unnamed namespace
+
 void FileCompound::addPart(FilePart* fpart)
 {
   const Range newRange(offset_t(_fsize.v), offset_t((_fsize+fpart->size()).v));
@@ -41,15 +52,11 @@ void FileCompound::addPart(FilePart* fpart)
   _fsize += fpart->size();
 }
 
-std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const std::string& original_filename) {
+std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const std::string& filename) {
   std::shared_ptr<FileCompound> fileCompound;
-  bool multi_parts_asked = false;
-  auto filename = original_filename;
-  if (filename.size() > 6 && filename.substr(filename.size()-6) == ".zimaa") {
-    filename.resize(filename.size()-2);
-    multi_parts_asked = true;
-  } else {
-  try {
+  const bool multi_parts_asked = endsWith(filename, ".zimaa");
+  if ( !multi_parts_asked ) {
+    try {
       fileCompound = std::make_shared<FileCompound>(filename);
     } catch(...) { }
   }
@@ -62,7 +69,7 @@ std::shared_ptr<FileCompound> FileCompound::openSinglePieceOrSplitZimFile(const 
     // We haven't found any part
     throw std::runtime_error(Formatter() << "Error opening "
                              << (multi_parts_asked ? "as a split " : "")
-                             << "ZIM file: " << original_filename);
+                             << "ZIM file: " << filename);
   }
   return fileCompound;
 }
@@ -74,10 +81,14 @@ FileCompound::FileCompound(const std::string& filename):
   addPart(new FilePart(filename));
 }
 
-FileCompound::FileCompound(const std::string& base_filename, MultiPartToken _token):
-  _filename(base_filename),
+FileCompound::FileCompound(const std::string& filename, MultiPartToken _token):
+  _filename(filename),
   _fsize(0)
 {
+  const std::string base_filename = endsWith(filename, ".zimaa")
+                                  ? filename.substr(0, filename.size()-2)
+                                  : filename;
+
   try {
     for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)
     {
