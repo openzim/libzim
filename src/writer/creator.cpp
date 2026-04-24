@@ -43,6 +43,7 @@
 
 #if defined(ENABLE_XAPIAN)
 # include "xapianHandler.h"
+# include "xapianIndexer.h"
 #endif
 
 #ifdef _WIN32
@@ -395,7 +396,9 @@ void Creator::finishZimCreation()
   data->removeLoopsAndBlindChainsOfRedirects();
   data->dropRemovedRedirects();
 
-  TINFO("Set entry indexes");
+  data->indexTitles();
+
+  TINFO("Set entry indices");
   data->setEntryIndexes();
 
   TINFO("Resolve mimetype");
@@ -610,8 +613,9 @@ CreatorData::CreatorData(const std::string& fname,
   uncompCluster = new Cluster(Compression::None);
 
 #if defined(ENABLE_XAPIAN)
-  auto xapianIndexer = std::make_shared<XapianHandler>(this, withIndex);
-  m_direntHandlers.push_back(xapianIndexer);
+  if ( withIndex ) {
+    m_direntHandlers.push_back(std::make_shared<XapianHandler>(this));
+  }
 #endif
 
   m_direntHandlers.push_back(std::make_shared<CounterHandler>(this));
@@ -815,8 +819,7 @@ Cluster* CreatorData::closeCluster(bool compressed)
 
 void CreatorData::setEntryIndexes()
 {
-  // set index
-  INFO("set index");
+  INFO("Set entry indices");
   entry_index_t idx(0);
   for (auto& dirent: dirents) {
     dirent->setIdx(idx);
@@ -932,6 +935,50 @@ void CreatorData::addTitleListingData()
   Dirent* const d = *findDirent(NS::X, "listing/titleOrdered/v1");
   auto listingProvider = std::make_unique<TitleListingProvider>(this->dirents);
   addItemData(*d, std::move(listingProvider), false);
+}
+
+#if defined(ENABLE_XAPIAN)
+namespace
+{
+
+void indexTitle(XapianIndexer& indexer, const Dirent& dirent)
+{
+  const auto title = dirent.getTitle();
+  if ( !title.empty() ) {
+    const auto path = dirent.getPath();
+    if (dirent.isRedirect()) {
+      const auto redirectPath = dirent.getRedirectPath();
+      indexer.indexTitle(path, title, redirectPath);
+    } else {
+      indexer.indexTitle(path, title);
+    }
+  }
+}
+
+} // unnamed namespace
+#endif // defined(ENABLE_XAPIAN)
+
+void CreatorData::indexTitles()
+{
+  INFO("Index titles");
+#if defined(ENABLE_XAPIAN)
+  const std::string tmpFilePath = zimName + "_title.idx";
+  XapianIndexer xi(tmpFilePath, indexingLanguage, IndexingMode::TITLE, true);
+  xi.indexingPrelude();
+  for ( Dirent* const d : dirents ) {
+    if ( d->isFrontArticle() ) {
+      indexTitle(xi, *d);
+    }
+  }
+  xi.indexingPostlude();
+
+  if (!xi.is_empty()) {
+    Dirent* const d = createDirent(NS::X, "title/xapian",
+                                   "application/octet-stream+xapian", "");
+    auto fileDataProvider = std::make_unique<FileProvider>(tmpFilePath);
+    addItemData(*d, std::move(fileDataProvider), false);
+  }
+#endif // defined(ENABLE_XAPIAN)
 }
 
 } // namespace writer

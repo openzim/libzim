@@ -29,7 +29,7 @@ class XapianIndexer;
 
 class XapianHandler : public DirentHandler {
   public:
-    XapianHandler(CreatorData* data, bool withFullTextIndex);
+    explicit XapianHandler(CreatorData* data);
     virtual ~XapianHandler();
 
     void start() override;
@@ -43,12 +43,10 @@ class XapianHandler : public DirentHandler {
     Dirents createDirents() const override;
 
   private: // methods
-    void indexTitle(const Dirent& dirent);
     void waitNoMoreTask() const;
 
   private: // data
     std::unique_ptr<XapianIndexer> mp_fulltextIndexer;
-    std::unique_ptr<XapianIndexer> mp_titleIndexer;
     CreatorData* mp_creatorData;
 };
 

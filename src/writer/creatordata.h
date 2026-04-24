@@ -95,6 +95,7 @@ namespace zim
         DirentIterator removeDirent(DirentIterator it);
         void removeDirent(Dirent* dirent);
 
+        void indexTitles();
         void addTitleListingData();
 
         DirentPool  pool;

@@ -841,12 +841,12 @@ TEST(Suggestion, indexFullPath) {
   // Make sure that the namespace is included in the path recorded
   // with each indexed document
   ASSERT_EQ(database.get_document(1).get_data(), "C/MainPage");
-  ASSERT_EQ(database.get_document(2).get_data(), "C/Preface");
-  ASSERT_EQ(database.get_document(3).get_data(), "C/Volume1/Chapter1");
-  ASSERT_EQ(database.get_document(4).get_data(), "C/Volume1/Chapter2");
-  ASSERT_EQ(database.get_document(5).get_data(), "C/Volume2/Chapter3");
-  ASSERT_EQ(database.get_document(6).get_data(), "C/Volume2/Chapter4");
-  ASSERT_EQ(database.get_document(7).get_data(), "C/Postbutt");
+  ASSERT_EQ(database.get_document(2).get_data(), "C/Postbutt");
+  ASSERT_EQ(database.get_document(3).get_data(), "C/Preface");
+  ASSERT_EQ(database.get_document(4).get_data(), "C/Volume1/Chapter1");
+  ASSERT_EQ(database.get_document(5).get_data(), "C/Volume1/Chapter2");
+  ASSERT_EQ(database.get_document(6).get_data(), "C/Volume2/Chapter3");
+  ASSERT_EQ(database.get_document(7).get_data(), "C/Volume2/Chapter4");
 }
 
 } // unnamed namespace
