@@ -106,16 +106,19 @@ namespace zim
 
       /** Archive constructor.
        *
-       *  Construct an archive from a filename.
-       *  The file is open readonly.
+       *  Construct an archive from a file path.
        *
-       *  The filename is the "logical" path.
-       *  So if you want to open a split zim file (foo.zimaa, foo.zimab, ...)
-       *  you must pass the `foo.zim` path.
+       *  The file is opened readonly.
        *
-       *  @param fname The filename to the file to open (utf8 encoded)
+       *  In case of a split ZIM file (foo.zimaa, foo.zimab, ...), either the
+       *  filename of the first part (foo.zimaa) or the "logical" filename
+       *  (foo.zim) can be used. Note, however, that opening a split ZIM file
+       *  via a logical path is subject to the risk of having the wrong file
+       *  opened (if that path is used by another file).
+       *
+       *  @param path The path of the file to open (utf8 encoded)
        */
-      explicit Archive(const std::string& fname);
+      explicit Archive(const std::string& path);
 
       /** Archive constructor.
        *
@@ -253,12 +256,19 @@ namespace zim
       Archive(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
 
-      /** Return the filename of the zim file.
+      /** Return the real path of the file(s) underlying this ZIM archive.
        *
-       *  Return the filename as passed to the constructor
-       *  (So foo.zim).
+       * In case of a regular (single-piece) ZIM file, returns the path of that
+       * file.
        *
-       *  @return The logical filename of the archive.
+       * In case of a split ZIM file, returns the path of its first (.zimaa)
+       * part.
+       *
+       * If the ZIM file was opened using a file descriptor, an empty
+       * string is returned.
+       *
+       *  @return The path of the ZIM file or its first part (which can
+       *          be used directly to open the same file).
        */
       const std::string& getFilename() const;
 

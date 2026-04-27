@@ -289,13 +289,18 @@ TEST_F(ZimArchive, openRealZimArchive)
 TEST_F(ZimArchive, openSplitZimArchive)
 {
   const char* fname = "wikibooks_be_all_nopic_2017-02_splitted.zim";
+  const std::string suffixes[] = { "", "aa" };
 
   for (auto& testfile: getDataFilePath(fname)) {
-    const TestContext ctx{ {"path", testfile.path+"aa" } };
-    std::unique_ptr<zim::Archive> archive;
-    EXPECT_NO_THROW( archive.reset(new zim::Archive(testfile.path+"aa")) ) << ctx;
-    if ( archive ) {
-      EXPECT_TRUE( archive->check() ) << ctx;
+    for ( const auto& suffix : suffixes ) {
+      const std::string path = testfile.path + suffix;
+      const TestContext ctx{ {"path", path } };
+      std::unique_ptr<zim::Archive> archive;
+      EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
+      if ( archive ) {
+        EXPECT_EQ(archive->getFilename(), testfile.path + "aa");
+        EXPECT_TRUE( archive->check() ) << ctx;
+      }
     }
   }
 }
