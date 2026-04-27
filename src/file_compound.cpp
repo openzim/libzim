@@ -82,12 +82,13 @@ FileCompound::FileCompound(const std::string& filename):
 }
 
 FileCompound::FileCompound(const std::string& filename, MultiPartToken _token):
-  _filename(filename),
   _fsize(0)
 {
   const std::string base_filename = endsWith(filename, ".zimaa")
                                   ? filename.substr(0, filename.size()-2)
                                   : filename;
+
+  _filename = base_filename + "aa";
 
   try {
     for (char ch0 = 'a'; ch0 <= 'z'; ++ch0)

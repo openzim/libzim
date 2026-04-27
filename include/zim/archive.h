@@ -256,12 +256,19 @@ namespace zim
       Archive(const std::vector<FdInput>& fds, OpenConfig openConfig);
 #endif
 
-      /** Return the path used to open the ZIM file.
+      /** Return the real path of the file(s) underlying this ZIM archive.
+       *
+       * In case of a regular (single-piece) ZIM file, returns the path of that
+       * file.
+       *
+       * In case of a split ZIM file, returns the path of its first (.zimaa)
+       * part.
        *
        * If the ZIM file was opened using a file descriptor, an empty
        * string is returned.
        *
-       *  @return The path passed to the constructor.
+       *  @return The path of the ZIM file or its first part (which can
+       *          be used directly to open the same file).
        */
       const std::string& getFilename() const;
 

@@ -298,7 +298,7 @@ TEST_F(ZimArchive, openSplitZimArchive)
       std::unique_ptr<zim::Archive> archive;
       EXPECT_NO_THROW( archive.reset(new zim::Archive(path)) ) << ctx;
       if ( archive ) {
-        EXPECT_EQ(archive->getFilename(), path);
+        EXPECT_EQ(archive->getFilename(), testfile.path + "aa");
         EXPECT_TRUE( archive->check() ) << ctx;
       }
     }
