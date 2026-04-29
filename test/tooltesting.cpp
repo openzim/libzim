@@ -240,4 +240,22 @@ TEST(UrlUtils, stripSearchAndFragmentComponents) {
   }
 }
 
+TEST(UrlUtils, getVirtualRedirectUrl) {
+
+  EXPECT_EQ("",
+            zim::UrlUtils::getVirtualRedirectUrl("")
+  );
+
+  EXPECT_EQ("./Nairobi#Geography",
+            zim::UrlUtils::getVirtualRedirectUrl(R"(<html>
+  <head>
+    <title>Geography of Nairobi</title>
+    <meta http-equiv="refresh" content="0;URL='./Nairobi#Geography'" />
+  </head>
+  <body></body>
+</html>)")
+  );
+}
+
+
 } // unnamed namespace

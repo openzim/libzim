@@ -34,6 +34,7 @@
 #include <stdexcept>
 #include <random>
 #include <sstream>
+#include <regex>
 
 #ifdef _WIN32
 # include <windows.h>
@@ -376,6 +377,30 @@ std::string zim::UrlUtils::stripSearchAndFragmentComponents(std::string url)
   const auto search = getSearchComponent(url);
   url.resize(url.size() - frag.size() - search.size());
   return url;
+}
+
+std::string zim::UrlUtils::getVirtualRedirectUrl(const std::string& html)
+{
+  const std::string OPTIONAL_WHITESPACE("[[:space:]]*");
+  const std::string URL_CAPTURE("([^']*)");
+
+  const std::string miniHtmlRedirectRegexStr = std::string() +
+"<html>"                                               + OPTIONAL_WHITESPACE +
+  "<head>"                                             + OPTIONAL_WHITESPACE +
+    "<title>" + "[^<]*" + "</title>"                   + OPTIONAL_WHITESPACE +
+    "<meta http-equiv=\"refresh\" content=\"0;URL='"   + URL_CAPTURE + "'\" />"
+                                                       + OPTIONAL_WHITESPACE +
+  "</head>"                                            + OPTIONAL_WHITESPACE +
+  "<body></body>"                                      + OPTIONAL_WHITESPACE +
+"</html>";
+
+  const std::regex regex(miniHtmlRedirectRegexStr);
+
+  std::smatch m;
+
+  return std::regex_match(html, m, regex)
+       ? std::string(m[1].first, m[1].second)
+       : "";
 }
 
 #endif
