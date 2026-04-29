@@ -359,4 +359,15 @@ std::string zim::UrlUtils::getFragmentComponent(const std::string& url)
        : url.substr(i);
 }
 
+std::string zim::UrlUtils::getSearchComponent(std::string url)
+{
+  const auto frag = getFragmentComponent(url);
+  url.resize(url.size() - frag.size());
+
+  const auto q = url.find('?');
+  return q == std::string::npos
+       ? ""
+       : url.substr(q);
+}
+
 #endif

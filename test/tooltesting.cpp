@@ -189,4 +189,32 @@ TEST(UrlUtils, getFragmentComponent) {
   }
 }
 
+TEST(UrlUtils, getSearchComponent) {
+  const std::vector<std::pair<std::string, std::string>> testData{
+  //{ url                                          , search component }
+    { ""                                           , ""                       },
+    { "?planet=new+earth"                          , "?planet=new+earth"      },
+    { "landing/page/en"                            , ""                       },
+    { "/favicon?size=32x32&colour=red"             , "?size=32x32&colour=red" },
+    { "how-old-is-your-browser?"                   , "?"                      },
+
+    // search and fragment used in the same url
+    { "https://agi.ai/?q=purpose+of+life#tldr"     , "?q=purpose+of+life"     },
+
+    // search followed by fragment containing a ? symbol
+    { "toc?lang=sumerian#ok?"                      , "?lang=sumerian"         },
+
+    // URI-encoded ?
+    { "wiki/What%3F_Where%3F_When%3F"              , ""                       },
+    { "program/What%3F_Where%3F_When%3F?y=1995"    , "?y=1995"                },
+  };
+
+  for ( const auto& t : testData ) {
+    const std::string url = t.first;
+    const std::string expectedResult = t.second;
+    EXPECT_EQ(zim::UrlUtils::getSearchComponent(url), expectedResult)
+      << "URL: " << url;
+  }
+}
+
 } // unnamed namespace
