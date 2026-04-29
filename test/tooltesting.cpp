@@ -217,4 +217,27 @@ TEST(UrlUtils, getSearchComponent) {
   }
 }
 
+TEST(UrlUtils, stripSearchAndFragmentComponents) {
+  const std::vector<std::pair<std::string, std::string>> testData{
+  //{ url                                      , search component }
+    { ""                                       , ""                          },
+    { "?query=who+framed+rabbit+roger"         , ""                          },
+    { "#anchor"                                , ""                          },
+    { "admin/login"                            , "admin/login"               },
+    { "news/feed?format=rss"                   , "news/feed"                 },
+    { "/pull/123/diff#file=main.js&line=123"   , "/pull/123/diff"            },
+    { "/books/?author=jared+diamond#upheaval"  , "/books/"                   },
+
+    // URI-encoded ? and # symbols
+    { "Who_needs_F%23_and_why%3F"              , "Who_needs_F%23_and_why%3F" },
+  };
+
+  for ( const auto& t : testData ) {
+    const std::string url = t.first;
+    const std::string expectedResult = t.second;
+    EXPECT_EQ(zim::UrlUtils::stripSearchAndFragmentComponents(url), expectedResult)
+      << "URL: " << url;
+  }
+}
+
 } // unnamed namespace

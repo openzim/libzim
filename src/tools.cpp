@@ -370,4 +370,12 @@ std::string zim::UrlUtils::getSearchComponent(std::string url)
        : url.substr(q);
 }
 
+std::string zim::UrlUtils::stripSearchAndFragmentComponents(std::string url)
+{
+  const auto frag = getFragmentComponent(url);
+  const auto search = getSearchComponent(url);
+  url.resize(url.size() - frag.size() - search.size());
+  return url;
+}
+
 #endif

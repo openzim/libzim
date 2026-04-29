@@ -77,6 +77,7 @@ namespace zim {
   {
     static std::string getFragmentComponent(const std::string& url);
     static std::string getSearchComponent(std::string url);
+    static std::string stripSearchAndFragmentComponents(std::string url);
   };
 
 // Xapian based tools
