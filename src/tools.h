@@ -73,6 +73,11 @@ namespace zim {
     return count;
   }
 
+  struct LIBZIM_PRIVATE_API UrlUtils
+  {
+    static std::string getFragmentComponent(const std::string& url);
+  };
+
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
   std::string LIBZIM_PRIVATE_API removeAccents(const std::string& text);

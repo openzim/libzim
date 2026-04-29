@@ -160,4 +160,33 @@ TEST(Tools, removeAccents) {
 }
 
 #endif
+
+TEST(UrlUtils, getFragmentComponent) {
+  const std::vector<std::pair<std::string, std::string>> testData{
+  //{ url                                          , fragment }
+    { ""                                           , ""                },
+    { "#fragment"                                  , "#fragment"       },
+    { "road/to/hell"                               , ""                },
+    { "path/to/prosperity#luck"                    , "#luck"           },
+    { "/a/b/c#"                                    , "#"               },
+
+    // special symbols appearing in fragment
+    { "../faq#qwerty?a=1#xyz"                      , "#qwerty?a=1#xyz" },
+
+    // search and fragment used in the same url
+    { "https://agi.ai/?q=purpose+of+life#tldr"     , "#tldr"           },
+
+    // URI-encoded #
+    { "Java-vs-C%23?page=5"                        , ""                },
+    { "C%23-vs-Java#cons"                          , "#cons"           },
+  };
+
+  for ( const auto& t : testData ) {
+    const std::string url = t.first;
+    const std::string expectedResult = t.second;
+    EXPECT_EQ(zim::UrlUtils::getFragmentComponent(url), expectedResult)
+      << "URL: " << url;
+  }
+}
+
 } // unnamed namespace

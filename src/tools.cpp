@@ -350,4 +350,13 @@ void zim::setICUDataDirectory(const std::string& path)
 {
   u_setDataDirectory(path.c_str());
 }
+
+std::string zim::UrlUtils::getFragmentComponent(const std::string& url)
+{
+  const auto i = url.find('#');
+  return i == std::string::npos
+       ? ""
+       : url.substr(i);
+}
+
 #endif
