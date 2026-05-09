@@ -210,7 +210,7 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
   // Our approach is to return the average memory consumption by this cluster
   // under the assumption that half of its data is decompressed.
   // Note:
-  //  - No need to protect this method from concurent access (as well
+  //  - No need to protect this method from concurrent access (as well
   //    as memoize its result) as it is intended to be called by ConcurentCache
   //    which should invoke this method exactly once per cluster object
   size_t Cluster::getMemorySize() const {

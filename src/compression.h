@@ -131,7 +131,7 @@ class Uncompressor
               // no more input.
               return RunnerStatus::NEED_MORE;
             } else {
-              // Not enought output size.
+              // Not enough output size.
               // Allocate more memory and continue the loop.
               DEB("need memory " << data_size << " " << stream.avail_out << " " << stream.total_out)
               data_size *= 2;
@@ -147,7 +147,7 @@ class Uncompressor
             // On first call where lzma cannot progress (no output size).
             // Lzma return OK. If we return NEED_MORE, then we will try to compress
             // with new input data, but we should not as current one is not processed.
-            // We must do a second step to have te BUF_ERROR and handle thing correctly.
+            // We must do a second step to have the BUF_ERROR and handle thing correctly.
             // If we have no more input, then we must ask for more.
             if (stream.avail_in == 0) {
               return RunnerStatus::NEED_MORE;
