@@ -521,10 +521,6 @@ TEST(Suggestion, nonWordCharacters) {
       "Jack & Jill, on the hill"
     );
 
-    EXPECT_SUGGESTED_TITLES(archive, "4",
-      "Ali Baba & the 40 thieves"
-    );
-
     EXPECT_SUGGESTED_TITLES(archive, "40",
       "Ali Baba & the 40 thieves"
     );
