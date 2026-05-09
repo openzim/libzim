@@ -1,3 +1,13 @@
+libzim 9.7.0
+============
+
+ * Fix handling of "bad" redirections (@veloman-yunkan #1065 #1077)
+ * Fix handling of ZIM file chunks (@veloman-yunkan #1078)
+ * Made zim::writer::creator::addMetadata() exception-safe (@veloman-yunkan #1070)
+ * Fix a rare (edge-case) and old bug in ZIM reader (@veloman-yunkan #1066)
+ * Enable better memory mgmt on macOS in ZIM reader (@veloman-yunkan #1067)
+ * Further optimization of redirection memory usage for both writer and reader (@veloman-yunkan #1068)
+
 libzim 9.6.0
 ============
 
