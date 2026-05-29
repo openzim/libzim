@@ -29,19 +29,19 @@ jobs:
           - target: ios-x86_64-dyn
             arch_name: x86-apple-ios-simulator
             run_test: false
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # pin@v2
         with:
           egress-policy: audit
 
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v6
 
       - name: Setup Python 3.13
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # pin@v6
         with:
           python-version: '3.13'
 
@@ -54,7 +54,7 @@ jobs:
         run: pip3 install meson pytest
 
       - name: Install dependencies
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # pin@main
         with:
           target_platform: ${{ matrix.target }}
 
@@ -89,20 +89,20 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - windows-2025
+          - windows-2025-vs2026
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # pin@v2
         with:
           egress-policy: audit
 
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v6
 
       - name: Setup python 3.13
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # pin@v6
         with:
           python-version: '3.13'
 
@@ -114,12 +114,12 @@ jobs:
         run: pip3 install meson
 
       - name: Setup MSVC compiler
-        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d # v1
+        uses: bus1/cabuild/action/msdevshell@e22aba57d6e74891d059d66501b6b5aed8123c4d # pin@v1
         with:
           architecture: x64
 
       - name: Install dependencies
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # pin@main
         with:
           target_platform: win-x86_64-dyn
 
@@ -201,24 +201,24 @@ jobs:
             coverage: false
     env:
       HOME: /home/runner
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
-      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:2025-06-07"
+      image: "ghcr.io/kiwix/kiwix-build_ci_${{matrix.image_variant}}:2026-04-25"
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # pin@v2
         with:
           egress-policy: audit
 
       - name: Install dependencies
         if: ${{ !contains(matrix.target, 'musl') }}
-        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # main
+        uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # pin@main
         with:
           target_platform: ${{ matrix.target }}
 
       - name: Retrieve source code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v6
 
       - name: Compile source code
         shell: bash
@@ -269,14 +269,14 @@ jobs:
           fi
 
       - name: Upload code coverage
-        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # pin@v5
         if: matrix.coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   OSSF-Scorecard:
     name: OSSF Scorecard
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # `publish_results: true` only works when run from the default branch. conditional can be removed if disabled.
     if: github.event.repository.default_branch == github.ref_name || github.event_name == 'pull_request'
     permissions:
@@ -290,12 +290,12 @@ jobs:
 
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v6
         with:
           persist-credentials: false
 
       - name: "Run analysis"
-        uses: ossf/scorecard-action@f49aabe0b5af0936a0987cfb85d86b75731b0186 # v2.4.1
+        uses: ossf/scorecard-action@f49aabe0b5af0936a0987cfb85d86b75731b0186 # pin@v2
         with:
           results_file: results.sarif
           results_format: sarif
@@ -320,7 +320,7 @@ jobs:
       # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
       # format to the repository Actions tab.
       - name: "Upload artifact"
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # pin@v7
         with:
           name: SARIF file
           path: results.sarif
@@ -329,6 +329,6 @@ jobs:
       # Upload the results to GitHub's code scanning dashboard (optional).
       # Commenting out will disable upload of results to your repo's Code Scanning dashboard
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # pin@v4
         with:
           sarif_file: results.sarif
