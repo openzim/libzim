@@ -892,7 +892,35 @@ private:
    * @return False if any check fails, true otherwise.
    */
   bool LIBZIM_API validate(const std::string& zimPath, IntegrityCheckList checksToRun);
-}
+
+  /** Resolve the final URL of a chain of real and/or virtual redirections
+   *
+   * ZIM file format allows for redirections that fall a little short of
+   * functionality available via generic URLs. In particular, search and
+   * fragment components (those after the ? and # symbols, respectively)
+   * cannot be used since the '?' and '#' symbols are treated as regular
+   * symbols inside the path component.
+   *
+   * A workaround is to simulate such redirects via mini-HTML items with an
+   * empty `<body>` and nothing more than a  `<title>` and a
+   * `<meta http-equiv="refresh" * content="0;URL=..." />`
+   * directive in their `<head>` section. We call such (or any other similar)
+   * tricks *virtual redirects*.
+   *
+   * `resolveTargetURL()` recognizes and follows virtual redirects
+   * in addition to the native ZIM redirects. A chain of real of virtual
+   * redirects resolves either to
+   *
+   * - a full URL pointing outside the ZIM file (e.g. http://kiwix.org)
+   *
+   * - or a URI-encoded path of a ZIM item (which is not itself a virtual
+   *   redirect) with search and/or fragment components appended to it
+   *   as needed (if the last redirect was a virtual one and had those
+   *   components).
+   */
+  std::string LIBZIM_API resolveTargetURL(const zim::Archive& a,
+                                          const std::string& path);
+
+} // namespace zim
 
 #endif // ZIM_ARCHIVE_H
-
