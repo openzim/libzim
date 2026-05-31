@@ -209,6 +209,20 @@ class TitleListingProvider : public ContentProvider {
     DirentPtrs::const_iterator m_it;
 };
 
+typedef std::deque<offset_t> DirentOffsets;
+
+DirentOffsets writeDirents(int fd, const CreatorData::UrlSortedDirents& dirents)
+{
+  DirentOffsets direntOffsets;
+  lseek(fd, 0, SEEK_END);
+  for (Dirent* dirent: dirents)
+  {
+    direntOffsets.push_back(offset_t(lseek(fd, 0, SEEK_CUR)));
+    dirent->write(fd);
+  }
+  return direntOffsets;
+}
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -497,15 +511,8 @@ void Creator::writeLastParts() const
   // TODO: the offset values with dirent size values and reconstructing
   // TODO: the offsets as a running sum starting from the offset of the
   // TODO: first dirent
-  std::deque<offset_t> direntOffsets;
-
   TINFO(" write directory entries");
-  lseek(out_fd, 0, SEEK_END);
-  for (Dirent* dirent: data->dirents)
-  {
-    direntOffsets.push_back(offset_t(lseek(out_fd, 0, SEEK_CUR)));
-    dirent->write(out_fd);
-  }
+  const DirentOffsets direntOffsets = writeDirents(out_fd, data->dirents);
 
   TINFO(" write path ptr list");
   header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
