@@ -156,6 +156,11 @@ void Cluster::_compress()
   compressed_data = Blob(comp.release(), size.v);
 }
 
+void Cluster::write(BinaryFile& f) const
+{
+  write(f.out_fd);
+}
+
 void Cluster::write(int out_fd) const
 {
   // write clusterInfo

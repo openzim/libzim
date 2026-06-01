@@ -74,7 +74,7 @@ namespace zim
             }
             creatorData->clusterToWrite.popFromQueue(cluster);
             cluster->setOffset(offset_t(creatorData->tellFilePos()));
-            cluster->write(creatorData->out_fd);
+            cluster->write(static_cast<BinaryFile&>(*creatorData));
             cluster->clear_data();
             wait = 0;
           }
