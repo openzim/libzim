@@ -57,6 +57,11 @@ namespace zim
       checksumPos(std::numeric_limits<offset_type>::max())
   {}
 
+  void Fileheader::write(writer::BinaryFile& f) const
+  {
+    write(f.out_fd);
+  }
+
   void Fileheader::write(int out_fd) const
   {
     char header[Fileheader::size];
