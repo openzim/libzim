@@ -158,18 +158,13 @@ void Cluster::_compress()
 
 void Cluster::write(BinaryFile& f) const
 {
-  write(f.out_fd);
-}
-
-void Cluster::write(int out_fd) const
-{
   // write clusterInfo
   char clusterInfo = 0;
   if (isExtended) {
     clusterInfo = 0x10;
   }
   clusterInfo += static_cast<uint8_t>(getCompression());
-  if (_write(out_fd, &clusterInfo, 1) == -1) {
+  if (_write(f.out_fd, &clusterInfo, 1) == -1) {
     throw std::runtime_error("Error writing");
   }
 
@@ -178,7 +173,7 @@ void Cluster::write(int out_fd) const
   {
     case Compression::None:
     {
-      auto writer = [=](const Blob& data) -> void {
+      auto writer = [&f](const Blob& data) -> void {
         // Ideally we would simply have to do :
         // ::write(tmp_fd, data.c_str(), data.size());
         // However, the data can be pretty big (> 4Gb), especially with test,
@@ -187,7 +182,7 @@ void Cluster::write(int out_fd) const
         const char* src = data.data();
         while (to_write) {
          size_type chunk_size = std::min(MAX_WRITE_SIZE, to_write);
-         auto ret = _write(out_fd, src, chunk_size);
+         auto ret = _write(f.out_fd, src, chunk_size);
          src += ret;
          to_write -= ret;
         }
@@ -199,7 +194,7 @@ void Cluster::write(int out_fd) const
     case Compression::Zstd:
       {
         log_debug("compress data");
-        if (_write(out_fd, compressed_data.data(), compressed_data.size()) == -1) {
+        if (_write(f.out_fd, compressed_data.data(), compressed_data.size()) == -1) {
           throw std::runtime_error("Error writing");
         }
         break;

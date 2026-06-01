@@ -77,7 +77,6 @@ class LIBZIM_PRIVATE_API Cluster {
     }
 
     void write(BinaryFile&) const;
-    void write(int out_fd) const;
 
   protected:
     Compression compression;
