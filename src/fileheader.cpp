@@ -59,11 +59,6 @@ namespace zim
 
   void Fileheader::write(writer::BinaryFile& f) const
   {
-    write(f.out_fd);
-  }
-
-  void Fileheader::write(int out_fd) const
-  {
     char header[Fileheader::size];
     toLittleEndian(Fileheader::zimMagic, header);
     toLittleEndian(getMajorVersion(), header + 4);
@@ -79,7 +74,7 @@ namespace zim
     toLittleEndian(getLayoutPage(), header + 68);
     toLittleEndian(getChecksumPos(), header + 72);
 
-    auto ret = _write(out_fd, header, Fileheader::size);
+    auto ret = _write(f.out_fd, header, Fileheader::size);
     if (ret != Fileheader::size) {
       std::cerr << "Error Writing" << std::endl;
       std::cerr << "Ret is " << ret << std::endl;

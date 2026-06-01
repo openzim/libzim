@@ -62,7 +62,6 @@ namespace zim
     public:
       Fileheader();
       void write(writer::BinaryFile&) const;
-      void write(int out_fd) const;
       void read(const Reader& reader);
 
       // Do some sanity check, raise a ZimFileFormateError is

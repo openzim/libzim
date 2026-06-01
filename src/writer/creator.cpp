@@ -580,7 +580,7 @@ void Creator::writeLastParts() const
 
   TINFO(" write header");
   lseek(out_fd, 0, SEEK_SET);
-  header.write(out_fd);
+  header.write(outFile);
 }
 
 void Creator::checkError()
