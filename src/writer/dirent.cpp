@@ -110,11 +110,6 @@ entry_index_t Dirent::getRedirectIndex() const      {
 
 void Dirent::write(BinaryFile& f) const
 {
-  write(f.out_fd);
-}
-
-void Dirent::write(int out_fd) const
-{
   const static char zero = 0;
   union
   {
@@ -132,17 +127,17 @@ void Dirent::write(int out_fd) const
   if (isRedirect())
   {
     zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
-    _write(out_fd, header.d, 12);
+    _write(f.out_fd, header.d, 12);
   }
   else
   {
     zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);
     zim::toLittleEndian(zim::blob_index_type(getBlobNumber()), header.d + 12);
-    _write(out_fd, header.d, 16);
+    _write(f.out_fd, header.d, 16);
   }
 
-  _write(out_fd, pathTitle.data(), pathTitle.size());
-  _write(out_fd, &zero, 1);
+  _write(f.out_fd, pathTitle.data(), pathTitle.size());
+  _write(f.out_fd, &zero, 1);
 }
 
 } // namespace writer

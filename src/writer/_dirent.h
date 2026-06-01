@@ -172,7 +172,6 @@ namespace zim
         }
 
         void write(BinaryFile&) const;
-        void write(int out_fd) const;
 
         bool comparePath(const Dirent& other) const {
           return pathTitle.comparePath(other.pathTitle);
