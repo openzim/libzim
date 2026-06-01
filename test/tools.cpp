@@ -160,6 +160,7 @@ const std::vector<TestFile> getDataFilePath(const std::string& filename, const s
   return filePaths;
 }
 
+#ifndef LIBZIM_WITHOUT_WRITER
 zim::Archive TempZimArchive::createZimFromTitles(std::vector<std::string> titles) {
   zim::writer::Creator creator;
   creator.configIndexing(true, "en");
@@ -195,6 +196,7 @@ zim::Archive TempZimArchive::createZimFromContent(std::vector<std::vector<std::s
   creator.finishZimCreation();
   return zim::Archive(this->path());
 }
+#endif
 
 const std::string TempZimArchive::getPath() const {
   return this->path();

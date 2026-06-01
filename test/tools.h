@@ -41,9 +41,13 @@ typedef SSIZE_T ssize_t;
 
 #define ZIM_PRIVATE
 #include <zim/archive.h>
-#include <zim/writer/creator.h>
-#include <zim/writer/item.h>
-#include <zim/writer/contentProvider.h>
+
+#ifndef LIBZIM_WITHOUT_WRITER
+  #include <zim/writer/creator.h>
+  #include <zim/writer/item.h>
+  #include <zim/writer/contentProvider.h>
+#endif
+
 #include <zim/tools.h>
 
 namespace zim
@@ -194,7 +198,12 @@ enum class IsFrontArticle {
   DEFAULT
 };
 
-class TestItem : public zim::writer::Item {
+#ifdef LIBZIM_WITHOUT_WRITER
+  class TestItem
+#else  
+  class TestItem : public zim::writer::Item 
+#endif
+{
   public:
     TestItem(
         const std::string& path,
@@ -213,6 +222,8 @@ class TestItem : public zim::writer::Item {
     virtual std::string getPath() const { return path; };
     virtual std::string getTitle() const { return title; };
     virtual std::string getMimeType() const { return mimetype; };
+
+    #ifndef LIBZIM_WITHOUT_WRITER
     virtual zim::writer::Hints getHints() const {
       switch (frontArticle) {
         case IsFrontArticle::YES:
@@ -227,6 +238,7 @@ class TestItem : public zim::writer::Item {
     virtual std::unique_ptr<zim::writer::ContentProvider> getContentProvider() const {
       return std::unique_ptr<zim::writer::ContentProvider>(new zim::writer::StringProvider(content));
     }
+    #endif
 
   std::string path;
   std::string title;

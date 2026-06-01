@@ -178,7 +178,6 @@ TEST(FindTests, ByTitleWithDuplicate)
   CHECK_FIND_TITLE_COUNT("C", 2)
 }
 
-
 // By Path
 TEST(FindTests, ByPath)
 {

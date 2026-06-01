@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  *
  */
-
+#ifndef LIBZIM_WITHOUT_WRITER
 #include <cstring>
 #include <iostream>
 #include <sstream>
@@ -209,3 +209,4 @@ TEST(DirentTest, redirect_dirent_size)
 }
 
 }  // namespace
+#endif // LIBZIM_WITHOUT_WRITER

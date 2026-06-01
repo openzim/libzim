@@ -1,17 +1,29 @@
-tests = [
+writer_dependant_tests = [
+    'cluster',
+    'dirent',
+    'creator',
+    'error_in_creator',
+    'indexing_criteria',
+    'tinyString',
+    'suggestion_iterator',
+    'archive',
+    'header',
+    'reader',
+    'iterator',
+    'find'
+]
+xapian_writer_dependant_tests = [
+    'search', 
+    'defaultIndexdata', 
+    'suggestion', 
+    'search_iterator'
+]
+
+all_tests = [
     'log',
     'lrucache',
     'concurrentcache',
-    'cluster',
-    'creator',
-    'dirent',
-    'error_in_creator',
-    'header',
     'uuid',
-    'archive',
-    'iterator',
-    'reader',
-    'find',
     'compression',
     'dirent_lookup',
     'istreamreader',
@@ -21,15 +33,15 @@ tests = [
     'parseLongPath',
     'random',
     'tooltesting',
-    'tinyString',
-    'suggestion_iterator',
-    'indexing_criteria',
     'counterParsing',
     'illustrations'
 ]
 
-if xapian_dep.found()
-    tests += ['search', 'defaultIndexdata', 'search_iterator', 'suggestion']
+if not get_option('without_writer')
+    if xapian_dep.found()
+        writer_dependant_tests += xapian_writer_dependant_tests
+    endif
+    all_tests += writer_dependant_tests
 endif
 
 datadir = get_option('test_data_dir')
@@ -52,7 +64,7 @@ if cpp.get_id() == 'gcc' and cpp.version().version_compare('>=12.0.0') and cpp.v
 endif
 
 if gtest_dep.found() and not meson.is_cross_build()
-    foreach test_name : tests
+    foreach test_name : all_tests
         test_exe = executable(test_name, [test_name+'.cpp', 'tools.cpp'],
                               implicit_include_directories: false,
                               include_directories: [include_directory, src_directory],
