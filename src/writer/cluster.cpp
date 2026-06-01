@@ -32,14 +32,7 @@
 #include <fcntl.h>
 #include <stdexcept>
 
-#ifdef _WIN32
-# include <io.h>
-#else
-# include <unistd.h>
-# define _write(fd, addr, size) ::write((fd), (addr), (size))
-#endif
-
-const zim::size_type MAX_WRITE_SIZE(4UL*1024*1024*1024-1);
+const zim::size_type MAX_WRITE_SIZE(16UL*1024*1024);
 
 namespace zim {
 namespace writer {
@@ -164,9 +157,7 @@ void Cluster::write(BinaryFile& f) const
     clusterInfo = 0x10;
   }
   clusterInfo += static_cast<uint8_t>(getCompression());
-  if (_write(f.out_fd, &clusterInfo, 1) == -1) {
-    throw std::runtime_error("Error writing");
-  }
+  f.write(&clusterInfo, 1);
 
   // Open a comprestion stream if needed
   switch(getCompression())
@@ -177,14 +168,14 @@ void Cluster::write(BinaryFile& f) const
         // Ideally we would simply have to do :
         // ::write(tmp_fd, data.c_str(), data.size());
         // However, the data can be pretty big (> 4Gb), especially with test,
-        // And ::write fails to write data > 4Gb. So we have to chunck the write.
+        // And ::write fails to write data > 4Gb. So we have to chunk the write.
         size_type to_write = data.size();
         const char* src = data.data();
         while (to_write) {
-         size_type chunk_size = std::min(MAX_WRITE_SIZE, to_write);
-         auto ret = _write(f.out_fd, src, chunk_size);
-         src += ret;
-         to_write -= ret;
+         const size_type chunk_size = std::min(MAX_WRITE_SIZE, to_write);
+         f.write(src, chunk_size);
+         src += chunk_size;
+         to_write -= chunk_size;
         }
       };
       write_content(writer);
@@ -194,9 +185,7 @@ void Cluster::write(BinaryFile& f) const
     case Compression::Zstd:
       {
         log_debug("compress data");
-        if (_write(f.out_fd, compressed_data.data(), compressed_data.size()) == -1) {
-          throw std::runtime_error("Error writing");
-        }
+        f.write(compressed_data.data(), compressed_data.size());
         break;
       }
 
