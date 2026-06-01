@@ -36,6 +36,7 @@
 
 #include "../fileheader.h"
 #include "direntPool.h"
+#include "binaryfile.h"
 
 namespace zim
 {
@@ -49,7 +50,8 @@ namespace zim
 
     class Cluster;
     class Task;
-    class CreatorData
+
+    class CreatorData : public BinaryFile
     {
       public:
         typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
@@ -123,7 +125,6 @@ namespace zim
         size_t clusterSize;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
-        int out_fd;
 
         bool withIndex;
         std::string indexingLanguage;
