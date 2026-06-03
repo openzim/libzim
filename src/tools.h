@@ -52,6 +52,12 @@ namespace zim {
    **/
   uint32_t LIBZIM_PRIVATE_API randomNumber(uint32_t max);
 
+  inline bool startsWith(const std::string& str, const std::string& prefix)
+  {
+    return prefix.length() <= str.length()
+        && std::equal(prefix.begin(), prefix.end(), str.begin());
+  }
+
   std::vector<std::string> split(const std::string & str,
                                 const std::string & delims=" *-");
 
