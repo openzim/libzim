@@ -254,6 +254,18 @@ void writeChecksum(int fd)
   _write(fd, reinterpret_cast<const char*>(digest), 16);
 }
 
+void addChecksum(const std::string& filePath)
+{
+#ifdef _WIN32
+  const int flag = _O_RDWR | _O_BINARY;
+#else
+  const int flag = O_RDWR;
+#endif
+  const int fd = ::open(filePath.c_str(), flag);
+  writeChecksum(fd);
+  ::close(fd);
+}
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -498,6 +510,10 @@ void Creator::finishZimCreation()
   DEFAULTFS::rename(data->tmpFileName, data->zimName);
   data->tmpFileName.clear();
 
+  INFO("Adding checksum...");
+  addChecksum(data->zimName);
+  INFO("ZIM file is ready!");
+
   TINFO("finish");
 }
 
@@ -565,9 +581,6 @@ void Creator::writeLastParts() const
   TINFO(" write header");
   lseek(out_fd, 0, SEEK_SET);
   header.write(out_fd);
-
-  TINFO(" write checksum");
-  writeChecksum(out_fd);
 }
 
 void Creator::checkError()
