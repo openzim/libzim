@@ -22,6 +22,8 @@
 
 #include "config.h"
 
+#include <string>
+
 namespace zim
 {
 
@@ -30,8 +32,11 @@ namespace writer
 
 class LIBZIM_PRIVATE_API BinaryFile
 {
-public:
-    int out_fd;
+public: // functions
+  void openFile(const std::string& filePath);
+
+public: // data
+  int out_fd = -1;
 };
 
 } // namespace writer
