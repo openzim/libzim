@@ -44,6 +44,7 @@ public: // functions
   void closeFile();
 
   offset_type tellFilePos() const;
+  offset_type seekEnd();
 
 public: // data
   int out_fd = -1;

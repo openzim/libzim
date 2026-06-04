@@ -61,8 +61,7 @@ size_t writtenDirentSize(const zim::writer::Dirent& dirent)
   zim::writer::BinaryFile bf;
   bf.out_fd = dup(tmpFile.fd());
   dirent.write(bf);
-  auto size = lseek(bf.out_fd, 0, SEEK_END);
-  return size;
+  return bf.seekEnd();
 }
 
 TEST(DirentTest, size)

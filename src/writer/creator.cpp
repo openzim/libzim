@@ -214,7 +214,7 @@ typedef std::deque<offset_t> DirentOffsets;
 DirentOffsets writeDirents(BinaryFile& f, const CreatorData::UrlSortedDirents& dirents)
 {
   DirentOffsets direntOffsets;
-  lseek(f.out_fd, 0, SEEK_END);
+  f.seekEnd();
   for (Dirent* dirent: dirents)
   {
     direntOffsets.push_back(offset_t(f.tellFilePos()));
