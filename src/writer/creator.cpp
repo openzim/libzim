@@ -233,6 +233,27 @@ void writeDirentOffsets(int fd, const DirentOffsets& direntOffsets)
   }
 }
 
+void writeChecksum(int fd)
+{
+  struct zim_MD5_CTX md5ctx;
+  unsigned char batch_read[1024+1];
+  lseek(fd, 0, SEEK_SET);
+  zim_MD5Init(&md5ctx);
+  while (true) {
+     auto r = read(fd, batch_read, 1024);
+     if (r == -1) {
+       throw std::runtime_error(std::strerror(errno));
+     }
+     if (r == 0)
+       break;
+     batch_read[r] = 0;
+     zim_MD5Update(&md5ctx, batch_read, r);
+  }
+  unsigned char digest[16];
+  zim_MD5Final(digest, &md5ctx);
+  _write(fd, reinterpret_cast<const char*>(digest), 16);
+}
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -546,23 +567,7 @@ void Creator::writeLastParts() const
   header.write(out_fd);
 
   TINFO(" write checksum");
-  struct zim_MD5_CTX md5ctx;
-  unsigned char batch_read[1024+1];
-  lseek(out_fd, 0, SEEK_SET);
-  zim_MD5Init(&md5ctx);
-  while (true) {
-     auto r = read(out_fd, batch_read, 1024);
-     if (r == -1) {
-       throw std::runtime_error(std::strerror(errno));
-     }
-     if (r == 0)
-       break;
-     batch_read[r] = 0;
-     zim_MD5Update(&md5ctx, batch_read, r);
-  }
-  unsigned char digest[16];
-  zim_MD5Final(digest, &md5ctx);
-  _write(out_fd, reinterpret_cast<const char*>(digest), 16);
+  writeChecksum(out_fd);
 }
 
 void Creator::checkError()
