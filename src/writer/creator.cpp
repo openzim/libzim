@@ -223,13 +223,13 @@ DirentOffsets writeDirents(BinaryFile& f, const CreatorData::UrlSortedDirents& d
   return direntOffsets;
 }
 
-void writeDirentOffsets(int fd, const DirentOffsets& direntOffsets)
+void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
 {
   for (auto offset : direntOffsets)
   {
     char tmp_buff[sizeof(offset_type)];
     toLittleEndian(offset, tmp_buff);
-    _write(fd, tmp_buff, sizeof(offset_type));
+    _write(f.out_fd, tmp_buff, sizeof(offset_type));
   }
 }
 
@@ -563,7 +563,7 @@ void Creator::writeLastParts() const
 
   TINFO(" write path ptr list");
   header.setPathPtrPos(outFile.tellFilePos());
-  writeDirentOffsets(out_fd, direntOffsets);
+  writeDirentOffsets(outFile, direntOffsets);
 
   } // writing dirents
 
