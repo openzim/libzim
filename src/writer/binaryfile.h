@@ -37,7 +37,7 @@ public: // functions
   BinaryFile(const BinaryFile& ) = delete;
   void operator=(const BinaryFile& ) = delete;
 
-  BinaryFile();
+  explicit BinaryFile(int fd = -1);
   ~BinaryFile();
 
   void openFile(const std::string& filePath);
@@ -49,7 +49,7 @@ public: // functions
 
   void write(const char* buf, size_t size);
 
-public: // data
+private: // data
   int out_fd = -1;
 };
 

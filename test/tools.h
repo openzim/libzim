@@ -148,8 +148,7 @@ zim::Buffer write_to_buffer(const T& object, const std::string& tail="")
 {
   TempFile tmpFile("test_temp_file");
   const auto tmp_fd = dup(tmpFile.fd());
-  zim::writer::BinaryFile bf;
-  bf.out_fd = tmp_fd;
+  zim::writer::BinaryFile bf(tmp_fd);
   object.write(bf);
   if (write(tmp_fd, tail.data(), tail.size()) != (ssize_t)tail.size()) {
     throw std::runtime_error("Cannot write to " + tmpFile.path());

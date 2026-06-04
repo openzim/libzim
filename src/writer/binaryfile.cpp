@@ -19,7 +19,8 @@ namespace zim
 namespace writer
 {
 
-BinaryFile::BinaryFile()
+BinaryFile::BinaryFile(int fd)
+  : out_fd(fd)
 {
 }
 
