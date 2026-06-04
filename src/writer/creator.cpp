@@ -223,6 +223,16 @@ DirentOffsets writeDirents(int fd, const CreatorData::UrlSortedDirents& dirents)
   return direntOffsets;
 }
 
+void writeDirentOffsets(int fd, const DirentOffsets& direntOffsets)
+{
+  for (auto offset : direntOffsets)
+  {
+    char tmp_buff[sizeof(offset_type)];
+    toLittleEndian(offset, tmp_buff);
+    _write(fd, tmp_buff, sizeof(offset_type));
+  }
+}
+
 } // unnamed namespace
 
 Creator::Creator()
@@ -516,12 +526,7 @@ void Creator::writeLastParts() const
 
   TINFO(" write path ptr list");
   header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
-  for (auto offset : direntOffsets)
-  {
-    char tmp_buff[sizeof(offset_type)];
-    toLittleEndian(offset, tmp_buff);
-    _write(out_fd, tmp_buff, sizeof(offset_type));
-  }
+  writeDirentOffsets(out_fd, direntOffsets);
 
   } // writing dirents
 
