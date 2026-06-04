@@ -503,7 +503,7 @@ void Creator::finishZimCreation()
 
   TINFO("write zimfile :");
   writeLastParts();
-  data->closeFile();
+  data->outFile.closeFile();
 
   TINFO("rename tmpfile to final one.");
   DEFAULTFS::rename(data->tmpFileName, data->zimName);
@@ -538,7 +538,7 @@ void Creator::writeLastParts() const
   Fileheader header;
   fillHeader(&header);
 
-  BinaryFile& outFile = *data;
+  BinaryFile& outFile = data->outFile;
 
   outFile.seek(header.getMimeListPos());
   TINFO(" write mimetype list");
@@ -618,8 +618,8 @@ CreatorData::CreatorData(const std::string& fname,
     nbUnCompClusters(0),
     start_time(time(NULL))
 {
-  openFile(tmpFileName);
-  seek(CLUSTER_BASE_OFFSET);
+  outFile.openFile(tmpFileName);
+  outFile.seek(CLUSTER_BASE_OFFSET);
 
   // We keep both a "compressed cluster" and an "uncompressed cluster"
   // because we don't know which one will fill up first.  We also need
@@ -651,7 +651,7 @@ CreatorData::~CreatorData()
   for(auto& cluster: clustersList) {
     delete cluster;
   }
-  closeFile();
+  outFile.closeFile();
   if ( ! tmpFileName.empty() ) {
     DEFAULTFS::removeFile(tmpFileName);
   }

@@ -51,7 +51,7 @@ namespace zim
     class Cluster;
     class Task;
 
-    class CreatorData : public BinaryFile
+    class CreatorData
     {
       public:
         typedef std::set<Dirent*, UrlCompare> UrlSortedDirents;
@@ -121,6 +121,7 @@ namespace zim
         const Compression compression;
         std::string zimName;
         std::string tmpFileName;
+        BinaryFile  outFile;
         bool isEmpty = true;
         size_t clusterSize;
         Cluster *compCluster = nullptr;
