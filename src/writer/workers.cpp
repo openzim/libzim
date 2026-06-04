@@ -73,7 +73,7 @@ namespace zim
               continue;
             }
             creatorData->clusterToWrite.popFromQueue(cluster);
-            cluster->setOffset(offset_t(lseek(creatorData->out_fd, 0, SEEK_CUR)));
+            cluster->setOffset(offset_t(creatorData->tellFilePos()));
             cluster->write(creatorData->out_fd);
             cluster->clear_data();
             wait = 0;

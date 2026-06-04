@@ -538,7 +538,8 @@ void Creator::writeLastParts() const
   Fileheader header;
   fillHeader(&header);
 
-  int out_fd = data->out_fd;
+  BinaryFile& outFile = *data;
+  const int out_fd = outFile.out_fd;
 
   lseek(out_fd, header.getMimeListPos(), SEEK_SET);
   TINFO(" write mimetype list");
@@ -549,7 +550,7 @@ void Creator::writeLastParts() const
 
   _write(out_fd, "", 1);
 
-  ASSERT(lseek(out_fd, 0, SEEK_CUR), <, CLUSTER_BASE_OFFSET);
+  ASSERT(outFile.tellFilePos(), <, offset_type(CLUSTER_BASE_OFFSET));
 
   { // writing dirents
 
@@ -561,13 +562,13 @@ void Creator::writeLastParts() const
   const DirentOffsets direntOffsets = writeDirents(out_fd, data->dirents);
 
   TINFO(" write path ptr list");
-  header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
+  header.setPathPtrPos(outFile.tellFilePos());
   writeDirentOffsets(out_fd, direntOffsets);
 
   } // writing dirents
 
   TINFO(" write cluster offset list");
-  header.setClusterPtrPos(lseek(out_fd, 0, SEEK_CUR));
+  header.setClusterPtrPos(outFile.tellFilePos());
   for (auto cluster : data->clustersList)
   {
     char tmp_buff[sizeof(offset_type)];
@@ -575,7 +576,7 @@ void Creator::writeLastParts() const
     _write(out_fd, tmp_buff, sizeof(offset_type));
   }
 
-  header.setChecksumPos(lseek(out_fd, 0, SEEK_CUR));
+  header.setChecksumPos(outFile.tellFilePos());
 
   TINFO(" write header");
   lseek(out_fd, 0, SEEK_SET);

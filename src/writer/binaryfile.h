@@ -21,6 +21,7 @@
 #define ZIM_WRITER_BINARY_FILE_H
 
 #include "config.h"
+#include "zim/zim.h"
 
 #include <string>
 
@@ -41,6 +42,8 @@ public: // functions
 
   void openFile(const std::string& filePath);
   void closeFile();
+
+  offset_type tellFilePos() const;
 
 public: // data
   int out_fd = -1;

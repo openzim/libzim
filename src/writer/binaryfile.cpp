@@ -51,6 +51,11 @@ void BinaryFile::closeFile()
   }
 }
 
+offset_type BinaryFile::tellFilePos() const
+{
+  return lseek(out_fd, 0, SEEK_CUR);
+}
+
 } // namespace writer
 
 } // namespace zim
