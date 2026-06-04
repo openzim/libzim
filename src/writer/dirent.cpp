@@ -108,6 +108,11 @@ entry_index_t Dirent::getRedirectIndex() const      {
   return targetDirent->getIdx();
 }
 
+void Dirent::write(BinaryFile& f) const
+{
+  write(f.out_fd);
+}
+
 void Dirent::write(int out_fd) const
 {
   const static char zero = 0;

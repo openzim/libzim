@@ -218,7 +218,7 @@ DirentOffsets writeDirents(BinaryFile& f, const CreatorData::UrlSortedDirents& d
   for (Dirent* dirent: dirents)
   {
     direntOffsets.push_back(offset_t(f.tellFilePos()));
-    dirent->write(f.out_fd);
+    dirent->write(f);
   }
   return direntOffsets;
 }
