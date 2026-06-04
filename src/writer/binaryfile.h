@@ -34,6 +34,7 @@ class LIBZIM_PRIVATE_API BinaryFile
 {
 public: // functions
   void openFile(const std::string& filePath);
+  void closeFile();
 
 public: // data
   int out_fd = -1;

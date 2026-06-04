@@ -503,8 +503,7 @@ void Creator::finishZimCreation()
 
   TINFO("write zimfile :");
   writeLastParts();
-  ::close(data->out_fd);
-  data->out_fd = -1;
+  data->closeFile();
 
   TINFO("rename tmpfile to final one.");
   DEFAULTFS::rename(data->tmpFileName, data->zimName);
@@ -621,7 +620,7 @@ CreatorData::CreatorData(const std::string& fname,
 {
   openFile(tmpFileName);
   if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
-    close(out_fd);
+    closeFile();
     throw std::runtime_error(std::strerror(errno));
   }
 
@@ -655,9 +654,7 @@ CreatorData::~CreatorData()
   for(auto& cluster: clustersList) {
     delete cluster;
   }
-  if ( out_fd != - 1 ) {
-    ::close(out_fd);
-  }
+  closeFile();
   if ( ! tmpFileName.empty() ) {
     DEFAULTFS::removeFile(tmpFileName);
   }
