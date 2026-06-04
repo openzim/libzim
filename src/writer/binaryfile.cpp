@@ -17,6 +17,15 @@ namespace zim
 namespace writer
 {
 
+BinaryFile::BinaryFile()
+{
+}
+
+BinaryFile::~BinaryFile()
+{
+  closeFile();
+}
+
 void BinaryFile::openFile(const std::string& filePath)
 {
   closeFile();

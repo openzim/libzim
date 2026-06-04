@@ -620,7 +620,6 @@ CreatorData::CreatorData(const std::string& fname,
 {
   openFile(tmpFileName);
   if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
-    closeFile();
     throw std::runtime_error(std::strerror(errno));
   }
 

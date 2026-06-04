@@ -33,6 +33,12 @@ namespace writer
 class LIBZIM_PRIVATE_API BinaryFile
 {
 public: // functions
+  BinaryFile(const BinaryFile& ) = delete;
+  void operator=(const BinaryFile& ) = delete;
+
+  BinaryFile();
+  ~BinaryFile();
+
   void openFile(const std::string& filePath);
   void closeFile();
 
