@@ -56,6 +56,13 @@ offset_type BinaryFile::tellFilePos() const
   return lseek(out_fd, 0, SEEK_CUR);
 }
 
+void BinaryFile::seek(offset_type pos)
+{
+  if ( offset_type(lseek(out_fd, pos, SEEK_SET)) != pos ) {
+    throw std::runtime_error(std::strerror(errno));
+  }
+}
+
 offset_type BinaryFile::seekEnd()
 {
   return lseek(out_fd, 0, SEEK_END);

@@ -541,7 +541,7 @@ void Creator::writeLastParts() const
   BinaryFile& outFile = *data;
   const int out_fd = outFile.out_fd;
 
-  lseek(out_fd, header.getMimeListPos(), SEEK_SET);
+  outFile.seek(header.getMimeListPos());
   TINFO(" write mimetype list");
   for(auto& mimeType: data->mimeTypesList)
   {
@@ -579,7 +579,7 @@ void Creator::writeLastParts() const
   header.setChecksumPos(outFile.tellFilePos());
 
   TINFO(" write header");
-  lseek(out_fd, 0, SEEK_SET);
+  outFile.seek(0);
   header.write(outFile);
 }
 
@@ -620,9 +620,7 @@ CreatorData::CreatorData(const std::string& fname,
     start_time(time(NULL))
 {
   openFile(tmpFileName);
-  if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
-    throw std::runtime_error(std::strerror(errno));
-  }
+  seek(CLUSTER_BASE_OFFSET);
 
   // We keep both a "compressed cluster" and an "uncompressed cluster"
   // because we don't know which one will fill up first.  We also need
