@@ -9,6 +9,8 @@
 #include <io.h>
 #else
 #include <unistd.h>
+#define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
+{throw std::runtime_error("Error writing");}
 #endif
 
 namespace zim
@@ -66,6 +68,11 @@ void BinaryFile::seek(offset_type pos)
 offset_type BinaryFile::seekEnd()
 {
   return lseek(out_fd, 0, SEEK_END);
+}
+
+void BinaryFile::write(const char* buf, size_t size)
+{
+  _write(out_fd, buf, size);
 }
 
 } // namespace writer

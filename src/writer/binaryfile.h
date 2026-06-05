@@ -47,6 +47,8 @@ public: // functions
   void seek(offset_type pos);
   offset_type seekEnd();
 
+  void write(const char* buf, size_t size);
+
 public: // data
   int out_fd = -1;
 };

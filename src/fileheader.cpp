@@ -27,12 +27,6 @@
 #include "reader.h"
 #include "bufferstreamer.h"
 #include "buffer.h"
-#ifdef _WIN32
-# include "io.h"
-#else
-# include "unistd.h"
-# define _write(fd, addr, size) ::write((fd), (addr), (size))
-#endif
 
 log_define("zim.file.header")
 
@@ -74,13 +68,7 @@ namespace zim
     toLittleEndian(getLayoutPage(), header + 68);
     toLittleEndian(getChecksumPos(), header + 72);
 
-    auto ret = _write(f.out_fd, header, Fileheader::size);
-    if (ret != Fileheader::size) {
-      std::cerr << "Error Writing" << std::endl;
-      std::cerr << "Ret is " << ret << std::endl;
-      perror("Error writing");
-      throw std::runtime_error("Error writing");
-    }
+    f.write(header, Fileheader::size);
   }
 
   void Fileheader::read(const Reader& reader)

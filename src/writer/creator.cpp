@@ -229,7 +229,7 @@ void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
   {
     char tmp_buff[sizeof(offset_type)];
     toLittleEndian(offset, tmp_buff);
-    _write(f.out_fd, tmp_buff, sizeof(offset_type));
+    f.write(tmp_buff, sizeof(offset_type));
   }
 }
 
@@ -539,16 +539,15 @@ void Creator::writeLastParts() const
   fillHeader(&header);
 
   BinaryFile& outFile = *data;
-  const int out_fd = outFile.out_fd;
 
   outFile.seek(header.getMimeListPos());
   TINFO(" write mimetype list");
   for(auto& mimeType: data->mimeTypesList)
   {
-    _write(out_fd, mimeType.c_str(), mimeType.size()+1);
+    outFile.write(mimeType.c_str(), mimeType.size()+1);
   }
 
-  _write(out_fd, "", 1);
+  outFile.write("", 1);
 
   ASSERT(outFile.tellFilePos(), <, offset_type(CLUSTER_BASE_OFFSET));
 
@@ -573,7 +572,7 @@ void Creator::writeLastParts() const
   {
     char tmp_buff[sizeof(offset_type)];
     toLittleEndian(cluster->getOffset(), tmp_buff);
-    _write(out_fd, tmp_buff, sizeof(offset_type));
+    outFile.write(tmp_buff, sizeof(offset_type));
   }
 
   header.setChecksumPos(outFile.tellFilePos());
