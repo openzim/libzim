@@ -48,9 +48,7 @@
 
 #ifdef _WIN32
 # include <io.h>
-# include <fcntl.h>
 #else
-# include <unistd.h>
 # define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
 {throw std::runtime_error("Error writing");}
 #endif
@@ -208,6 +206,63 @@ class TitleListingProvider : public ContentProvider {
     char buffer[sizeof(zim::entry_index_type)];
     DirentPtrs::const_iterator m_it;
 };
+
+typedef std::deque<offset_t> DirentOffsets;
+
+DirentOffsets writeDirents(BinaryFile& f, const CreatorData::UrlSortedDirents& dirents)
+{
+  DirentOffsets direntOffsets;
+  f.seekEnd();
+  for (Dirent* dirent: dirents)
+  {
+    direntOffsets.push_back(offset_t(f.tellFilePos()));
+    dirent->write(f);
+  }
+  return direntOffsets;
+}
+
+void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
+{
+  for (auto offset : direntOffsets)
+  {
+    char tmp_buff[sizeof(offset_type)];
+    toLittleEndian(offset, tmp_buff);
+    f.write(tmp_buff, sizeof(offset_type));
+  }
+}
+
+void writeChecksum(int fd)
+{
+  struct zim_MD5_CTX md5ctx;
+  unsigned char batch_read[1024+1];
+  lseek(fd, 0, SEEK_SET);
+  zim_MD5Init(&md5ctx);
+  while (true) {
+     auto r = read(fd, batch_read, 1024);
+     if (r == -1) {
+       throw std::runtime_error(std::strerror(errno));
+     }
+     if (r == 0)
+       break;
+     batch_read[r] = 0;
+     zim_MD5Update(&md5ctx, batch_read, r);
+  }
+  unsigned char digest[16];
+  zim_MD5Final(digest, &md5ctx);
+  _write(fd, reinterpret_cast<const char*>(digest), 16);
+}
+
+void addChecksum(const std::string& filePath)
+{
+#ifdef _WIN32
+  const int flag = _O_RDWR | _O_BINARY;
+#else
+  const int flag = O_RDWR;
+#endif
+  const int fd = ::open(filePath.c_str(), flag);
+  writeChecksum(fd);
+  ::close(fd);
+}
 
 } // unnamed namespace
 
@@ -446,12 +501,15 @@ void Creator::finishZimCreation()
 
   TINFO("write zimfile :");
   writeLastParts();
-  ::close(data->out_fd);
-  data->out_fd = -1;
+  data->outFile.closeFile();
 
   TINFO("rename tmpfile to final one.");
   DEFAULTFS::rename(data->tmpFileName, data->zimName);
   data->tmpFileName.clear();
+
+  INFO("Adding checksum...");
+  addChecksum(data->zimName);
+  INFO("ZIM file is ready!");
 
   TINFO("finish");
 }
@@ -478,18 +536,18 @@ void Creator::writeLastParts() const
   Fileheader header;
   fillHeader(&header);
 
-  int out_fd = data->out_fd;
+  BinaryFile& outFile = data->outFile;
 
-  lseek(out_fd, header.getMimeListPos(), SEEK_SET);
+  outFile.seek(header.getMimeListPos());
   TINFO(" write mimetype list");
   for(auto& mimeType: data->mimeTypesList)
   {
-    _write(out_fd, mimeType.c_str(), mimeType.size()+1);
+    outFile.write(mimeType.c_str(), mimeType.size()+1);
   }
 
-  _write(out_fd, "", 1);
+  outFile.write("", 1);
 
-  ASSERT(lseek(out_fd, 0, SEEK_CUR), <, CLUSTER_BASE_OFFSET);
+  ASSERT(outFile.tellFilePos(), <, offset_type(CLUSTER_BASE_OFFSET));
 
   { // writing dirents
 
@@ -497,60 +555,29 @@ void Creator::writeLastParts() const
   // TODO: the offset values with dirent size values and reconstructing
   // TODO: the offsets as a running sum starting from the offset of the
   // TODO: first dirent
-  std::deque<offset_t> direntOffsets;
-
   TINFO(" write directory entries");
-  lseek(out_fd, 0, SEEK_END);
-  for (Dirent* dirent: data->dirents)
-  {
-    direntOffsets.push_back(offset_t(lseek(out_fd, 0, SEEK_CUR)));
-    dirent->write(out_fd);
-  }
+  const DirentOffsets direntOffsets = writeDirents(outFile, data->dirents);
 
   TINFO(" write path ptr list");
-  header.setPathPtrPos(lseek(out_fd, 0, SEEK_CUR));
-  for (auto offset : direntOffsets)
-  {
-    char tmp_buff[sizeof(offset_type)];
-    toLittleEndian(offset, tmp_buff);
-    _write(out_fd, tmp_buff, sizeof(offset_type));
-  }
+  header.setPathPtrPos(outFile.tellFilePos());
+  writeDirentOffsets(outFile, direntOffsets);
 
   } // writing dirents
 
   TINFO(" write cluster offset list");
-  header.setClusterPtrPos(lseek(out_fd, 0, SEEK_CUR));
+  header.setClusterPtrPos(outFile.tellFilePos());
   for (auto cluster : data->clustersList)
   {
     char tmp_buff[sizeof(offset_type)];
     toLittleEndian(cluster->getOffset(), tmp_buff);
-    _write(out_fd, tmp_buff, sizeof(offset_type));
+    outFile.write(tmp_buff, sizeof(offset_type));
   }
 
-  header.setChecksumPos(lseek(out_fd, 0, SEEK_CUR));
+  header.setChecksumPos(outFile.tellFilePos());
 
   TINFO(" write header");
-  lseek(out_fd, 0, SEEK_SET);
-  header.write(out_fd);
-
-  TINFO(" write checksum");
-  struct zim_MD5_CTX md5ctx;
-  unsigned char batch_read[1024+1];
-  lseek(out_fd, 0, SEEK_SET);
-  zim_MD5Init(&md5ctx);
-  while (true) {
-     auto r = read(out_fd, batch_read, 1024);
-     if (r == -1) {
-       throw std::runtime_error(std::strerror(errno));
-     }
-     if (r == 0)
-       break;
-     batch_read[r] = 0;
-     zim_MD5Update(&md5ctx, batch_read, r);
-  }
-  unsigned char digest[16];
-  zim_MD5Final(digest, &md5ctx);
-  _write(out_fd, reinterpret_cast<const char*>(digest), 16);
+  outFile.seek(0);
+  header.write(outFile);
 }
 
 void Creator::checkError()
@@ -589,21 +616,8 @@ CreatorData::CreatorData(const std::string& fname,
     nbUnCompClusters(0),
     start_time(time(NULL))
 {
-#ifdef _WIN32
-  int flag = _O_RDWR | _O_CREAT | _O_TRUNC | _O_BINARY;
-  int mode =  _S_IREAD | _S_IWRITE;
-#else
-  int flag = O_RDWR | O_CREAT | O_TRUNC;
-  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-#endif
-  out_fd = open(tmpFileName.c_str(), flag, mode);
-  if (out_fd == -1){
-    throw std::runtime_error(std::strerror(errno));
-  }
-  if(lseek(out_fd, CLUSTER_BASE_OFFSET, SEEK_SET) != CLUSTER_BASE_OFFSET) {
-    close(out_fd);
-    throw std::runtime_error(std::strerror(errno));
-  }
+  outFile.openFile(tmpFileName);
+  outFile.seek(CLUSTER_BASE_OFFSET);
 
   // We keep both a "compressed cluster" and an "uncompressed cluster"
   // because we don't know which one will fill up first.  We also need
@@ -635,9 +649,7 @@ CreatorData::~CreatorData()
   for(auto& cluster: clustersList) {
     delete cluster;
   }
-  if ( out_fd != - 1 ) {
-    ::close(out_fd);
-  }
+  outFile.closeFile();
   if ( ! tmpFileName.empty() ) {
     DEFAULTFS::removeFile(tmpFileName);
   }

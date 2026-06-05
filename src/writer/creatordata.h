@@ -36,6 +36,7 @@
 
 #include "../fileheader.h"
 #include "direntPool.h"
+#include "binaryfile.h"
 
 namespace zim
 {
@@ -49,6 +50,7 @@ namespace zim
 
     class Cluster;
     class Task;
+
     class CreatorData
     {
       public:
@@ -119,11 +121,11 @@ namespace zim
         const Compression compression;
         std::string zimName;
         std::string tmpFileName;
+        BinaryFile  outFile;
         bool isEmpty = true;
         size_t clusterSize;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
-        int out_fd;
 
         bool withIndex;
         std::string indexingLanguage;

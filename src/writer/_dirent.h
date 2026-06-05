@@ -23,6 +23,7 @@
 
 #include "cluster.h"
 #include "tinyString.h"
+#include "binaryfile.h"
 
 #include "debug.h"
 
@@ -170,7 +171,7 @@ namespace zim
               && getRedirectTargetDirent()->isPlaceholder();
         }
 
-        void write(int out_fd) const;
+        void write(BinaryFile&) const;
 
         bool comparePath(const Dirent& other) const {
           return pathTitle.comparePath(other.pathTitle);

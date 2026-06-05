@@ -58,10 +58,9 @@ zim::Dirent read_from_buffer(const zim::Buffer& buf)
 size_t writtenDirentSize(const zim::writer::Dirent& dirent)
 {
   TempFile tmpFile("test_dirent");
-  const auto tmp_fd = tmpFile.fd();
-  dirent.write(tmp_fd);
-  auto size = lseek(tmp_fd, 0, SEEK_END);
-  return size;
+  zim::writer::BinaryFile bf(dup(tmpFile.fd()));
+  dirent.write(bf);
+  return bf.seekEnd();
 }
 
 TEST(DirentTest, size)

@@ -389,7 +389,9 @@ const std::string OUTPUT_FROM_TIDY_ZIM_CREATION =
     "Detect dangling redirects\n"
     "Detect loops and/or blind chains of redirects\n"
     "Index titles\n"
-    "Set entry indices\n";
+    "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n";
 
 TEST(ZimCreator, redirectAddedAfterItsTargetIsCreated)
 {
@@ -691,6 +693,8 @@ TEST(ZimCreator, handlingOfAnAscendingBlindChainOfRedirections)
     "Redirection C/redirectB -> C/redirectC belongs to a blind chain or loop. Removing...\n"
     "Index titles\n"
     "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -739,6 +743,8 @@ TEST(ZimCreator, handlingOfADescendingBlindChainOfRedirections)
     "Redirection C/redirectC -> C/redirectB belongs to a blind chain or loop. Removing...\n"
     "Index titles\n"
     "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -787,6 +793,8 @@ TEST(ZimCreator, handlingOfRedirectionLoops)
     "Redirection C/redirectZ -> C/redirectY belongs to a blind chain or loop. Removing...\n"
     "Index titles\n"
     "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -888,6 +896,8 @@ TEST(ZimCreator, pruningOfARedirectionForest)
     "Redirection C/Z -> C/Y belongs to a blind chain or loop. Removing...\n"
     "Index titles\n"
     "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n"
   );
 
   const zim::Archive archive(tempPath);
@@ -963,6 +973,8 @@ TEST(ZimCreator, addingATargetForAnAlreadyAddedRedirectFails)
     "Detect loops and/or blind chains of redirects\n"
     "Index titles\n"
     "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n"
   );
 
   const zim::Archive a(tempPath);
@@ -1033,6 +1045,8 @@ TEST(ZimCreator, titleIndexingOfDroppedEntries)
     "Redirection C/adios -> C/farewell belongs to a blind chain or loop. Removing...\n"
     "Index titles\n"
     "Set entry indices\n"
+    "Adding checksum...\n"
+    "ZIM file is ready!\n"
   );
 
   const zim::Archive a(tempPath);

@@ -31,6 +31,7 @@
 #include "../zim_types.h"
 #include "../debug.h"
 #include "config.h"
+#include "binaryfile.h"
 
 namespace zim {
 
@@ -75,7 +76,7 @@ class LIBZIM_PRIVATE_API Cluster {
       return offset_t(1) + offset_t((count().v + 1) * (isExtended?sizeof(uint64_t):sizeof(uint32_t)));
     }
 
-    void write(int out_fd) const;
+    void write(BinaryFile&) const;
 
   protected:
     Compression compression;

@@ -24,6 +24,7 @@
 #include <zim/zim.h>
 #include <zim/uuid.h>
 #include "config.h"
+#include "./writer/binaryfile.h"
 
 #include <limits>
 
@@ -60,7 +61,7 @@ namespace zim
 
     public:
       Fileheader();
-      void write(int out_fd) const;
+      void write(writer::BinaryFile&) const;
       void read(const Reader& reader);
 
       // Do some sanity check, raise a ZimFileFormateError is

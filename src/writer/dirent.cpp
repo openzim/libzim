@@ -26,13 +26,6 @@
 #include "log.h"
 #include <algorithm>
 #include <cstring>
-#ifdef _WIN32
-# include <io.h>
-#else
-# include <unistd.h>
-# define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
-{throw std::runtime_error("Error writing");}
-#endif
 
 log_define("zim.dirent")
 
@@ -108,7 +101,7 @@ entry_index_t Dirent::getRedirectIndex() const      {
   return targetDirent->getIdx();
 }
 
-void Dirent::write(int out_fd) const
+void Dirent::write(BinaryFile& f) const
 {
   const static char zero = 0;
   union
@@ -127,17 +120,17 @@ void Dirent::write(int out_fd) const
   if (isRedirect())
   {
     zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
-    _write(out_fd, header.d, 12);
+    f.write(header.d, 12);
   }
   else
   {
     zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);
     zim::toLittleEndian(zim::blob_index_type(getBlobNumber()), header.d + 12);
-    _write(out_fd, header.d, 16);
+    f.write(header.d, 16);
   }
 
-  _write(out_fd, pathTitle.data(), pathTitle.size());
-  _write(out_fd, &zero, 1);
+  f.write(pathTitle.data(), pathTitle.size());
+  f.write(&zero, 1);
 }
 
 } // namespace writer
