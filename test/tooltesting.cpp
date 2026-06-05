@@ -98,7 +98,7 @@ namespace {
     ASSERT_EQ(zim::removeAccents("bépoàǹ"), "bepoan");
     std::ostringstream ss;
     // Create 2 and half batches (3 boundaries) of 4kb.
-    // Each bondary has its property:
+    // Each boundary has its property:
     // - A 4 bytes chars being cut by the boundary
     // - A "é" stored in NDF form when the "e" is before the boundary and the "´" is after
     // - Nothing special

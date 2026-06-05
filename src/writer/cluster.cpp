@@ -159,7 +159,7 @@ void Cluster::write(BinaryFile& f) const
   clusterInfo += static_cast<uint8_t>(getCompression());
   f.write(&clusterInfo, 1);
 
-  // Open a comprestion stream if needed
+  // Open a compression stream if needed
   switch(getCompression())
   {
     case Compression::None:

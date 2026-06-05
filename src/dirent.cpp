@@ -123,7 +123,7 @@ namespace zim
     // the title, path and extra parameters.
     // This is a pity but we have no choice.
     // We cannot take a buffer of the size of the file, it would be really
-    // inefficient. Let's do try, catch and retry while chosing a smart value
+    // inefficient. Let's do try, catch and retry while choosing a smart value
     // for the buffer size. Most dirent will be "Article" entry (header's size
     // == 16) without extra parameters. Let's hope that path + title size will
     // be < 256 and if not try again with a bigger size.

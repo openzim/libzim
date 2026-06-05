@@ -303,9 +303,9 @@ TEST_P(FaultyDelayedItemErrorTest, faultyCompressedItem)
   // We force the closing of the cluster, so working thread will detect error
   CHECK_ASYNC_EXCEPT(creator.addMetadata("A metadata", "A compressed (default) metadata"));
   // give a chance to threads to detect the error.
-  // How many time to wait is a bit tricky.
-  // Too long and all tests will wait to much and developpers hate to wait,
-  // Not enough and error is not deteced and tests fail (and developpers hate failing tets)
+  // How much time to wait is a bit tricky.
+  // Too long and all tests will wait too much and developers hate to wait,
+  // Not enough and error is not detected and tests fail (and developers hate failing tests)
   // The exact value is specific to each computer, so we need to make this configurable.
   // We use a base and we multiply it by a factor taken from env variable.
   const long sleep_time = 1000000; // Default value is set to a factor 10 above what is needed to work on my (fast) computer
@@ -334,9 +334,9 @@ TEST_P(FaultyDelayedItemErrorTest, faultyUnCompressedItem)
   CHECK_ASYNC_EXCEPT(creator.addMetadata("A metadata", "A uncompressed metadata", "plain/content"));
   // give a chance to threads to detect the error
   // How many time to wait is a bit tricky.
-  // Too long and all tests will wait to much and developpers hate to wait
-  // Not enough and error is not deteced and tests fail (and developpers hate failing tets)
-  // The exacte value is specific to each computer, so we need to make this configurable.
+  // Too long and all tests will wait too much and developers hate to wait
+  // Not enough and error is not detected and tests fail (and developers hate failing tests)
+  // The exact value is specific to each computer, so we need to make this configurable.
   // We use a base and we multiply it by a factor taken from env variable.
   // Note here, that we have a base smaller than for compressed test as we don't compress the content
   // and the writer thread (the one using the contentProvider) detect the error sooner
