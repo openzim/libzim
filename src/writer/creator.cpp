@@ -48,9 +48,7 @@
 
 #ifdef _WIN32
 # include <io.h>
-# include <fcntl.h>
 #else
-# include <unistd.h>
 # define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
 {throw std::runtime_error("Error writing");}
 #endif

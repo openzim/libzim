@@ -24,6 +24,7 @@
 #include "zim/zim.h"
 
 #include <string>
+#include <stdio.h>
 
 namespace zim
 {
@@ -49,8 +50,12 @@ public: // functions
 
   void write(const char* buf, size_t size);
 
+  void flush();
+
 private: // data
-  int out_fd = -1;
+  // For our use cases C stdio proves to be significantly more efficient than
+  // std::ofstream or (untuned) custom buffering over raw syscalls to write()
+  FILE* file = nullptr;
 };
 
 } // namespace writer

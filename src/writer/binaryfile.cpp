@@ -9,8 +9,7 @@
 #include <io.h>
 #else
 #include <unistd.h>
-#define _write(fd, addr, size) if(::write((fd), (addr), (size)) != (ssize_t)(size)) \
-{throw std::runtime_error("Error writing");}
+#define _dup(fd) dup(fd)
 #endif
 
 namespace zim
@@ -20,7 +19,7 @@ namespace writer
 {
 
 BinaryFile::BinaryFile(int fd)
-  : out_fd(fd)
+  : file(fd >= 0 ? fdopen(_dup(fd), "wb") : nullptr)
 {
 }
 
@@ -33,47 +32,54 @@ void BinaryFile::openFile(const std::string& filePath)
 {
   closeFile();
 
-#ifdef _WIN32
-  int flag = _O_RDWR | _O_CREAT | _O_TRUNC | _O_BINARY;
-  int mode =  _S_IREAD | _S_IWRITE;
-#else
-  int flag = O_RDWR | O_CREAT | O_TRUNC;
-  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-#endif
-  out_fd = ::open(filePath.c_str(), flag, mode);
-  if (out_fd == -1){
+  file = fopen(filePath.c_str(), "wb");
+  if ( !file ){
     throw std::runtime_error(std::strerror(errno));
+  }
+}
+
+void BinaryFile::flush()
+{
+  if ( file ) {
+    fflush(file);
   }
 }
 
 void BinaryFile::closeFile()
 {
-  if ( out_fd != -1 ) {
-    ::close(out_fd);
-    out_fd = -1;
+  if ( file ) {
+    flush();
+    fclose(file);
+    file = nullptr;
   }
 }
 
 offset_type BinaryFile::tellFilePos() const
 {
-  return lseek(out_fd, 0, SEEK_CUR);
+  return ftell(file);
 }
 
 void BinaryFile::seek(offset_type pos)
 {
-  if ( offset_type(lseek(out_fd, pos, SEEK_SET)) != pos ) {
+  if ( fseek(file, pos, SEEK_SET) == -1 ) {
     throw std::runtime_error(std::strerror(errno));
   }
 }
 
 offset_type BinaryFile::seekEnd()
 {
-  return lseek(out_fd, 0, SEEK_END);
+  if ( fseek(file, 0, SEEK_END) == -1 ) {
+    throw std::runtime_error(std::strerror(errno));
+  }
+
+  return tellFilePos();
 }
 
 void BinaryFile::write(const char* buf, size_t size)
 {
-  _write(out_fd, buf, size);
+  if ( fwrite(buf, 1, size, file) != size ) {
+    throw std::runtime_error(std::strerror(errno));
+  }
 }
 
 } // namespace writer
