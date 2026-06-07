@@ -601,9 +601,23 @@ namespace zim
        */
       EntryRange<EntryOrder::pathOrder>  findByPath(std::string path) const;
 
-      /** Find a range of entry starting with title.
+      /** Find a range of entries starting with title pattern.
        *
-       * When using old namespace scheme, entry title is search in `A` namespace.
+       * Case & diacritic sensitive and unable to find a pattern in
+       * the middle of an entry title (works via a dichotomy on a
+       * sorted list).
+       *
+       * Relies, via a dichotomic search, on the native & mandatory
+       * ZIM sorted list of titles located at
+       * `listing/titleOrdered/v1`. This list includes titles of
+       * entries declared as “FRONT_ARTICLE” at ZIM creation
+       * time. But, when used on ZIM with old namespace scheme,
+       * then the list includes titles of all entries in the `A`
+       * namespace.
+       *
+       * If you want a powerful completion system, then use
+       * `zim::SuggestionSearcher`; but this will work only if the ZIM
+       * provides the necessary underlying suggestion database.
        *
        * @param title The title prefix to search for.
        * @return A range starting from the first entry starting with title

@@ -43,9 +43,21 @@ class SuggestionDataBase;
 /**
  * A SuggestionSearcher is a object suggesting over titles of an Archive
  *
- * A SuggestionSearcher is mainly used to create new `SuggestionSearch`
- * Internally, this is a wrapper around a SuggestionDataBase which may or may not
- * include a Xapian index.
+ * Allows to make "smart" searches on the ZIM entry titles. The search
+ * is case and diacritic insensitive. It allows to search patterns in
+ * the middle of a title too. It is usually used to provide a title
+ * based completion feature.
+ *
+ * A SuggestionSearcher is mainly used to create new
+ * `SuggestionSearch` Internally. This is a wrapper around a
+ * SuggestionDataBase which may or may not include a Xapian title
+ * index (it is optional in the ZIM specification). If the underlying
+ * index does not exist, then it will fallback on
+ * `zim::Archive::findByTitle` (with all its limitations).
+ *
+ * The underlying Xapian index includes the very same entry titles
+ * like for `zim::Archive::findByTitle`, ie. the one declared as
+ * “FRONT_ARTICLE” at ZIM creation time.
  *
  * You should consider that all search operations are NOT threadsafe.
  * It is up to you to protect your calls to avoid race competition.

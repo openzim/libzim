@@ -91,11 +91,12 @@ But you may want to find entries using a more loosely method.
       std::cout << "Entry " << entry.getPath() << " should starts with fo." << std::endl;
     }
 
-Searching for entries
----------------------
+Full-text searching in entries
+------------------------------
 
-Find entries by path/title is nice but you may want to search for entries base on their content.
-If the zim archive contains a full text index, you can search on it.
+Find entries by path/title is nice but you may want to full-text
+search for entries based on their content.  If the ZIM archive contains
+a full-text index, you can search on it.
 
 The class |Searcher| allow to search on one or several |Archive|.
 It allows to create a |Search| which represent a particular search for a |Query|.
@@ -122,14 +123,13 @@ From a |Search|, you can get a |SearchResultSet| on which you can iterate.
       std::cout << entry.getPath() << std::endl;
     }
 
-Searching for suggestions
--------------------------
+Searching for entry titles
+--------------------------
 
-While |findByTitle| may be a good start to search for suggestion, you may want to search for suggestion for term
-in the middle of the suggestion.
-
-The suggestion API allow you to search for suggestion, using suggestion database included in recent zim files.
-The suggestion API is pretty close from the search API:
+While |findByTitle| may be a good start to search for entry titles,
+you may want to search for terms in the middle of the title and
+without having to care about the case and diacritics. The
+|SuggestionSearcher| allows you to do that.
 
  .. code-block:: c++
 
@@ -148,8 +148,6 @@ The suggestion API is pretty close from the search API:
       std::cout << entry.getPath() << std::endl;
     }
 
-If the zim file doesn't contain a suggestion database, the suggestion will fallback to |findByTitle| for you.
-
  .. Declare some replacement helpers
 
  .. |Archive| replace:: :class:`zim::Archive`
@@ -159,6 +157,7 @@ If the zim file doesn't contain a suggestion database, the suggestion will fallb
  .. |EntryNotFound| replace:: :class:`zim::EntryNotFound`
  .. |Searcher| replace:: :class:`zim::Searcher`
  .. |Search| replace:: :class:`zim::Search`
+ .. |SuggestionSearcher| replace:: :class:`zim::SuggestionSearcher`
  .. |Query| replace:: :class:`zim::Query`
  .. |SearchResultSet| replace:: :class:`zim::SearchResultSet`
  .. |getEntryByPath| replace:: :func:`getEntryByPath<void zim::Archive::getEntryByPath(const std::string&) const>`
