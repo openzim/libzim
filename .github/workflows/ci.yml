@@ -82,7 +82,6 @@ jobs:
           meson test --verbose
         env:
           SKIP_BIG_MEMORY_TEST: 1
-          WAIT_TIME_FACTOR_TEST: 10
 
   Windows:
     strategy:
@@ -138,8 +137,6 @@ jobs:
           cd build
           ninja.exe download_test_data
           meson.exe test --verbose
-        env:
-          WAIT_TIME_FACTOR_TEST: 10
 
   Linux:
     strategy:
@@ -287,7 +284,6 @@ jobs:
         env:
           LD_LIBRARY_PATH: "${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib:${{env.HOME}}/BUILD_${{matrix.arch_name}}/INSTALL/lib${{matrix.lib_postfix}}"
           SKIP_BIG_MEMORY_TEST: 1
-          WAIT_TIME_FACTOR_TEST: 10
         run: |
           cd build
           ninja download_test_data
