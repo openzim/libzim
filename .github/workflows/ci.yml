@@ -147,7 +147,9 @@ jobs:
       matrix:
         target:
           - linux-x86_64-static
-          - linux-x86_64-dyn
+          - jammy-x86_64-dyn
+          - noble-x86_64-dyn
+          - resolute-x86_64-dyn
           - linux-aarch64-musl-dyn
           - linux-aarch64-dyn
           - android-arm
@@ -159,46 +161,72 @@ jobs:
         include:
           - target: linux-x86_64-static
             image_variant: jammy
+            dl_deps_archive_target: linux-x86_64-static
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: linux-x86_64
             run_test: true
             coverage: true
-          - target: linux-x86_64-dyn
+          - target: jammy-x86_64-dyn
             image_variant: jammy
+            dl_deps_archive_target: linux-x86_64-dyn
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: linux-x86_64
             run_test: true
-            coverage: true
+            coverage: false
+          - target: noble-x86_64-dyn
+            image_variant: noble
+            dl_deps_archive_target: linux-x86_64-dyn
+            lib_postfix: '/x86_64-linux-gnu'
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: false
+          - target: resolute-x86_64-dyn
+            image_variant: resolute
+            dl_deps_archive_target: linux-x86_64-dyn
+            lib_postfix: '/x86_64-linux-gnu'
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: false
           - target: linux-aarch64-musl-dyn
             image_variant: alpine
+            dl_deps_archive_target: linux-aarch64-musl-dyn
             lib_postfix: '/x86_64-linux-musl'
             arch_name: linux-aarch64-musl
             run_test: true
             coverage: false
           - target: linux-aarch64-dyn
             image_variant: jammy
+            dl_deps_archive_target: linux-aarch64-dyn
             lib_postfix: '/aarch64-rpi3-linux-gnu'
             arch_name: aarch64-rpi3-linux-gnu
             run_test: false
             coverage: false
           - target: android-arm
             image_variant: jammy
+            dl_deps_archive_target: android-arm
             lib_postfix: '/arm-linux-androideabi'
             arch_name: arm-linux-androideabi
             run_test: false
             coverage: false
           - target: android-arm64
             image_variant: jammy
+            dl_deps_archive_target: android-arm64
             lib_postfix: '/aarch64-linux-android'
             arch_name: aarch64-linux-android
             run_test: false
             coverage: false
           - target: wasm
             image_variant: jammy
+            dl_deps_archive_target: wasm
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: wasm64-emscripten
             run_test: false
             coverage: false
+        exclude:
+          - target: noble-x86_64-dyn # Already tested wihout Xapian on jammy-x86_64-dyn
+            with_xapian: false
+          - target: resolute-x86_64-dyn # Already tested wihout Xapian on jammy-x86_64-dyn
+            with_xapian: false
     env:
       HOME: /home/runner
     runs-on: ubuntu-24.04
@@ -212,10 +240,10 @@ jobs:
           egress-policy: audit
 
       - name: Install dependencies
-        if: ${{ !contains(matrix.target, 'musl') }}
+        if: ${{ !contains(matrix.dl_deps_archive_target, 'musl') }}
         uses: kiwix/kiwix-build/actions/dl_deps_archive@77592b12ffa8f2b51f9b28e6f34643eb2d99ac62 # pin@main
         with:
-          target_platform: ${{ matrix.target }}
+          target_platform: ${{ matrix.dl_deps_archive_target }}
 
       - name: Retrieve source code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # pin@v6
