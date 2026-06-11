@@ -139,6 +139,10 @@ Xapian::Query SuggestionDataBase::parseQuery(const std::string& query)
 
   const auto flags = Xapian::QueryParser::FLAG_DEFAULT | Xapian::QueryParser::FLAG_PARTIAL | Xapian::QueryParser::FLAG_CJK_NGRAM;
 
+#if XAPIAN_MAJOR_VERSION == 2
+  m_queryParser.set_min_wildcard_prefix(0);
+#endif
+
   // Reset stemming strategy for normal parsing
   m_queryParser.set_stemming_strategy(Xapian::QueryParser::STEM_SOME);
   xquery = m_queryParser.parse_query(query, flags);
