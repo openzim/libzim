@@ -26,10 +26,11 @@ if xapian_dep.found()
   )
 endif
 
-install_headers(
-    'writer/item.h',
-    'writer/creator.h',
-    'writer/contentProvider.h',
-    subdir:'zim/writer'
-)
-
+if not get_option('without_writer')
+  install_headers(
+      'writer/item.h',
+      'writer/creator.h',
+      'writer/contentProvider.h',
+      subdir:'zim/writer'
+  )
+endif

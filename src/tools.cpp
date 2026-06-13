@@ -23,7 +23,6 @@
 #include "zim/tools.h"
 #include "zim/illustration.h"
 #include "fs.h"
-#include "writer/_dirent.h"
 
 #include <sys/types.h>
 #include <string.h>

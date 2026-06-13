@@ -384,6 +384,7 @@ TEST(Suggestion, checkStopword) {
   );
 }
 
+#ifndef LIBZIM_WITHOUT_WRITER
 TEST(Suggestion, checkRedirectionCollapse) {
   TempZimArchive tza("testZim");
   zim::writer::Creator creator;
@@ -463,7 +464,7 @@ TEST(Suggestion, diffArticleSameTitle) {
                                             };
   ASSERT_EQ(resultSet, expectedResult);
 }
-
+#endif
 // Titles which begins with the search string should have higher relevance
 TEST(Suggestion, anchorQueryToBeginning) {
   std::vector<std::string> titles = {
@@ -647,6 +648,8 @@ TEST(Suggestion, reuseSearcher) {
   }
   ASSERT_EQ(count, 3);
 }
+
+#ifndef LIBZIM_WITHOUT_WRITER
 
 std::shared_ptr<TestItem> makeHtmlItem(std::string path, std::string title) {
   return std::make_shared<TestItem>(path, "text/html", title);
@@ -848,5 +851,6 @@ TEST(Suggestion, indexFullPath) {
   ASSERT_EQ(database.get_document(6).get_data(), "C/Volume2/Chapter3");
   ASSERT_EQ(database.get_document(7).get_data(), "C/Volume2/Chapter4");
 }
+#endif // LIBZIM_WITHOUT_WRITER
 
 } // unnamed namespace

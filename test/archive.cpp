@@ -160,7 +160,6 @@ TEST_F(ZimArchive, wrongChecksumInEmptyZimArchive)
   ASSERT_FALSE(archive.check());
 }
 
-
 TEST_F(ZimArchive, openCreatedArchive)
 {
   TempFile temp("zimfile");
