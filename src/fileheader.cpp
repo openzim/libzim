@@ -50,7 +50,7 @@ namespace zim
       layoutPage(std::numeric_limits<entry_index_type>::max()),
       checksumPos(std::numeric_limits<offset_type>::max())
   {}
-
+#ifndef LIBZIM_WITHOUT_WRITER
   void Fileheader::write(writer::BinaryFile& f) const
   {
     char header[Fileheader::size];
@@ -70,6 +70,7 @@ namespace zim
 
     f.write(header, Fileheader::size);
   }
+#endif
 
   void Fileheader::read(const Reader& reader)
   {

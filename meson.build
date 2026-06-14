@@ -44,6 +44,12 @@ if get_option('default_library') == 'shared'
   add_project_arguments('-DLIBZIM_EXPORT_PRIVATE_DLL', language: 'cpp')
 endif
 
+without_writer = get_option('without_writer')
+if without_writer
+  private_conf.set('LIBZIM_WITHOUT_WRITER', without_writer)
+  public_conf.set('LIBZIM_WITHOUT_WRITER', without_writer)
+endif
+
 zstd_dep = dependency('libzstd', static:static_linkage, default_options:['werror=false'])
 
 if host_machine.system() == 'freebsd'
@@ -94,7 +100,9 @@ subdir('include')
 subdir('scripts')
 subdir('static')
 subdir('src')
-if get_option('examples')
+# The example project demonstrates writer usage
+# so only include it if the writer is also present
+if get_option('examples') and not get_option('without_writer')
   subdir('examples')
 endif
 if get_option('tests')
