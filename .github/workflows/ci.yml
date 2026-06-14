@@ -139,12 +139,14 @@ jobs:
           meson.exe test --verbose
 
   Linux:
+    name: "Linux (${{matrix.target}}, with_xapian=${{matrix.with_xapian}}, without_writer=${{ matrix.without_writer != '' && format('{0}', matrix.without_writer) }} )"
     strategy:
       fail-fast: false
       matrix:
         target:
           - linux-x86_64-static
-          - jammy-x86_64-dyn
+          # The ci for jammy jobs is configured in the 'include' section below
+          # - jammy-x86_64-dyn  
           - noble-x86_64-dyn
           - resolute-x86_64-dyn
           - linux-aarch64-musl-dyn
@@ -169,7 +171,27 @@ jobs:
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: linux-x86_64
             run_test: true
+            coverage: true
+            with_xapian: true
+            without_writer: true
+          - target: jammy-x86_64-dyn
+            image_variant: jammy
+            dl_deps_archive_target: linux-x86_64-dyn
+            lib_postfix: '/x86_64-linux-gnu'
+            arch_name: linux-x86_64
+            run_test: true
             coverage: false
+            with_xapian: true
+            without_writer: false
+          - target: jammy-x86_64-dyn
+            image_variant: jammy
+            dl_deps_archive_target: linux-x86_64-dyn
+            lib_postfix: '/x86_64-linux-gnu'
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: false
+            with_xapian: false
+            without_writer: false
           - target: noble-x86_64-dyn
             image_variant: noble
             dl_deps_archive_target: linux-x86_64-dyn
@@ -272,6 +294,11 @@ jobs:
           if [[ "${{matrix.target}}" == wasm ]]
           then
             MESON_OPTION="$MESON_OPTION -Dexamples=false"
+          fi
+
+          if [[ "${{matrix.without_writer}}" != '' ]]
+          then
+            MESON_OPTION="$MESON_OPTION -Dwithout_writer=${{matrix.without_writer}}"
           fi
 
           meson setup . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
