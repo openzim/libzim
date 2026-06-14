@@ -29,4 +29,6 @@
 
 #mesondefine ENV32BIT
 
+#mesondefine LIBZIM_WITHOUT_WRITER
+
 #endif // ZIM_CONFIG_H

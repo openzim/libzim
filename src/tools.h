@@ -29,7 +29,6 @@
 #include "config.h"
 
 #include <zim/item.h>
-#include "zim/writer/item.h"
 
 #if defined(ENABLE_XAPIAN)
 namespace Xapian {

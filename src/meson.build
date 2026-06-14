@@ -5,6 +5,24 @@ configure_file(output : 'config.h',
 
 src_directory = include_directories('.')
 
+writer_sources = [
+    'writer/binaryfile.cpp',
+    'writer/contentProvider.cpp',
+    'writer/creator.cpp',
+    'writer/item.cpp',
+    'writer/cluster.cpp',
+    'writer/dirent.cpp',
+    'writer/workers.cpp',
+    'writer/clusterWorker.cpp',
+    'writer/counterHandler.cpp'
+]
+
+xapian_writer_sources = [
+    'writer/xapianIndexer.cpp',
+    'writer/xapianWorker.cpp',
+    'writer/xapianHandler.cpp'
+]
+
 common_sources = [
 #    'config.h',
     'archive.cpp',
@@ -27,15 +45,6 @@ common_sources = [
     'istreamreader.cpp',
     'namedthread.cpp',
     'log.cpp',
-    'writer/binaryfile.cpp',
-    'writer/contentProvider.cpp',
-    'writer/creator.cpp',
-    'writer/item.cpp',
-    'writer/cluster.cpp',
-    'writer/dirent.cpp',
-    'writer/workers.cpp',
-    'writer/clusterWorker.cpp',
-    'writer/counterHandler.cpp',
     'suggestion.cpp',
     'suggestion_iterator.cpp',
     'version.cpp'
@@ -51,20 +60,25 @@ xapian_sources = [
     'search.cpp',
     'search_iterator.cpp',
     'xapian/htmlparse.cc',
-    'xapian/myhtmlparse.cc',
-    'writer/xapianIndexer.cpp',
-    'writer/xapianWorker.cpp',
-    'writer/xapianHandler.cpp'
+    'xapian/myhtmlparse.cc'
 ]
 
 sources = common_sources
 deps = [thread_dep, lzma_dep, zstd_dep, win_deps]
+
+without_writer = get_option('without_writer')
+if not without_writer
+    sources += writer_sources
+endif
 
 if target_machine.system() == 'freebsd'
     deps += [execinfo_dep]
 endif
 
 if xapian_dep.found()
+    if not without_writer 
+        xapian_sources += xapian_writer_sources
+    endif
     sources += xapian_sources
     sources += lib_resources
     deps += [xapian_dep, icu_dep]

@@ -20,15 +20,19 @@ jobs:
           - target: macos-aarch64-dyn
             arch_name: arm64-apple-macos
             run_test: true
+            without_writer: false
           - target: macos-x86_64-dyn
             arch_name: x86_64-apple-darwin
             run_test: true
+            without_writer: false
           - target: ios-arm64-dyn
             arch_name: aarch64-apple-ios
             run_test: false
+            without_writer: true
           - target: ios-x86_64-dyn
             arch_name: x86-apple-ios-simulator
             run_test: false
+            without_writer: true
     runs-on: macos-26
 
     steps:
@@ -61,12 +65,13 @@ jobs:
       - name: Compile
         shell: bash
         run: |
-          MESON_OPTION="--default-library=shared"
+          MESON_OPTION="--default-library=shared -Dwithout_writer=${{matrix.without_writer}}"
           MESON_CROSSFILE="$HOME/BUILD_${{matrix.arch_name}}/meson_cross_file.txt"
           if [ -e $MESON_CROSSFILE ]; then
             MESON_OPTION="$MESON_OPTION --cross-file $MESON_CROSSFILE -Dstatic-linkage=true"
             cat $MESON_CROSSFILE
           fi
+
           export PKG_CONFIG_PATH=$HOME/BUILD_${{matrix.arch_name}}/INSTALL/lib/pkgconfig
           meson . build ${MESON_OPTION}
           cd build
@@ -139,12 +144,14 @@ jobs:
           meson.exe test --verbose
 
   Linux:
+    name: "Linux (${{matrix.target}}, with_xapian=${{matrix.with_xapian}}, without_writer=${{ matrix.without_writer != '' && format('{0}', matrix.without_writer) }} )"
     strategy:
       fail-fast: false
       matrix:
         target:
           - linux-x86_64-static
-          - jammy-x86_64-dyn
+          # The ci for jammy jobs is configured in the 'include' section below
+          # - jammy-x86_64-dyn  
           - noble-x86_64-dyn
           - resolute-x86_64-dyn
           - linux-aarch64-musl-dyn
@@ -169,7 +176,27 @@ jobs:
             lib_postfix: '/x86_64-linux-gnu'
             arch_name: linux-x86_64
             run_test: true
+            coverage: true
+            with_xapian: true
+            without_writer: true
+          - target: jammy-x86_64-dyn
+            image_variant: jammy
+            dl_deps_archive_target: linux-x86_64-dyn
+            lib_postfix: '/x86_64-linux-gnu'
+            arch_name: linux-x86_64
+            run_test: true
             coverage: false
+            with_xapian: true
+            without_writer: false
+          - target: jammy-x86_64-dyn
+            image_variant: jammy
+            dl_deps_archive_target: linux-x86_64-dyn
+            lib_postfix: '/x86_64-linux-gnu'
+            arch_name: linux-x86_64
+            run_test: true
+            coverage: false
+            with_xapian: false
+            without_writer: false
           - target: noble-x86_64-dyn
             image_variant: noble
             dl_deps_archive_target: linux-x86_64-dyn
@@ -205,6 +232,7 @@ jobs:
             arch_name: arm-linux-androideabi
             run_test: false
             coverage: false
+            without_writer: true
           - target: android-arm64
             image_variant: jammy
             dl_deps_archive_target: android-arm64
@@ -212,6 +240,7 @@ jobs:
             arch_name: aarch64-linux-android
             run_test: false
             coverage: false
+            without_writer: true
           - target: wasm
             image_variant: jammy
             dl_deps_archive_target: wasm
@@ -219,6 +248,7 @@ jobs:
             arch_name: wasm64-emscripten
             run_test: false
             coverage: false
+            without_writer: true
         exclude:
           - target: noble-x86_64-dyn # Already tested wihout Xapian on jammy-x86_64-dyn
             with_xapian: false
@@ -272,6 +302,11 @@ jobs:
           if [[ "${{matrix.target}}" == wasm ]]
           then
             MESON_OPTION="$MESON_OPTION -Dexamples=false"
+          fi
+
+          if [[ "${{matrix.without_writer}}" != '' ]]
+          then
+            MESON_OPTION="$MESON_OPTION -Dwithout_writer=${{matrix.without_writer}}"
           fi
 
           meson setup . build ${MESON_OPTION} -Dwith_xapian=${{matrix.with_xapian}}
