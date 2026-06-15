@@ -88,15 +88,15 @@ void millisleep(unsigned milliseconds) {
 
 TEST(Log, concurrencyOrchestration) {
   const auto oddFlow = [](){
-    millisleep(10);
+    millisleep(40);
     log_debug("Humpty Dumpty sat on a wall.");
-    millisleep(10);
+    millisleep(40);
     log_debug("All the king's horses and all the king's men");
   };
 
   const auto evenFlow = [](){
     log_debug("Humpty Dumpty had a great fall.");
-    millisleep(15);
+    millisleep(60);
     log_debug("Couldn't put Humpty together again.");
   };
 
