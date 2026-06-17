@@ -65,11 +65,11 @@ private_conf.set('ENABLE_XAPIAN', xapian_dep.found())
 public_conf.set('LIBZIM_WITH_XAPIAN', xapian_dep.found())
 
 if build_machine.system() == 'windows'
-    win_deps = declare_dependency(
+    win_dep = declare_dependency(
         link_args: ['-lRpcrt4', '-lWs2_32', '-lwinmm', '-lshlwapi']
     )
 else
-    win_deps = declare_dependency()
+    win_dep = declare_dependency()
 endif
 
 compiler = meson.get_compiler('cpp')
@@ -80,17 +80,17 @@ else
   thread_dep = dependency('', required:false)
 endif
 
-if xapian_dep.found()
-    icu_dep = dependency('icu-i18n', static:static_linkage)
-    if icu_dep.version().version_compare('>= 76')
-        icu_dep = [icu_dep, dependency('icu-uc', static:static_linkage)]
-    endif
-else
-    icu_dep = dependency('icu-i18n', required:false, static:static_linkage)
-    if icu_dep.version().version_compare('>= 76')
-        icu_dep = [icu_dep, dependency('icu-uc', required:false, static:static_linkage)]
-    endif
+icu_dep = dependency('icu-i18n', required:xapian_dep.found(), static:static_linkage)
+icu_deps = [icu_dep]
+if icu_dep.version().version_compare('>= 76')
+    icu_deps += [dependency('icu-uc', required:xapian_dep.found(), static:static_linkage)]
 endif
+
+# Dependencies as string
+all_deps = [thread_dep, xapian_dep, lzma_dep, zstd_dep, win_dep]
+
+# Dependencies as array
+all_deps += icu_deps
 
 gtest_dep = dependency('gtest', version: '>=1.10.0', main:true, fallback:['gtest', 'gtest_main_dep'], required:false)
 

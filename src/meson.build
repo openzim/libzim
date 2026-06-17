@@ -64,7 +64,6 @@ xapian_sources = [
 ]
 
 sources = common_sources
-deps = [thread_dep, lzma_dep, zstd_dep, win_deps]
 
 without_writer = get_option('without_writer')
 if not without_writer
@@ -72,7 +71,7 @@ if not without_writer
 endif
 
 if target_machine.system() == 'freebsd'
-    deps += [execinfo_dep]
+    all_deps += [execinfo_dep]
 endif
 
 if xapian_dep.found()
@@ -81,13 +80,12 @@ if xapian_dep.found()
     endif
     sources += xapian_sources
     sources += lib_resources
-    deps += [xapian_dep, icu_dep]
 endif
 
 libzim = library('zim',
                  sources,
                  include_directories : inc,
-                 dependencies : deps,
+                 dependencies : all_deps,
                  version: meson.project_version(),
                  install : true)
 libzim_dep = declare_dependency(link_with: libzim,
