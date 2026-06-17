@@ -1,3 +1,17 @@
+libzim 9.8.0
+============
+
+ * Speed-up ZIM creation with buffered IO (@veloman-yunkan #1091)
+ * Improve documentation around suggestions primitives (@kelson42 #1097)
+ * Multiple typo fixes in the documentation (@kelson42 #1095)
+ * Allow to compile only the reader part (@ford-jones #1093)
+ * Make code base c++23 compatible (@ford-jone #1092)
+ * Fix compilation against Xapian 2.0 (@veloman-yunkan #1081)
+ * Better handling of ICU library dependence (@kelson42 #1015, @OneByTheSide #1090)
+ * Update CI runners to the latest versions (@kelson42 #1089 #1094)
+ * Speed-up CI test running (@veloman-yunkan #1099)
+ * Improve stability of the Windows CI (@veloman-yunkan #1101)
+
 libzim 9.7.0
 ============
 
