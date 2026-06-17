@@ -82,8 +82,11 @@ void millisleep(unsigned milliseconds) {
   // of waking up the concurrent thread at the right time under high load.
   using namespace std::chrono_literals;
 
-  for ( unsigned i = 0; i < milliseconds; ++i )
+  const std::chrono::milliseconds d(milliseconds);
+  const auto endTime = std::chrono::high_resolution_clock::now() + d;
+  do {
     std::this_thread::sleep_for(1ms);
+  } while ( std::chrono::high_resolution_clock::now() < endTime );
 }
 
 TEST(Log, concurrencyOrchestration) {
