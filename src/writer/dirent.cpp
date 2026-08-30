@@ -101,38 +101,6 @@ entry_index_t Dirent::getRedirectIndex() const      {
   return targetDirent->getIdx();
 }
 
-void Dirent::write(BinaryFile& f) const
-{
-  const static char zero = 0;
-  union
-  {
-    char d[16];
-    long a;
-  } header;
-  zim::toLittleEndian(getMimeType(), header.d);
-  header.d[2] = 0; // parameter size
-  header.d[3] = NsAsChar(getNamespace());
-
-  log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size());
-
-  zim::toLittleEndian(getVersion(), header.d + 4);
-
-  if (isRedirect())
-  {
-    zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
-    f.write(header.d, 12);
-  }
-  else
-  {
-    zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);
-    zim::toLittleEndian(zim::blob_index_type(getBlobNumber()), header.d + 12);
-    f.write(header.d, 16);
-  }
-
-  f.write(pathTitle.data(), pathTitle.size());
-  f.write(&zero, 1);
-}
-
 } // namespace writer
 
 } // namespace zim

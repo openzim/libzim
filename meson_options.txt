@@ -1,5 +1,7 @@
 option('CLUSTER_CACHE_SIZE', type : 'integer', min: 0, max: 1000000000000, value : 16777216,
   description : 'set default cluster cache size in bytes (default:16MiB)')
+option('DIRENT_CHUNK_CACHE_SIZE', type : 'integer', min: 0, max: 1000000000000, value : 8388608,
+  description : 'set default dirent chunk cache size in bytes (default:8MiB); only relevant to ZIM files written with Creator::configCompactIndexStructures() enabled')
 option('DIRENT_CACHE_SIZE', type : 'string', value : '512',
   description : 'set dirent cache size to number (default:512)')
 option('DIRENT_LOOKUP_CACHE_SIZE', type : 'string', value : '1024',

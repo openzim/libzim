@@ -38,6 +38,8 @@
 #include <fstream>
 #include "../md5.h"
 #include "../constants.h"
+#include "../compact_index.h"
+#include "../dirent_chunk.h"
 #include "counterHandler.h"
 #include "writer/_dirent.h"
 
@@ -221,6 +223,97 @@ DirentOffsets writeDirents(BinaryFile& f, const CreatorData::UrlSortedDirents& d
   return direntOffsets;
 }
 
+// A minimal in-memory sink exposing the same write(const char*, size_t)
+// interface as BinaryFile, so Dirent::write() (templated, see _dirent.h)
+// can serialize a dirent into a memory buffer instead of straight to the
+// output file. Used to accumulate a dirent chunk before it is
+// zstd-compressed as a unit -- see writeChunkedDirents() below.
+struct MemorySink
+{
+  std::string buffer;
+  void write(const char* data, size_t size) { buffer.append(data, size); }
+};
+
+struct ChunkedDirentsResult
+{
+  // Packed (chunkIndex, intraChunkOffset) offset per dirent, in the same
+  // order as the `dirents` passed to writeChunkedDirents() -- see
+  // dirent_chunk.h. This is what gets recorded in the path pointer list.
+  DirentOffsets direntOffsets;
+
+  // Absolute file offset of each compressed chunk -- the "dirent chunk
+  // pointer list" written right after the last chunk (see
+  // writeDirentChunkPtrList()).
+  std::vector<offset_type> chunkOffsets;
+};
+
+// Compact (compressed) form of writeDirents(): dirents are buffered into
+// ~64KiB (uncompressed) chunks -- never splitting a dirent across two
+// chunks, mirroring how CreatorData::addItemData() closes a content
+// cluster on an item boundary once it reaches its target size -- and each
+// chunk is zstd-compressed and written to the file as an independent
+// frame. Only used when Creator::configCompactIndexStructures() was
+// enabled -- see Fileheader::usesCompactIndexStructures().
+ChunkedDirentsResult writeChunkedDirents(BinaryFile& f, const CreatorData::UrlSortedDirents& dirents)
+{
+  ChunkedDirentsResult result;
+  f.seekEnd();
+
+  uint64_t chunkIndex = 0;
+  size_t chunkDirentCount = 0;
+  MemorySink chunkBuf;
+
+  auto flushChunk = [&]() {
+    if (chunkDirentCount == 0) {
+      return;
+    }
+    const std::string compressed = compressDirentChunk(chunkBuf.buffer.data(), chunkBuf.buffer.size());
+    result.chunkOffsets.push_back(f.tellFilePos());
+    f.write(compressed.data(), compressed.size());
+    chunkBuf.buffer.clear();
+    chunkDirentCount = 0;
+    ++chunkIndex;
+  };
+
+  for (Dirent* dirent : dirents) {
+    if (chunkDirentCount && chunkBuf.buffer.size() + dirent->getDirentSize() >= DIRENT_CHUNK_TARGET_SIZE) {
+      flushChunk();
+    }
+    const size_t intraOffset = chunkBuf.buffer.size();
+    dirent->write(chunkBuf);
+    result.direntOffsets.push_back(offset_t(packDirentOffset(chunkIndex, intraOffset)));
+    ++chunkDirentCount;
+  }
+  flushChunk();
+
+  return result;
+}
+
+// Writes the "dirent chunk pointer list": one absolute file offset per
+// chunk (in order), followed by an 8-byte little-endian chunk count.
+// Unlike the cluster pointer list (whose position is recorded in a
+// dedicated Fileheader field), there is no room left in the fixed 80-byte
+// ZIM header for a new field, so this list's own position is derived
+// rather than stored: it is written immediately after the last dirent
+// chunk and immediately before the path pointer list, with the count
+// last (i.e. immediately preceding pathPtrPos), so a reader that knows
+// pathPtrPos can walk backwards -- read the fixed-size 8-byte count
+// ending at pathPtrPos, then the count*8 pointer bytes ending where the
+// count begins. See FileImpl::FileImpl() for the reader side.
+void writeDirentChunkPtrList(BinaryFile& f, const std::vector<offset_type>& chunkOffsets)
+{
+  for (auto offset : chunkOffsets)
+  {
+    char tmp_buff[sizeof(offset_type)];
+    toLittleEndian(offset, tmp_buff);
+    f.write(tmp_buff, sizeof(offset_type));
+  }
+
+  char countBuf[sizeof(uint64_t)];
+  toLittleEndian(uint64_t(chunkOffsets.size()), countBuf);
+  f.write(countBuf, sizeof(countBuf));
+}
+
 void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
 {
   for (auto offset : direntOffsets)
@@ -229,6 +322,22 @@ void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
     toLittleEndian(offset, tmp_buff);
     f.write(tmp_buff, sizeof(offset_type));
   }
+}
+
+// Compact form of writeDirentOffsets(): delta+varint encodes the (strictly
+// increasing) dirent offsets, then zstd-compresses the result, prefixed
+// with the compressed size so a reader knows how many bytes to consume.
+// Only used when Creator::configCompactIndexStructures() was enabled --
+// see Fileheader::usesCompactIndexStructures().
+void writeCompactDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
+{
+  const std::vector<offset_type> offsets(direntOffsets.begin(), direntOffsets.end());
+  const std::string compressed = compactEncodeOffsetList(offsets);
+
+  char sizeBuf[sizeof(uint64_t)];
+  toLittleEndian(uint64_t(compressed.size()), sizeBuf);
+  f.write(sizeBuf, sizeof(sizeBuf));
+  f.write(compressed.data(), compressed.size());
 }
 
 void writeChecksum(int fd)
@@ -290,6 +399,12 @@ Creator& Creator::configClusterSize(zim::size_type targetSize)
   return *this;
 }
 
+Creator& Creator::configCompactIndexStructures(bool compact)
+{
+  m_compactIndexStructures = compact;
+  return *this;
+}
+
 Creator& Creator::configIndexing(bool indexing, const std::string& language)
 {
   m_withIndex = indexing;
@@ -306,7 +421,7 @@ Creator& Creator::configNbWorkers(unsigned nbWorkers)
 void Creator::startZimCreation(const std::string& filepath)
 {
   data = std::unique_ptr<CreatorData>(
-    new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_clusterSize)
+    new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_clusterSize, m_compactIndexStructures)
   );
 
   for(unsigned i=0; i<m_nbWorkers; i++)
@@ -530,6 +645,10 @@ void Creator::fillHeader(Fileheader* header) const
 
   header->setTitleIdxPos(offset_type(-1));
   header->setClusterCount( data->clustersList.size() );
+
+  if (data->compactIndexStructures) {
+    header->setMinorVersion(Fileheader::zimMinorVersionCompactIndex);
+  }
 }
 
 void Creator::writeLastParts() const
@@ -552,16 +671,33 @@ void Creator::writeLastParts() const
 
   { // writing dirents
 
-  // TODO: Memory usage by direntOffsets can be reduced by replacing
-  // TODO: the offset values with dirent size values and reconstructing
-  // TODO: the offsets as a running sum starting from the offset of the
-  // TODO: first dirent
   TINFO(" write directory entries");
-  const DirentOffsets direntOffsets = writeDirents(outFile, data->dirents);
+  if (data->compactIndexStructures) {
+    // Dirents are grouped into compressed chunks (see dirent_chunk.h);
+    // each dirent's "offset" is a packed (chunkIndex, intraChunkOffset)
+    // value. The chunk pointer list is written right after the chunks,
+    // then the (still monotonically increasing, so still compatible with
+    // compactEncodeOffsetList()) packed offsets are written as the path
+    // pointer list, same as the non-chunked case.
+    const auto chunked = writeChunkedDirents(outFile, data->dirents);
 
-  TINFO(" write path ptr list");
-  header.setPathPtrPos(outFile.tellFilePos());
-  writeDirentOffsets(outFile, direntOffsets);
+    TINFO(" write dirent chunk ptr list");
+    writeDirentChunkPtrList(outFile, chunked.chunkOffsets);
+
+    TINFO(" write path ptr list");
+    header.setPathPtrPos(outFile.tellFilePos());
+    writeCompactDirentOffsets(outFile, chunked.direntOffsets);
+  } else {
+    // TODO: Memory usage by direntOffsets can be reduced by replacing
+    // TODO: the offset values with dirent size values and reconstructing
+    // TODO: the offsets as a running sum starting from the offset of the
+    // TODO: first dirent
+    const DirentOffsets direntOffsets = writeDirents(outFile, data->dirents);
+
+    TINFO(" write path ptr list");
+    header.setPathPtrPos(outFile.tellFilePos());
+    writeDirentOffsets(outFile, direntOffsets);
+  }
 
   } // writing dirents
 
@@ -599,13 +735,15 @@ CreatorData::CreatorData(const std::string& fname,
                                bool withIndex,
                                std::string language,
                                Compression c,
-                               size_t clusterSize)
+                               size_t clusterSize,
+                               bool compactIndexStructures)
   : mainPageDirent(nullptr),
     m_errored(false),
     compression(c),
     zimName(fname),
     tmpFileName(fname + ".tmp"),
     clusterSize(clusterSize),
+    compactIndexStructures(compactIndexStructures),
     withIndex(withIndex),
     indexingLanguage(language),
     verbose(verbose),
@@ -947,7 +1085,7 @@ void CreatorData::addTitleListingData()
 {
   Dirent* const d = *findDirent(NS::X, "listing/titleOrdered/v1");
   auto listingProvider = std::make_unique<TitleListingProvider>(this->dirents);
-  addItemData(*d, std::move(listingProvider), false);
+  addItemData(*d, std::move(listingProvider), compactIndexStructures);
 }
 
 #if defined(ENABLE_XAPIAN)

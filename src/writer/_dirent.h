@@ -24,6 +24,7 @@
 #include "cluster.h"
 #include "tinyString.h"
 #include "binaryfile.h"
+#include "../endian_tools.h"
 
 #include "debug.h"
 
@@ -171,7 +172,42 @@ namespace zim
               && getRedirectTargetDirent()->isPlaceholder();
         }
 
-        void write(BinaryFile&) const;
+        // Templated on the sink type (anything exposing
+        // write(const char*, size_t), e.g. BinaryFile or the in-memory
+        // MemorySink used to buffer dirents into chunks -- see
+        // Creator::configCompactIndexStructures() / dirent_chunk.h) so the
+        // exact same serialization is used whether writing straight to
+        // the output file or into a chunk buffer to be compressed.
+        template<class Sink>
+        void write(Sink& f) const
+        {
+          const static char zero = 0;
+          union
+          {
+            char d[16];
+            long a;
+          } header;
+          zim::toLittleEndian(getMimeType(), header.d);
+          header.d[2] = 0; // parameter size
+          header.d[3] = NsAsChar(getNamespace());
+
+          zim::toLittleEndian(getVersion(), header.d + 4);
+
+          if (isRedirect())
+          {
+            zim::toLittleEndian(getRedirectIndex().v, header.d + 8);
+            f.write(header.d, 12);
+          }
+          else
+          {
+            zim::toLittleEndian(zim::cluster_index_type(getClusterNumber()), header.d + 8);
+            zim::toLittleEndian(zim::blob_index_type(getBlobNumber()), header.d + 12);
+            f.write(header.d, 16);
+          }
+
+          f.write(pathTitle.data(), pathTitle.size());
+          f.write(&zero, 1);
+        }
 
         bool comparePath(const Dirent& other) const {
           return pathTitle.comparePath(other.pathTitle);

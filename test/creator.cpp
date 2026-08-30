@@ -39,6 +39,10 @@
 
 #include "gtest/gtest.h"
 
+#include <fstream>
+#include <numeric>
+#include <random>
+
 namespace
 {
 
@@ -175,6 +179,37 @@ TEST(ZimCreator, createEmptyZim)
   ASSERT_EQ(blob.size(), 0);
 }
 
+
+// Edge case: an "empty" ZIM (no user-added items) still gets two internal
+// dirents (Counter metadata + title listing) written by the creator --
+// exercising the smallest possible dirent-chunk case, a single chunk well
+// under DIRENT_CHUNK_TARGET_SIZE, with Creator::configCompactIndexStructures()
+// enabled.
+TEST(ZimCreator, compactIndexStructuresEmptyZim)
+{
+  unittests::TempFile temp("emptyzimfile_compact");
+  auto tempPath = temp.path();
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.configCompactIndexStructures(true);
+  creator.startZimCreation(tempPath);
+  creator.finishZimCreation();
+
+  Archive archive(tempPath);
+  EXPECT_EQ(archive.getEntryCount(), 0u); // no user ("C" namespace) entries
+  EXPECT_FALSE(archive.hasMainEntry());
+
+  auto fileCompound = std::make_shared<FileCompound>(tempPath);
+  auto reader = std::make_shared<MultiPartFileReader>(fileCompound);
+  Fileheader header;
+  header.read(*reader);
+  ASSERT_TRUE(header.usesCompactIndexStructures());
+  ASSERT_EQ(header.getArticleCount(), 2u); // counter + titleListIndexesv0
+
+  const auto chunkCount = reader->read_uint<uint64_t>(offset_t(header.getPathPtrPos() - sizeof(uint64_t)));
+  EXPECT_EQ(chunkCount, 1u);
+}
 
 class TestItem : public writer::Item
 {
@@ -354,6 +389,212 @@ TEST(ZimCreator, createZim)
 
   blob = cluster->getBlob(illustration96BlobIndex);
   ASSERT_EQ(std::string(blob), "PNGBinaryContent96");
+}
+
+namespace {
+
+void buildTestZim(const std::string& path, bool compact)
+{
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.configCompactIndexStructures(compact);
+  creator.startZimCreation(path);
+  for (int i = 0; i < 200; ++i) {
+    const auto suffix = std::to_string(i);
+    // Title order deliberately differs from path order (reverse-ish),
+    // to exercise the title listing (IndirectDirentAccessor) meaningfully.
+    const auto title = "Title " + std::to_string(999 - i);
+    const auto content = "Content for article " + suffix + std::string(37, 'x');
+    creator.addItem(makeTestItem("article" + suffix, title, content));
+  }
+  creator.setMainPath("article0");
+  creator.finishZimCreation();
+}
+
+size_t fileSize(const std::string& path)
+{
+  std::ifstream f(path, std::ios::binary | std::ios::ate);
+  return static_cast<size_t>(f.tellg());
+}
+
+} // unnamed namespace
+
+// Round-trip test for Creator::configCompactIndexStructures(): a file
+// written with it enabled must be indistinguishable, content-wise, from
+// one written without it -- same paths, same titles (including title
+// order), same item data -- while actually being smaller and flagged with
+// the new minor version.
+TEST(ZimCreator, compactIndexStructuresRoundTrip)
+{
+  unittests::TempFile tempPlain("zimfile_plain");
+  unittests::TempFile tempCompact("zimfile_compact");
+
+  buildTestZim(tempPlain.path(), false);
+  buildTestZim(tempCompact.path(), true);
+
+  // The header must flag the new minor version only for the compact file.
+  {
+    auto fc = std::make_shared<FileCompound>(tempPlain.path());
+    auto r = std::make_shared<MultiPartFileReader>(fc);
+    Fileheader header;
+    header.read(*r);
+    ASSERT_FALSE(header.usesCompactIndexStructures());
+  }
+  {
+    auto fc = std::make_shared<FileCompound>(tempCompact.path());
+    auto r = std::make_shared<MultiPartFileReader>(fc);
+    Fileheader header;
+    header.read(*r);
+    ASSERT_TRUE(header.usesCompactIndexStructures());
+  }
+
+  Archive plainArchive(tempPlain.path());
+  Archive compactArchive(tempCompact.path());
+
+  ASSERT_EQ(plainArchive.getEntryCount(), compactArchive.getEntryCount());
+  ASSERT_TRUE(plainArchive.hasTitleIndex());
+  ASSERT_TRUE(compactArchive.hasTitleIndex());
+
+  // Path order: same path, title, and item data for every entry.
+  for (entry_index_type i = 0; i < plainArchive.getEntryCount(); ++i) {
+    const auto pe = plainArchive.getEntryByPath(i);
+    const auto ce = compactArchive.getEntryByPath(i);
+    ASSERT_EQ(pe.getPath(), ce.getPath());
+    ASSERT_EQ(pe.getTitle(), ce.getTitle());
+    if (!pe.isRedirect()) {
+      ASSERT_EQ(pe.getItem().getData(), ce.getItem().getData());
+    }
+  }
+
+  // Title order: exercises the (possibly compressed) title listing.
+  {
+    auto plainRange = plainArchive.iterByTitle();
+    auto compactRange = compactArchive.iterByTitle();
+    auto pIt = plainRange.begin();
+    auto cIt = compactRange.begin();
+    for ( ; pIt != plainRange.end() && cIt != compactRange.end(); ++pIt, ++cIt) {
+      auto& pEntry = *pIt;
+      auto& cEntry = *cIt;
+      ASSERT_EQ(pEntry.getPath(), cEntry.getPath());
+      ASSERT_EQ(pEntry.getTitle(), cEntry.getTitle());
+    }
+  }
+
+  const auto plainSize = fileSize(tempPlain.path());
+  const auto compactSize = fileSize(tempCompact.path());
+  std::cerr << "compactIndexStructuresRoundTrip: plain=" << plainSize
+            << " compact=" << compactSize
+            << " (-" << (100.0 * (double(plainSize) - double(compactSize)) / double(plainSize)) << "%)"
+            << std::endl;
+  EXPECT_LT(compactSize, plainSize);
+}
+
+// Larger round-trip test for Creator::configCompactIndexStructures():
+// forces the dirent table well past DIRENT_CHUNK_TARGET_SIZE (64KiB) so
+// several dirent chunks are created (see dirent_chunk.h), then exercises
+// both sequential and shuffled (out-of-order) lookups by index -- proving
+// the packed (chunkIndex, intraChunkOffset) offset math and the dirent
+// chunk decompression cache both work correctly across chunk boundaries,
+// not just for the in-order access pattern normal iteration happens to
+// produce.
+TEST(ZimCreator, compactIndexStructuresMultiChunkRoundTrip)
+{
+  unittests::TempFile tempPlain("zimfile_plain_multichunk");
+  unittests::TempFile tempCompact("zimfile_compact_multichunk");
+
+  // ~16-byte dirent header + ~10-byte path + ~90-byte title + 2 null
+  // terminators, times 3000 entries, is comfortably more than 5 chunks'
+  // worth (5*64KiB) of raw dirent data.
+  const int kNumItems = 3000;
+  auto build = [&](const std::string& path, bool compact) {
+    writer::Creator creator;
+    creator.setUuid(makeSafeUuid());
+    creator.configCompactIndexStructures(compact);
+    creator.startZimCreation(path);
+    for (int i = 0; i < kNumItems; ++i) {
+      const auto suffix = std::to_string(i);
+      const std::string padding(80, char('A' + (i % 26)));
+      // Title order deliberately differs from path order, to exercise
+      // the title listing meaningfully.
+      const auto title = "Title " + std::to_string(kNumItems - 1 - i) + " " + padding;
+      const auto content = "Content for article " + suffix;
+      creator.addItem(makeTestItem("article" + suffix, title, content));
+    }
+    creator.setMainPath("article0");
+    creator.finishZimCreation();
+  };
+
+  build(tempPlain.path(), false);
+  build(tempCompact.path(), true);
+
+  // Confirm this really did create multiple dirent chunks (not just infer
+  // it from the file being smaller): read back the dirent chunk count
+  // directly using the same on-disk convention FileImpl::setUpChunkedDirents()
+  // relies on (see fileimpl.cpp) -- an 8-byte little-endian value
+  // immediately preceding the path pointer list.
+  {
+    auto fc = std::make_shared<FileCompound>(tempCompact.path());
+    auto r = std::make_shared<MultiPartFileReader>(fc);
+    Fileheader header;
+    header.read(*r);
+    ASSERT_TRUE(header.usesCompactIndexStructures());
+    const auto chunkCount = r->read_uint<uint64_t>(offset_t(header.getPathPtrPos() - sizeof(uint64_t)));
+    EXPECT_GE(chunkCount, 4u)
+        << "expected the multi-chunk test corpus to produce at least 4 dirent chunks";
+  }
+
+  Archive plainArchive(tempPlain.path());
+  Archive compactArchive(tempCompact.path());
+  ASSERT_EQ(plainArchive.getEntryCount(), compactArchive.getEntryCount());
+
+  const auto entryCount = compactArchive.getEntryCount();
+
+  auto checkEntry = [&](entry_index_type i) {
+    const auto pe = plainArchive.getEntryByPath(i);
+    const auto ce = compactArchive.getEntryByPath(i);
+    ASSERT_EQ(pe.getPath(), ce.getPath());
+    ASSERT_EQ(pe.getTitle(), ce.getTitle());
+    if (!pe.isRedirect()) {
+      ASSERT_EQ(pe.getItem().getData(), ce.getItem().getData());
+    }
+  };
+
+  // Sequential access first.
+  for (entry_index_type i = 0; i < entryCount; ++i) {
+    checkEntry(i);
+  }
+
+  // Shuffled (out-of-order, cross-chunk-boundary) access.
+  std::vector<entry_index_type> order(entryCount);
+  std::iota(order.begin(), order.end(), 0);
+  std::mt19937 rng(1234); // fixed seed for reproducibility
+  std::shuffle(order.begin(), order.end(), rng);
+  for (auto i : order) {
+    checkEntry(i);
+  }
+
+  // Title order (exercises the compressed title listing layered on top of
+  // chunked dirents).
+  {
+    auto plainRange = plainArchive.iterByTitle();
+    auto compactRange = compactArchive.iterByTitle();
+    auto pIt = plainRange.begin();
+    auto cIt = compactRange.begin();
+    for ( ; pIt != plainRange.end() && cIt != compactRange.end(); ++pIt, ++cIt) {
+      ASSERT_EQ((*pIt).getPath(), (*cIt).getPath());
+      ASSERT_EQ((*pIt).getTitle(), (*cIt).getTitle());
+    }
+    ASSERT_EQ(pIt, plainRange.end());
+    ASSERT_EQ(cIt, compactRange.end());
+  }
+
+  const auto plainSize = fileSize(tempPlain.path());
+  const auto compactSize = fileSize(tempCompact.path());
+  std::cerr << "compactIndexStructuresMultiChunkRoundTrip: plain=" << plainSize
+            << " compact=" << compactSize
+            << " (-" << (100.0 * (double(plainSize) - double(compactSize)) / double(plainSize)) << "%)"
+            << std::endl;
+  EXPECT_LT(compactSize, plainSize);
 }
 
 

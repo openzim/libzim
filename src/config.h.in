@@ -15,6 +15,8 @@
 
 #mesondefine CLUSTER_CACHE_SIZE
 
+#mesondefine DIRENT_CHUNK_CACHE_SIZE
+
 #mesondefine LZMA_MEMORY_SIZE
 
 #mesondefine ENABLE_XAPIAN

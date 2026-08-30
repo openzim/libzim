@@ -36,6 +36,7 @@ namespace zim
   const uint16_t Fileheader::zimOldMajorVersion = 5;
   const uint16_t Fileheader::zimMajorVersion = 6;
   const uint16_t Fileheader::zimMinorVersion = 3;
+  const uint16_t Fileheader::zimMinorVersionCompactIndex = 4;
   const offset_type Fileheader::size = 80; // This is also mimeListPos (so an offset)
 
   Fileheader::Fileheader()

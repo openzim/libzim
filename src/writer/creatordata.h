@@ -67,7 +67,8 @@ namespace zim
         CreatorData(const std::string& fname, bool verbose,
                        bool withIndex, std::string language,
                        Compression compression,
-                       size_t clusterSize);
+                       size_t clusterSize,
+                       bool compactIndexStructures = false);
         virtual ~CreatorData();
 
         Dirent* addOrUpdate(Dirent&& dirent);
@@ -124,6 +125,7 @@ namespace zim
         BinaryFile  outFile;
         bool isEmpty = true;
         size_t clusterSize;
+        bool compactIndexStructures;
         Cluster *compCluster = nullptr;
         Cluster *uncompCluster = nullptr;
 

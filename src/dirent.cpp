@@ -20,6 +20,7 @@
 
 #include "_dirent.h"
 #include "direntreader.h"
+#include "dirent_chunk.h"
 #include <zim/zim.h>
 #include <zim/error.h>
 #include "buffer.h"
@@ -112,8 +113,91 @@ namespace zim
     return true;
   }
 
+  void DirentReader::enableChunkedDirents(std::unique_ptr<const Reader> chunkPtrReader,
+                                           uint64_t chunkCount,
+                                           offset_t chunkTableStart)
+  {
+    mp_chunkPtrReader = std::move(chunkPtrReader);
+    m_chunkCount = chunkCount;
+    m_chunkTableStart = chunkTableStart;
+  }
+
+  offset_t DirentReader::getChunkCompressedStart(uint64_t chunkIndex) const
+  {
+    return offset_t(mp_chunkPtrReader->read_uint<offset_type>(offset_t(sizeof(offset_type)*chunkIndex)));
+  }
+
+  offset_t DirentReader::getChunkCompressedEnd(uint64_t chunkIndex) const
+  {
+    if (chunkIndex + 1 < m_chunkCount) {
+      return getChunkCompressedStart(chunkIndex+1);
+    }
+    // The last chunk's compressed data ends exactly where the dirent
+    // chunk pointer list begins -- chunks are written back-to-back
+    // immediately before it (see writeDirentChunkPtrList()).
+    return m_chunkTableStart;
+  }
+
+  std::shared_ptr<const Buffer> DirentReader::getChunk(uint64_t chunkIndex)
+  {
+    {
+      std::lock_guard<std::mutex> l(m_chunkCacheMutex);
+      auto v = m_chunkCache.get(chunkIndex);
+      if (v.hit()) {
+        return v.value();
+      }
+    }
+
+    const offset_t compressedStart = getChunkCompressedStart(chunkIndex);
+    const offset_t compressedEnd = getChunkCompressedEnd(chunkIndex);
+    if (compressedEnd.v <= compressedStart.v) {
+      throw ZimFileFormatError("Invalid dirent chunk pointer");
+    }
+    const zsize_t compressedSize(compressedEnd.v - compressedStart.v);
+
+    const auto compressedBuf = mp_zimReader->get_buffer(compressedStart, compressedSize);
+    auto decompressed = std::make_shared<const Buffer>(
+      decompressDirentChunk(compressedBuf.data(), compressedSize.v));
+
+    std::lock_guard<std::mutex> l(m_chunkCacheMutex);
+    m_chunkCache.put(chunkIndex, decompressed);
+    return decompressed;
+  }
+
+  std::shared_ptr<const Dirent> DirentReader::readDirentFromChunk(offset_t packedOffset)
+  {
+    const uint64_t chunkIdx = direntChunkIndex(packedOffset.v);
+    if (chunkIdx >= m_chunkCount) {
+      throw ZimFileFormatError("Invalid dirent chunk index");
+    }
+    const size_t intraOffset = direntChunkIntraOffset(packedOffset.v);
+
+    const auto chunkData = getChunk(chunkIdx);
+    if (intraOffset >= chunkData->size().v) {
+      throw ZimFileFormatError("Invalid intra-chunk dirent offset");
+    }
+
+    // The whole decompressed chunk is already fully in memory, so (unlike
+    // the unchunked path below) there's no point in guessing a small
+    // buffer size and growing it -- just hand initDirent() everything
+    // from intraOffset to the end of the chunk in one go. By construction
+    // a dirent never straddles a chunk boundary (see writeChunkedDirents()
+    // in writer/creator.cpp), so this always contains the whole dirent.
+    const size_t available = chunkData->size().v - intraOffset;
+    const Buffer direntBuf = chunkData->sub_buffer(offset_t(intraOffset), zsize_t(available));
+    auto dirent = std::make_shared<Dirent>();
+    if (!initDirent(*dirent, direntBuf)) {
+      throw ZimFileFormatError("Invalid dirent data in dirent chunk");
+    }
+    return dirent;
+  }
+
   std::shared_ptr<const Dirent> DirentReader::readDirent(offset_t offset)
   {
+    if (mp_chunkPtrReader) {
+      return readDirentFromChunk(offset);
+    }
+
     const auto totalSize = mp_zimReader->size();
     if (offset.v >= totalSize.v) {
       throw ZimFileFormatError("Invalid dirent pointer");
