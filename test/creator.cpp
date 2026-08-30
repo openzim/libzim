@@ -39,6 +39,8 @@
 
 #include "gtest/gtest.h"
 
+#include <fstream>
+
 namespace
 {
 
@@ -354,6 +356,104 @@ TEST(ZimCreator, createZim)
 
   blob = cluster->getBlob(illustration96BlobIndex);
   ASSERT_EQ(std::string(blob), "PNGBinaryContent96");
+}
+
+namespace {
+
+void buildTestZim(const std::string& path, bool compact)
+{
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.configCompactIndexStructures(compact);
+  creator.startZimCreation(path);
+  for (int i = 0; i < 200; ++i) {
+    const auto suffix = std::to_string(i);
+    // Title order deliberately differs from path order (reverse-ish),
+    // to exercise the title listing (IndirectDirentAccessor) meaningfully.
+    const auto title = "Title " + std::to_string(999 - i);
+    const auto content = "Content for article " + suffix + std::string(37, 'x');
+    creator.addItem(makeTestItem("article" + suffix, title, content));
+  }
+  creator.setMainPath("article0");
+  creator.finishZimCreation();
+}
+
+size_t fileSize(const std::string& path)
+{
+  std::ifstream f(path, std::ios::binary | std::ios::ate);
+  return static_cast<size_t>(f.tellg());
+}
+
+} // unnamed namespace
+
+// Round-trip test for Creator::configCompactIndexStructures(): a file
+// written with it enabled must be indistinguishable, content-wise, from
+// one written without it -- same paths, same titles (including title
+// order), same item data -- while actually being smaller and flagged with
+// the new minor version.
+TEST(ZimCreator, compactIndexStructuresRoundTrip)
+{
+  unittests::TempFile tempPlain("zimfile_plain");
+  unittests::TempFile tempCompact("zimfile_compact");
+
+  buildTestZim(tempPlain.path(), false);
+  buildTestZim(tempCompact.path(), true);
+
+  // The header must flag the new minor version only for the compact file.
+  {
+    auto fc = std::make_shared<FileCompound>(tempPlain.path());
+    auto r = std::make_shared<MultiPartFileReader>(fc);
+    Fileheader header;
+    header.read(*r);
+    ASSERT_FALSE(header.usesCompactIndexStructures());
+  }
+  {
+    auto fc = std::make_shared<FileCompound>(tempCompact.path());
+    auto r = std::make_shared<MultiPartFileReader>(fc);
+    Fileheader header;
+    header.read(*r);
+    ASSERT_TRUE(header.usesCompactIndexStructures());
+  }
+
+  Archive plainArchive(tempPlain.path());
+  Archive compactArchive(tempCompact.path());
+
+  ASSERT_EQ(plainArchive.getEntryCount(), compactArchive.getEntryCount());
+  ASSERT_TRUE(plainArchive.hasTitleIndex());
+  ASSERT_TRUE(compactArchive.hasTitleIndex());
+
+  // Path order: same path, title, and item data for every entry.
+  for (entry_index_type i = 0; i < plainArchive.getEntryCount(); ++i) {
+    const auto pe = plainArchive.getEntryByPath(i);
+    const auto ce = compactArchive.getEntryByPath(i);
+    ASSERT_EQ(pe.getPath(), ce.getPath());
+    ASSERT_EQ(pe.getTitle(), ce.getTitle());
+    if (!pe.isRedirect()) {
+      ASSERT_EQ(pe.getItem().getData(), ce.getItem().getData());
+    }
+  }
+
+  // Title order: exercises the (possibly compressed) title listing.
+  {
+    auto plainRange = plainArchive.iterByTitle();
+    auto compactRange = compactArchive.iterByTitle();
+    auto pIt = plainRange.begin();
+    auto cIt = compactRange.begin();
+    for ( ; pIt != plainRange.end() && cIt != compactRange.end(); ++pIt, ++cIt) {
+      auto& pEntry = *pIt;
+      auto& cEntry = *cIt;
+      ASSERT_EQ(pEntry.getPath(), cEntry.getPath());
+      ASSERT_EQ(pEntry.getTitle(), cEntry.getTitle());
+    }
+  }
+
+  const auto plainSize = fileSize(tempPlain.path());
+  const auto compactSize = fileSize(tempCompact.path());
+  std::cerr << "compactIndexStructuresRoundTrip: plain=" << plainSize
+            << " compact=" << compactSize
+            << " (-" << (100.0 * (double(plainSize) - double(compactSize)) / double(plainSize)) << "%)"
+            << std::endl;
+  EXPECT_LT(compactSize, plainSize);
 }
 
 

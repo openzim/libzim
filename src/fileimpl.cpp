@@ -36,6 +36,8 @@
 #include "_dirent.h"
 #include "file_compound.h"
 #include "buffer_reader.h"
+#include "compact_index.h"
+#include "endian_tools.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstring>
@@ -74,6 +76,30 @@ sectionSubReader(const Reader& zimReader, const std::string& sectionName,
 #else
   return zimReader.sub_reader(offset, size);
 #endif
+}
+
+// Reads back a path pointer list written by writeCompactDirentOffsets():
+// an 8-byte little-endian compressed-size prefix followed by that many
+// zstd-compressed, delta+varint-encoded bytes. Only used when
+// Fileheader::usesCompactIndexStructures() is set.
+std::unique_ptr<const Reader>
+compactPathPtrReader(const Reader& zimReader, offset_t offset, entry_index_type articleCount)
+{
+  const zsize_t prefixSize(sizeof(uint64_t));
+  if (!zimReader.can_read(offset, prefixSize)) {
+    throw ZimFileFormatError("Compact dirent pointer table outside (or not fully inside) ZIM file.");
+  }
+  const auto prefixBuf = zimReader.get_buffer(offset, prefixSize);
+  const auto compressedSize = zsize_t(fromLittleEndian<uint64_t>(prefixBuf.data()));
+
+  const offset_t compressedOffset(offset.v + prefixSize.v);
+  if (!zimReader.can_read(compressedOffset, compressedSize)) {
+    throw ZimFileFormatError("Compact dirent pointer table outside (or not fully inside) ZIM file.");
+  }
+  const auto compressedBuf = zimReader.get_buffer(compressedOffset, compressedSize);
+
+  const auto decoded = compactDecodeOffsetList(compressedBuf.data(), compressedSize.v, articleCount);
+  return std::unique_ptr<Reader>(new BufferReader(decoded));
 }
 
 std::shared_ptr<Reader>
@@ -231,10 +257,12 @@ private: // data
       throw ZimFileFormatError("Zim file(s) is of bad size or corrupted.");
     }
 
-    auto pathPtrReader = sectionSubReader(*zimReader,
-                                          "Dirent pointer table",
-                                          offset_t(header.getPathPtrPos()),
-                                          zsize_t(sizeof(offset_type)*header.getArticleCount()));
+    auto pathPtrReader = header.usesCompactIndexStructures()
+      ? compactPathPtrReader(*zimReader, offset_t(header.getPathPtrPos()), header.getArticleCount())
+      : sectionSubReader(*zimReader,
+                          "Dirent pointer table",
+                          offset_t(header.getPathPtrPos()),
+                          zsize_t(sizeof(offset_type)*header.getArticleCount()));
 
     mp_pathDirentAccessor.reset(
         new DirectDirentAccessor(direntReader, std::move(pathPtrReader), entry_index_t(header.getArticleCount())));
@@ -308,9 +336,26 @@ private: // data
     auto dirent = mp_pathDirentAccessor->getDirent(idx);
     auto cluster = getCluster(dirent->getClusterNumber());
     if (cluster->isCompressed()) {
-      // This is a ZimFileFormatError.
-      // Let's be tolerant and skip the entry
-      return nullptr;
+      if (!header.usesCompactIndexStructures()) {
+        // This is a ZimFileFormatError.
+        // Let's be tolerant and skip the entry
+        return nullptr;
+      }
+      // Compact index structures (see Creator::configCompactIndexStructures())
+      // store the title listing in a compressed cluster like any other
+      // content. There's no fixed byte offset to read it from directly, so
+      // fetch the decompressed blob and copy it into an owned buffer.
+      const Blob blob = cluster->getBlob(dirent->getBlobNumber());
+      std::unique_ptr<char[]> copy(new char[blob.size()]);
+      if (blob.size() > 0) {
+        std::memcpy(copy.get(), blob.data(), blob.size());
+      }
+      Buffer::DataPtr dataPtr(copy.release(), std::default_delete<char[]>());
+      const Buffer buffer = Buffer::makeBuffer(dataPtr, zsize_t(blob.size()));
+      auto titleIndexReader = std::unique_ptr<Reader>(new BufferReader(buffer));
+      return std::unique_ptr<IndirectDirentAccessor>(
+        new IndirectDirentAccessor(mp_pathDirentAccessor, std::move(titleIndexReader),
+                                    title_index_t(blob.size()/sizeof(entry_index_type))));
     }
     auto titleOffset = getClusterOffset(dirent->getClusterNumber()) + cluster->getBlobOffset(dirent->getBlobNumber());
     auto titleSize = cluster->getBlobSize(dirent->getBlobNumber());

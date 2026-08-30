@@ -46,6 +46,14 @@ namespace zim
       static const uint16_t zimOldMajorVersion;
       static const uint16_t zimMajorVersion;
       static const uint16_t zimMinorVersion;
+
+      // Minor version at which the "compact index structures" extension
+      // (delta+varint+zstd-compressed path pointer list, zstd-compressible
+      // title listing) is understood. Opt-in only -- see
+      // Creator::configCompactIndexStructures(). Readers older than this
+      // cannot parse a file written with it enabled.
+      static const uint16_t zimMinorVersionCompactIndex;
+
       static const size_type size;
 
     private:
@@ -114,6 +122,7 @@ namespace zim
       void        setChecksumPos(offset_type p)    { checksumPos = p; }
 
       bool        useNewNamespaceScheme() const    { return minorVersion >= 1; }
+      bool        usesCompactIndexStructures() const { return minorVersion >= zimMinorVersionCompactIndex; }
 
   };
 

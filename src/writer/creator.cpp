@@ -38,6 +38,7 @@
 #include <fstream>
 #include "../md5.h"
 #include "../constants.h"
+#include "../compact_index.h"
 #include "counterHandler.h"
 #include "writer/_dirent.h"
 
@@ -231,6 +232,22 @@ void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
   }
 }
 
+// Compact form of writeDirentOffsets(): delta+varint encodes the (strictly
+// increasing) dirent offsets, then zstd-compresses the result, prefixed
+// with the compressed size so a reader knows how many bytes to consume.
+// Only used when Creator::configCompactIndexStructures() was enabled --
+// see Fileheader::usesCompactIndexStructures().
+void writeCompactDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
+{
+  const std::vector<offset_type> offsets(direntOffsets.begin(), direntOffsets.end());
+  const std::string compressed = compactEncodeOffsetList(offsets);
+
+  char sizeBuf[sizeof(uint64_t)];
+  toLittleEndian(uint64_t(compressed.size()), sizeBuf);
+  f.write(sizeBuf, sizeof(sizeBuf));
+  f.write(compressed.data(), compressed.size());
+}
+
 void writeChecksum(int fd)
 {
   struct zim_MD5_CTX md5ctx;
@@ -290,6 +307,12 @@ Creator& Creator::configClusterSize(zim::size_type targetSize)
   return *this;
 }
 
+Creator& Creator::configCompactIndexStructures(bool compact)
+{
+  m_compactIndexStructures = compact;
+  return *this;
+}
+
 Creator& Creator::configIndexing(bool indexing, const std::string& language)
 {
   m_withIndex = indexing;
@@ -306,7 +329,7 @@ Creator& Creator::configNbWorkers(unsigned nbWorkers)
 void Creator::startZimCreation(const std::string& filepath)
 {
   data = std::unique_ptr<CreatorData>(
-    new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_clusterSize)
+    new CreatorData(filepath, m_verbose, m_withIndex, m_indexingLanguage, m_compression, m_clusterSize, m_compactIndexStructures)
   );
 
   for(unsigned i=0; i<m_nbWorkers; i++)
@@ -530,6 +553,10 @@ void Creator::fillHeader(Fileheader* header) const
 
   header->setTitleIdxPos(offset_type(-1));
   header->setClusterCount( data->clustersList.size() );
+
+  if (data->compactIndexStructures) {
+    header->setMinorVersion(Fileheader::zimMinorVersionCompactIndex);
+  }
 }
 
 void Creator::writeLastParts() const
@@ -561,7 +588,11 @@ void Creator::writeLastParts() const
 
   TINFO(" write path ptr list");
   header.setPathPtrPos(outFile.tellFilePos());
-  writeDirentOffsets(outFile, direntOffsets);
+  if (data->compactIndexStructures) {
+    writeCompactDirentOffsets(outFile, direntOffsets);
+  } else {
+    writeDirentOffsets(outFile, direntOffsets);
+  }
 
   } // writing dirents
 
@@ -599,13 +630,15 @@ CreatorData::CreatorData(const std::string& fname,
                                bool withIndex,
                                std::string language,
                                Compression c,
-                               size_t clusterSize)
+                               size_t clusterSize,
+                               bool compactIndexStructures)
   : mainPageDirent(nullptr),
     m_errored(false),
     compression(c),
     zimName(fname),
     tmpFileName(fname + ".tmp"),
     clusterSize(clusterSize),
+    compactIndexStructures(compactIndexStructures),
     withIndex(withIndex),
     indexingLanguage(language),
     verbose(verbose),
@@ -947,7 +980,7 @@ void CreatorData::addTitleListingData()
 {
   Dirent* const d = *findDirent(NS::X, "listing/titleOrdered/v1");
   auto listingProvider = std::make_unique<TitleListingProvider>(this->dirents);
-  addItemData(*d, std::move(listingProvider), false);
+  addItemData(*d, std::move(listingProvider), compactIndexStructures);
 }
 
 #if defined(ENABLE_XAPIAN)

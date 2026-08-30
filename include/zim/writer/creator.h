@@ -125,6 +125,26 @@ namespace zim
         Creator& configClusterSize(zim::size_type targetSize);
 
         /**
+         * Enable the "compact index structures" extension (opt-in, off by
+         * default).
+         *
+         * The path pointer list is compressed (delta+varint encoding,
+         * zstd-compressed) instead of stored as a flat array of raw 8-byte
+         * offsets, and the title listing is stored compressible instead of
+         * always uncompressed. On typical archives this measurably reduces
+         * the total file size.
+         *
+         * This requires bumping the ZIM minor version: files written with
+         * this enabled cannot be read by libzim versions that predate this
+         * feature. Only enable it if you control (or are confident about)
+         * the minimum libzim version your readers will have.
+         *
+         * @param compact True to enable the extension.
+         * @return a reference to itself.
+         */
+        Creator& configCompactIndexStructures(bool compact);
+
+        /**
          * Configure the fulltext indexing feature.
          *
          * @param indexing True if we must fulltext index the content.
@@ -314,6 +334,7 @@ namespace zim
         Compression m_compression = Compression::Zstd;
         bool m_withIndex = false;
         size_t m_clusterSize;
+        bool m_compactIndexStructures = false;
         std::string m_indexingLanguage;
         unsigned m_nbWorkers = 4;
 

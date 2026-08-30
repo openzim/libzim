@@ -38,6 +38,7 @@ common_sources = [
     'item.cpp',
     'blob.cpp',
     'buffer.cpp',
+    'compact_index.cpp',
     'md5.c',
     'uuid.cpp',
     'tools.cpp',
