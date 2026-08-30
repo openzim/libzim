@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 #include <sstream>
 #include <string>
+#include <vector>
 
 #if defined(ENABLE_XAPIAN)
   #include <unicode/unistr.h>
@@ -91,6 +92,57 @@ namespace {
 
     // Edge case: just a semicolon
     ASSERT_EQ(zim::stripMimeParameters(";"), "");
+  }
+
+  TEST(Tools, encodeDecodeRedirectFragmentRoundTrip) {
+    const std::vector<std::string> fragments{
+      "Geography",
+      "a",
+      std::string(zim::MAX_REDIRECT_FRAGMENT_SIZE, 'x'), // longest allowed
+      "with spaces and / slashes",
+      "unicode: \xc3\xa9\xc3\xa8", // "éè"
+    };
+    for (const std::string& fragment : fragments) {
+      const auto encoded = zim::encodeRedirectParameter(fragment);
+      ASSERT_EQ(zim::decodeRedirectFragment(encoded), fragment) << "fragment: " << fragment;
+    }
+  }
+
+  TEST(Tools, encodeRedirectParameterOfEmptyFragmentIsEmpty) {
+    // No fragment must mean no parameter bytes at all: this is what makes
+    // the feature backward compatible with every redirect written before it
+    // existed (and with every redirect that simply doesn't use it).
+    ASSERT_EQ(zim::encodeRedirectParameter(""), "");
+  }
+
+  TEST(Tools, encodeRedirectParameterRejectsOverlongFragment) {
+    const std::string tooLong(zim::MAX_REDIRECT_FRAGMENT_SIZE + 1, 'x');
+    ASSERT_THROW(zim::encodeRedirectParameter(tooLong), std::invalid_argument);
+  }
+
+  TEST(Tools, decodeRedirectFragmentOfEmptyParameterIsEmpty) {
+    ASSERT_EQ(zim::decodeRedirectFragment(""), "");
+  }
+
+  TEST(Tools, decodeRedirectFragmentIgnoresUnrecognizedRecords) {
+    // A record with a tag this version of the code doesn't know about must
+    // be skipped, not misread as (part of) a fragment - this is what makes
+    // the format forward compatible with future record types sharing the
+    // same "parameter" field.
+    const std::string unknownRecord = std::string("Z") + char(3) + "abc";
+    ASSERT_EQ(zim::decodeRedirectFragment(unknownRecord), "");
+
+    const std::string unknownThenFragment =
+      unknownRecord + zim::encodeRedirectParameter("Geography");
+    ASSERT_EQ(zim::decodeRedirectFragment(unknownThenFragment), "Geography");
+  }
+
+  TEST(Tools, decodeRedirectFragmentOfTruncatedParameterIsEmpty) {
+    // Simulates a parameter blob that claims a value longer than the bytes
+    // actually available -- reading must degrade gracefully, never throw or
+    // read out of bounds, regardless of how such a value came to exist.
+    const std::string truncated = std::string("F") + char(10) + "short";
+    ASSERT_EQ(zim::decodeRedirectFragment(truncated), "");
   }
 
 #if defined(ENABLE_XAPIAN)
