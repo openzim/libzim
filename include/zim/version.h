@@ -21,6 +21,7 @@
 #define ZIM_VERSION_H
 
 #include "zim.h"
+#include <iostream>
 #include <string>
 #include <vector>
 
