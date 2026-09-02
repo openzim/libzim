@@ -61,6 +61,7 @@
 #include <sstream>
 #include <ctime>
 #include <deque>
+#include <vector>
 #include "log.h"
 #include "../fs.h"
 #include "../tools.h"
@@ -231,21 +232,22 @@ void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
   }
 }
 
+constexpr size_t CHECKSUM_BUFFER_SIZE = 64 * 1024;
+
 void writeChecksum(int fd)
 {
   struct zim_MD5_CTX md5ctx;
-  unsigned char batch_read[1024+1];
+  std::vector<unsigned char> buffer(CHECKSUM_BUFFER_SIZE);
   lseek(fd, 0, SEEK_SET);
   zim_MD5Init(&md5ctx);
   while (true) {
-     auto r = read(fd, batch_read, 1024);
-     if (r == -1) {
-       throw std::runtime_error(std::strerror(errno));
-     }
-     if (r == 0)
-       break;
-     batch_read[r] = 0;
-     zim_MD5Update(&md5ctx, batch_read, r);
+    auto r = read(fd, buffer.data(), buffer.size());
+    if (r == -1) {
+      throw std::runtime_error(std::strerror(errno));
+    }
+    if (r == 0)
+      break;
+    zim_MD5Update(&md5ctx, buffer.data(), static_cast<unsigned int>(r));
   }
   unsigned char digest[16];
   zim_MD5Final(digest, &md5ctx);
