@@ -26,3 +26,5 @@
 // Note that a similar limit applies to full-text indexing but we don't
 // provide a way to control it (so it is at Xapian's default value of 64)
 #define MAX_INDEXABLE_TITLE_WORD_SIZE 240
+
+constexpr size_t TITLE_LISTING_BUFFER_SIZE = 64 * 1024;
