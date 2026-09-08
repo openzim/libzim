@@ -146,6 +146,11 @@ namespace zim
       offset_t getClusterOffset(cluster_index_t idx) const;
       offset_t getBlobOffset(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
       ItemDataDirectAccessInfo getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const;
+#ifndef _WIN32
+      // Same as above, but also returns the native fd (-1 if none).
+      // Internal only, so it's free to add this out-param.
+      ItemDataDirectAccessInfo getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx, int& fd) const;
+#endif
 
       entry_index_t getNamespaceBeginOffset(char ch) const;
       entry_index_t getNamespaceEndOffset(char ch) const;

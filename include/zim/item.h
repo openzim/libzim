@@ -83,6 +83,20 @@ namespace zim
        */
       zim::ItemDataDirectAccessInfo getDirectAccessInformation() const;
 
+#ifndef _WIN32
+      /** An owned file descriptor for direct access to this item's data.
+       *
+       * Like getDirectAccessInformation(), but returns an open, dup()'d
+       * file descriptor instead of a filename to reopen.
+       *
+       * The caller owns the descriptor and must close it. Seek to
+       * getDirectAccessInformation().offset before reading.
+       *
+       * @return An owned file descriptor, or -1 if not available.
+       */
+      int getDirectAccessFd() const;
+#endif
+
       entry_index_type getIndex() const   { return Entry::getIndex(); }
 
 #ifdef ZIM_PRIVATE

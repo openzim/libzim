@@ -25,6 +25,10 @@
 #include "fileimpl.h"
 #include "log.h"
 
+#ifndef _WIN32
+#include "fs_unix.h"
+#endif
+
 #include <cassert>
 
 log_define("zim.item")
@@ -62,6 +66,19 @@ ItemDataDirectAccessInfo Item::getDirectAccessInformation() const
 {
   return m_file->getDirectAccessInformation(m_dirent->getClusterNumber(), m_dirent->getBlobNumber());
 }
+
+#ifndef _WIN32
+int Item::getDirectAccessFd() const
+{
+  int fd = -1;
+  m_file->getDirectAccessInformation(m_dirent->getClusterNumber(), m_dirent->getBlobNumber(), fd);
+  if (fd < 0) {
+    return -1;
+  }
+  // dup() so the caller gets its own descriptor; ours stays owned by the FilePart.
+  return dupFd(fd).release();
+}
+#endif
 
 cluster_index_type Item::getClusterIndex() const
 {
