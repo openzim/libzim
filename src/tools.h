@@ -76,7 +76,13 @@ namespace zim {
 // Xapian based tools
 #if defined(ENABLE_XAPIAN)
   std::string LIBZIM_PRIVATE_API removeAccents(const std::string& text);
+#ifndef _WIN32
+  // fd, if >= 0, is an open descriptor for accessInfo.filename; dup() it
+  // instead of reopening the path.
+  bool LIBZIM_PRIVATE_API getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, int fd, Xapian::Database& database);
+#else
   bool LIBZIM_PRIVATE_API getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, Xapian::Database& database);
+#endif
   Xapian::Stem getXapianStemmer(const std::string& iso639LangCode);
 #endif
 }

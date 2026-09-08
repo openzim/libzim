@@ -58,13 +58,25 @@ void SuggestionDataBase::initXapianDb() {
   }
 
   auto xapianEntry = Entry(impl, entry_index_type(r.second));
-  auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
+  auto xapianItem = xapianEntry.getItem();
+#ifndef _WIN32
+  int fd = -1;
+  auto accessInfo = impl->getDirectAccessInformation(
+    cluster_index_t(xapianItem.getClusterIndex()), blob_index_t(xapianItem.getBlobIndex()), fd
+  );
+#else
+  auto accessInfo = xapianItem.getDirectAccessInformation();
+#endif
   if (!accessInfo.isValid()) {
       return;
   }
 
   Xapian::Database database;
+#ifndef _WIN32
+  if (!getDbFromAccessInfo(accessInfo, fd, database)) {
+#else
   if (!getDbFromAccessInfo(accessInfo, database)) {
+#endif
     return;
   }
 

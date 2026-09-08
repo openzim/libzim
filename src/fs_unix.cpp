@@ -147,5 +147,17 @@ std::string getFilePathFromFD(int fd)
   return Formatter()  << "/dev/fd/" << fd;
 }
 
+unix::FD dupFd(int fd)
+{
+  const int newFd = dup(fd);
+  if (newFd == -1) {
+    const std::string errorStr = strerror(errno);
+    throw std::runtime_error(
+      Formatter() << "Error duplicating file descriptor " << fd << ": " << errorStr
+    );
+  }
+  return unix::FD(newFd);
+}
+
 }; // zim namespace
 
