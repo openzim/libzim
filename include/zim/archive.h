@@ -301,18 +301,27 @@ namespace zim
 
       /** Return the number of articles in the archive.
        *
-       *  The definition of "article" depends of the zim archive.
-       *  On recent archives, this correspond to all entries marked as "FRONT_ARTICLE"
-       *  at creaton time.
-       *  On old archives, this corresponds to all "text/html*" entries.
+       * The definition of "article" depends of the ZIM
+       * archive. Technically, this corresponds to all entries marked
+       * as ``FRONT_ARTICLE`` at ZIM creation time (usually the HTML
+       * pages).
        *
-       *  @return the number of articles in the archive.
+       * On older archives (up to version 5 of the ZIM format), this
+       * corresponds to all ``text/html*`` entries as given by the ZIM
+       * Metadata ``Counter``.
+       *
+       * @return the number of articles in the archive.
        */
       entry_index_type getArticleCount() const;
 
       /** Return the number of media in the archive.
        *
-       * This definition of "media" is based on the mimetype.
+       * The value returned is based on the ZIM Metadata ``Counter``
+       * which gives the number of entries per MIME type. A "media" is
+       * based on the mimetype starting with ``image/``, ``video/`` or
+       * ``audio/``.
+       *
+       * Aliases (see zim::writer::Creator::addAlias()) are ignored.
        *
        * @return the number of media in the archive.
        */
