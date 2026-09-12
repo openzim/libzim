@@ -387,11 +387,12 @@ void Creator::addIllustration(unsigned int size, std::unique_ptr<ContentProvider
   addIllustration(IllustrationInfo{size, size, 1, {}}, std::move(provider));
 }
 
-void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints)
+void Creator::addRedirection(const std::string& path, const std::string& title, const std::string& targetPath, const Hints& hints, const std::string& targetFragment)
 {
   checkError();
   const auto targetDirent = data->addOrUpdate(Dirent(NS::C, targetPath));
   const auto dirent = data->addOrUpdate(Dirent(NS::C, path, title, targetDirent));
+  dirent->setRedirectFragment(targetFragment);
   setFrontArticle(*dirent, hints);
 
   if (data->dirents.size()%1000 == 0){

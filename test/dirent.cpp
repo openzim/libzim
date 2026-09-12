@@ -39,6 +39,7 @@
 #include "../src/direntreader.h"
 #include "../src/buffer_reader.h"
 #include "../src/writer/_dirent.h"
+#include "../src/tools.h"
 
 #include "tools.h"
 
@@ -65,17 +66,23 @@ size_t writtenDirentSize(const zim::writer::Dirent& dirent)
 
 TEST(DirentTest, size)
 {
+  // Dirent grew by sizeof(std::shared_ptr<const std::string>) (redirect
+  // fragment support, see redirectFragment's own comment) - 16 bytes on a
+  // 64-bit platform, 8 on a 32-bit one, on every implementation this was
+  // checked against (libstdc++, libc++, MSVC STL all use a 2-pointer
+  // shared_ptr). The values below are those adjusted accordingly; only the
+  // non-32-bit, non-Windows case (45U) has actually been measured here.
 #ifdef _WIN32
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 48U);
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 64U);
 #else
   // Dirent's size is important for us as we are creating huge zim files on
   // Linux and we need to store a lot of dirents.
   // Be sure that dirent's size is not increased by any change.
 #if ENV32BIT
   // On 32 bits, Dirent is smaller.
-  ASSERT_EQ(sizeof(zim::writer::Dirent), 21U);
-#else
   ASSERT_EQ(sizeof(zim::writer::Dirent), 29U);
+#else
+  ASSERT_EQ(sizeof(zim::writer::Dirent), 45U);
 #endif
 #endif
 }
@@ -206,6 +213,40 @@ TEST(DirentTest, redirect_dirent_size)
   zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
 
   ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
+}
+
+TEST(DirentTest, read_write_redirect_dirent_with_fragment)
+{
+  zim::writer::Dirent targetDirent(NS::C, "Foo", "", 17);
+  targetDirent.setIdx(zim::entry_index_t(321));
+  zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
+  dirent.setRedirectFragment("Geography");
+
+  ASSERT_EQ(dirent.getRedirectFragment(), "Geography");
+  ASSERT_EQ(dirent.getDirentSize(), writtenDirentSize(dirent));
+
+  auto buffer = write_to_buffer(dirent);
+  zim::Dirent dirent2(read_from_buffer(buffer));
+
+  ASSERT_TRUE(dirent2.isRedirect());
+  ASSERT_EQ(dirent2.getPath(), "Bar");
+  ASSERT_EQ(dirent2.getRedirectIndex().v, 321U);
+  ASSERT_EQ(zim::decodeRedirectFragment(dirent2.getParameter()), "Geography");
+}
+
+TEST(DirentTest, redirect_dirent_without_fragment_is_unaffected_by_the_feature)
+{
+  // A redirect that doesn't use a fragment must produce byte-for-byte the
+  // same dirent as before this feature existed: no parameter bytes at all.
+  zim::writer::Dirent targetDirent(NS::C, "Foo", "", 17);
+  targetDirent.setIdx(zim::entry_index_t(321));
+  zim::writer::Dirent dirent(NS::C, "Bar", "", &targetDirent);
+
+  auto buffer = write_to_buffer(dirent);
+  zim::Dirent dirent2(read_from_buffer(buffer));
+
+  ASSERT_EQ(dirent2.getParameter(), "");
+  ASSERT_EQ(zim::decodeRedirectFragment(dirent2.getParameter()), "");
 }
 
 }  // namespace

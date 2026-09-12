@@ -104,13 +104,16 @@ entry_index_t Dirent::getRedirectIndex() const      {
 void Dirent::write(BinaryFile& f) const
 {
   const static char zero = 0;
+  const std::string parameter = isRedirect()
+    ? encodeRedirectParameter(getRedirectFragment())
+    : std::string();
   union
   {
     char d[16];
     long a;
   } header;
   zim::toLittleEndian(getMimeType(), header.d);
-  header.d[2] = 0; // parameter size
+  header.d[2] = static_cast<char>(parameter.size());
   header.d[3] = NsAsChar(getNamespace());
 
   log_debug("title=" << dirent.getTitle() << " title.size()=" << dirent.getTitle().size());
@@ -131,6 +134,9 @@ void Dirent::write(BinaryFile& f) const
 
   f.write(pathTitle.data(), pathTitle.size());
   f.write(&zero, 1);
+  if (!parameter.empty()) {
+    f.write(parameter.data(), parameter.size());
+  }
 }
 
 } // namespace writer

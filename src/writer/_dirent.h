@@ -24,8 +24,11 @@
 #include "cluster.h"
 #include "tinyString.h"
 #include "binaryfile.h"
+#include "../tools.h"
 
 #include "debug.h"
+
+#include <memory>
 
 namespace zim
 {
@@ -59,6 +62,15 @@ namespace zim
         PathTitleTinyString pathTitle;
         uint16_t mimeType;
         entry_index_t idx = entry_index_t(0);
+        // Only ever set for redirects, and only when they have a fragment
+        // (the vast majority don't). A null shared_ptr here, rather than an
+        // inline std::string, is deliberate: Dirent's size matters at the
+        // scale of the millions of entries a large ZIM can have (see
+        // DirentTest.size), so a field that's unused by almost every dirent
+        // shouldn't cost more than a pointer on the ones that don't use it.
+        // shared_ptr (not unique_ptr) because Dirent is copy-constructed
+        // into DirentPool's storage.
+        std::shared_ptr<const std::string> redirectFragment;
 
         union {
           Direct   direct;
@@ -119,6 +131,23 @@ namespace zim
         void setIdx(entry_index_t idx_)      { idx = idx_; }
         entry_index_t getIdx() const         { return idx; }
 
+        // Only valid to call on a redirect. fragment is stored as given
+        // (no leading '#', not URL-encoded); see encodeRedirectParameter()
+        // for the on-disk representation. An empty fragment leaves
+        // redirectFragment null, exactly as it was before this ever gets
+        // called -- no allocation for the common no-fragment case.
+        void setRedirectFragment(const std::string& fragment) {
+          ASSERT(isRedirect(), ==, true);
+          redirectFragment = fragment.empty()
+            ? nullptr
+            : std::make_shared<const std::string>(fragment);
+        }
+        const std::string& getRedirectFragment() const {
+          ASSERT(isRedirect(), ==, true);
+          static const std::string empty;
+          return redirectFragment ? *redirectFragment : empty;
+        }
+
 
         void setCluster(zim::writer::Cluster* _cluster)
         {
@@ -149,7 +178,10 @@ namespace zim
 
         size_t getDirentSize() const
         {
-          return (isRedirect() ? 12 : 16) + pathTitle.size() + 1;
+          const size_t parameterSize = isRedirect()
+            ? encodeRedirectParameter(getRedirectFragment()).size()
+            : 0;
+          return (isRedirect() ? 12 : 16) + pathTitle.size() + 1 + parameterSize;
         }
 
         bool isRemoved() const { return removed; }
