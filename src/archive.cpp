@@ -604,6 +604,11 @@ namespace zim
     return offset_type(m_impl->getClusterOffset(cluster_index_t(idx)));
   }
 
+  void Archive::decompressClustersLazily(bool enable)
+  {
+    m_impl->decompressClustersLazily(enable);
+  }
+
   entry_index_type Archive::getMainEntryIndex() const
   {
     return m_impl->getFileheader().getMainPage();

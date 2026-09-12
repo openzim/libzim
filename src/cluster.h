@@ -79,7 +79,12 @@ namespace zim
       void checkBlobIndex(blob_index_t n) const;
 
     public:
-      Cluster(std::unique_ptr<IStreamReader> reader, Compression comp, bool isExtended, size_t maxBlobCount);
+      Cluster(std::unique_ptr<IStreamReader> reader,
+              Compression comp,
+              bool isExtended,
+              size_t maxBlobCount,
+              bool decompressOnDemand);
+
       ~Cluster();
       Compression getCompression() const   { return compression; }
       bool isCompressed() const                { return compression != Compression::None; }
@@ -95,7 +100,7 @@ namespace zim
 
       size_t getMemorySize() const;
 
-      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount = size_t(-1));
+      static std::shared_ptr<Cluster> read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount = size_t(-1), bool decompressOnDemand=true);
   };
 
   struct ClusterMemorySize {
