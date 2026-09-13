@@ -36,6 +36,7 @@
 #include "../endian_tools.h"
 #include <algorithm>
 #include <fstream>
+#include <vector>
 #include "../md5.h"
 #include "../constants.h"
 #include "counterHandler.h"
@@ -175,6 +176,13 @@ bool getCompressionHint(const Hints& hints)
   return it != hints.end() && it->second != 0;
 }
 
+constexpr size_t SIZEOF_ENTRY_INDEX = sizeof(zim::entry_index_type);
+
+static_assert(
+  TITLE_LISTING_BUFFER_SIZE % SIZEOF_ENTRY_INDEX == 0,
+  "Title listing buffer must hold a whole number of entry indexes"
+);
+
 class TitleListingProvider : public ContentProvider {
   public:
     explicit TitleListingProvider(const CreatorData::UrlSortedDirents& dirents) {
@@ -189,22 +197,23 @@ class TitleListingProvider : public ContentProvider {
     }
 
     zim::size_type getSize() const override {
-        return m_dirents.size() * sizeof(zim::entry_index_type);
+        return m_dirents.size() * SIZEOF_ENTRY_INDEX;
     }
 
     zim::Blob feed() override {
-      if (m_it == m_dirents.end()) {
-        return zim::Blob(nullptr, 0);
+      size_t bytesWritten = 0;
+      while (m_it != m_dirents.end() && bytesWritten < buffer.size()) {
+        zim::toLittleEndian((*m_it)->getIdx().v, buffer.data() + bytesWritten);
+        ++m_it;
+        bytesWritten += SIZEOF_ENTRY_INDEX;
       }
-      zim::toLittleEndian((*m_it)->getIdx().v, buffer);
-      m_it++;
-      return zim::Blob(buffer, sizeof(zim::entry_index_type));
+      return zim::Blob(buffer.data(), bytesWritten);
     }
 
   private:
     typedef std::deque<const Dirent*> DirentPtrs;
     DirentPtrs m_dirents;
-    char buffer[sizeof(zim::entry_index_type)];
+    std::vector<char> buffer = std::vector<char>(TITLE_LISTING_BUFFER_SIZE);
     DirentPtrs::const_iterator m_it;
 };
 

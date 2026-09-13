@@ -36,6 +36,7 @@
 #include "../src/fileheader.h"
 #include "../src/cluster.h"
 #include "../src/rawstreamreader.h"
+#include "../src/constants.h"
 
 #include "gtest/gtest.h"
 
@@ -354,6 +355,74 @@ TEST(ZimCreator, createZim)
 
   blob = cluster->getBlob(illustration96BlobIndex);
   ASSERT_EQ(std::string(blob), "PNGBinaryContent96");
+}
+
+TEST(ZimCreator, titleListingProviderBatchBoundaries)
+{
+  constexpr size_t entriesPerBatch = TITLE_LISTING_BUFFER_SIZE / sizeof(entry_index_type);
+  const size_t entryCounts[] = {
+    0,
+    entriesPerBatch - 1,
+    entriesPerBatch,
+    entriesPerBatch + 1,
+    2 * entriesPerBatch,
+    2 * entriesPerBatch + 1
+  };
+
+  // Keep the front-article numbers at six digits so lexicographic and numeric
+  // sorting produce the same order.
+  constexpr size_t firstNumber = 100000;
+  constexpr size_t nonFrontArticleCount = 3;
+
+  for (const size_t entryCount : entryCounts) {
+    SCOPED_TRACE("entryCount=" + std::to_string(entryCount));
+
+    unittests::TempFile temp("title-listing-batch-boundary");
+    writer::Creator creator;
+    creator.setUuid(makeSafeUuid());
+    creator.startZimCreation(temp.path());
+
+    for (size_t i = 0; i < nonFrontArticleCount; ++i) {
+      const auto number = firstNumber - i - 1;
+      const auto numberAsString = std::to_string(number);
+      creator.addItem(writer::StringItem::create(
+        "path/" + numberAsString,
+        "text/plain",
+        "title/" + numberAsString,
+        writer::Hints{{writer::FRONT_ARTICLE, 0}},
+        ""
+      ));
+    }
+
+    for (size_t i = 0; i < entryCount; ++i) {
+      const auto path = "path/" + std::to_string(firstNumber + i);
+      // Reverse the title order relative to the path order so the test checks
+      // that the listing is ordered by title.
+      const auto title = "title/" + std::to_string(
+        firstNumber + entryCount - i - 1
+      );
+      creator.addItem(makeTestItem(path, title, ""));
+    }
+    creator.finishZimCreation();
+
+    const zim::Archive archive(temp.path());
+    const auto titleOrderedEntries = archive.iterByTitle();
+    ASSERT_EQ(titleOrderedEntries.size(), entryCount);
+
+    size_t i = 0;
+    for (const auto& entry : titleOrderedEntries) {
+      EXPECT_EQ(
+        entry.getTitle(),
+        "title/" + std::to_string(firstNumber + i)
+      );
+      EXPECT_EQ(
+        entry.getPath(),
+        "path/" + std::to_string(firstNumber + entryCount - i - 1)
+      );
+      ++i;
+    }
+    EXPECT_EQ(i, entryCount);
+  }
 }
 
 
