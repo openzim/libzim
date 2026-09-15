@@ -53,12 +53,17 @@ class FilePart {
         m_size(m_fhandle->getSize()) {}
 
 #ifndef _WIN32
+    // dup() the fd instead of reopening it by path - some Android
+    // descriptors reject that reopen.
     explicit FilePart(int fd) :
-        FilePart(getFilePathFromFD(fd)) {}
+        m_filename(getFilePathFromFD(fd)),
+        m_fhandle(std::make_shared<FS::FD>(dupFd(fd))),
+        m_offset(0),
+        m_size(m_fhandle->getSize()) {}
 
     explicit FilePart(FdInput fdInput):
         m_filename(getFilePathFromFD(fdInput.fd)),
-        m_fhandle(std::make_shared<FS::FD>(FS::openFile(m_filename))),
+        m_fhandle(std::make_shared<FS::FD>(dupFd(fdInput.fd))),
         m_offset(fdInput.offset),
         m_size(fdInput.size) {}
 #endif
@@ -67,6 +72,11 @@ class FilePart {
     const std::string& filename() const { return m_filename; };
     const FS::FD& fhandle() const { return *m_fhandle; };
     const FDSharedPtr& shareable_fhandle() const { return m_fhandle; };
+#ifndef _WIN32
+    // Native fd backing this part, for callers who want to dup() it
+    // instead of reopening filename().
+    int nativeFd() const { return m_fhandle->getNativeHandle(); }
+#endif
 
     zsize_t size() const { return m_size; };
     offset_t offset() const { return m_offset; }

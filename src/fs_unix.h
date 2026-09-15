@@ -85,6 +85,10 @@ struct FS {
 
 std::string getFilePathFromFD(int fd);
 
+// Duplicates fd. Unlike reopening "/dev/fd/<fd>" by path, this can't fail
+// with a permission error.
+unix::FD dupFd(int fd);
+
 }; // zim namespace
 
 #endif //ZIM_FS_UNIX_H_

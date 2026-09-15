@@ -32,6 +32,13 @@
 
 #include "gtest/gtest.h"
 
+#include <limits>
+
+#ifndef _WIN32
+# include <fcntl.h>
+# include <unistd.h>
+#endif
+
 namespace {
 
 using zim::unittests::TempZimArchive;
@@ -89,6 +96,28 @@ TEST(Suggestion, searchByTitle)
     ASSERT_EQ(mainItem.getPath(), result.begin()->getPath());
   }
 }
+
+#ifndef _WIN32
+// Regression test: suggestion search must work on an archive opened
+// from a file descriptor, with no real path to reopen.
+TEST(Suggestion, searchByTitleOnArchiveOpenedByFD)
+{
+  for(auto& testfile:getDataFilePath("small.zim")) {
+    const int fd = open(testfile.path.c_str(), O_RDONLY);
+    ASSERT_NE(-1, fd);
+    const zim::Archive archive(fd);
+    // Archive(int fd) doesn't take ownership, so close fd ourselves.
+    close(fd);
+    ASSERT_TRUE(archive.hasTitleIndex());
+    const auto mainItem = archive.getMainEntry().getItem(true);
+    zim::SuggestionSearcher suggestionSearcher(archive);
+    auto suggestionSearch = suggestionSearcher.suggest(mainItem.getTitle());
+    ASSERT_NE(0, suggestionSearch.getEstimatedMatches());
+    auto result = suggestionSearch.getResults(0, archive.getEntryCount());
+    ASSERT_EQ(mainItem.getPath(), result.begin()->getPath());
+  }
+}
+#endif // not _WIN32
 #endif
 
 
@@ -837,7 +866,11 @@ TEST(Suggestion, indexFullPath) {
   ASSERT_TRUE(dai.isValid());
 
   Xapian::Database database;
+#ifndef _WIN32
+  ASSERT_TRUE(zim::getDbFromAccessInfo(dai, -1, database));
+#else
   ASSERT_TRUE(zim::getDbFromAccessInfo(dai, database));
+#endif
   const auto lastdocid = database.get_lastdocid();
   ASSERT_EQ(lastdocid, 7);
 
@@ -851,6 +884,16 @@ TEST(Suggestion, indexFullPath) {
   ASSERT_EQ(database.get_document(6).get_data(), "C/Volume2/Chapter3");
   ASSERT_EQ(database.get_document(7).get_data(), "C/Volume2/Chapter4");
 }
+
+#ifndef _WIN32
+// Covers getDbFromAccessInfo()'s error path with a deliberately bad fd.
+TEST(Suggestion, getDbFromAccessInfoFailsGracefullyOnAnInvalidFd)
+{
+  const zim::ItemDataDirectAccessInfo dai("this-filename-is-unused-when-fd-is-set", 0);
+  Xapian::Database database;
+  ASSERT_FALSE(zim::getDbFromAccessInfo(dai, /*fd=*/std::numeric_limits<int>::max(), database));
+}
+#endif // not _WIN32
 #endif // LIBZIM_WITHOUT_WRITER
 
 } // unnamed namespace
