@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2021 Emmanuel Engelhart <kelson@kiwix.org>
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -17,20 +15,36 @@
  *
  */
 
-#ifndef ZIM_VERSION_H
-#define ZIM_VERSION_H
+#include <zim/version.h>
 
-#include "zim.h"
-#include <iostream>
-#include <string>
-#include <vector>
+#include <sstream>
 
-namespace zim
+#include "gtest/gtest.h"
+
+namespace {
+
+TEST(Version, getVersions)
 {
-  typedef std::vector<std::pair<std::string, std::string>> LibVersions;
-  LIBZIM_API LibVersions getVersions();
-  LIBZIM_API void printVersions(std::ostream& out = std::cout);
+  const auto versions = zim::getVersions();
+  ASSERT_FALSE(versions.empty());
+
+  bool foundLibzim = false;
+  for (const auto& nameAndVersion : versions) {
+    ASSERT_FALSE(nameAndVersion.first.empty());
+    ASSERT_FALSE(nameAndVersion.second.empty());
+    if (nameAndVersion.first == "libzim") {
+      foundLibzim = true;
+    }
+  }
+  ASSERT_TRUE(foundLibzim);
 }
 
-#endif // ZIM_VERSION_H
+TEST(Version, printVersions)
+{
+  std::ostringstream out;
+  zim::printVersions(out);
+  const auto printed = out.str();
+  ASSERT_NE(std::string::npos, printed.find("libzim"));
+}
 
+} // unnamed namespace

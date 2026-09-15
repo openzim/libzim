@@ -34,7 +34,8 @@ all_tests = [
     'random',
     'tooltesting',
     'counterParsing',
-    'illustrations'
+    'illustrations',
+    'version'
 ]
 
 if not get_option('without_writer')

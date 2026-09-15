@@ -176,6 +176,57 @@ TEST(ZimCreator, createEmptyZim)
   ASSERT_EQ(blob.size(), 0);
 }
 
+// Every other test in this file adds items through a hand-rolled
+// writer::Item subclass (TestItem, below); the two full implementations
+// libzim itself ships - StringItem and FileItem - are never exercised by
+// any test.
+TEST(ZimCreator, stringAndFileItem)
+{
+  unittests::TempFile temp("stringandfileitemzim");
+  auto tempPath = temp.path();
+
+  const std::string fileContent = "<html><body>from a file</body></html>";
+  auto inputFile = unittests::makeTempFile("stringandfileitem_input", fileContent);
+
+  writer::Creator creator;
+  creator.setUuid(makeSafeUuid());
+  creator.startZimCreation(tempPath);
+  creator.addItem(writer::StringItem::create(
+    "string_item", "text/html", "String Item", writer::Hints(),
+    std::string("<html><body>from a string</body></html>")
+  ));
+  creator.addItem(std::make_shared<writer::FileItem>(
+    "file_item", "text/html", "File Item", writer::Hints(), inputFile->path()
+  ));
+  creator.finishZimCreation();
+
+  const zim::Archive archive(tempPath);
+  ASSERT_ITEM_ENTRY(archive, "string_item", "String Item", "text/html", "<html><body>from a string</body></html>");
+  ASSERT_ITEM_ENTRY(archive, "file_item", "File Item", "text/html", fileContent);
+}
+
+class MinimalItem : public writer::Item
+{
+  public:
+    std::string getPath() const override { return "minimal_item"; }
+    std::string getTitle() const override { return "Minimal Item"; }
+    std::string getMimeType() const override { return "text/plain"; }
+    std::unique_ptr<writer::ContentProvider> getContentProvider() const override {
+      return std::unique_ptr<writer::ContentProvider>(new writer::StringProvider("minimal content"));
+    }
+    // getHints() deliberately left unimplemented, to exercise Item::getHints()'s
+    // base default (an empty Hints()) - every other Item in this codebase
+    // (TestItem, and BasicItem's StringItem/FileItem subclasses) overrides it.
+};
+
+TEST(ZimCreator, itemHintsDefaultToMimetypeBasedGuesses)
+{
+  const MinimalItem item;
+  const auto hints = item.getAmendedHints();
+  ASSERT_EQ(0U, hints.at(writer::FRONT_ARTICLE)); // "text/plain" isn't "text/html*"
+  ASSERT_EQ(1U, hints.at(writer::COMPRESS)); // "text/plain" starts with "text"
+}
+
 
 class TestItem : public writer::Item
 {

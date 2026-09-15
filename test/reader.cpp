@@ -25,6 +25,9 @@
 
 #include "gtest/gtest.h"
 
+#include <fstream>
+#include <cstdio>
+
 namespace
 {
 
@@ -67,6 +70,15 @@ TEST(FileReader, shouldJustWork)
 
     ASSERT_EQ(offset_t(baseOffset+0), reader->offset());
     ASSERT_EQ(zsize_t(sizeof(data)-1), reader->size());
+
+    // On-disk data (FileReader/MultiPartFileReader) isn't counted, since it
+    // can be mmapped and is managed by the kernel, not our cache; an
+    // in-memory Buffer's own size is.
+    if (createReader == createBufferReader) {
+      ASSERT_EQ(zsize_t(sizeof(data)-1).v, reader->getMemorySize());
+    } else {
+      ASSERT_EQ(0U, reader->getMemorySize());
+    }
 
     ASSERT_EQ('a', reader->read(offset_t(0)));
     ASSERT_EQ('e', reader->read(offset_t(4)));
@@ -160,6 +172,48 @@ TEST(FileReader, zeroReader)
     const char nullarray[] = {0, 0, 0, 0};
     ASSERT_EQ(0, memcmp(out, nullarray, 4));
   }
+}
+
+// get_mmap_buffer() falls back to a plain (memcpy-based) read whenever the
+// requested range isn't backed by a single file part - the multi-part
+// archive tests never exercise this specifically because they only ever
+// read whole, already-part-aligned blobs. Build a synthetic 2-part
+// compound (FileCompound's multi-part scan looks for an "aa"/"ab"/...
+// suffix convention - there's no existing helper that names temp files
+// that way, so it's built here by hand) and read a range that straddles
+// the two parts.
+TEST(FileReader, multiPartBoundaryRead)
+{
+  // TempFile's mkstemp-based naming reserves us a unique path/prefix;
+  // repurpose it to place two parts at <prefix>aa/<prefix>ab.
+  unittests::TempFile tempFileBase("multipart");
+  const std::string prefix = tempFileBase.path();
+  const std::string partAPath = prefix + "aa";
+  const std::string partBPath = prefix + "ab";
+
+  {
+    std::ofstream partA(partAPath, std::ios::binary);
+    partA << "0123456789";
+  }
+  {
+    std::ofstream partB(partBPath, std::ios::binary);
+    partB << "ABCDEFGHIJ";
+  }
+
+  {
+    auto fileCompound = std::make_shared<FileCompound>(prefix, FileCompound::MultiPartToken::Multi);
+    ASSERT_TRUE(fileCompound->is_multiPart());
+    MultiPartFileReader reader(fileCompound);
+
+    ASSERT_EQ(zsize_t(20), reader.size());
+    // Straddles the part boundary at offset 10 (2 bytes into part "aa"'s
+    // tail, 2 bytes into part "ab"'s head).
+    const auto buf = reader.get_buffer(offset_t(8), zsize_t(4));
+    ASSERT_EQ(0, memcmp(buf.data(), "89AB", 4));
+  }
+
+  std::remove(partAPath.c_str());
+  std::remove(partBPath.c_str());
 }
 
 } // unnamed namespace
