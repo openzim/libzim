@@ -241,8 +241,6 @@ void writeDirentOffsets(BinaryFile& f, const DirentOffsets& direntOffsets)
   }
 }
 
-constexpr size_t CHECKSUM_BUFFER_SIZE = 64 * 1024;
-
 void writeChecksum(int fd)
 {
   struct zim_MD5_CTX md5ctx;

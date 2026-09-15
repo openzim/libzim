@@ -30,7 +30,7 @@
 
 #include "zim_types.h"
 #include <memory>
-#define CHUNK_SIZE 1024
+#include <vector>
 #include <zim/error.h>
 #include <zim/tools.h>
 #include "_dirent.h"
@@ -39,11 +39,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstring>
-#include <fstream>
 #include <numeric>
 #include "config.h"
 #include "log.h"
 #include "md5.h"
+#include "constants.h"
 #include "tools.h"
 #include "fileheader.h"
 
@@ -610,44 +610,26 @@ private: // data
     struct zim_MD5_CTX md5ctx;
     zim_MD5Init(&md5ctx);
 
-    unsigned char ch[CHUNK_SIZE];
-    offset_type checksumPos = header.getChecksumPos();
-    offset_type toRead = checksumPos;
-
-    for(auto part = zimFile->begin();
-        part != zimFile->end();
-        part++) {
-      std::ifstream stream(part->second->filename(), std::ios_base::in|std::ios_base::binary);
-
-      while(toRead>=CHUNK_SIZE && stream.read(reinterpret_cast<char*>(ch),CHUNK_SIZE).good()) {
-        zim_MD5Update(&md5ctx, ch, CHUNK_SIZE);
-        toRead-=CHUNK_SIZE;
+    std::vector<unsigned char> buffer(CHECKSUM_BUFFER_SIZE);
+    const offset_type checksumPos = header.getChecksumPos();
+    offset_type currentPos = 0;
+    try {
+      // Read through the logical archive so multipart boundaries and embedded
+      // file offsets are handled by the reader abstraction.
+      while (currentPos < checksumPos) {
+        const auto bytesToRead = static_cast<unsigned int>(
+          std::min<offset_type>(buffer.size(), checksumPos - currentPos)
+        );
+        zimReader->read(
+          reinterpret_cast<char*>(buffer.data()),
+          offset_t(currentPos),
+          zsize_t(bytesToRead)
+        );
+        zim_MD5Update(&md5ctx, buffer.data(), bytesToRead);
+        currentPos += bytesToRead;
       }
-
-      // Previous read was good, so we have exited the previous `while` because
-      // `toRead<CHUNK_SIZE`. Let's try to read `toRead` chars and process them later.
-      // Else, the previous `while` exited because we didn't succeed to read
-      // `CHUNK_SIZE`, and we still have some data to process before changing part.
-      // It reads the remaining amount of part when we reach the end of the file
-      if(stream.good()){
-        stream.read(reinterpret_cast<char*>(ch),toRead);
-      }
-
-      // It updates the checksum with the remaining amount of data when we
-      // reach the end of the file or part
-      zim_MD5Update(&md5ctx, ch, stream.gcount());
-      toRead-=stream.gcount();
-
-      if (stream.bad()) {
-        perror("error while reading file");
-        return false;
-      }
-      if (!toRead) {
-        break;
-      }
-    }
-
-    if (toRead) {
+    } catch (const std::exception& e) {
+      log_warn("error reading data for checksum: " << e.what());
       return false;
     }
 

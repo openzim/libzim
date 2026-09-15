@@ -1020,6 +1020,27 @@ TEST_F(ZimArchive, openZIMFileMultiPartEmbeddedInAnotherFile)
     checkEquivalence(archive1, archive2);
   }
 }
+
+TEST_F(ZimArchive, checksumOfMultipartZim)
+{
+  for (const auto& testfile : getDataFilePath("small.zim", {"noTitleListingV0"})) {
+    const zim::Archive sourceArchive(testfile.path);
+    const auto archiveSize = sourceArchive.getFilesize();
+    constexpr zim::size_type firstPartSize = 1234; // Deliberately not chunk-aligned.
+    ASSERT_LT(firstPartSize, archiveSize);
+
+    const int fd = OPEN_READ_ONLY(testfile.path);
+    const std::vector<zim::FdInput> parts = {
+      zim::FdInput(fd, 0, firstPartSize),
+      zim::FdInput(fd, firstPartSize, archiveSize - firstPartSize)
+    };
+    const zim::Archive multipartArchive(parts);
+    close(fd);
+
+    ASSERT_TRUE(multipartArchive.isMultiPart());
+    EXPECT_TRUE(multipartArchive.check());
+  }
+}
 #endif // not _WIN32
 #endif // WITH_TEST_DATA
 
