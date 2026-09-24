@@ -296,6 +296,11 @@ private: // data
     dropCachedClusters();
   }
 
+  void FileImpl::decompressClustersLazily(bool enable)
+  {
+    m_decompressClustersLazily = enable;
+  }
+
   void FileImpl::dropCachedClusters() const {
     getClusterCache().dropAll([this](const ClusterRef& key) {
         return std::get<0>(key) == this;
@@ -510,7 +515,7 @@ private: // data
     offset_t clusterOffset(getClusterOffset(idx));
     log_debug("read cluster " << idx << " from offset " << clusterOffset);
     const auto maxBlobCountInCluster = getMaxBlobCountInCluster(idx);
-    return Cluster::read(*zimReader, clusterOffset, maxBlobCountInCluster);
+    return Cluster::read(*zimReader, clusterOffset, maxBlobCountInCluster, m_decompressClustersLazily);
   }
 
   ClusterHandle FileImpl::getCluster(cluster_index_t idx) const
