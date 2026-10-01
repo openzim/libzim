@@ -64,7 +64,14 @@ exhale_args = {
     "treeViewIsBootstrap": True,
     "createTreeView" : True,
     "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin": "INPUT = ../include"
+    "exhaleDoxygenStdin": (
+        "INPUT = ../include\n"
+        "ENABLE_PREPROCESSING = YES\n"
+        "MACRO_EXPANSION = YES\n"
+        "EXPAND_ONLY_PREDEF = YES\n"
+        "PREDEFINED += LIBZIM_API=\n"
+        "PREDEFINED += LIBZIM_WITH_XAPIAN=1\n"
+    )
 }
 
 primary_domain = 'cpp'
