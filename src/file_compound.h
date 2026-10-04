@@ -87,7 +87,11 @@ class LIBZIM_PRIVATE_API FileCompound : private std::map<Range, FilePart*, less_
     }
 
     PartRange locate(offset_t offset, zsize_t size) const {
-      const Range queryRange(offset, offset+size);
+      // A wide query range can compare "equivalent" to two different
+      // stored part ranges at once, breaking less_range's transitivity
+      // (not just equal_range's UB below). Query by boundary points
+      // instead, like locate(offset) above already does safely.
+      //
       // equal_range expects comparator to satisfy the `Compare` requirement.
       // (ie `comp(a, b) == !comp(b, a)`) which is not the case for `less_range`
       // If not satisfy, this is UB.
@@ -96,7 +100,16 @@ class LIBZIM_PRIVATE_API FileCompound : private std::map<Range, FilePart*, less_
       // In all case, we are triggering a UB and it is to us to not call equal_range.
       // So let's use lower_bound and upper_bound which doesn't need such requirement.
       // See https://stackoverflow.com/questions/67042750/should-setequal-range-return-pair-setlower-bound-setupper-bound
-      return {lower_bound(queryRange), upper_bound(queryRange)};
+      const PartIterator first = lower_bound(Range(offset, offset));
+      if (size.v == 0) {
+        return {first, first};
+      }
+      const offset_t lastByte(offset.v + size.v - 1);
+      PartIterator last = lower_bound(Range(lastByte, lastByte));
+      if (last != end()) {
+        ++last;
+      }
+      return {first, last};
     }
 
   private: // functions
