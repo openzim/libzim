@@ -50,6 +50,23 @@ typedef SSIZE_T ssize_t;
 
 #include <zim/tools.h>
 
+// Some tests deliberately call a DEPRECATED method to verify it still
+// works, which these macros let them do without failing -Werror.
+#if defined(__GNUC__) || defined(__clang__)
+# define ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+# define ZIM_TEST_SUPPRESS_DEPRECATED_END _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+# define ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4996))
+# define ZIM_TEST_SUPPRESS_DEPRECATED_END __pragma(warning(pop))
+#else
+# define ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN
+# define ZIM_TEST_SUPPRESS_DEPRECATED_END
+#endif
+
 namespace zim
 {
 

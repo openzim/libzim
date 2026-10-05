@@ -81,20 +81,30 @@ namespace zim
        *         If it is not possible to have direct access for this item,
        *         return a pair of `{"", 0}`
        */
+#ifndef _WIN32
+      /** @deprecated Use getDirectAccessFd() instead: reopening `filename` by
+       *  path can fail for archives opened from a file descriptor with no
+       *  safely reopenable path (e.g. some Android content providers).
+       */
+      DEPRECATED zim::ItemDataDirectAccessInfo getDirectAccessInformation() const;
+#else
       zim::ItemDataDirectAccessInfo getDirectAccessInformation() const;
+#endif
 
 #ifndef _WIN32
-      /** An owned file descriptor for direct access to this item's data.
+      /** An owned file descriptor and offset for direct access to this
+       * item's data.
        *
        * Like getDirectAccessInformation(), but returns an open, dup()'d
-       * file descriptor instead of a filename to reopen.
+       * file descriptor instead of a filename to reopen, avoiding the
+       * reopen-by-path failure described above.
        *
-       * The caller owns the descriptor and must close it. Seek to
-       * getDirectAccessInformation().offset before reading.
+       * The caller owns the descriptor and must close it.
        *
-       * @return An owned file descriptor, or -1 if not available.
+       * @return The fd/offset to read the content, or `{-1, 0}` if direct
+       *         access is not available for this item.
        */
-      int getDirectAccessFd() const;
+      zim::ItemDirectAccessFd getDirectAccessFd() const;
 #endif
 
       entry_index_type getIndex() const   { return Entry::getIndex(); }

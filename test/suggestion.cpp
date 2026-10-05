@@ -861,7 +861,9 @@ TEST(Suggestion, indexFullPath) {
 
   zim::Archive archive(tza.getPath());
   const zim::Entry titleIndexEntry = getTitleIndexEntry(archive);
+  ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN
   const auto dai = titleIndexEntry.getItem().getDirectAccessInformation();
+  ZIM_TEST_SUPPRESS_DEPRECATED_END
 
   ASSERT_TRUE(dai.isValid());
 
