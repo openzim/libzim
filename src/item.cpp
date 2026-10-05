@@ -68,15 +68,15 @@ ItemDataDirectAccessInfo Item::getDirectAccessInformation() const
 }
 
 #ifndef _WIN32
-int Item::getDirectAccessFd() const
+ItemDirectAccessFd Item::getDirectAccessFd() const
 {
   int fd = -1;
-  m_file->getDirectAccessInformation(m_dirent->getClusterNumber(), m_dirent->getBlobNumber(), fd);
+  auto info = m_file->getDirectAccessInformation(m_dirent->getClusterNumber(), m_dirent->getBlobNumber(), fd);
   if (fd < 0) {
-    return -1;
+    return ItemDirectAccessFd();
   }
   // dup() so the caller gets its own descriptor; ours stays owned by the FilePart.
-  return dupFd(fd).release();
+  return ItemDirectAccessFd(dupFd(fd).release(), info.offset);
 }
 #endif
 
