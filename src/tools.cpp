@@ -215,6 +215,57 @@ std::string zim::stripMimeParameters(const std::string& rawMimeType) {
 
 namespace
 {
+  // Tag byte identifying a fragment record in a redirect dirent's
+  // "parameter" field. Reserved for future use: other tag values may be
+  // introduced later for unrelated data sharing the same field, and any
+  // tag this version of the code doesn't recognize is meant to be skipped
+  // rather than misinterpreted.
+  const char FRAGMENT_PARAM_TAG = 'F';
+} // unnamed namespace
+
+std::string zim::encodeRedirectParameter(const std::string& fragment)
+{
+  if (fragment.empty()) {
+    return "";
+  }
+  if (fragment.size() > MAX_REDIRECT_FRAGMENT_SIZE) {
+    throw std::invalid_argument(
+      "Redirect fragment is too long (" + std::to_string(fragment.size()) +
+      " bytes, max " + std::to_string(MAX_REDIRECT_FRAGMENT_SIZE) + ")"
+    );
+  }
+  std::string encoded;
+  encoded.reserve(fragment.size() + 2);
+  encoded += FRAGMENT_PARAM_TAG;
+  encoded += static_cast<char>(fragment.size());
+  encoded += fragment;
+  return encoded;
+}
+
+std::string zim::decodeRedirectFragment(const std::string& parameter)
+{
+  size_t i = 0;
+  while (i + 2 <= parameter.size()) {
+    const char tag = parameter[i];
+    const auto len = static_cast<unsigned char>(parameter[i+1]);
+    const size_t valueStart = i + 2;
+    if (valueStart + len > parameter.size()) {
+      // Truncated/corrupt record - nothing more we can safely parse.
+      break;
+    }
+    if (tag == FRAGMENT_PARAM_TAG) {
+      return parameter.substr(valueStart, len);
+    }
+    // Not a record we recognize - skip over it and keep looking, so that
+    // a future record type stored ahead of (or instead of) the fragment
+    // doesn't prevent us from finding it.
+    i = valueStart + len;
+  }
+  return "";
+}
+
+namespace
+{
 // The counter metadata format is a list of item separated by a `;` :
 // item0;item1;item2
 // Each item is a "tuple" mimetype=number.
