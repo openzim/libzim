@@ -73,15 +73,19 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
 
 } // unnamed namespace
 
-  std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount)
+  std::shared_ptr<Cluster> Cluster::read(const Reader& zimReader, offset_t clusterOffset, size_t maxBlobCount, bool decompressOnDemand)
   {
     Compression comp;
     bool extended;
     auto reader = getClusterReader(zimReader, clusterOffset, &comp, &extended);
-    return std::make_shared<Cluster>(std::move(reader), comp, extended, maxBlobCount);
+    return std::make_shared<Cluster>(std::move(reader), comp, extended, maxBlobCount, decompressOnDemand);
   }
 
-  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_, Compression comp, bool isExtended, size_t maxBlobCount)
+  Cluster::Cluster(std::unique_ptr<IStreamReader> reader_,
+                   Compression comp,
+                   bool isExtended,
+                   size_t maxBlobCount,
+                   bool decompressOnDemand)
     : compression(comp),
       isExtended(isExtended),
       m_reader(std::move(reader_))
@@ -90,6 +94,11 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
       read_header<uint64_t>(maxBlobCount);
     } else {
       read_header<uint32_t>(maxBlobCount);
+    }
+
+    if ( decompressOnDemand == false && compression != Compression::None ) {
+      getReader(blob_index_t(count().v - 1));
+      m_reader.reset();
     }
   }
 
@@ -220,6 +229,12 @@ getClusterReader(const Reader& zimReader, offset_t offset, Cluster::Compression*
     // If the cluster is not compressed, we rely on mmap and kernel
     // to do the memory management.
     const auto dataSize = isCompressed() ? decompressedDataSize : 0;
+
+    if ( !m_reader ) {
+      // on-demand decompression has been disabled
+      // the cluster is a compressed one and has been fully read
+      return blobOffsetsSize + dataSize;
+    }
 
     // Memory consumption by the decompressor stream.
     // For non-compressed data reader it is assumed to be 0 (see the comment
