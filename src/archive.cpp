@@ -393,7 +393,9 @@ namespace zim
     }
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
-    auto accessInfo = item.getDirectAccessInformation();
+    auto accessInfo = m_impl->getDirectAccessInformation(
+      cluster_index_t(item.getClusterIndex()), blob_index_t(item.getBlobIndex())
+    );
     return accessInfo.isValid();
   }
 
@@ -404,7 +406,9 @@ namespace zim
     }
     auto entry = Entry(m_impl, entry_index_type(r.second));
     auto item = entry.getItem(true);
-    auto accessInfo = item.getDirectAccessInformation();
+    auto accessInfo = m_impl->getDirectAccessInformation(
+      cluster_index_t(item.getClusterIndex()), blob_index_t(item.getBlobIndex())
+    );
     return accessInfo.isValid();
   }
 

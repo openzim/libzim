@@ -245,6 +245,43 @@ namespace zim
       return !filename.empty();
      }
   };
+
+#ifndef _WIN32
+  /**
+   * Information needed to directly access an item's data via an owned,
+   * already-open file descriptor instead of a filename to reopen.
+   */
+  struct ItemDirectAccessFd {
+
+     /**
+      * An owned file descriptor, or -1 if direct access is not available.
+      * The caller must close it.
+      */
+     int fd;
+
+     /**
+      * The offset to seek to before reading.
+      */
+     offset_type offset;
+
+     explicit ItemDirectAccessFd()
+       : fd(-1),
+         offset()
+     {}
+
+     ItemDirectAccessFd(int fd, offset_type offset)
+       : fd(fd),
+         offset(offset)
+     {}
+
+     /**
+      * Return if the ItemDirectAccessFd is valid
+      */
+     bool isValid() const {
+      return fd >= 0;
+     }
+  };
+#endif
 }
 
 #endif // ZIM_ZIM_H

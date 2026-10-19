@@ -827,6 +827,15 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
 
   ItemDataDirectAccessInfo FileImpl::getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx) const
   {
+#ifndef _WIN32
+    int unusedFd;
+    return getDirectAccessInformation(clusterIdx, blobIdx, unusedFd);
+  }
+
+  ItemDataDirectAccessInfo FileImpl::getDirectAccessInformation(cluster_index_t clusterIdx, blob_index_t blobIdx, int& fd) const
+  {
+    fd = -1;
+#endif
     auto cluster = getCluster(clusterIdx);
     if (cluster->isCompressed()) {
       return ItemDataDirectAccessInfo();
@@ -844,6 +853,9 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     auto part = first_part->second;
     const offset_type logical_local_offset(full_offset - range.min);
     const auto physical_local_offset = logical_local_offset + part->offset().v;
+#ifndef _WIN32
+    fd = part->nativeFd();
+#endif
     return ItemDataDirectAccessInfo(part->filename(), physical_local_offset);
   }
 
@@ -875,13 +887,22 @@ bool checkTitleListing(const IndirectDirentAccessor& accessor, entry_index_type 
     if (xapianDirent->isRedirect()) {
       return nullptr;
     }
+#ifndef _WIN32
+    int accessFd = -1;
+    auto accessInfo = getDirectAccessInformation(xapianDirent->getClusterNumber(), xapianDirent->getBlobNumber(), accessFd);
+#else
     auto accessInfo = getDirectAccessInformation(xapianDirent->getClusterNumber(), xapianDirent->getBlobNumber());
+#endif
     if (!accessInfo.isValid()) {
       return nullptr;
     }
 
     Xapian::Database xapianDatabase;
+#ifndef _WIN32
+    if (!getDbFromAccessInfo(accessInfo, accessFd, xapianDatabase)) {
+#else
     if (!getDbFromAccessInfo(accessInfo, xapianDatabase)) {
+#endif
       return nullptr;
     }
 

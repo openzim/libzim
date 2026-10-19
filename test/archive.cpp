@@ -1063,7 +1063,9 @@ TEST_F(ZimArchive, getDirectAccessInformation)
       if (!entry.isRedirect()) {
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
+        ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN
         const auto dai = item.getDirectAccessInformation();
+        ZIM_TEST_SUPPRESS_DEPRECATED_END
         if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
@@ -1075,6 +1077,46 @@ TEST_F(ZimArchive, getDirectAccessInformation)
 }
 
 #ifndef _WIN32
+// Regression test: getDirectAccessFd() gives the same fd+offset as the
+// deprecated getDirectAccessInformation(), without reopening by path.
+TEST_F(ZimArchive, getDirectAccessFd)
+{
+  for(auto& testfile:getDataFilePath("small.zim")) {
+    const zim::Archive archive(testfile.path);
+    zim::entry_index_type checkedItemCount = 0;
+    for ( auto entry : archive.iterEfficient() ) {
+      if (!entry.isRedirect()) {
+        const TestContext ctx{ {"entry", entry.getPath() } };
+        const auto item = entry.getItem();
+        ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN
+        const auto dai = item.getDirectAccessInformation();
+        ZIM_TEST_SUPPRESS_DEPRECATED_END
+        const auto facc = item.getDirectAccessFd();
+        if ( dai.isValid() ) {
+          ++checkedItemCount;
+          ASSERT_TRUE(facc.isValid()) << ctx;
+          ASSERT_EQ(dai.offset, facc.offset) << ctx;
+          // Wrap fd so it gets closed after reading.
+          zim::DEFAULTFS::FD ownedFd(facc.fd);
+          const auto size = item.getSize();
+          std::shared_ptr<char> data(new char[size], std::default_delete<char[]>());
+          ownedFd.readAt(data.get(), zim::zsize_t(size), zim::offset_t(facc.offset));
+          EXPECT_EQ(item.getData(), zim::Blob(data, size)) << ctx;
+        } else {
+          EXPECT_FALSE(facc.isValid()) << ctx;
+        }
+      }
+    }
+    ASSERT_NE(0U, checkedItemCount);
+  }
+}
+
+// Covers dupFd()'s error path, otherwise never hit by a real test.
+TEST(Tools, dupFdThrowsOnAnInvalidFd)
+{
+  EXPECT_THROW(zim::dupFd(-1), std::runtime_error);
+}
+
 TEST_F(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
 {
   for(auto& testfile:getDataFilePath("small.zim")) {
@@ -1085,7 +1127,9 @@ TEST_F(ZimArchive, getDirectAccessInformationInAnArchiveOpenedByFD)
       if (!entry.isRedirect()) {
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
+        ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN
         const auto dai = item.getDirectAccessInformation();
+        ZIM_TEST_SUPPRESS_DEPRECATED_END
         if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
@@ -1111,7 +1155,9 @@ TEST_F(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
       if (!entry.isRedirect()) {
         const TestContext ctx{ {"entry", entry.getPath() } };
         const auto item = entry.getItem();
+        ZIM_TEST_SUPPRESS_DEPRECATED_BEGIN
         const auto dai = item.getDirectAccessInformation();
+        ZIM_TEST_SUPPRESS_DEPRECATED_END
         if ( dai.isValid() ) {
           ++checkedItemCount;
           EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
