@@ -175,7 +175,7 @@ uint32_t zim::randomNumber(uint32_t max)
   static std::mutex mutex;
 
   std::lock_guard<std::mutex> l(mutex);
-  return (uint32_t)(((double)random() / random.max()) * max);
+  return std::uniform_int_distribution<uint32_t>(0, max)(random);
 }
 
 /* Split string in a token array */

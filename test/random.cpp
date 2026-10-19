@@ -35,10 +35,24 @@ TEST(Random, smallMax)
   }
 
 
-  for(auto i=0; i<1000; i++) {
+  constexpr uint32_t NB_TOSSES = 1000;
+  constexpr uint32_t MAX_IMBALANCE = 154;
+  uint32_t zeroes = 0;
+  uint32_t ones = 0;
+  for (auto i = 0U; i < NB_TOSSES; i++) {
     auto r = randomNumber(1);
-    ASSERT_TRUE(r>=0U && r<=1U) << r;
+    ASSERT_LE(r, 1U) << r;
+    if (r == 0U) {
+      zeroes++;
+    } else {
+      ones++;
+    }
   }
+  // If X ~ Binomial(n, 1/2), the imbalance D = |#0 - #1| = |2X - n|.
+  // For n = 1000, P(D > 154) = 2 * sum(k=0..422) C(1000, k) / 2^1000
+  // = 9.06e-7, so this limit keeps the test failure probability below 1e-6.
+  const auto imbalance = zeroes > ones ? zeroes - ones : ones - zeroes;
+  ASSERT_LE(imbalance, MAX_IMBALANCE);
 }
 
 TEST(Random, distribution)
