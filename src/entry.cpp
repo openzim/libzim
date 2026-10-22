@@ -23,6 +23,7 @@
 #include <zim/item.h>
 #include <zim/tools.h>
 #include "fileimpl.h"
+#include "tools.h"
 #include "log.h"
 
 log_define("zim.entry")
@@ -82,6 +83,14 @@ entry_index_type Entry::getRedirectEntryIndex() const  {
                       << "Entry " << getPath() << " is not a redirect entry.");
 
   return m_dirent->getRedirectIndex().v;
+}
+
+std::string Entry::getRedirectFragment() const {
+  if (!isRedirect())
+    throw InvalidType(Formatter()
+                      << "Entry " << getPath() << " is not a redirect entry.");
+
+  return decodeRedirectFragment(m_dirent->getParameter());
 }
 
 Entry Entry::getRedirectEntry() const  {

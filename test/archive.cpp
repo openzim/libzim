@@ -264,6 +264,36 @@ TEST_F(ZimArchive, openCreatedArchive)
   ASSERT_THROW(archive.getEntryByPathWithNamespace('C', "non/existent/path"), zim::EntryNotFound);
 }
 
+TEST_F(ZimArchive, redirectWithFragment)
+{
+  TempFile temp("zimfile");
+  auto tempPath = temp.path();
+
+  zim::writer::Creator creator;
+  creator.startZimCreation(tempPath);
+  auto item = std::make_shared<TestItem>("foo", "text/html", "Foo", "FooContent", IsFrontArticle::YES);
+  creator.addItem(item);
+  creator.addRedirection("plain", "Plain redirect", "foo");
+  creator.addRedirection("toSection", "Redirect to a section", "foo", zim::writer::Hints(), "Geography");
+  creator.finishZimCreation();
+
+  zim::Archive archive(tempPath);
+
+  auto foo = archive.getEntryByPath("foo");
+  ASSERT_FALSE(foo.isRedirect());
+  ASSERT_THROW(foo.getRedirectFragment(), zim::InvalidType);
+
+  auto plain = archive.getEntryByPath("plain");
+  ASSERT_TRUE(plain.isRedirect());
+  ASSERT_EQ(plain.getRedirectEntry().getIndex(), foo.getIndex());
+  ASSERT_EQ(plain.getRedirectFragment(), "");
+
+  auto toSection = archive.getEntryByPath("toSection");
+  ASSERT_TRUE(toSection.isRedirect());
+  ASSERT_EQ(toSection.getRedirectEntry().getIndex(), foo.getIndex());
+  ASSERT_EQ(toSection.getRedirectFragment(), "Geography");
+}
+
 #if WITH_TEST_DATA
 TEST_F(ZimArchive, openRealZimArchive)
 {

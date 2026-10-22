@@ -22,6 +22,7 @@
 #ifndef OPENZIM_LIBZIM_TOOLS_H
 #define OPENZIM_LIBZIM_TOOLS_H
 
+#include <cstddef>
 #include <string>
 #include <tuple>
 #include <map>
@@ -58,6 +59,52 @@ namespace zim {
   std::map<std::string, int> read_valuesmap(const std::string& s);
 
   std::string LIBZIM_PRIVATE_API stripMimeParameters(const std::string& rawMimeType);
+
+  /** Maximum size (in bytes) of a redirect fragment that can be stored.
+   *
+   * The dirent "parameter" field this is encoded into is itself limited to
+   * 255 bytes on disk; MAX_REDIRECT_FRAGMENT_SIZE is that limit minus the
+   * 2-byte record header encodeRedirectParameter() adds.
+   */
+  constexpr size_t MAX_REDIRECT_FRAGMENT_SIZE = 253;
+
+  /** Encode a redirect's optional fragment into dirent "parameter" bytes.
+   *
+   * The dirent "parameter" field is a small (<= 255 bytes), currently
+   * unused-by-anything-else, per-entry byte string reserved by the ZIM
+   * format for this kind of extension. To leave room for other, unrelated
+   * data that may be stored there in the future, the fragment is not
+   * written as a bare string but as a single tagged record:
+   *
+   *   1 byte    record tag, always FRAGMENT_PARAM_TAG for now
+   *   1 byte    N, the length of the fragment in bytes
+   *   N bytes   the fragment itself, exactly as given (UTF-8, no leading
+   *             '#', not URL-encoded)
+   *
+   * A redirect without a fragment is encoded as an empty string, identical
+   * to the on-disk representation redirects have always had -- this changes
+   * nothing for existing ZIM files or for redirects that don't use it.
+   *
+   * @param fragment The fragment to encode, without a leading '#'.
+   * @return The bytes to store in the dirent's "parameter" field.
+   * @exception std::invalid_argument if fragment is longer than
+   *            MAX_REDIRECT_FRAGMENT_SIZE bytes.
+   */
+  std::string LIBZIM_PRIVATE_API encodeRedirectParameter(const std::string& fragment);
+
+  /** Decode a redirect's optional fragment from dirent "parameter" bytes.
+   *
+   * Inverse of encodeRedirectParameter(). Never throws: a "parameter" value
+   * this function doesn't recognize (empty, truncated, or produced by some
+   * future record type this version of libzim doesn't know about) decodes
+   * to "", the same as a redirect with no fragment at all. Reading a ZIM
+   * file must never fail just because a later library version stored
+   * something in this field that an older reader doesn't understand.
+   *
+   * @param parameter The raw bytes of a redirect dirent's "parameter" field.
+   * @return The decoded fragment (without a leading '#'), or "" if none.
+   */
+  std::string LIBZIM_PRIVATE_API decodeRedirectFragment(const std::string& parameter);
 
   using MimeCounterType = std::map<const std::string, zim::entry_index_type>;
   MimeCounterType LIBZIM_PRIVATE_API parseMimetypeCounter(const std::string& counterData);
