@@ -81,6 +81,19 @@ namespace zim
        */
       entry_index_type getRedirectEntryIndex() const;
 
+      /** Get the fragment associated with this redirect, if any.
+       *
+       * ZIM redirects can optionally carry a fragment (the part of a URL
+       * after '#'), for cases such as redirecting to a specific section of
+       * an article rather than just the article itself. Most redirects
+       * don't have one, in which case this returns "".
+       *
+       * @return The fragment, without a leading '#', or "" if this redirect
+       *         has none.
+       * @exception InvalidType if the entry is not a redirection.
+       */
+      std::string getRedirectFragment() const;
+
       entry_index_type getIndex() const   { return m_idx; }
 
     protected: // so that Item can be implemented as a wrapper over Entry

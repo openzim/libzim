@@ -241,12 +241,19 @@ namespace zim
          * @param title the title of the redirection entry.
          * @param targetpath the path of the target of the redirection.
          * @param hints hints associated with the redirection.
+         * @param targetFragment the fragment of the target of the
+         *        redirection (the part of a URL after '#', without the
+         *        '#' itself), so that, for example, a redirection can
+         *        point not just to an article but to a specific section
+         *        within it. Most redirections don't need this and can
+         *        omit it.
          */
         void addRedirection(
             const std::string& path,
             const std::string& title,
             const std::string& targetpath,
-            const Hints& hints = Hints());
+            const Hints& hints = Hints(),
+            const std::string& targetFragment = "");
 
 
         /** Add an alias of an existing entry.
