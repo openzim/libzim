@@ -185,19 +185,20 @@ TEST_F(ZimArchive, openCreatedArchive)
   creator.setMainPath("foo");
   creator.addRedirection("foo3", "FooRedirection", "foo"); // No a front article.
   creator.addRedirection("foo4", "FooRedirection", "NoExistent"); // Invalid redirection, must be removed by creator
+  creator.addRedirection("foo5", "FooChainRedirection", "foo3"); // A redirect to a redirect.
   creator.finishZimCreation();
 
   zim::Archive archive(tempPath);
 #if !defined(ENABLE_XAPIAN)
-// listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + redirection
-#define ALL_ENTRY_COUNT 9U
+// listingIndex + M/Counter + M/Title + mainpage + 2*Illustration + 2*Item + 2*redirection
+#define ALL_ENTRY_COUNT 10U
 #else
 // same as above + 2 xapian indexes.
-#define ALL_ENTRY_COUNT 11U
+#define ALL_ENTRY_COUNT 12U
 #endif
   ASSERT_EQ(archive.getAllEntryCount(), ALL_ENTRY_COUNT);
 #undef ALL_ENTRY_COUNT
-  ASSERT_EQ(archive.getEntryCount(), 3U);
+  ASSERT_EQ(archive.getEntryCount(), 4U);
   ASSERT_EQ(archive.getArticleCount(), 1U);
   ASSERT_EQ(archive.getUuid(), uuid);
   ASSERT_EQ(archive.getMetadataKeys(), std::vector<std::string>({"Counter", "Illustration_48x48@1", "Illustration_96x96@1", "Title"}));
@@ -230,6 +231,11 @@ TEST_F(ZimArchive, openCreatedArchive)
   ASSERT_EQ(illu96.getPath(), "Illustration_96x96@1");
   ASSERT_EQ(std::string(illu96.getData()), "PNGBinaryContent96");
 
+  // getIllustrationItem(size) delegates to the IllustrationInfo overload above.
+  ASSERT_EQ(archive.getIllustrationItem(48).getPath(), "Illustration_48x48@1");
+  ASSERT_EQ(archive.getIllustrationItem(96).getPath(), "Illustration_96x96@1");
+  ASSERT_THROW(archive.getIllustrationItem(9999), zim::EntryNotFound);
+
   auto foo = archive.getEntryByPath("foo");
   ASSERT_EQ(foo.getPath(), "foo");
   ASSERT_EQ(foo.getTitle(), "Foo");
@@ -251,6 +257,16 @@ TEST_F(ZimArchive, openCreatedArchive)
   ASSERT_TRUE(foo3.isRedirect());
   ASSERT_EQ(foo3.getRedirectEntry().getIndex(), foo.getIndex());
   ASSERT_EQ(foo3.getRedirectEntryIndex(), foo.getIndex());
+  // getItem() defaults to follow=false; on a redirect entry that must throw
+  // rather than silently resolve it.
+  ASSERT_THROW(foo3.getItem(), zim::InvalidType);
+
+  // foo5 -> foo3 -> foo: a chain of two redirects. getItem(true)/getRedirect()
+  // must follow the whole chain, not just the first hop.
+  auto foo5 = archive.getEntryByPath("foo5");
+  ASSERT_TRUE(foo5.isRedirect());
+  ASSERT_EQ(std::string(foo5.getItem(true).getData()), "FooContent");
+  ASSERT_EQ(foo5.getRedirect().getIndex(), foo.getIndex());
 
   auto main = archive.getMainEntry();
   ASSERT_TRUE(main.isRedirect());
@@ -283,6 +299,27 @@ TEST_F(ZimArchive, openRealZimArchive)
         EXPECT_TRUE( archive->check() ) << ctx;
       }
     }
+  }
+}
+
+TEST_F(ZimArchive, getChecksum)
+{
+  // md5 of each small.zim's bytes preceding its checksum; one value per
+  // category since each has distinct content.
+  for (auto& testfile: getDataFilePath("small.zim")) {
+    std::string expected;
+    if (testfile.category == "nons") {
+      expected = "dbf4ab7c1de668876332193f53556af9";
+    } else if (testfile.category == "withns") {
+      expected = "76d3e977d9776d3ac6fc2618e0dda999";
+    } else if (testfile.category == "noTitleListingV0") {
+      expected = "ad8cc88d89b4cf1e503df44fd13882a8";
+    } else {
+      FAIL() << "No expected checksum recorded for category " << testfile.category;
+    }
+
+    const zim::Archive archive(testfile.path);
+    EXPECT_EQ(expected, archive.getChecksum()) << testfile.category;
   }
 }
 

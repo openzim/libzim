@@ -34,6 +34,7 @@ TEST(search_iterator, uninitialized) {
   zim::SearchResultSet::iterator it;
   ASSERT_EQ(it.getTitle(), "");
   ASSERT_EQ(it.getPath(), "");
+  ASSERT_EQ(it.getDbData(), "");
   ASSERT_EQ(it.getSnippet(), "");
   ASSERT_EQ(it.getScore(), 0);
   ASSERT_EQ(it.getFileIndex(), 0);

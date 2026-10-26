@@ -25,6 +25,10 @@
 
 #include "gtest/gtest.h"
 
+#include <fstream>
+#include <cstdio>
+#include <vector>
+
 namespace
 {
 
@@ -67,6 +71,15 @@ TEST(FileReader, shouldJustWork)
 
     ASSERT_EQ(offset_t(baseOffset+0), reader->offset());
     ASSERT_EQ(zsize_t(sizeof(data)-1), reader->size());
+
+    // BaseFileReader always returns 0 (see file_reader.h's XXX comment);
+    // only BufferReader measures its Buffer. Branch on real type, not
+    // which factory built it.
+    if (dynamic_cast<const BufferReader*>(reader.get())) {
+      ASSERT_EQ(zsize_t(sizeof(data)-1).v, reader->getMemorySize());
+    } else {
+      ASSERT_EQ(0U, reader->getMemorySize());
+    }
 
     ASSERT_EQ('a', reader->read(offset_t(0)));
     ASSERT_EQ('e', reader->read(offset_t(4)));
@@ -159,6 +172,71 @@ TEST(FileReader, zeroReader)
     reader->read(out, offset_t(0), zsize_t(0));
     const char nullarray[] = {0, 0, 0, 0};
     ASSERT_EQ(0, memcmp(out, nullarray, 4));
+  }
+}
+
+// FileCompound needs fixed "aa"/"ab"/... suffixes, so makeTempFile()'s
+// random paths don't fit; this RAII helper removes each part on destruction.
+class MultiPartFiles
+{
+  std::vector<std::string> paths_;
+public:
+  ~MultiPartFiles() {
+    for (auto& path : paths_) {
+      std::remove(path.c_str());
+    }
+  }
+
+  void addPart(const std::string& path, const std::string& content) {
+    std::ofstream f(path, std::ios::binary);
+    f << content;
+    paths_.push_back(path);
+  }
+};
+
+// Covers all access patterns against a synthetic 3-part (10 bytes each)
+// compound: small/whole/boundary-straddling/large reads, aligned or not.
+TEST(FileReader, multiPartReads)
+{
+  // TempFile's mkstemp-based naming reserves us a unique path/prefix;
+  // repurpose it to place parts at <prefix>aa/<prefix>ab/<prefix>ac.
+  unittests::TempFile tempFileBase("multipart");
+  const std::string prefix = tempFileBase.path();
+
+  MultiPartFiles parts;
+  parts.addPart(prefix + "aa", "0123456789");
+  parts.addPart(prefix + "ab", "ABCDEFGHIJ");
+  parts.addPart(prefix + "ac", "KLMNOPQRST");
+
+  auto fileCompound = std::make_shared<FileCompound>(prefix, FileCompound::MultiPartToken::Multi);
+  ASSERT_TRUE(fileCompound->is_multiPart());
+  MultiPartFileReader reader(fileCompound);
+  ASSERT_EQ(zsize_t(30), reader.size());
+
+  struct Case {
+    const char* name;
+    offset_t offset;
+    zsize_t size;
+    const char* expected;
+  };
+  const Case cases[] = {
+    // Small reads (smaller than the 10-byte part size).
+    {"small read strictly inside a part",             offset_t(2),  zsize_t(3),  "234"},
+    {"small read aligned with a part's left boundary", offset_t(10), zsize_t(3),  "ABC"},
+    {"small read aligned with a part's right boundary", offset_t(7), zsize_t(3),  "789"},
+    // A whole part, read in one go.
+    {"read of an entire part",                         offset_t(10), zsize_t(10), "ABCDEFGHIJ"},
+    // Straddles the aa/ab boundary.
+    {"read spanning one part boundary",                offset_t(8),  zsize_t(4),  "89AB"},
+    // Large reads (bigger than the 10-byte part size).
+    {"large read aligned with a part's beginning",     offset_t(10), zsize_t(15), "ABCDEFGHIJKLMNO"},
+    {"large read aligned with a part's end",           offset_t(5),  zsize_t(15), "56789ABCDEFGHIJ"},
+    {"large read extending past both boundaries of a part", offset_t(5), zsize_t(20), "56789ABCDEFGHIJKLMNO"},
+  };
+
+  for (const auto& c : cases) {
+    const auto buf = reader.get_buffer(c.offset, c.size);
+    EXPECT_EQ(0, memcmp(buf.data(), c.expected, c.size.v)) << c.name;
   }
 }
 
