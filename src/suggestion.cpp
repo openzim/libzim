@@ -26,6 +26,7 @@
 #include "fileimpl.h"
 #include "tools.h"
 #include "constants.h"
+#include "xapian/myhtmlparse.h"
 
 namespace zim
 {
@@ -303,6 +304,29 @@ SuggestionResultSet::SuggestionResultSet(EntryRange entryRange) :
   , mp_mset(nullptr)
 #endif  // ENABLE_XAPIAN
 {}
+
+std::string SuggestionResultSet::getSnippet(const Entry& entry) const
+{
+#if defined(ENABLE_XAPIAN)
+  if (mp_mset) {
+    try {
+      MyHtmlParser parser;
+      const std::string content = entry.getItem(true).getData();
+      try {
+        parser.parse_html(content, "UTF-8", true);
+      } catch (...) {
+        // MyHtmlParser uses exceptions for charset/noindex control flow, as in SearchIterator.
+      }
+      return mp_mset->snippet(parser.dump, 500, mp_internalDb->m_stemmer, 0);
+    } catch (const Xapian::Error&) {
+      return "";
+    } catch (const std::exception&) {
+      return "";
+    }
+  }
+#endif
+  return "";
+}
 
 int SuggestionResultSet::size() const
 {
