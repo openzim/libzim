@@ -619,6 +619,25 @@ TEST(Suggestion, titleSnippet) {
   );
 }
 
+TEST(Suggestion, articleSnippetWithoutFulltextIndex) {
+  TempZimArchive tza("titleSnippet");
+  zim::writer::Creator creator;
+  creator.configIndexing(false, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("estonia", "text/html", "Estonia",
+    "<html><body>Estonia is a country. &lt;script&gt; must be escaped.</body></html>"));
+  creator.addRedirection("alias", "Estonia alias", "estonia");
+  creator.finishZimCreation();
+  zim::Archive archive(tza.getPath());
+  ASSERT_FALSE(archive.hasFulltextIndex());
+  zim::SuggestionSearcher searcher(archive);
+  auto results = searcher.suggest("estonia").getResults(0, 0);
+  const auto snippet = results.getSnippet(archive.getEntryByPath("alias"));
+  EXPECT_NE(snippet.find("<b>Estonia</b>"), std::string::npos);
+  EXPECT_NE(snippet.find("country"), std::string::npos);
+  EXPECT_EQ(snippet.find("<script>"), std::string::npos);
+}
+
 TEST(Suggestion, reuseSearcher) {
   std::vector<std::string> titles = {
                                       "song for you",

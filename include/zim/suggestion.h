@@ -177,6 +177,12 @@ class LIBZIM_API SuggestionResultSet
     /** The size of the SearchResult (end()-begin()) */
     int size() const;
 
+    /** Generate an escaped, highlighted article snippet using this title query.
+     * Reads the article directly (following redirects), without a full-text search.
+     * Returns an empty string if the title index or article text is unavailable.
+     */
+    std::string getSnippet(const Entry& entry) const;
+
   private: // types
     typedef Archive::EntryRange<EntryOrder::titleOrder> EntryRange;
     typedef std::shared_ptr<SuggestionDataBase> SuggestionDBPtr;
