@@ -85,7 +85,7 @@ class XapianDb {
 /**
  * A class to encapsulate a xapian database and all the information we can gather from it.
  */
-class InternalDataBase {
+class LIBZIM_PRIVATE_API InternalDataBase {
   public: // methods
     InternalDataBase(const std::vector<zim::Archive>& archives, bool verbose);
     bool hasDatabase() const;

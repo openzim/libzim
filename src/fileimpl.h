@@ -175,7 +175,7 @@ namespace zim
 
 #ifdef ENABLE_XAPIAN
       std::shared_ptr<XapianDb> loadXapianDb();
-      std::shared_ptr<XapianDb> getXapianDb();
+      LIBZIM_PRIVATE_API std::shared_ptr<XapianDb> getXapianDb();
 #endif
   private:
       FileImpl(std::shared_ptr<FileCompound> zimFile, OpenConfig openConfig);
