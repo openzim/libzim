@@ -23,6 +23,9 @@
 #include <zim/item.h>
 #include <zim/search.h>
 
+#include "fileimpl.h"
+#include "search_internal.h"
+#include <thread>
 #include <xapian.h>
 
 #include "tools.h"
@@ -85,6 +88,42 @@ TEST(Search, indexFullPath)
 
   result++;
   ASSERT_EQ(result, results.end());
+}
+
+TEST(Search, databaseLockExcludesAnotherThread)
+{
+  TempZimArchive tza("searchLock");
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>(
+      "article", "text/html", "Article", "Searchable content"));
+  creator.finishZimCreation();
+
+  zim::Archive archive(tza.getPath());
+  zim::InternalDataBase database({archive}, false);
+  auto xapianDb = archive.getImpl()->getXapianDb();
+  ASSERT_NE(xapianDb, nullptr);
+  bool acquired = false;
+  {
+    auto guard = database.lock();
+    std::thread contender([&] {
+      acquired = xapianDb->m_mutex.try_lock();
+      if (acquired) {
+        xapianDb->m_mutex.unlock();
+      }
+    });
+    contender.join();
+    EXPECT_FALSE(acquired);
+  }
+  std::thread contender([&] {
+    acquired = xapianDb->m_mutex.try_lock();
+    if (acquired) {
+      xapianDb->m_mutex.unlock();
+    }
+  });
+  contender.join();
+  EXPECT_TRUE(acquired);
 }
 
 TEST(Search, fulltextSnippet)
