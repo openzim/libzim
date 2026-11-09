@@ -138,10 +138,7 @@ int InternalDataBase::valueSlot(const std::string& valueName) const
 }
 
 std::lock_guard<MultiMutex> InternalDataBase::lock() {
-  // Construct the guard with a list-initialization, so we don't have to move it
-  // (which we can't do as lock_guard is not movable).
-  // See https://stackoverflow.com/questions/22502606/why-is-stdlock-guard-not-movable
-  return { m_mutexes, std::adopt_lock };
+  return std::lock_guard<MultiMutex>(m_mutexes);
 }
 
 Xapian::Query InternalDataBase::parseQuery(const Query& query)
