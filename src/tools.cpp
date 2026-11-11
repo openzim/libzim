@@ -317,13 +317,27 @@ std::string zim::removeAccents(const std::string& text)
   return unaccentedText;
 }
 
+#ifndef _WIN32
+bool zim::getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, int fd, Xapian::Database& database) {
+#else
 bool zim::getDbFromAccessInfo(zim::ItemDataDirectAccessInfo accessInfo, Xapian::Database& database) {
+#endif
   zim::DEFAULTFS::FD databasefd;
   try {
+#ifndef _WIN32
+      // dup() the fd we have instead of reopening the path - the path
+      // may not be safely reopenable.
+      if (fd >= 0) {
+        databasefd = zim::dupFd(fd);
+      } else {
+        databasefd = zim::DEFAULTFS::openFile(accessInfo.filename);
+      }
+#else
       databasefd = zim::DEFAULTFS::openFile(accessInfo.filename);
-  } catch (...) {
-      std::cerr << "Impossible to open " << accessInfo.filename << std::endl;
-      std::cerr << strerror(errno) << std::endl;
+#endif
+  } catch (const std::exception& e) {
+      // dupFd()/openFile() already include a full error message.
+      std::cerr << "Impossible to open " << accessInfo.filename << ": " << e.what() << std::endl;
       return false;
   }
   if (!databasefd.seek(zim::offset_t(accessInfo.offset))) {
