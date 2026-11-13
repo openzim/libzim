@@ -1041,6 +1041,23 @@ TEST_F(ZimArchive, checksumOfMultipartZim)
     EXPECT_TRUE(multipartArchive.check());
   }
 }
+
+TEST_F(ZimArchive, checksumOfEmbeddedZim)
+{
+  auto normalZims = getDataFilePath("small.zim", {"noTitleListingV0"});
+  auto embeddedZims = getDataFilePath("small.zim.embedded", {"noTitleListingV0"});
+
+  ASSERT_EQ(normalZims.size(), embeddedZims.size()) << "We must have same number of zim files.";
+  for (auto i = 0UL; i < normalZims.size(); i++) {
+    const zim::Archive normalArchive(normalZims[i].path);
+    const int fd = OPEN_READ_ONLY(embeddedZims[i].path);
+    const zim::Archive embeddedArchive(zim::FdInput(fd, 8, normalArchive.getFilesize()));
+    close(fd);
+
+    EXPECT_TRUE(normalArchive.check());
+    EXPECT_TRUE(embeddedArchive.check());
+  }
+}
 #endif // not _WIN32
 #endif // WITH_TEST_DATA
 
