@@ -36,6 +36,7 @@ namespace {
 
 using zim::unittests::TempZimArchive;
 using zim::unittests::TestItem;
+using zim::unittests::IsFrontArticle;
 using zim::unittests::getDataFilePath;
 
 std::vector<std::string> getSuggestedTitles(const zim::Archive archive, std::string query, int range) {
@@ -617,6 +618,64 @@ TEST(Suggestion, titleSnippet) {
       "<b>this</b> <b>is</b> a long title to ensure that the snippets generated contain the entire title even if match <b>is</b> one word"
     }
   );
+}
+
+TEST(Suggestion, articleSnippetWithoutFulltextIndex) {
+  TempZimArchive tza("titleSnippet");
+  zim::writer::Creator creator;
+  creator.configIndexing(false, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("estonia", "text/html", "Estonia",
+    "<html><body>Estonia is a country. &lt;script&gt; must be escaped.</body></html>"));
+  creator.addRedirection("alias", "Estonia alias", "estonia");
+  creator.finishZimCreation();
+  zim::Archive archive(tza.getPath());
+  ASSERT_FALSE(archive.hasFulltextIndex());
+  zim::SuggestionSearcher searcher(archive);
+  auto results = searcher.suggest("estonia").getResults(0, 0);
+  const auto snippet = results.getSnippet(archive.getEntryByPath("alias"));
+  EXPECT_NE(snippet.find("<b>Estonia</b>"), std::string::npos);
+  EXPECT_NE(snippet.find("country"), std::string::npos);
+  EXPECT_EQ(snippet.find("<script>"), std::string::npos);
+}
+
+TEST(Suggestion, articleSnippetSkipsNonHtmlFrontArticle) {
+  TempZimArchive tza("titleSnippet");
+  zim::writer::Creator creator;
+  creator.configIndexing(false, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("estonia", "text/plain", "Estonia",
+    "Estonia is a country.", IsFrontArticle::YES));
+  creator.finishZimCreation();
+  zim::Archive archive(tza.getPath());
+  ASSERT_TRUE(archive.hasTitleIndex());
+  zim::SuggestionSearcher searcher(archive);
+  auto results = searcher.suggest("estonia").getResults(0, 1);
+  ASSERT_EQ(results.size(), 1);
+  EXPECT_EQ(results.getSnippet(results.begin().getEntry()), "");
+}
+
+TEST(Suggestion, articleSnippetSkipsNoindex) {
+  TempZimArchive tza("titleSnippet");
+  zim::writer::Creator creator;
+  creator.configIndexing(true, "en");
+  creator.startZimCreation(tza.getPath());
+  creator.addItem(std::make_shared<TestItem>("robots", "text/html", "Estonia",
+    R"(<html><body>Estonia is a country.<meta name="robots" content="noindex"></body></html>)"));
+  creator.addItem(std::make_shared<TestItem>("marker", "text/html", "Estonia",
+    "<html><body>Estonia is a country. NOINDEX</body></html>"));
+  creator.finishZimCreation();
+  zim::Archive archive(tza.getPath());
+  ASSERT_TRUE(archive.hasTitleIndex());
+  ASSERT_FALSE(archive.hasFulltextIndex());
+  zim::SuggestionSearcher searcher(archive);
+  auto results = searcher.suggest("estonia").getResults(0, 2);
+  ASSERT_EQ(results.size(), 2);
+  for (auto it = results.begin(); it != results.end(); ++it) {
+    const auto entry = it.getEntry();
+    EXPECT_EQ(entry.getTitle(), "Estonia");
+    EXPECT_EQ(results.getSnippet(entry), "") << entry.getPath();
+  }
 }
 
 TEST(Suggestion, reuseSearcher) {
