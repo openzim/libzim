@@ -37,7 +37,7 @@ class LIBZIM_PRIVATE_API HtmlParser {
 	map<string, string> parameters;
     protected:
 	void decode_entities(string &s);
-	bool in_script;
+	bool in_script=false;
 	string charset;
 	static map<string, unsigned int> named_ents;
 
