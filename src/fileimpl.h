@@ -100,6 +100,8 @@ namespace zim
       using ByTitleDirentLookup = zim::DirentLookup<ByTitleDirentLookupConfig>;
       std::unique_ptr<ByTitleDirentLookup> m_byTitleDirentLookup;
 
+      bool m_decompressClustersLazily = true;
+
 #ifdef ENABLE_XAPIAN
       std::shared_ptr<XapianDb> mp_xapianDb;
       mutable std::mutex m_xapianDbCreationMutex;
@@ -172,6 +174,8 @@ namespace zim
       size_t getDirentCacheMaxSize() const;
       size_t getDirentCacheCurrentSize() const;
       void setDirentCacheMaxSize(size_t nbDirents);
+
+      void decompressClustersLazily(bool enable);
 
 #ifdef ENABLE_XAPIAN
       std::shared_ptr<XapianDb> loadXapianDb();
