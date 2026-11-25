@@ -115,7 +115,7 @@ error if Xapian is not found).  You can build without Xapian by
 passing the option `-Dwith_xapian=false` :
 ```bash
 meson . build -Dwith_xapian=false
-ninja -C build doc
+ninja -C build
 ```
 
 If Libzim is compiled without Xapian, all search API are removed.  You
